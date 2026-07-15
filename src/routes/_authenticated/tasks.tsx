@@ -261,7 +261,65 @@ function TasksPage() {
       </div>
 
       <TaskDrawer task={selected} onClose={() => setSelectedId(null)} />
-    </AppShell>
+
+      <Dialog open={newOpen} onOpenChange={setNewOpen}>
+        <DialogContent className="rounded-2xl">
+          <DialogHeader>
+            <DialogTitle>Nova tarefa</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <label className="block space-y-1">
+              <span className="text-xs font-medium text-muted-foreground">Título</span>
+              <Input
+                autoFocus
+                value={newTitle}
+                onChange={e => setNewTitle(e.target.value)}
+                placeholder="Ex: Criar arte para Instagram"
+                onKeyDown={e => {
+                  if (e.key === "Enter" && newTitle.trim()) {
+                    createTask.mutate({ title: newTitle.trim(), status: newStatus, priority: newPriority });
+                    setNewOpen(false);
+                  }
+                }}
+              />
+            </label>
+            <div className="grid grid-cols-2 gap-3">
+              <label className="block space-y-1">
+                <span className="text-xs font-medium text-muted-foreground">Status</span>
+                <Select value={newStatus} onValueChange={v => setNewStatus(v as TaskStatus)}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {STATUS_ORDER.map(s => <SelectItem key={s} value={s}>{STATUS_META[s].label}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </label>
+              <label className="block space-y-1">
+                <span className="text-xs font-medium text-muted-foreground">Prioridade</span>
+                <Select value={newPriority} onValueChange={v => setNewPriority(v as TaskPriority)}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="low">Baixa</SelectItem>
+                    <SelectItem value="medium">Média</SelectItem>
+                    <SelectItem value="high">Alta</SelectItem>
+                  </SelectContent>
+                </Select>
+              </label>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" className="rounded-full" onClick={() => setNewOpen(false)}>Cancelar</Button>
+            <Button
+              className="rounded-full"
+              disabled={!newTitle.trim() || createTask.isPending}
+              onClick={() => {
+                createTask.mutate({ title: newTitle.trim(), status: newStatus, priority: newPriority });
+                setNewOpen(false);
+              }}
+            >Criar tarefa</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
 
