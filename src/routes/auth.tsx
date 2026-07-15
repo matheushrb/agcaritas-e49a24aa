@@ -51,7 +51,7 @@ function AuthPage() {
     setLoading(true);
     try {
       if (mode === "signup") {
-        const { error } = await supabase.auth.signUp({
+        const { data: signUpData, error } = await supabase.auth.signUp({
           email,
           password,
           options: {
@@ -60,8 +60,13 @@ function AuthPage() {
           },
         });
         if (error) throw error;
-        toast.success("Conta criada! Você já pode entrar.");
-        setMode("signin");
+        // If email confirmation is off, session is already active — go straight to onboarding.
+        if (signUpData.session) {
+          navigate({ to: "/onboarding" });
+        } else {
+          toast.success("Conta criada! Confirme seu e-mail para continuar.");
+          setMode("signin");
+        }
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
