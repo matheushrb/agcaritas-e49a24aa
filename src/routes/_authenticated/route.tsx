@@ -1,6 +1,8 @@
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/app-shell";
+import { TimerProvider } from "@/contexts/timer-context";
+import { TimerWidget } from "@/components/timer-widget";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
@@ -19,8 +21,11 @@ export const Route = createFileRoute("/_authenticated")({
     return { user: data.user };
   },
   component: () => (
-    <AppShell>
-      <Outlet />
-    </AppShell>
+    <TimerProvider>
+      <AppShell>
+        <Outlet />
+      </AppShell>
+      <TimerWidget />
+    </TimerProvider>
   ),
 });
