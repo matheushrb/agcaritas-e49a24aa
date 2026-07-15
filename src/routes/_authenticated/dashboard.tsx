@@ -163,6 +163,32 @@ function DashboardContent() {
         </div>
       </section>
 
+      {/* Financeiro */}
+      <section className="lg:col-span-12">
+        <SectionLabel>Financeiro</SectionLabel>
+        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">
+          <StatCard label="Faturamento" value={BRL(0)} hint="vs mês anterior" icon={TrendingUp} tone="success" delta={{ value: "0%", direction: "up" }} />
+          <StatCard label="Despesas" value={BRL(0)} hint="vs mês anterior" icon={TrendingDown} tone="destructive" delta={{ value: "0%", direction: "up" }} />
+          <StatCard label="Lucro Líquido" value={BRL(0)} hint="Margem 0%" icon={Wallet} tone="primary" delta={{ value: "0%", direction: "up" }} />
+          <StatCard label="MRR" value={BRL(0)} hint="Recorrente mensal" icon={Activity} tone="info" />
+          <StatCard label="Pipeline" value={BRL(pipelineValue(data.proposals))} hint={`${data.proposals.length} deals`} icon={BarChart3} tone="accent" />
+          <StatCard label="Conversão" value={`${proposalsRate(data.proposals)}%`} hint="Taxa de fechamento" icon={Target} tone="warning" />
+        </div>
+      </section>
+
+      {/* Operacional */}
+      <section className="lg:col-span-12">
+        <SectionLabel>Operacional</SectionLabel>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <StatCard label="Projetos Ativos" value={String(activeProjects(data.projects))} hint="em andamento" icon={FolderOpen} tone="primary" />
+          <StatCard label="Tarefas Abertas" value={String(openTasks(data.allTasks))} hint="aguardando conclusão" icon={CheckSquare} tone="info" />
+          <StatCard label="Concluídas Hoje" value={String(completedToday(data.allTasks))} hint="entregues hoje" icon={CheckCircle2} tone="success" />
+          <StatCard label="Prazos em 7 dias" value={String(dueSoon(data.allTasks))} hint="vencem em breve" icon={CalendarClock} tone="warning" />
+        </div>
+      </section>
+
+
+
 
       {/* Right column: Calendar + agenda */}
       <section className="lg:col-span-4 lg:row-span-2">
