@@ -1,56 +1,65 @@
-Pixie Pro — Plano de construção
+## Objetivo
 
-ERP interno para a Caritas Gestão Criativa. Cobre o funil completo: Lead → Proposta → Contrato → Plano de Marketing → Projeto → Tarefas/KPIs → Faturamento. Segue o layout das duas referências enviadas (dashboard com sidebar estreita à esquerda, seguindo o mesmo modelo de menu, que não cobre a lateral interia, se puder ser o mais literal possível, cards grandes com bordas arredondadas, usando as paletas em azul (que é a cor da marca), Usar sempre ícones ao invés de ilustração, e ser o mais parecido possível com a referência, entendendo que talvez não teremos os mesmos cards., tipografia display + sans limpa, suporte dark/light).
+Transformar o dashboard atual em uma grade personalizável: cada usuário vê widgets diferentes conforme sua função (preset), e pode ligar/desligar/reordenar tudo em um painel lateral "Personalizar".
 
-## Fase 1 — Fundação (esta iteração)
+## Como vai funcionar
 
-Vamos começar pela base sólida antes de espalhar em 10 módulos:
+**1. Registro de widgets (extensível)**
+Um único arquivo `src/lib/dashboard-widgets.tsx` lista todos os widgets disponíveis. Cada widget tem:
+- `id` estável (ex.: `tasks.today`, `finance.revenue`, `hr.birthdays`)
+- `category` (Tarefas, Projetos, Financeiro, RH, Agenda, Comercial, Notificações, Outros)
+- `title`, `description`, `icon`
+- `size` padrão (small / medium / large — mapeia para col-span do grid)
+- `component` que já sabe buscar seus próprios dados
+- `roles` sugeridas (para os presets)
 
-1. **Design system fiel às referências**
-  - Tokens em `src/styles.css`: fundo claro `#F6F5FB` / dark `#0F1020`, primário violeta `#6C63FF` + glow, cards `card`, superfícies com `radius` ~20px, sombras suaves.
-  - Tipografia: display "Sora" para títulos, "Inter" para corpo (carregadas via `<link>` no `__root.tsx`).
-  - Toggle Light/Dark no header (pílula igual à referência).
-2. **Shell da aplicação**
-  - Sidebar fixa à esquerda estilo "ilha flutuante" (ícones Lucide, item ativo em card branco/violeta, badge PRO).
-  - Header com nav (Dashboard · Workflows · Integrations), campo de busca com placeholder "Search or type command", toggle tema, sino de notificação, ícone settings, botão "Export data" e CTA sólido "Add new board".
-  - Layout responsivo com grid principal.
-3. **Lovable Cloud (backend)**
-  - Habilitar Cloud, criar schema inicial: `organizations`, `profiles`, `user_roles`, `clients`, `leads`, `proposals`, `contracts`, `marketing_plans`, `projects`, `tasks`, `platform_kpis`, `team_members`, `charges`.
-  - RLS por `organization_id` em todas as tabelas. Roles (`admin`, `manager`, `member`) em tabela separada com função `has_role`.
-  - Auth email/senha + tela `/auth`, layout `_authenticated` protegendo rotas.
-4. **Dashboard (M01) — tela âncora do design**
-  Recriamos exatamente o layout da referência:
-  - Saudação "Olá, [nome]! Quais são seus planos para hoje?" + 3 cards de atalho (Stay organized / Sync your notes / Collaborate).
-  - Painel Notificações (com swipe editar/excluir).
-  - Assignments em destaque (tarefa prioritária + tags + prioridade).
-  - Mini-calendário mensal + agenda do dia.
-  - Today tasks com barra de progresso, comentários, anexos.
-  - Card "Go premium" violeta.
-  - Cards de KPI (Data Research 90%, UX/UI 65%) e "Board meeting" com Reschedule/Accept.
+Novos módulos futuros só precisam adicionar uma entrada nesse arquivo — nada mais muda.
 
-## Fase 2 (próximas iterações, depois de você validar a fundação)
+**Widgets iniciais** (cobrindo os módulos existentes):
+- Tarefas: Tarefas de hoje, Minhas tarefas, Atribuições, Concluídas hoje, Prazos em 7 dias
+- Projetos: Projetos ativos, Próximas entregas, Status geral
+- Financeiro: Faturamento, Despesas, Lucro, MRR, Pipeline, Conversão, Contas a receber
+- RH/Equipe: Membros ativos, Aniversariantes, Férias
+- Agenda: Próxima reunião, Mini calendário
+- Comercial: Leads no funil, Propostas em aberto
+- Outros: Notificações, KPIs de plataforma, Saudação
 
-5. CRM Kanban (M02) + Drawer de lead
-6. Propostas + Contratos (M03/M04)
-7. Plano de Marketing com briefing por segmento (M05)
-8. Projetos + Tarefas com 4 modelos de faturamento (M06/M07)
-9. Plataformas & KPIs + relatório PDF (M08)
-10. Financeiro / Cobranças (M09)
-11. RH / Time (M10)
+**2. Presets por função**
+Ao concluir o onboarding, o `role_title` do perfil determina o preset inicial:
+- Admin/Diretor → dashboard completo (visão macro)
+- Financeiro → foco em Financeiro + Agenda
+- Projetos/PM → Projetos + Tarefas + Agenda
+- RH → RH + Agenda + Notificações
+- Comercial → Comercial + Financeiro (pipeline)
+- Operacional/Designer → Tarefas + Projetos
 
-## Regras que respeitarei em todo o sistema
+O usuário pode editar livremente depois.
 
-- Zero emoji, apenas ícones Lucide.
-- Nenhum mock permanente — tudo vem do Cloud.
-- Validação Zod em todo formulário.
-- Rotas protegidas sob `_authenticated`.
-- Cores/gradientes/sombras apenas via tokens semânticos em `styles.css` — nada de `bg-[#...]` em componentes.
-- Plano aprovado → cria projeto automaticamente (trigger no banco).
+**3. Painel lateral "Personalizar"**
+Botão "Personalizar" no cabeçalho do dashboard abre um `Sheet` lateral com:
+- Lista de widgets agrupada por categoria
+- Toggle (Switch) para ligar/desligar cada widget
+- Setas ↑↓ para reordenar (drag-and-drop fica para uma iteração futura para manter o escopo)
+- Botão "Restaurar preset da minha função"
+- Preferências salvas automaticamente
 
-## Perguntas rápidas antes de eu começar
+**4. Persistência**
+Nova tabela `dashboard_preferences` (user_id, widgets jsonb, updated_at) com RLS por `auth.uid()`. Se o usuário ainda não tem preferências, aplica o preset da role no primeiro carregamento e salva.
 
-1. Confirma que vamos usar **Lovable Cloud** (backend integrado, sem contas externas)? É o que o PRD pede como Supabase, e no Lovable é o equivalente sem setup.
-2. Começamos pela **Fase 1 completa** (design system + shell + auth + dashboard funcional consumindo o banco) e depois seguimos módulo a módulo? Ou você prefere que eu já monte o **esqueleto de todas as rotas** (páginas vazias com layout) para você navegar antes?
-3. O idioma da interface é **português (BR)** em tudo, certo? As referências estão em inglês mas o PRD é em PT.
+## Ajuste já feito
 
-Assim que confirmar, começo pela Fase 1.
+Card **"Tarefas de hoje"** agora renderiza no máximo 4 linhas, cresce só conforme o conteúdo e não usa barra de rolagem. Um link "Ver todas (N)" aparece quando há mais.
+
+## Detalhes técnicos
+
+- **Migration**: `dashboard_preferences (user_id uuid PK, widgets jsonb not null default '[]', updated_at timestamptz)` + GRANTs + RLS (user só lê/edita as próprias) + trigger `set_updated_at`.
+- **Query**: `useSuspenseQuery` carrega preferências junto do dashboard; server-side `upsert` via `createServerFn` com `requireSupabaseAuth` quando o usuário salva.
+- **Grid**: layout continua em `grid-cols-12`; cada widget declara seu `colSpan` (4/6/8/12) e o render itera na ordem salva.
+- **Presets**: função `getPresetForRole(role_title)` que devolve a lista ordenada de widget ids.
+- **Fallback**: se `role_title` não bate com nenhum preset conhecido, aplica o preset "Admin" (completo).
+
+## Fora do escopo desta etapa
+
+- Drag-and-drop visual (fica ↑↓ por enquanto)
+- Configuração fina por widget (ex.: escolher qual métrica específica dentro do card Financeiro) — cada widget hoje é "ligado/desligado" inteiro
+- Compartilhar layouts entre usuários
