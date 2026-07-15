@@ -471,6 +471,36 @@ function proposalsRate(proposals: { status: string }[]): number {
   return Math.round((approved / proposals.length) * 100);
 }
 
+function pipelineValue(proposals: { status: string; total_value: number | null }[]): number {
+  return proposals
+    .filter(p => p.status !== "approved" && p.status !== "rejected")
+    .reduce((sum, p) => sum + (Number(p.total_value) || 0), 0);
+}
+
+function activeProjects(projects: { status: string }[]): number {
+  return projects.filter(p => p.status !== "completed" && p.status !== "archived" && p.status !== "cancelled").length;
+}
+
+function openTasks(tasks: { status: string }[]): number {
+  return tasks.filter(t => t.status !== "done" && t.status !== "completed" && t.status !== "cancelled").length;
+}
+
+function completedToday(tasks: { completed_at: string | null }[]): number {
+  const today = new Date().toDateString();
+  return tasks.filter(t => t.completed_at && new Date(t.completed_at).toDateString() === today).length;
+}
+
+function dueSoon(tasks: { status: string; due_date: string | null }[]): number {
+  const now = new Date();
+  const in7 = new Date();
+  in7.setDate(now.getDate() + 7);
+  return tasks.filter(t => {
+    if (!t.due_date) return false;
+    if (t.status === "done" || t.status === "completed") return false;
+    const d = new Date(t.due_date);
+    return d >= now && d <= in7;
+  }).length;
+
 function upcomingText(events: any[]) {
   if (!events.length) return "Sem reuniões";
   const e = events[0];
