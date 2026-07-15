@@ -65,12 +65,14 @@ const dashboardQuery = {
 function DashboardContent() {
   const { data: me } = useSuspenseQuery(profileQuery);
   const { data } = useSuspenseQuery(dashboardQuery);
+  const profile = me?.profile as any;
   const displayName =
-    me?.profile?.full_name?.trim() ||
-    me?.user?.user_metadata?.full_name ||
+    profile?.display_name?.trim() ||
+    profile?.full_name?.trim().split(" ")[0] ||
+    me?.user?.user_metadata?.full_name?.split(" ")[0] ||
     me?.user?.email?.split("@")[0] ||
     "por aí";
-  const firstName = displayName.split(" ")[0];
+  const firstName = displayName;
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-5">
