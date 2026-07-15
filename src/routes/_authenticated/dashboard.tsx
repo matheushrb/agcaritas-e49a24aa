@@ -500,6 +500,8 @@ function dueSoon(tasks: { status: string; due_date: string | null }[]): number {
     const d = new Date(t.due_date);
     return d >= now && d <= in7;
   }).length;
+}
+
 
 function upcomingText(events: any[]) {
   if (!events.length) return "Sem reuniões";
