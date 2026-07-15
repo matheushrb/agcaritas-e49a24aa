@@ -99,7 +99,7 @@ function TeamPage() {
       <div className="grid grid-cols-3 gap-4">
         <Card className="p-4"><div className="text-xs text-muted-foreground">Total</div><div className="text-xl font-semibold">{kpis.total}</div></Card>
         <Card className="p-4"><div className="text-xs text-muted-foreground">Ativos</div><div className="text-xl font-semibold">{kpis.active}</div></Card>
-        <Card className="p-4"><div className="text-xs text-muted-foreground">Onboarding</div><div className="text-xl font-semibold">{kpis.onboarding}</div></Card>
+        <Card className="p-4"><div className="text-xs text-muted-foreground">Ausentes/Férias</div><div className="text-xl font-semibold">{kpis.away}</div></Card>
       </div>
 
       <div className="relative max-w-sm">
