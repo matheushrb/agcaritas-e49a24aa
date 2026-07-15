@@ -130,7 +130,7 @@ function ProjectDetail() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("charges")
-        .select("id,title,amount,status,direction,due_date,project_id")
+        .select("id,description,amount,status,due_date,paid_at,project_id")
         .eq("project_id", projectId);
       if (error) return [];
       return (data ?? []) as Charge[];
