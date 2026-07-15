@@ -60,11 +60,6 @@ export function AppShell({ children }: { children: ReactNode }) {
               style={active ? { backgroundColor: "var(--sidebar-active)", color: "var(--primary-foreground)" } : undefined}
             >
               <Icon className={`h-5 w-5 ${active ? "" : "text-sidebar-foreground group-hover:text-foreground"}`} />
-              {item.badge && (
-                <span className="absolute -right-1 -top-1 rounded-full bg-success px-1.5 py-0.5 text-[9px] font-bold text-success-foreground">
-                  {item.badge}
-                </span>
-              )}
             </Link>
           );
         })}
