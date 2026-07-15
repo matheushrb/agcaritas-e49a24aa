@@ -485,9 +485,9 @@ function openTasks(tasks: { status: string }[]): number {
   return tasks.filter(t => t.status !== "done" && t.status !== "completed" && t.status !== "cancelled").length;
 }
 
-function completedToday(tasks: { completed_at: string | null }[]): number {
+function completedToday(tasks: { status: string; updated_at: string }[]): number {
   const today = new Date().toDateString();
-  return tasks.filter(t => t.completed_at && new Date(t.completed_at).toDateString() === today).length;
+  return tasks.filter(t => t.status === "done" && new Date(t.updated_at).toDateString() === today).length;
 }
 
 function dueSoon(tasks: { status: string; due_date: string | null }[]): number {
