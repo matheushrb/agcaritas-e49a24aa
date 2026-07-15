@@ -109,13 +109,13 @@ function TasksPage() {
   }, [tasks]);
 
   const createTask = useMutation({
-    mutationFn: async (input: { title: string; status: TaskStatus }) => {
+    mutationFn: async (input: { title: string; status: TaskStatus; priority?: TaskPriority }) => {
       const { data: profile } = await supabase.from("profiles").select("organization_id").maybeSingle();
       if (!profile?.organization_id) throw new Error("Sem organização");
       const { error } = await supabase.from("tasks").insert({
         title: input.title,
         status: input.status,
-        priority: "medium",
+        priority: input.priority ?? "medium",
         organization_id: profile.organization_id,
       });
       if (error) throw error;
