@@ -26,7 +26,7 @@ const primaryNav = [
 const sideIcons = [
   { to: "/dashboard", icon: LayoutGrid, label: "Dashboard" },
   { to: "/team", icon: User, label: "Time" },
-  { to: "/finance", icon: PieChart, label: "Financeiro", badge: "PRO" as const },
+  { to: "/finance", icon: PieChart, label: "Financeiro" },
   { to: "/notifications", icon: Bell, label: "Notificações" },
   { to: "/calendar", icon: Calendar, label: "Agenda" },
   { to: "/inbox", icon: Inbox, label: "Caixa de entrada" },
