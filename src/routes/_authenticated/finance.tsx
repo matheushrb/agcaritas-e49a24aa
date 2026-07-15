@@ -18,7 +18,7 @@ export const Route = createFileRoute("/_authenticated/finance")({
   component: FinancePage,
 });
 
-type ChargeStatus = "pending" | "paid" | "overdue" | "canceled";
+type ChargeStatus = "pending" | "paid" | "overdue" | "cancelled";
 type Charge = {
   id: string;
   description: string | null;
@@ -35,10 +35,10 @@ type Client = { id: string; name: string };
 type Project = { id: string; name: string };
 
 const STATUS_META: Record<ChargeStatus, { label: string; color: string; icon: typeof Clock }> = {
-  pending:  { label: "Pendente",  color: "bg-amber-500/15 text-amber-600 dark:text-amber-400", icon: Clock },
-  paid:     { label: "Pago",      color: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400", icon: CheckCircle2 },
-  overdue:  { label: "Atrasado",  color: "bg-red-500/15 text-red-600 dark:text-red-400", icon: AlertCircle },
-  canceled: { label: "Cancelado", color: "bg-muted text-muted-foreground", icon: AlertCircle },
+  pending:   { label: "Pendente",  color: "bg-amber-500/15 text-amber-600 dark:text-amber-400", icon: Clock },
+  paid:      { label: "Pago",      color: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400", icon: CheckCircle2 },
+  overdue:   { label: "Atrasado",  color: "bg-red-500/15 text-red-600 dark:text-red-400", icon: AlertCircle },
+  cancelled: { label: "Cancelado", color: "bg-muted text-muted-foreground", icon: AlertCircle },
 };
 
 function money(n: number) {
@@ -87,7 +87,7 @@ function FinancePage() {
       if (c.status === "paid") received += amt;
       if (c.status === "pending") pending += amt;
       if (c.status === "overdue") overdue += amt;
-      if ((c.due_date ?? "").startsWith(monthKey) && c.status !== "canceled") monthTotal += amt;
+      if ((c.due_date ?? "").startsWith(monthKey) && c.status !== "cancelled") monthTotal += amt;
     }
     return { received, pending, overdue, monthTotal };
   }, [charges]);
@@ -95,7 +95,7 @@ function FinancePage() {
   const dre = useMemo(() => {
     const byMonth: Record<string, { in: number; out: number }> = {};
     for (const c of charges) {
-      if (c.status === "canceled") continue;
+      if (c.status === "cancelled") continue;
       const d = c.paid_at ?? c.due_date;
       if (!d) continue;
       const k = d.slice(0, 7);
@@ -111,10 +111,10 @@ function FinancePage() {
       if (!profile?.organization_id) throw new Error("Sem organização");
       const { error } = await supabase.from("charges").insert({
         organization_id: profile.organization_id,
-        description: input.description,
+        description: input.description ?? "",
         amount: input.amount ?? 0,
         status: (input.status ?? "pending") as ChargeStatus,
-        due_date: input.due_date,
+        due_date: input.due_date ?? undefined,
         client_id: input.client_id,
         project_id: input.project_id,
         payment_method: input.payment_method,
@@ -131,10 +131,10 @@ function FinancePage() {
 
   const updateStatus = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: ChargeStatus }) => {
-      const patch: Record<string, unknown> = { status };
-      if (status === "paid") patch.paid_at = new Date().toISOString();
-      if (status !== "paid") patch.paid_at = null;
-      const { error } = await supabase.from("charges").update(patch).eq("id", id);
+      const { error } = await supabase.from("charges").update({
+        status,
+        paid_at: status === "paid" ? new Date().toISOString() : null,
+      }).eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["charges"] }),

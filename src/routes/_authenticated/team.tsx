@@ -15,8 +15,8 @@ export const Route = createFileRoute("/_authenticated/team")({
   component: TeamPage,
 });
 
-type Level = "junior" | "pleno" | "senior" | "lead";
-type Status = "active" | "inactive" | "onboarding";
+type Level = "junior" | "mid" | "senior" | "lead";
+type Status = "active" | "inactive" | "away" | "vacation";
 type Member = {
   id: string;
   name: string;
@@ -30,11 +30,12 @@ type Member = {
   avatar_url: string | null;
 };
 
-const LEVEL_LABEL: Record<string, string> = { junior: "Júnior", pleno: "Pleno", senior: "Sênior", lead: "Lead" };
+const LEVEL_LABEL: Record<string, string> = { junior: "Júnior", mid: "Pleno", senior: "Sênior", lead: "Lead" };
 const STATUS_LABEL: Record<string, { label: string; color: string }> = {
-  active:     { label: "Ativo",       color: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400" },
-  inactive:   { label: "Inativo",     color: "bg-muted text-muted-foreground" },
-  onboarding: { label: "Onboarding",  color: "bg-blue-500/15 text-blue-600 dark:text-blue-400" },
+  active:   { label: "Ativo",    color: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400" },
+  inactive: { label: "Inativo",  color: "bg-muted text-muted-foreground" },
+  away:     { label: "Ausente",  color: "bg-amber-500/15 text-amber-600 dark:text-amber-400" },
+  vacation: { label: "Férias",   color: "bg-blue-500/15 text-blue-600 dark:text-blue-400" },
 };
 
 function TeamPage() {
@@ -142,7 +143,7 @@ function TeamPage() {
 function NewMemberDialog({ open, onOpenChange, onCreate }: {
   open: boolean; onOpenChange: (v: boolean) => void; onCreate: (v: Partial<Member>) => void;
 }) {
-  const [f, setF] = useState<Partial<Member>>({ status: "active", level: "pleno" });
+  const [f, setF] = useState<Partial<Member>>({ status: "active", level: "mid" });
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>

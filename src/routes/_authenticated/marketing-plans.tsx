@@ -16,7 +16,7 @@ export const Route = createFileRoute("/_authenticated/marketing-plans")({
   component: MarketingPlansPage,
 });
 
-type PlanStatus = "draft" | "approved" | "in_execution" | "completed" | "canceled";
+type PlanStatus = "draft" | "in_review" | "approved" | "archived";
 type Plan = {
   id: string;
   name: string;
@@ -30,11 +30,10 @@ type Plan = {
 type Client = { id: string; name: string };
 
 const STATUS_META: Record<PlanStatus, { label: string; color: string }> = {
-  draft:        { label: "Rascunho",     color: "bg-muted text-muted-foreground" },
-  approved:     { label: "Aprovado",     color: "bg-blue-500/15 text-blue-600 dark:text-blue-400" },
-  in_execution: { label: "Em execução",  color: "bg-amber-500/15 text-amber-600 dark:text-amber-400" },
-  completed:    { label: "Concluído",    color: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400" },
-  canceled:     { label: "Cancelado",    color: "bg-red-500/15 text-red-600 dark:text-red-400" },
+  draft:     { label: "Rascunho",   color: "bg-muted text-muted-foreground" },
+  in_review: { label: "Em revisão", color: "bg-amber-500/15 text-amber-600 dark:text-amber-400" },
+  approved:  { label: "Aprovado",   color: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400" },
+  archived:  { label: "Arquivado",  color: "bg-slate-500/15 text-slate-600 dark:text-slate-400" },
 };
 
 function MarketingPlansPage() {
