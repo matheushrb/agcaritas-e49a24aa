@@ -1,55 +1,79 @@
-# Roadmap — Pixie Pro / Caritas Gestão Criativa
+# Plano — Pixie Pro v2 (baseado no PDF do usuário)
 
-## Ordem de construção (definida com o usuário)
+Documento-guia: `Pixie_Telas_v2-2.pdf` — 13 módulos, 18 páginas, 8 drawers, 6 modais.
 
-Fluxo do cliente: **CRM → Propostas → Contratos → Planos de Marketing → Projetos → Tarefas → Financeiro → Agenda → RH → Configurações**.
+## Regra de menu
+Sidebar segue o doc: **Dashboard · CRM · Propostas · Projetos · Financeiro · Agenda · RH** + **Configurações** no rodapé. Nada mais entra na sidebar; módulos como Metas, Campanhas Internas, Fornecedores, Ideias, Aprovação Pública ficam acessíveis por links contextuais (dentro do módulo pai).
 
-Cada módulo entra completo — todas as janelas do PRD (páginas, drawers, modais, abas) + CRUD + integrações listadas — antes de passar para o próximo. Dashboard e personalização já feitos.
+## Feito nesta rodada
+- [x] Sidebar realinhada aos 7 ícones do doc + Configurações + Sair
+- [x] TopBar limpa (removidos botões "Exportar" e "Novo projeto" que não funcionavam; Sino → /notifications, Engrenagem → /settings)
+- [x] Rota `/settings` com 7 abas (Dados Agência · Serviços · Plataformas · Fluxos de Tarefa · Funil CRM · Usuários · Integrações)
+- [x] Rota `/clients` (lista + filtros + novo cliente com EntityDialog)
+- [x] Financeiro já tem as 5 abas internas (Visão Geral · Movimentações · Faturamentos · DRE · Parâmetros)
 
-## Padrão visual comum
+## Próximas rodadas (ordem sugerida)
 
-- Cards e superfícies em `rounded-2xl`/`rounded-3xl`, borda `border-border`, fundo `bg-card`, sombras suaves via tokens.
-- Chips de status coloridos por semântica (badge Radix `Badge` + tokens).
-- Header de página: título + subtítulo + KPIs em cards de 12 col e ação primária à direita.
-- Filtros em barra horizontal com Selects e Input de busca em `rounded-full`.
-- Drawers usam `Sheet` (side="right", `sm:max-w-lg`). Modais usam `Dialog`.
-- Toasts via `sonner` para toda mutação.
+### R2 — Cliente
+- [ ] `/clients/$clientId` com 4 abas: Dados · Contatos · Projetos · Propostas
+- [ ] Auto-fill de CNPJ (ReceitaWS) e CEP (ViaCEP)
+- [ ] Vínculo com projetos/propostas existentes
 
-## Estado do módulo
+### R3 — Tarefas (Módulo 02)
+- [ ] Split-panel desktop + drawer mobile
+- [ ] Drawer T03 com 4 abas: Detalhes · Uploads · Faturamento · Atividade
+- [ ] Turbo Financeiro (reordena por valor)
+- [ ] Kanban view (dnd)
+- [ ] Timer com widget flutuante ao minimizar
 
-| Módulo | Status |
-| --- | --- |
-| Dashboard | Feito + personalização por role |
-| **CRM** | **Em construção agora** |
-| Propostas | Pendente |
-| Contratos | Pendente |
-| Planos de Marketing | Pendente |
-| Projetos | Pendente |
-| Tarefas | Pendente |
-| Financeiro | Pendente |
-| Agenda | Pendente |
-| RH | Pendente |
-| Configurações | Pendente |
+### R4 — CRM (Módulo 03)
+- [ ] Kanban T04 com temperatura do lead + alerta de follow-up
+- [ ] Detalhe do Lead T05 com 6 abas: Atividades · Stakeholders · Reuniões · Briefing · Social · Agente IA
 
-## M02 · CRM (esta etapa)
+### R5 — Propostas (Módulo 04)
+- [ ] T06 Nova proposta com 2 colunas + resumo ao vivo
+- [ ] T14 Lista com status e ações (···)
+- [ ] T15 Detalhe com Diagnóstico · Plano de Execução · Contrato
+- [ ] Página pública `/p/$token` (T21)
 
-### Janelas
-1. **Página `/crm`** — kanban 5 colunas (Lead · Contato · Proposta · Negociação · Fechado), KPIs no topo (Pipeline total, Receita fechada, Taxa de conversão), busca e filtro por segmento, `+ Novo lead`.
-2. **Drawer `Detalhe do lead`** — abre ao clicar no card. Dados completos, barra de etapas com Avançar/Voltar, campo de notas, botão `Criar proposta`.
-3. **Modal `+ Novo lead`** — form: nome, empresa, telefone, email, segmento, valor estimado, etapa inicial, origem.
+### R6 — Projetos (Módulo 05)
+- [ ] Reorganizar abas em `/projects/$projectId` conforme doc
+- [ ] Aba Estratégia completa (SWOT · Personas · Concorrentes · Roadmap · KPIs · Plano de ação · IA)
+- [ ] T16 Calendário de Conteúdo (aba condicional)
+- [ ] T17 Grid de Conteúdo (Kanban por status)
+- [ ] Wizard de novo projeto (tipo · faturamento · urgência · ferramentas · verba tráfego · verbas outras · toggles de planejamento) — solicitado pelo usuário
 
-### Regras
-- Arrastar com `@dnd-kit`. Ao soltar em **Fechado**, exibe banner "Criar Plano de Marketing?" com dois botões (Criar / Depois). Criar navega para `/marketing-plans/novo?leadId=…`.
-- `+ Criar proposta` no drawer navega para `/proposals/nova?leadId=…`.
-- Mutações reagem otimistas via TanStack Query.
-- Todo lead pertence à `organization_id` do usuário logado (RLS já cuida).
+### R7 — Agenda (Módulo 07)
+- [ ] T09 Grade semanal com 3 abas (Planejamento · Entregas pendentes · Vencimentos)
+- [ ] Snap 15min · drag para mover · resize
+- [ ] Sync Google Calendar
 
-### Fora do escopo
-- Histórico de interações estruturado (por enquanto: campo único `notes`). Iteração futura.
-- Automação de e-mail. Iteração futura.
+### R8 — RH (Módulo 08)
+- [ ] T10 Lista + detalhe com 5 abas (Dados · Custos · Folha · Acesso · Histórico)
+- [ ] Simulação de encargos por tipo de contrato
 
-## Já entregue anteriormente
+### R9 — Módulos secundários
+- [ ] Metas (T18) — acessível via Dashboard
+- [ ] Campanhas Internas (T19) — acessível via Marketing/Projetos
+- [ ] Fornecedores (T20) — acessível via Financeiro
+- [ ] Banco de Ideias — acessível via Projetos/CRM
+- [ ] Aprovação Pública `/aprovar/$token` (T22)
 
-- Dashboard personalizável com preset por role + painel lateral.
-- Card "Tarefas de hoje" limitado a 4 linhas, cresce por conteúdo.
-- Tabela `dashboard_preferences` com RLS.
+### R10 — Configurações — editores dedicados
+- [ ] T23 Fluxos de Tarefa (stage sets)
+- [ ] T24 Plataformas com regras de prazo
+- [ ] Serviços (catálogo)
+- [ ] Funil CRM (etapas)
+- [ ] Usuários (papéis, convites)
+- [ ] Integrações (Buffer, Google Calendar)
+
+## Tabelas ainda não criadas
+Serão migradas por rodada, junto do módulo correspondente:
+- `stage_sets`, `stages`, `stage_checklist_items` (R10)
+- `platforms`, `platform_delivery_rules` (R10)
+- `services_catalog` (R10)
+- `crm_stages` (R10)
+- `time_entries` (já existe)
+- `subtasks`, `task_uploads`, `task_activity` (R3)
+- `content_items` (já existe — usar em R6)
+- `payroll_records` (R8)
