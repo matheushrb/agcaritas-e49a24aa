@@ -1,8 +1,7 @@
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
 import {
-  LayoutGrid, User, PieChart, Bell, Calendar, Inbox, ClipboardList,
-  MessageCircle, Search, Settings, Download, Plus, Moon, Sun, Sparkles, LogOut,
-  Users, FileText, FileSignature, Target, Briefcase, DollarSign, UsersRound,
+  LayoutGrid, Users, FileText, Briefcase, DollarSign, Calendar, UsersRound,
+  Search, Settings, Moon, Sun, Sparkles, LogOut, Bell,
 } from "lucide-react";
 import type { ReactNode } from "react";
 import { Button } from "@/components/ui/button";
@@ -10,29 +9,17 @@ import { Input } from "@/components/ui/input";
 import { useTheme } from "@/components/theme-provider";
 import { supabase } from "@/integrations/supabase/client";
 
-const primaryNav = [
-  { to: "/dashboard", label: "Dashboard", icon: LayoutGrid },
-  { to: "/crm", label: "CRM", icon: Users },
-  { to: "/proposals", label: "Propostas", icon: FileText },
-  { to: "/contracts", label: "Contratos", icon: FileSignature },
-  { to: "/marketing-plans", label: "Planos", icon: Target },
-  { to: "/projects", label: "Projetos", icon: Briefcase },
-  { to: "/tasks", label: "Tarefas", icon: ClipboardList },
-  { to: "/finance", label: "Financeiro", icon: DollarSign },
-  { to: "/team", label: "Time", icon: UsersRound },
-];
-
-// Compact side nav (as-literal-to-the-reference sidebar)
+// Sidebar principal — 7 ícones conforme documento Pixie v2 (Dashboard, CRM,
+// Propostas, Projetos, Financeiro, Agenda, RH). Configurações no rodapé.
 const sideIcons = [
-  { to: "/dashboard", icon: LayoutGrid, label: "Dashboard" },
-  { to: "/team", icon: User, label: "Time" },
-  { to: "/finance", icon: PieChart, label: "Financeiro" },
-  { to: "/notifications", icon: Bell, label: "Notificações" },
-  { to: "/calendar", icon: Calendar, label: "Agenda" },
-  { to: "/inbox", icon: Inbox, label: "Caixa de entrada" },
-  { to: "/tasks", icon: ClipboardList, label: "Tarefas" },
-  { to: "/messages", icon: MessageCircle, label: "Mensagens" },
-];
+  { to: "/dashboard",  icon: LayoutGrid, label: "Dashboard" },
+  { to: "/crm",        icon: Users,      label: "CRM" },
+  { to: "/proposals",  icon: FileText,   label: "Propostas" },
+  { to: "/projects",   icon: Briefcase,  label: "Projetos" },
+  { to: "/finance",    icon: DollarSign, label: "Financeiro" },
+  { to: "/calendar",   icon: Calendar,   label: "Agenda" },
+  { to: "/team",       icon: UsersRound, label: "RH" },
+] as const;
 
 export function AppShell({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
