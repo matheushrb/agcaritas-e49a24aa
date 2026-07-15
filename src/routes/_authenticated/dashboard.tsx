@@ -263,7 +263,7 @@ function DashboardContent() {
 
           <div className="mt-4 space-y-3">
             {data.tasks.length === 0 && <EmptyRow icon={ClipboardList} label="Nenhuma tarefa para hoje ainda." />}
-            {data.tasks.map(t => (
+            {data.tasks.slice(0, 4).map(t => (
               <div key={t.id} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-2xl bg-muted/40 p-3 md:p-4">
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-3">
@@ -282,7 +282,13 @@ function DashboardContent() {
                 </div>
               </div>
             ))}
+            {data.tasks.length > 4 && (
+              <button className="w-full text-xs text-muted-foreground hover:text-foreground py-1">
+                Ver todas ({data.tasks.length})
+              </button>
+            )}
           </div>
+
         </Card>
       </section>
 
