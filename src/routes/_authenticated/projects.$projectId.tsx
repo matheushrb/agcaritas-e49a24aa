@@ -54,11 +54,11 @@ type Task = {
 };
 type Charge = {
   id: string;
-  title: string;
+  description: string;
   amount: number;
   status: string;
-  direction: string | null;
   due_date: string | null;
+  paid_at: string | null;
   project_id: string | null;
 };
 type Client = { id: string; name: string };
