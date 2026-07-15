@@ -33,13 +33,13 @@ export function EntityDialog({
   size?: "md" | "lg";
 }) {
   const toneMap: Record<string, string> = {
-    emerald: "from-emerald-500/15 to-emerald-500/0 text-emerald-600 dark:text-emerald-400",
-    amber:   "from-amber-500/15 to-amber-500/0 text-amber-600 dark:text-amber-400",
-    red:     "from-red-500/15 to-red-500/0 text-red-600 dark:text-red-400",
-    blue:    "from-blue-500/15 to-blue-500/0 text-blue-600 dark:text-blue-400",
-    purple:  "from-purple-500/15 to-purple-500/0 text-purple-600 dark:text-purple-400",
-    slate:   "from-slate-500/15 to-slate-500/0 text-slate-600 dark:text-slate-400",
-    pink:    "from-pink-500/15 to-pink-500/0 text-pink-600 dark:text-pink-400",
+    emerald: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-b border-emerald-500/20",
+    amber:   "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-b border-amber-500/20",
+    red:     "bg-red-500/10 text-red-600 dark:text-red-400 border-b border-red-500/20",
+    blue:    "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-b border-blue-500/20",
+    purple:  "bg-purple-500/10 text-purple-600 dark:text-purple-400 border-b border-purple-500/20",
+    slate:   "bg-slate-500/10 text-slate-600 dark:text-slate-400 border-b border-slate-500/20",
+    pink:    "bg-pink-500/10 text-pink-600 dark:text-pink-400 border-b border-pink-500/20",
   };
   const width = size === "lg" ? "max-w-[960px]" : "max-w-[760px]";
 
