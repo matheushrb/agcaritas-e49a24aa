@@ -2,12 +2,12 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState, useEffect, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { AppShell } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
@@ -62,6 +62,10 @@ function TasksPage() {
   const [view, setView] = useState<"list" | "kanban">("list");
   const [turbo, setTurbo] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [newOpen, setNewOpen] = useState(false);
+  const [newTitle, setNewTitle] = useState("");
+  const [newStatus, setNewStatus] = useState<TaskStatus>("todo");
+  const [newPriority, setNewPriority] = useState<TaskPriority>("medium");
   const [quickTitle, setQuickTitle] = useState<Record<string, string>>({});
 
   const { data: tasks = [], isLoading } = useQuery<Task[]>({
@@ -105,13 +109,13 @@ function TasksPage() {
   }, [tasks]);
 
   const createTask = useMutation({
-    mutationFn: async (input: { title: string; status: TaskStatus }) => {
+    mutationFn: async (input: { title: string; status: TaskStatus; priority?: TaskPriority }) => {
       const { data: profile } = await supabase.from("profiles").select("organization_id").maybeSingle();
       if (!profile?.organization_id) throw new Error("Sem organização");
       const { error } = await supabase.from("tasks").insert({
         title: input.title,
         status: input.status,
-        priority: "medium",
+        priority: input.priority ?? "medium",
         organization_id: profile.organization_id,
       });
       if (error) throw error;
@@ -133,7 +137,7 @@ function TasksPage() {
   };
 
   return (
-    <AppShell>
+    <>
       <div className="space-y-6">
         <header className="flex flex-wrap items-end justify-between gap-4">
           <div>
@@ -142,7 +146,7 @@ function TasksPage() {
           </div>
           <Button
             className="rounded-full gap-1.5"
-            onClick={() => createTask.mutate({ title: "Nova tarefa", status: "todo" })}
+            onClick={() => { setNewTitle(""); setNewStatus("todo"); setNewPriority("medium"); setNewOpen(true); }}
           >
             <Plus className="h-4 w-4" /> Nova tarefa
           </Button>
@@ -257,7 +261,65 @@ function TasksPage() {
       </div>
 
       <TaskDrawer task={selected} onClose={() => setSelectedId(null)} />
-    </AppShell>
+
+      <Dialog open={newOpen} onOpenChange={setNewOpen}>
+        <DialogContent className="rounded-2xl">
+          <DialogHeader>
+            <DialogTitle>Nova tarefa</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <label className="block space-y-1">
+              <span className="text-xs font-medium text-muted-foreground">Título</span>
+              <Input
+                autoFocus
+                value={newTitle}
+                onChange={e => setNewTitle(e.target.value)}
+                placeholder="Ex: Criar arte para Instagram"
+                onKeyDown={e => {
+                  if (e.key === "Enter" && newTitle.trim()) {
+                    createTask.mutate({ title: newTitle.trim(), status: newStatus, priority: newPriority });
+                    setNewOpen(false);
+                  }
+                }}
+              />
+            </label>
+            <div className="grid grid-cols-2 gap-3">
+              <label className="block space-y-1">
+                <span className="text-xs font-medium text-muted-foreground">Status</span>
+                <Select value={newStatus} onValueChange={v => setNewStatus(v as TaskStatus)}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {STATUS_ORDER.map(s => <SelectItem key={s} value={s}>{STATUS_META[s].label}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </label>
+              <label className="block space-y-1">
+                <span className="text-xs font-medium text-muted-foreground">Prioridade</span>
+                <Select value={newPriority} onValueChange={v => setNewPriority(v as TaskPriority)}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="low">Baixa</SelectItem>
+                    <SelectItem value="medium">Média</SelectItem>
+                    <SelectItem value="high">Alta</SelectItem>
+                  </SelectContent>
+                </Select>
+              </label>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" className="rounded-full" onClick={() => setNewOpen(false)}>Cancelar</Button>
+            <Button
+              className="rounded-full"
+              disabled={!newTitle.trim() || createTask.isPending}
+              onClick={() => {
+                createTask.mutate({ title: newTitle.trim(), status: newStatus, priority: newPriority });
+                setNewOpen(false);
+              }}
+            >Criar tarefa</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
 
