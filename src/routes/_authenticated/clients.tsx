@@ -38,7 +38,7 @@ type Client = {
   segment: string | null;
   email: string | null;
   phone: string | null;
-  document: string | null;
+  tax_id: string | null;
 };
 
 function ClientsPage() {
@@ -53,7 +53,7 @@ function ClientsPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("clients")
-        .select("id,name,status,segment,email,phone,document")
+        .select("id,name,status,segment,email,phone,tax_id")
         .order("name");
       if (error) throw error;
       return (data ?? []) as Client[];
