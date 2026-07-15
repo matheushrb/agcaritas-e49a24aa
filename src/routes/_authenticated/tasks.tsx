@@ -6,12 +6,16 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Search, Plus, LayoutGrid, List as ListIcon, Play, Pause, Square, Clock, Zap, ChevronLeft, ChevronRight } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Search, Plus, LayoutGrid, List as ListIcon, Play, Pause, Square, Clock, Zap,
+  ChevronLeft, ChevronRight, X, Calendar as CalendarIcon, Flag, Circle,
+  MessageSquare, Paperclip, ListChecks, Activity, Trash2, MoreHorizontal, Timer,
+} from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
@@ -38,20 +42,21 @@ type Task = {
   platform: string | null;
   delivery_type: string | null;
   estimated_hours: number | null;
+  created_at?: string;
 };
 
-const STATUS_META: Record<TaskStatus, { label: string; color: string }> = {
-  todo: { label: "A fazer", color: "bg-muted text-muted-foreground" },
-  in_progress: { label: "Em andamento", color: "bg-blue-500/15 text-blue-600 dark:text-blue-400" },
-  review: { label: "Revisão", color: "bg-amber-500/15 text-amber-600 dark:text-amber-400" },
-  done: { label: "Concluída", color: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400" },
+const STATUS_META: Record<TaskStatus, { label: string; color: string; dot: string }> = {
+  todo:        { label: "A fazer",      color: "bg-muted text-foreground",                                dot: "bg-muted-foreground" },
+  in_progress: { label: "Em andamento", color: "bg-blue-500/15 text-blue-600 dark:text-blue-400",         dot: "bg-blue-500" },
+  review:      { label: "Revisão",      color: "bg-amber-500/15 text-amber-600 dark:text-amber-400",      dot: "bg-amber-500" },
+  done:        { label: "Concluída",    color: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400", dot: "bg-emerald-500" },
 };
 const STATUS_ORDER: TaskStatus[] = ["todo", "in_progress", "review", "done"];
 
-const PRIORITY_META: Record<TaskPriority, { label: string; dot: string; badge: string }> = {
-  low: { label: "Baixa", dot: "bg-muted-foreground/40", badge: "bg-muted text-muted-foreground" },
-  medium: { label: "Média", dot: "bg-amber-500", badge: "bg-amber-500/15 text-amber-600 dark:text-amber-400" },
-  high: { label: "Alta", dot: "bg-red-500", badge: "bg-red-500/15 text-red-600 dark:text-red-400" },
+const PRIORITY_META: Record<TaskPriority, { label: string; color: string; badge: string }> = {
+  low:    { label: "Baixa", color: "text-muted-foreground",                     badge: "bg-muted text-muted-foreground" },
+  medium: { label: "Média", color: "text-amber-600 dark:text-amber-400",        badge: "bg-amber-500/15 text-amber-600 dark:text-amber-400" },
+  high:   { label: "Alta",  color: "text-red-600 dark:text-red-400",            badge: "bg-red-500/15 text-red-600 dark:text-red-400" },
 };
 
 function TasksPage() {
@@ -62,10 +67,6 @@ function TasksPage() {
   const [view, setView] = useState<"list" | "kanban">("list");
   const [turbo, setTurbo] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [newOpen, setNewOpen] = useState(false);
-  const [newTitle, setNewTitle] = useState("");
-  const [newStatus, setNewStatus] = useState<TaskStatus>("todo");
-  const [newPriority, setNewPriority] = useState<TaskPriority>("medium");
   const [quickTitle, setQuickTitle] = useState<Record<string, string>>({});
 
   const { data: tasks = [], isLoading } = useQuery<Task[]>({
@@ -73,7 +74,7 @@ function TasksPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("tasks")
-        .select("id,title,description,status,priority,project_id,assignee_id,due_date,billing_model,billing_value,progress,platform,delivery_type,estimated_hours")
+        .select("id,title,description,status,priority,project_id,assignee_id,due_date,billing_model,billing_value,progress,platform,delivery_type,estimated_hours,created_at")
         .order("created_at", { ascending: false });
       if (error) throw error;
       return (data ?? []) as Task[];
@@ -88,9 +89,7 @@ function TasksPage() {
     }
     if (priorityFilter !== "all") arr = arr.filter(t => t.priority === priorityFilter);
     if (statusFilter !== "all") arr = arr.filter(t => t.status === statusFilter);
-    if (turbo) {
-      arr = [...arr].sort((a, b) => (b.billing_value ?? 0) - (a.billing_value ?? 0));
-    }
+    if (turbo) arr = [...arr].sort((a, b) => (b.billing_value ?? 0) - (a.billing_value ?? 0));
     return arr;
   }, [tasks, search, priorityFilter, statusFilter, turbo]);
 
@@ -112,20 +111,23 @@ function TasksPage() {
     mutationFn: async (input: { title: string; status: TaskStatus; priority?: TaskPriority }) => {
       const { data: profile } = await supabase.from("profiles").select("organization_id").maybeSingle();
       if (!profile?.organization_id) throw new Error("Sem organização");
-      const { error } = await supabase.from("tasks").insert({
+      const { data, error } = await supabase.from("tasks").insert({
         title: input.title,
         status: input.status,
         priority: input.priority ?? "medium",
         organization_id: profile.organization_id,
-      });
+      }).select("id").single();
       if (error) throw error;
+      return data.id as string;
     },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["tasks"] });
-      toast.success("Tarefa criada");
-    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["tasks"] }),
     onError: (e: Error) => toast.error(e.message),
   });
+
+  const handleNew = async () => {
+    const id = await createTask.mutateAsync({ title: "Nova tarefa", status: "todo" });
+    setSelectedId(id);
+  };
 
   const selected = tasks.find(t => t.id === selectedId) ?? null;
 
@@ -144,10 +146,7 @@ function TasksPage() {
             <h1 className="font-display text-3xl font-bold tracking-tight">Tarefas</h1>
             <p className="text-sm text-muted-foreground">Lista, prioridades, timers e faturamento por tarefa.</p>
           </div>
-          <Button
-            className="rounded-full gap-1.5"
-            onClick={() => { setNewTitle(""); setNewStatus("todo"); setNewPriority("medium"); setNewOpen(true); }}
-          >
+          <Button className="rounded-full gap-1.5" onClick={handleNew} disabled={createTask.isPending}>
             <Plus className="h-4 w-4" /> Nova tarefa
           </Button>
         </header>
@@ -260,65 +259,7 @@ function TasksPage() {
         )}
       </div>
 
-      <TaskDrawer task={selected} onClose={() => setSelectedId(null)} />
-
-      <Dialog open={newOpen} onOpenChange={setNewOpen}>
-        <DialogContent className="rounded-2xl">
-          <DialogHeader>
-            <DialogTitle>Nova tarefa</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-3">
-            <label className="block space-y-1">
-              <span className="text-xs font-medium text-muted-foreground">Título</span>
-              <Input
-                autoFocus
-                value={newTitle}
-                onChange={e => setNewTitle(e.target.value)}
-                placeholder="Ex: Criar arte para Instagram"
-                onKeyDown={e => {
-                  if (e.key === "Enter" && newTitle.trim()) {
-                    createTask.mutate({ title: newTitle.trim(), status: newStatus, priority: newPriority });
-                    setNewOpen(false);
-                  }
-                }}
-              />
-            </label>
-            <div className="grid grid-cols-2 gap-3">
-              <label className="block space-y-1">
-                <span className="text-xs font-medium text-muted-foreground">Status</span>
-                <Select value={newStatus} onValueChange={v => setNewStatus(v as TaskStatus)}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {STATUS_ORDER.map(s => <SelectItem key={s} value={s}>{STATUS_META[s].label}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </label>
-              <label className="block space-y-1">
-                <span className="text-xs font-medium text-muted-foreground">Prioridade</span>
-                <Select value={newPriority} onValueChange={v => setNewPriority(v as TaskPriority)}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="low">Baixa</SelectItem>
-                    <SelectItem value="medium">Média</SelectItem>
-                    <SelectItem value="high">Alta</SelectItem>
-                  </SelectContent>
-                </Select>
-              </label>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" className="rounded-full" onClick={() => setNewOpen(false)}>Cancelar</Button>
-            <Button
-              className="rounded-full"
-              disabled={!newTitle.trim() || createTask.isPending}
-              onClick={() => {
-                createTask.mutate({ title: newTitle.trim(), status: newStatus, priority: newPriority });
-                setNewOpen(false);
-              }}
-            >Criar tarefa</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <TaskModal task={selected} onClose={() => setSelectedId(null)} />
     </>
   );
 }
@@ -337,7 +278,8 @@ function TaskRow({ task, onClick }: { task: Task; onClick: () => void }) {
   return (
     <li>
       <button onClick={onClick} className="w-full text-left px-4 py-3 hover:bg-muted/40 flex items-center gap-3">
-        <span className={cn("h-2 w-2 rounded-full shrink-0", PRIORITY_META[task.priority].dot)} />
+        <span className={cn("h-2 w-2 rounded-full shrink-0", STATUS_META[task.status].dot)} />
+        <Flag className={cn("h-3.5 w-3.5 shrink-0", PRIORITY_META[task.priority].color)} />
         <div className="min-w-0 flex-1">
           <div className="truncate text-sm font-medium">{task.title}</div>
           {task.description && <div className="truncate text-xs text-muted-foreground">{task.description}</div>}
@@ -370,15 +312,22 @@ function KanbanCard({ task, onClick }: { task: Task; onClick: () => void }) {
   );
 }
 
-function TaskDrawer({ task, onClose }: { task: Task | null; onClose: () => void }) {
+/* ============================================================
+ * TaskModal — janela grande estilo ClickUp / Monday
+ * ============================================================ */
+function TaskModal({ task, onClose }: { task: Task | null; onClose: () => void }) {
   const qc = useQueryClient();
-  const [title, setTitle] = useState(task?.title ?? "");
-  const [description, setDescription] = useState(task?.description ?? "");
-  const [priority, setPriority] = useState<TaskPriority>(task?.priority ?? "medium");
-  const [status, setStatus] = useState<TaskStatus>(task?.status ?? "todo");
-  const [dueDate, setDueDate] = useState<string>(task?.due_date ?? "");
-  const [billingModel, setBillingModel] = useState<BillingModel | "">(task?.billing_model ?? "");
-  const [billingValue, setBillingValue] = useState<string>(task?.billing_value?.toString() ?? "");
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [priority, setPriority] = useState<TaskPriority>("medium");
+  const [status, setStatus] = useState<TaskStatus>("todo");
+  const [dueDate, setDueDate] = useState<string>("");
+  const [billingModel, setBillingModel] = useState<BillingModel | "">("");
+  const [billingValue, setBillingValue] = useState<string>("");
+  const [estimatedHours, setEstimatedHours] = useState<string>("");
+  const [platform, setPlatform] = useState<string>("");
+  const [deliveryType, setDeliveryType] = useState<string>("");
+  const [progress, setProgress] = useState<number>(0);
 
   useEffect(() => {
     if (!task) return;
@@ -389,6 +338,10 @@ function TaskDrawer({ task, onClose }: { task: Task | null; onClose: () => void 
     setDueDate(task.due_date ?? "");
     setBillingModel(task.billing_model ?? "");
     setBillingValue(task.billing_value?.toString() ?? "");
+    setEstimatedHours(task.estimated_hours?.toString() ?? "");
+    setPlatform(task.platform ?? "");
+    setDeliveryType(task.delivery_type ?? "");
+    setProgress(task.progress ?? 0);
   }, [task]);
 
   const save = useMutation({
@@ -414,139 +367,397 @@ function TaskDrawer({ task, onClose }: { task: Task | null; onClose: () => void 
     },
   });
 
-  const advanceStatus = (dir: 1 | -1) => {
-    if (!task) return;
-    const idx = STATUS_ORDER.indexOf(status);
-    const next = STATUS_ORDER[Math.min(Math.max(idx + dir, 0), STATUS_ORDER.length - 1)];
-    setStatus(next);
-    save.mutate({ status: next });
-  };
+  const overdue = dueDate && new Date(dueDate) < new Date() && status !== "done";
 
   return (
-    <Sheet open={!!task} onOpenChange={o => { if (!o) onClose(); }}>
-      <SheetContent side="right" className="w-full sm:max-w-lg overflow-y-auto">
+    <Dialog open={!!task} onOpenChange={o => { if (!o) onClose(); }}>
+      <DialogContent
+        className="p-0 gap-0 w-[calc(100vw-2rem)] max-w-[1100px] h-[calc(100vh-3rem)] max-h-[860px] rounded-3xl overflow-hidden flex flex-col sm:max-w-[1100px]"
+      >
+        <DialogTitle className="sr-only">{title || "Tarefa"}</DialogTitle>
+
         {task && (
           <>
-            <SheetHeader className="space-y-3">
-              <div className="flex items-center gap-2 flex-wrap">
-                <Badge className={cn("rounded-full", PRIORITY_META[priority].badge)}>{PRIORITY_META[priority].label}</Badge>
-                <div className="flex items-center gap-1">
-                  <Button size="icon" variant="ghost" className="h-7 w-7 rounded-full" onClick={() => advanceStatus(-1)}><ChevronLeft className="h-4 w-4" /></Button>
-                  <Badge className={cn("rounded-full", STATUS_META[status].color)}>{STATUS_META[status].label}</Badge>
-                  <Button size="icon" variant="ghost" className="h-7 w-7 rounded-full" onClick={() => advanceStatus(1)}><ChevronRight className="h-4 w-4" /></Button>
-                </div>
+            {/* Top bar */}
+            <div className="flex items-center gap-2 px-6 py-3 border-b border-border bg-card/60 backdrop-blur">
+              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                <span className="rounded-md bg-muted px-2 py-0.5 font-mono">#{task.id.slice(0, 6).toUpperCase()}</span>
+                <span>·</span>
+                <span>Tarefa</span>
               </div>
-              <SheetTitle asChild>
+
+              <div className="ml-auto flex items-center gap-1">
+                <StatusPicker value={status} onChange={v => { setStatus(v); save.mutate({ status: v }); }} />
+                <PriorityPicker value={priority} onChange={v => { setPriority(v); save.mutate({ priority: v }); }} />
+                <DatePicker
+                  value={dueDate}
+                  overdue={!!overdue}
+                  onChange={v => { setDueDate(v); save.mutate({ due_date: v || null }); }}
+                />
+                <Button size="icon" variant="ghost" className="h-8 w-8 rounded-full text-muted-foreground hover:text-destructive" onClick={() => removeTask.mutate()} title="Excluir">
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+                <Button size="icon" variant="ghost" className="h-8 w-8 rounded-full" onClick={onClose} title="Fechar">
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+
+            {/* Body */}
+            <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-[1fr_320px]">
+              {/* ---------- MAIN ---------- */}
+              <div className="min-h-0 overflow-y-auto px-6 py-6 space-y-6 border-r border-border">
                 <input
                   value={title}
                   onChange={e => setTitle(e.target.value)}
-                  onBlur={() => title !== task.title && save.mutate({ title })}
-                  className="w-full bg-transparent outline-none text-xl font-semibold tracking-tight"
+                  onBlur={() => title.trim() && title !== task.title && save.mutate({ title: title.trim() })}
+                  placeholder="Título da tarefa"
+                  className="w-full bg-transparent outline-none text-2xl font-semibold tracking-tight placeholder:text-muted-foreground/50"
                 />
-              </SheetTitle>
-            </SheetHeader>
 
-            <Tabs defaultValue="details" className="mt-4">
-              <TabsList className="grid grid-cols-4 rounded-full">
-                <TabsTrigger value="details" className="rounded-full">Detalhes</TabsTrigger>
-                <TabsTrigger value="uploads" className="rounded-full">Uploads</TabsTrigger>
-                <TabsTrigger value="billing" className="rounded-full">Faturamento</TabsTrigger>
-                <TabsTrigger value="activity" className="rounded-full">Atividade</TabsTrigger>
-              </TabsList>
+                <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                  <div className="flex items-center gap-1.5">
+                    <Circle className={cn("h-2.5 w-2.5 fill-current", STATUS_META[status].dot.replace("bg-", "text-"))} />
+                    <span>{STATUS_META[status].label}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <Flag className={cn("h-3.5 w-3.5", PRIORITY_META[priority].color)} />
+                    <span>{PRIORITY_META[priority].label}</span>
+                  </div>
+                  {dueDate && (
+                    <div className={cn("flex items-center gap-1.5", overdue && "text-red-600 dark:text-red-400 font-medium")}>
+                      <CalendarIcon className="h-3.5 w-3.5" />
+                      <span>{new Date(dueDate).toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric" })}</span>
+                    </div>
+                  )}
+                </div>
 
-              <TabsContent value="details" className="space-y-4 mt-4">
-                <Field label="Descrição">
-                  <Textarea value={description} onChange={e => setDescription(e.target.value)} onBlur={() => save.mutate({ description })} rows={3} />
-                </Field>
-                <div className="grid grid-cols-2 gap-3">
-                  <Field label="Prioridade">
-                    <Select value={priority} onValueChange={v => { setPriority(v as TaskPriority); save.mutate({ priority: v as TaskPriority }); }}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Descrição</label>
+                  <Textarea
+                    value={description}
+                    onChange={e => setDescription(e.target.value)}
+                    onBlur={() => save.mutate({ description })}
+                    rows={5}
+                    placeholder="Adicione contexto, briefing, links de referência..."
+                    className="mt-2 rounded-xl resize-none"
+                  />
+                </div>
+
+                <Tabs defaultValue="subtasks" className="w-full">
+                  <TabsList className="rounded-full bg-muted/60">
+                    <TabsTrigger value="subtasks" className="rounded-full gap-1.5"><ListChecks className="h-4 w-4" />Subtarefas</TabsTrigger>
+                    <TabsTrigger value="uploads" className="rounded-full gap-1.5"><Paperclip className="h-4 w-4" />Anexos</TabsTrigger>
+                    <TabsTrigger value="comments" className="rounded-full gap-1.5"><MessageSquare className="h-4 w-4" />Comentários</TabsTrigger>
+                    <TabsTrigger value="activity" className="rounded-full gap-1.5"><Activity className="h-4 w-4" />Atividade</TabsTrigger>
+                  </TabsList>
+
+                  <TabsContent value="subtasks" className="mt-4">
+                    <Subtasks />
+                  </TabsContent>
+
+                  <TabsContent value="uploads" className="mt-4">
+                    <Card className="rounded-2xl p-6 border-dashed border-2 text-center space-y-2">
+                      <Paperclip className="h-6 w-6 mx-auto text-muted-foreground" />
+                      <div className="text-sm font-medium">Arraste arquivos ou clique para enviar</div>
+                      <div className="text-xs text-muted-foreground">PDF, PNG, JPG, MP4, PSD, AI — até 50 MB</div>
+                      <Button variant="outline" size="sm" className="rounded-full mt-2">Selecionar arquivo</Button>
+                    </Card>
+                    <div className="mt-3 text-xs text-muted-foreground">
+                      Uploads por plataforma (Instagram, TikTok, Meta Ads) serão vinculados quando o módulo de Plataformas estiver ativo em Configurações.
+                    </div>
+                  </TabsContent>
+
+                  <TabsContent value="comments" className="mt-4 space-y-3">
+                    <Card className="rounded-2xl p-3">
+                      <Textarea placeholder="Escreva um comentário… @mencione um membro" rows={2} className="rounded-xl border-none focus-visible:ring-0 resize-none" />
+                      <div className="flex justify-end mt-2">
+                        <Button size="sm" className="rounded-full">Comentar</Button>
+                      </div>
+                    </Card>
+                    <div className="text-xs text-muted-foreground text-center py-6">Nenhum comentário ainda.</div>
+                  </TabsContent>
+
+                  <TabsContent value="activity" className="mt-4">
+                    <ul className="space-y-3">
+                      <li className="flex items-start gap-3">
+                        <span className="mt-1.5 h-2 w-2 rounded-full bg-primary shrink-0" />
+                        <div className="text-sm">
+                          <div><strong>Você</strong> <span className="text-muted-foreground">criou a tarefa</span></div>
+                          <div className="text-xs text-muted-foreground">
+                            {task.created_at ? new Date(task.created_at).toLocaleString("pt-BR") : "agora"}
+                          </div>
+                        </div>
+                      </li>
+                    </ul>
+                  </TabsContent>
+                </Tabs>
+              </div>
+
+              {/* ---------- SIDEBAR ---------- */}
+              <aside className="min-h-0 overflow-y-auto bg-muted/20 px-5 py-6 space-y-5">
+                <SidebarSection title="Propriedades">
+                  <SidebarRow label="Status">
+                    <StatusPicker value={status} onChange={v => { setStatus(v); save.mutate({ status: v }); }} inline />
+                  </SidebarRow>
+                  <SidebarRow label="Prioridade">
+                    <PriorityPicker value={priority} onChange={v => { setPriority(v); save.mutate({ priority: v }); }} inline />
+                  </SidebarRow>
+                  <SidebarRow label="Prazo">
+                    <input
+                      type="date"
+                      value={dueDate}
+                      onChange={e => setDueDate(e.target.value)}
+                      onBlur={() => save.mutate({ due_date: dueDate || null })}
+                      className="bg-transparent text-sm outline-none w-full"
+                    />
+                  </SidebarRow>
+                  <SidebarRow label="Progresso">
+                    <div className="flex items-center gap-2 w-full">
+                      <input
+                        type="range" min={0} max={100} step={5}
+                        value={progress}
+                        onChange={e => setProgress(Number(e.target.value))}
+                        onMouseUp={() => save.mutate({ progress })}
+                        onTouchEnd={() => save.mutate({ progress })}
+                        className="flex-1 accent-primary"
+                      />
+                      <span className="text-xs tabular-nums w-9 text-right">{progress}%</span>
+                    </div>
+                  </SidebarRow>
+                </SidebarSection>
+
+                <SidebarSection title="Execução">
+                  <SidebarRow label="Plataforma">
+                    <Select value={platform || "none"} onValueChange={v => { const nv = v === "none" ? "" : v; setPlatform(nv); save.mutate({ platform: nv || null }); }}>
+                      <SelectTrigger className="h-8 rounded-lg border-none bg-transparent hover:bg-muted/60 text-sm px-2 shadow-none">
+                        <SelectValue placeholder="—" />
+                      </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="low">Baixa</SelectItem>
-                        <SelectItem value="medium">Média</SelectItem>
-                        <SelectItem value="high">Alta</SelectItem>
+                        <SelectItem value="none">—</SelectItem>
+                        <SelectItem value="instagram">Instagram</SelectItem>
+                        <SelectItem value="tiktok">TikTok</SelectItem>
+                        <SelectItem value="youtube">YouTube</SelectItem>
+                        <SelectItem value="meta_ads">Meta Ads</SelectItem>
+                        <SelectItem value="google_ads">Google Ads</SelectItem>
+                        <SelectItem value="site">Site / Blog</SelectItem>
                       </SelectContent>
                     </Select>
-                  </Field>
-                  <Field label="Prazo">
-                    <Input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} onBlur={() => save.mutate({ due_date: dueDate || null })} />
-                  </Field>
-                </div>
-              </TabsContent>
-
-              <TabsContent value="uploads" className="space-y-3 mt-4">
-                <div className="text-sm text-muted-foreground">
-                  Uploads de plataforma serão configurados por tarefa quando o módulo de Plataformas for ligado (Configurações → Plataformas).
-                </div>
-                <Card className="rounded-2xl p-4 border-dashed">
-                  <div className="text-sm">Nenhuma plataforma vinculada.</div>
-                  <Button variant="outline" size="sm" className="mt-2 rounded-full"><Plus className="h-4 w-4 mr-1" />Adicionar plataforma</Button>
-                </Card>
-              </TabsContent>
-
-              <TabsContent value="billing" className="space-y-4 mt-4">
-                <div className="grid grid-cols-2 gap-3">
-                  <Field label="Modelo">
-                    <Select value={billingModel} onValueChange={v => { setBillingModel(v as BillingModel); save.mutate({ billing_model: v as BillingModel }); }}>
-                      <SelectTrigger><SelectValue placeholder="Selecionar" /></SelectTrigger>
+                  </SidebarRow>
+                  <SidebarRow label="Tipo">
+                    <Select value={deliveryType || "none"} onValueChange={v => { const nv = v === "none" ? "" : v; setDeliveryType(nv); save.mutate({ delivery_type: nv || null }); }}>
+                      <SelectTrigger className="h-8 rounded-lg border-none bg-transparent hover:bg-muted/60 text-sm px-2 shadow-none">
+                        <SelectValue placeholder="—" />
+                      </SelectTrigger>
                       <SelectContent>
+                        <SelectItem value="none">—</SelectItem>
+                        <SelectItem value="post">Post</SelectItem>
+                        <SelectItem value="reels">Reels</SelectItem>
+                        <SelectItem value="story">Story</SelectItem>
+                        <SelectItem value="carrossel">Carrossel</SelectItem>
+                        <SelectItem value="video">Vídeo</SelectItem>
+                        <SelectItem value="arte">Arte</SelectItem>
+                        <SelectItem value="copy">Copy</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </SidebarRow>
+                  <SidebarRow label="Estimativa">
+                    <div className="flex items-center gap-1.5 w-full">
+                      <Input
+                        type="number" min={0} step={0.5}
+                        value={estimatedHours}
+                        onChange={e => setEstimatedHours(e.target.value)}
+                        onBlur={() => save.mutate({ estimated_hours: estimatedHours ? Number(estimatedHours) : null })}
+                        className="h-8 rounded-lg border-none bg-transparent hover:bg-muted/60 text-sm px-2 shadow-none focus-visible:ring-0"
+                        placeholder="0"
+                      />
+                      <span className="text-xs text-muted-foreground">h</span>
+                    </div>
+                  </SidebarRow>
+                </SidebarSection>
+
+                <SidebarSection title="Faturamento">
+                  <SidebarRow label="Modelo">
+                    <Select value={billingModel || "none"} onValueChange={v => { const nv = v === "none" ? "" : v; setBillingModel(nv as BillingModel | ""); save.mutate({ billing_model: (nv || null) as BillingModel | null }); }}>
+                      <SelectTrigger className="h-8 rounded-lg border-none bg-transparent hover:bg-muted/60 text-sm px-2 shadow-none">
+                        <SelectValue placeholder="—" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">—</SelectItem>
                         <SelectItem value="hourly">Por hora</SelectItem>
                         <SelectItem value="one_time">Fixo</SelectItem>
                         <SelectItem value="package">Pacote</SelectItem>
                         <SelectItem value="monthly">Recorrente</SelectItem>
                       </SelectContent>
                     </Select>
-                  </Field>
-                  <Field label="Valor (R$)">
-                    <Input
-                      type="number"
-                      value={billingValue}
-                      onChange={e => setBillingValue(e.target.value)}
-                      onBlur={() => save.mutate({ billing_value: billingValue ? Number(billingValue) : null })}
-                    />
-                  </Field>
-                </div>
-                <TaskTimer />
-              </TabsContent>
-
-              <TabsContent value="activity" className="space-y-3 mt-4">
-                <Card className="rounded-2xl p-4 space-y-3">
-                  <div className="flex items-start gap-3 text-sm">
-                    <span className="mt-1 h-2 w-2 rounded-full bg-primary" />
-                    <div>
-                      <div><strong>Você</strong> <span className="text-muted-foreground">criou a tarefa</span></div>
-                      <div className="text-xs text-muted-foreground">agora</div>
+                  </SidebarRow>
+                  <SidebarRow label="Valor">
+                    <div className="flex items-center gap-1.5 w-full">
+                      <span className="text-xs text-muted-foreground">R$</span>
+                      <Input
+                        type="number" min={0} step={0.01}
+                        value={billingValue}
+                        onChange={e => setBillingValue(e.target.value)}
+                        onBlur={() => save.mutate({ billing_value: billingValue ? Number(billingValue) : null })}
+                        className="h-8 rounded-lg border-none bg-transparent hover:bg-muted/60 text-sm px-2 shadow-none focus-visible:ring-0"
+                        placeholder="0,00"
+                      />
                     </div>
+                  </SidebarRow>
+                  <div className="pt-1">
+                    <TaskTimer />
                   </div>
-                </Card>
-                <Textarea placeholder="Comentar… @mencionar" rows={2} />
-                <div className="flex justify-end">
-                  <Button size="sm" className="rounded-full">Enviar</Button>
-                </div>
-              </TabsContent>
-            </Tabs>
-
-            <div className="mt-8 border-t border-border pt-4 flex items-center justify-between">
-              <Button variant="ghost" className="text-destructive" size="sm" onClick={() => removeTask.mutate()}>Excluir</Button>
-              <Button variant="outline" size="sm" onClick={onClose}>Fechar</Button>
+                </SidebarSection>
+              </aside>
             </div>
           </>
         )}
-      </SheetContent>
-    </Sheet>
+      </DialogContent>
+    </Dialog>
   );
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+/* ---------- Sidebar helpers ---------- */
+function SidebarSection({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <label className="block space-y-1">
-      <span className="text-xs font-medium text-muted-foreground">{label}</span>
-      {children}
+    <div>
+      <div className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2 px-1">{title}</div>
+      <div className="rounded-xl bg-card border border-border divide-y divide-border">
+        {children}
+      </div>
+    </div>
+  );
+}
+function SidebarRow({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="flex items-center gap-3 px-3 py-2 min-h-[40px]">
+      <span className="text-xs text-muted-foreground w-20 shrink-0">{label}</span>
+      <div className="flex-1 min-w-0">{children}</div>
+    </div>
+  );
+}
+
+/* ---------- Pickers ---------- */
+function StatusPicker({ value, onChange, inline }: { value: TaskStatus; onChange: (v: TaskStatus) => void; inline?: boolean }) {
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <button
+          className={cn(
+            "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium transition-colors",
+            STATUS_META[value].color,
+            inline && "w-full justify-start px-2 hover:opacity-80",
+          )}
+        >
+          <Circle className={cn("h-2 w-2 fill-current", STATUS_META[value].dot.replace("bg-", "text-"))} />
+          {STATUS_META[value].label}
+        </button>
+      </PopoverTrigger>
+      <PopoverContent align="end" className="p-1 w-44 rounded-xl">
+        {STATUS_ORDER.map(s => (
+          <button
+            key={s}
+            onClick={() => onChange(s)}
+            className={cn("w-full flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm hover:bg-muted", s === value && "bg-muted/60")}
+          >
+            <Circle className={cn("h-2 w-2 fill-current", STATUS_META[s].dot.replace("bg-", "text-"))} />
+            {STATUS_META[s].label}
+          </button>
+        ))}
+      </PopoverContent>
+    </Popover>
+  );
+}
+function PriorityPicker({ value, onChange, inline }: { value: TaskPriority; onChange: (v: TaskPriority) => void; inline?: boolean }) {
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <button
+          className={cn(
+            "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium transition-colors",
+            PRIORITY_META[value].badge,
+            inline && "w-full justify-start px-2 hover:opacity-80",
+          )}
+        >
+          <Flag className={cn("h-3 w-3", PRIORITY_META[value].color)} />
+          {PRIORITY_META[value].label}
+        </button>
+      </PopoverTrigger>
+      <PopoverContent align="end" className="p-1 w-40 rounded-xl">
+        {(["high", "medium", "low"] as TaskPriority[]).map(p => (
+          <button
+            key={p}
+            onClick={() => onChange(p)}
+            className={cn("w-full flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm hover:bg-muted", p === value && "bg-muted/60")}
+          >
+            <Flag className={cn("h-3.5 w-3.5", PRIORITY_META[p].color)} />
+            {PRIORITY_META[p].label}
+          </button>
+        ))}
+      </PopoverContent>
+    </Popover>
+  );
+}
+function DatePicker({ value, onChange, overdue }: { value: string; onChange: (v: string) => void; overdue?: boolean }) {
+  return (
+    <label className={cn(
+      "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium cursor-pointer transition-colors bg-muted text-foreground hover:bg-muted/70",
+      overdue && "bg-red-500/15 text-red-600 dark:text-red-400",
+    )}>
+      <CalendarIcon className="h-3.5 w-3.5" />
+      {value ? new Date(value).toLocaleDateString("pt-BR", { day: "2-digit", month: "short" }) : "Prazo"}
+      <input type="date" value={value} onChange={e => onChange(e.target.value)} className="sr-only" />
     </label>
   );
 }
 
+/* ---------- Subtasks (in-memory por enquanto) ---------- */
+function Subtasks() {
+  const [items, setItems] = useState<{ id: string; title: string; done: boolean }[]>([]);
+  const [draft, setDraft] = useState("");
+  const add = () => {
+    const t = draft.trim();
+    if (!t) return;
+    setItems(prev => [...prev, { id: crypto.randomUUID(), title: t, done: false }]);
+    setDraft("");
+  };
+  return (
+    <div className="space-y-2">
+      {items.length === 0 && (
+        <div className="text-xs text-muted-foreground py-3">Divida esta tarefa em passos menores.</div>
+      )}
+      <ul className="space-y-1">
+        {items.map(i => (
+          <li key={i.id} className="flex items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-muted/50 group">
+            <input
+              type="checkbox"
+              checked={i.done}
+              onChange={() => setItems(prev => prev.map(p => p.id === i.id ? { ...p, done: !p.done } : p))}
+              className="accent-primary"
+            />
+            <span className={cn("flex-1 text-sm", i.done && "line-through text-muted-foreground")}>{i.title}</span>
+            <button
+              onClick={() => setItems(prev => prev.filter(p => p.id !== i.id))}
+              className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive"
+            ><X className="h-3.5 w-3.5" /></button>
+          </li>
+        ))}
+      </ul>
+      <div className="flex items-center gap-2">
+        <Input
+          value={draft}
+          onChange={e => setDraft(e.target.value)}
+          onKeyDown={e => { if (e.key === "Enter") add(); }}
+          placeholder="+ Nova subtarefa"
+          className="rounded-lg h-9"
+        />
+        <Button size="sm" variant="outline" className="rounded-lg" onClick={add}>Adicionar</Button>
+      </div>
+    </div>
+  );
+}
+
+/* ---------- Timer ---------- */
 function TaskTimer() {
   const [running, setRunning] = useState(false);
   const [seconds, setSeconds] = useState(0);
@@ -569,18 +780,18 @@ function TaskTimer() {
   };
 
   return (
-    <Card className="rounded-2xl p-4">
+    <Card className="rounded-xl p-3 bg-card">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2 text-sm text-muted-foreground"><Clock className="h-4 w-4" /> Timer</div>
-        <div className="font-mono text-lg tabular-nums">{fmt(seconds)}</div>
+        <div className="flex items-center gap-1.5 text-xs text-muted-foreground"><Timer className="h-3.5 w-3.5" /> Timer</div>
+        <div className="font-mono text-sm tabular-nums">{fmt(seconds)}</div>
       </div>
-      <div className="mt-3 flex items-center gap-2">
+      <div className="mt-2 flex items-center gap-1.5">
         {running ? (
-          <Button size="sm" variant="outline" className="rounded-full gap-1.5" onClick={() => setRunning(false)}><Pause className="h-4 w-4" />Pausar</Button>
+          <Button size="sm" variant="outline" className="rounded-full gap-1 h-7 text-xs" onClick={() => setRunning(false)}><Pause className="h-3 w-3" />Pausar</Button>
         ) : (
-          <Button size="sm" className="rounded-full gap-1.5" onClick={() => setRunning(true)}><Play className="h-4 w-4" />Iniciar</Button>
+          <Button size="sm" className="rounded-full gap-1 h-7 text-xs" onClick={() => setRunning(true)}><Play className="h-3 w-3" />Iniciar</Button>
         )}
-        <Button size="sm" variant="ghost" className="rounded-full gap-1.5" onClick={() => { setRunning(false); setSeconds(0); }}><Square className="h-4 w-4" />Parar</Button>
+        <Button size="sm" variant="ghost" className="rounded-full gap-1 h-7 text-xs" onClick={() => { setRunning(false); setSeconds(0); }}><Square className="h-3 w-3" />Parar</Button>
       </div>
     </Card>
   );
