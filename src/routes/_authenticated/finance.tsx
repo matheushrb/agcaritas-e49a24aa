@@ -114,7 +114,7 @@ function FinancePage() {
         description: input.description ?? "",
         amount: input.amount ?? 0,
         status: (input.status ?? "pending") as ChargeStatus,
-        due_date: input.due_date ?? undefined,
+        due_date: input.due_date ?? new Date().toISOString().slice(0, 10),
         client_id: input.client_id,
         project_id: input.project_id,
         payment_method: input.payment_method,
@@ -189,7 +189,7 @@ function FinancePage() {
             <h3 className="font-medium mb-3">Faturamentos por cliente</h3>
             <div className="space-y-2">
               {Object.entries(charges.reduce<Record<string, number>>((acc, c) => {
-                if (c.status === "canceled" || !c.client_id) return acc;
+                if (c.status === "cancelled" || !c.client_id) return acc;
                 acc[c.client_id] = (acc[c.client_id] ?? 0) + Number(c.amount ?? 0);
                 return acc;
               }, {})).sort(([, a], [, b]) => b - a).map(([cid, total]) => (
