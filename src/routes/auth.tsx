@@ -250,7 +250,7 @@ function AuthPage() {
                 </div>
                 <Button
                   type="submit"
-                  className="w-full h-11 rounded-xl bg-gradient-to-r from-primary to-primary-glow font-semibold shadow-lg shadow-primary/25 hover:opacity-95"
+                  className="w-full h-11 rounded-xl bg-primary text-primary-foreground font-semibold shadow-lg shadow-primary/25 hover:opacity-95"
                   disabled={loading || googleLoading}
                 >
                   {loading && <Loader2 className="h-4 w-4 animate-spin" />}
