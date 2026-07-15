@@ -115,7 +115,7 @@ const dashboardQuery = {
       supabase.from("calendar_events").select("*").gte("starts_at", start).lt("starts_at", end).order("starts_at"),
       supabase.from("proposals").select("id, status, total_value"),
       supabase.from("projects").select("id, status"),
-      supabase.from("tasks").select("id, status, due_date, completed_at"),
+      supabase.from("tasks").select("id, status, due_date, updated_at"),
     ]);
 
     return {
