@@ -152,7 +152,7 @@ function ClientsPage() {
                   <div className="mt-auto space-y-1 text-xs text-muted-foreground pt-2 border-t border-border">
                     {c.email && <div className="inline-flex items-center gap-1.5 truncate"><Mail className="h-3.5 w-3.5" />{c.email}</div>}
                     {c.phone && <div className="inline-flex items-center gap-1.5"><Phone className="h-3.5 w-3.5" />{c.phone}</div>}
-                    {c.document && <div className="inline-flex items-center gap-1.5"><Building2 className="h-3.5 w-3.5" />{c.document}</div>}
+                    {c.tax_id && <div className="inline-flex items-center gap-1.5"><Building2 className="h-3.5 w-3.5" />{c.tax_id}</div>}
                   </div>
                 </Card>
               </Link>
