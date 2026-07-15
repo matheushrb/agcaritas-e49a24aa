@@ -473,7 +473,7 @@ function TaskModal({ task, onClose }: { task: Task | null; onClose: () => void }
                     <Card className="rounded-2xl p-3">
                       <Textarea placeholder="Escreva um comentário… @mencione um membro" rows={2} className="rounded-xl border-none focus-visible:ring-0 resize-none" />
                       <div className="flex justify-end mt-2">
-                        <Button size="sm" className="rounded-full">Comentar</Button>
+                        <Button size="sm" className="rounded-full" onClick={() => toast.info("Comentários em tarefas chegam em breve.")}>Comentar</Button>
                       </div>
                     </Card>
                     <div className="text-xs text-muted-foreground text-center py-6">Nenhum comentário ainda.</div>

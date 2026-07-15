@@ -406,7 +406,7 @@ function StratCard({ title, hint }: { title: string; hint: string }) {
     <Card className="rounded-2xl p-4">
       <div className="text-sm font-medium">{title}</div>
       <p className="text-xs text-muted-foreground mt-1">{hint}</p>
-      <Button size="sm" variant="outline" className="rounded-full mt-3 gap-1"><Plus className="h-3.5 w-3.5" />Adicionar</Button>
+      <Button size="sm" variant="outline" className="rounded-full mt-3 gap-1" onClick={() => toast.info(`${title}: editor completo em breve.`)}><Plus className="h-3.5 w-3.5" />Adicionar</Button>
     </Card>
   );
 }
