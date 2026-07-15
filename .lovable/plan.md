@@ -1,65 +1,55 @@
-## Objetivo
+# Roadmap — Pixie Pro / Caritas Gestão Criativa
 
-Transformar o dashboard atual em uma grade personalizável: cada usuário vê widgets diferentes conforme sua função (preset), e pode ligar/desligar/reordenar tudo em um painel lateral "Personalizar".
+## Ordem de construção (definida com o usuário)
 
-## Como vai funcionar
+Fluxo do cliente: **CRM → Propostas → Contratos → Planos de Marketing → Projetos → Tarefas → Financeiro → Agenda → RH → Configurações**.
 
-**1. Registro de widgets (extensível)**
-Um único arquivo `src/lib/dashboard-widgets.tsx` lista todos os widgets disponíveis. Cada widget tem:
-- `id` estável (ex.: `tasks.today`, `finance.revenue`, `hr.birthdays`)
-- `category` (Tarefas, Projetos, Financeiro, RH, Agenda, Comercial, Notificações, Outros)
-- `title`, `description`, `icon`
-- `size` padrão (small / medium / large — mapeia para col-span do grid)
-- `component` que já sabe buscar seus próprios dados
-- `roles` sugeridas (para os presets)
+Cada módulo entra completo — todas as janelas do PRD (páginas, drawers, modais, abas) + CRUD + integrações listadas — antes de passar para o próximo. Dashboard e personalização já feitos.
 
-Novos módulos futuros só precisam adicionar uma entrada nesse arquivo — nada mais muda.
+## Padrão visual comum
 
-**Widgets iniciais** (cobrindo os módulos existentes):
-- Tarefas: Tarefas de hoje, Minhas tarefas, Atribuições, Concluídas hoje, Prazos em 7 dias
-- Projetos: Projetos ativos, Próximas entregas, Status geral
-- Financeiro: Faturamento, Despesas, Lucro, MRR, Pipeline, Conversão, Contas a receber
-- RH/Equipe: Membros ativos, Aniversariantes, Férias
-- Agenda: Próxima reunião, Mini calendário
-- Comercial: Leads no funil, Propostas em aberto
-- Outros: Notificações, KPIs de plataforma, Saudação
+- Cards e superfícies em `rounded-2xl`/`rounded-3xl`, borda `border-border`, fundo `bg-card`, sombras suaves via tokens.
+- Chips de status coloridos por semântica (badge Radix `Badge` + tokens).
+- Header de página: título + subtítulo + KPIs em cards de 12 col e ação primária à direita.
+- Filtros em barra horizontal com Selects e Input de busca em `rounded-full`.
+- Drawers usam `Sheet` (side="right", `sm:max-w-lg`). Modais usam `Dialog`.
+- Toasts via `sonner` para toda mutação.
 
-**2. Presets por função**
-Ao concluir o onboarding, o `role_title` do perfil determina o preset inicial:
-- Admin/Diretor → dashboard completo (visão macro)
-- Financeiro → foco em Financeiro + Agenda
-- Projetos/PM → Projetos + Tarefas + Agenda
-- RH → RH + Agenda + Notificações
-- Comercial → Comercial + Financeiro (pipeline)
-- Operacional/Designer → Tarefas + Projetos
+## Estado do módulo
 
-O usuário pode editar livremente depois.
+| Módulo | Status |
+| --- | --- |
+| Dashboard | Feito + personalização por role |
+| **CRM** | **Em construção agora** |
+| Propostas | Pendente |
+| Contratos | Pendente |
+| Planos de Marketing | Pendente |
+| Projetos | Pendente |
+| Tarefas | Pendente |
+| Financeiro | Pendente |
+| Agenda | Pendente |
+| RH | Pendente |
+| Configurações | Pendente |
 
-**3. Painel lateral "Personalizar"**
-Botão "Personalizar" no cabeçalho do dashboard abre um `Sheet` lateral com:
-- Lista de widgets agrupada por categoria
-- Toggle (Switch) para ligar/desligar cada widget
-- Setas ↑↓ para reordenar (drag-and-drop fica para uma iteração futura para manter o escopo)
-- Botão "Restaurar preset da minha função"
-- Preferências salvas automaticamente
+## M02 · CRM (esta etapa)
 
-**4. Persistência**
-Nova tabela `dashboard_preferences` (user_id, widgets jsonb, updated_at) com RLS por `auth.uid()`. Se o usuário ainda não tem preferências, aplica o preset da role no primeiro carregamento e salva.
+### Janelas
+1. **Página `/crm`** — kanban 5 colunas (Lead · Contato · Proposta · Negociação · Fechado), KPIs no topo (Pipeline total, Receita fechada, Taxa de conversão), busca e filtro por segmento, `+ Novo lead`.
+2. **Drawer `Detalhe do lead`** — abre ao clicar no card. Dados completos, barra de etapas com Avançar/Voltar, campo de notas, botão `Criar proposta`.
+3. **Modal `+ Novo lead`** — form: nome, empresa, telefone, email, segmento, valor estimado, etapa inicial, origem.
 
-## Ajuste já feito
+### Regras
+- Arrastar com `@dnd-kit`. Ao soltar em **Fechado**, exibe banner "Criar Plano de Marketing?" com dois botões (Criar / Depois). Criar navega para `/marketing-plans/novo?leadId=…`.
+- `+ Criar proposta` no drawer navega para `/proposals/nova?leadId=…`.
+- Mutações reagem otimistas via TanStack Query.
+- Todo lead pertence à `organization_id` do usuário logado (RLS já cuida).
 
-Card **"Tarefas de hoje"** agora renderiza no máximo 4 linhas, cresce só conforme o conteúdo e não usa barra de rolagem. Um link "Ver todas (N)" aparece quando há mais.
+### Fora do escopo
+- Histórico de interações estruturado (por enquanto: campo único `notes`). Iteração futura.
+- Automação de e-mail. Iteração futura.
 
-## Detalhes técnicos
+## Já entregue anteriormente
 
-- **Migration**: `dashboard_preferences (user_id uuid PK, widgets jsonb not null default '[]', updated_at timestamptz)` + GRANTs + RLS (user só lê/edita as próprias) + trigger `set_updated_at`.
-- **Query**: `useSuspenseQuery` carrega preferências junto do dashboard; server-side `upsert` via `createServerFn` com `requireSupabaseAuth` quando o usuário salva.
-- **Grid**: layout continua em `grid-cols-12`; cada widget declara seu `colSpan` (4/6/8/12) e o render itera na ordem salva.
-- **Presets**: função `getPresetForRole(role_title)` que devolve a lista ordenada de widget ids.
-- **Fallback**: se `role_title` não bate com nenhum preset conhecido, aplica o preset "Admin" (completo).
-
-## Fora do escopo desta etapa
-
-- Drag-and-drop visual (fica ↑↓ por enquanto)
-- Configuração fina por widget (ex.: escolher qual métrica específica dentro do card Financeiro) — cada widget hoje é "ligado/desligado" inteiro
-- Compartilhar layouts entre usuários
+- Dashboard personalizável com preset por role + painel lateral.
+- Card "Tarefas de hoje" limitado a 4 linhas, cresce por conteúdo.
+- Tabela `dashboard_preferences` com RLS.
