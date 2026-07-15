@@ -50,7 +50,15 @@ export function AppShell({ children }: { children: ReactNode }) {
             </Link>
           );
         })}
-        <div className="mt-auto">
+        <div className="mt-auto flex flex-col items-center gap-1">
+          <Link
+            to="/settings"
+            title="Configurações"
+            className="grid h-11 w-11 place-items-center rounded-2xl transition-colors"
+            style={pathname.startsWith("/settings") ? { backgroundColor: "var(--sidebar-active)", color: "var(--primary-foreground)" } : undefined}
+          >
+            <Settings className={`h-5 w-5 ${pathname.startsWith("/settings") ? "" : "text-sidebar-foreground hover:text-foreground"}`} />
+          </Link>
           <button
             onClick={handleSignOut}
             className="grid h-11 w-11 place-items-center rounded-2xl text-sidebar-foreground hover:text-destructive"
@@ -84,28 +92,9 @@ function TopBar({
           </div>
           <span className="font-display text-lg font-bold hidden sm:inline">Caritas</span>
         </Link>
-        <nav className="hidden lg:flex items-center gap-6 text-sm">
-          {[
-            { to: "/dashboard", label: "Dashboard" },
-            { to: "/projects", label: "Projetos" },
-            { to: "/crm", label: "CRM" },
-          ].map(link => {
-            const active = pathname.startsWith(link.to);
-            return (
-              <Link
-                key={link.to}
-                to={link.to}
-                className={`relative py-1 ${active ? "text-foreground font-semibold" : "text-muted-foreground hover:text-foreground"}`}
-              >
-                {link.label}
-                {active && <span className="absolute -bottom-1 left-0 right-0 h-0.5 rounded-full bg-primary" />}
-              </Link>
-            );
-          })}
-        </nav>
         <div className="relative hidden md:block min-w-0 flex-1 max-w-sm">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input placeholder="Buscar ou digite um comando" className="pl-9 bg-card border-border rounded-full" />
+          <Input placeholder="Buscar tarefas, clientes, projetos, propostas..." className="pl-9 bg-card border-border rounded-full" />
         </div>
       </div>
 
@@ -124,15 +113,14 @@ function TopBar({
             <Moon className="h-3.5 w-3.5" /> Escuro
           </button>
         </div>
-        <Button variant="ghost" size="icon" className="rounded-full"><Bell className="h-4 w-4" /></Button>
-        <Button variant="ghost" size="icon" className="rounded-full"><Settings className="h-4 w-4" /></Button>
-        <Button variant="outline" size="sm" className="hidden md:inline-flex rounded-full gap-2">
-          <Download className="h-4 w-4" /> Exportar
-          <span className="ml-1 rounded-md bg-primary/10 px-1.5 py-0.5 text-[10px] font-bold text-primary">xls</span>
-        </Button>
-        <Button size="sm" className="rounded-full gap-1.5">
-          <Plus className="h-4 w-4" /> Novo projeto
-        </Button>
+        <Link to="/notifications" title="Notificações"
+          className={`grid h-9 w-9 place-items-center rounded-full ${pathname.startsWith("/notifications") ? "bg-primary/10 text-primary" : "text-muted-foreground hover:text-foreground"}`}>
+          <Bell className="h-4 w-4" />
+        </Link>
+        <Link to="/settings" title="Configurações"
+          className={`grid h-9 w-9 place-items-center rounded-full ${pathname.startsWith("/settings") ? "bg-primary/10 text-primary" : "text-muted-foreground hover:text-foreground"}`}>
+          <Settings className="h-4 w-4" />
+        </Link>
       </div>
     </header>
   );
