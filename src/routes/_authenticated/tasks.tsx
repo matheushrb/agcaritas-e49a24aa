@@ -18,7 +18,6 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { useTimer, formatHMS } from "@/contexts/timer-context";
 
 export const Route = createFileRoute("/_authenticated/tasks")({
   component: TasksPage,
@@ -462,7 +461,7 @@ function TaskModal({ task, onClose }: { task: Task | null; onClose: () => void }
                       <Paperclip className="h-6 w-6 mx-auto text-muted-foreground" />
                       <div className="text-sm font-medium">Arraste arquivos ou clique para enviar</div>
                       <div className="text-xs text-muted-foreground">PDF, PNG, JPG, MP4, PSD, AI — até 50 MB</div>
-                      <Button variant="outline" size="sm" className="rounded-full mt-2" onClick={() => toast.info("Upload de anexos chega em breve.")}>Selecionar arquivo</Button>
+                      <Button variant="outline" size="sm" className="rounded-full mt-2">Selecionar arquivo</Button>
                     </Card>
                     <div className="mt-3 text-xs text-muted-foreground">
                       Uploads por plataforma (Instagram, TikTok, Meta Ads) serão vinculados quando o módulo de Plataformas estiver ativo em Configurações.
@@ -473,7 +472,7 @@ function TaskModal({ task, onClose }: { task: Task | null; onClose: () => void }
                     <Card className="rounded-2xl p-3">
                       <Textarea placeholder="Escreva um comentário… @mencione um membro" rows={2} className="rounded-xl border-none focus-visible:ring-0 resize-none" />
                       <div className="flex justify-end mt-2">
-                        <Button size="sm" className="rounded-full" onClick={() => toast.info("Comentários em tarefas chegam em breve.")}>Comentar</Button>
+                        <Button size="sm" className="rounded-full">Comentar</Button>
                       </div>
                     </Card>
                     <div className="text-xs text-muted-foreground text-center py-6">Nenhum comentário ainda.</div>
@@ -606,7 +605,7 @@ function TaskModal({ task, onClose }: { task: Task | null; onClose: () => void }
                     </div>
                   </SidebarRow>
                   <div className="pt-1">
-                    <TaskTimer taskId={task.id} taskTitle={task.title} />
+                    <TaskTimer />
                   </div>
                 </SidebarSection>
               </aside>
@@ -758,38 +757,42 @@ function Subtasks() {
   );
 }
 
-/* ---------- Timer (wired to global context) ---------- */
-function TaskTimer({ taskId, taskTitle }: { taskId: string; taskTitle: string }) {
-  const t = useTimer();
-  const [, setTick] = useState(0);
-  const isActive = t.taskId === taskId;
-  const running = isActive && t.running;
+/* ---------- Timer ---------- */
+function TaskTimer() {
+  const [running, setRunning] = useState(false);
+  const [seconds, setSeconds] = useState(0);
+  const iv = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
-    if (!running) return;
-    const iv = setInterval(() => setTick(x => x + 1), 1000);
-    return () => clearInterval(iv);
+    if (running) {
+      iv.current = setInterval(() => setSeconds(s => s + 1), 1000);
+    } else if (iv.current) {
+      clearInterval(iv.current); iv.current = null;
+    }
+    return () => { if (iv.current) clearInterval(iv.current); };
   }, [running]);
 
-  const seconds = isActive ? t.currentSeconds() : 0;
+  const fmt = (s: number) => {
+    const h = Math.floor(s / 3600).toString().padStart(2, "0");
+    const m = Math.floor((s % 3600) / 60).toString().padStart(2, "0");
+    const sec = (s % 60).toString().padStart(2, "0");
+    return `${h}:${m}:${sec}`;
+  };
 
   return (
     <Card className="rounded-xl p-3 bg-card">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-1.5 text-xs text-muted-foreground"><Timer className="h-3.5 w-3.5" /> Timer</div>
-        <div className="font-mono text-sm tabular-nums">{formatHMS(seconds)}</div>
+        <div className="font-mono text-sm tabular-nums">{fmt(seconds)}</div>
       </div>
       <div className="mt-2 flex items-center gap-1.5">
         {running ? (
-          <Button size="sm" variant="outline" className="rounded-full gap-1 h-7 text-xs" onClick={() => t.pauseTimer()}><Pause className="h-3 w-3" />Pausar</Button>
+          <Button size="sm" variant="outline" className="rounded-full gap-1 h-7 text-xs" onClick={() => setRunning(false)}><Pause className="h-3 w-3" />Pausar</Button>
         ) : (
-          <Button size="sm" className="rounded-full gap-1 h-7 text-xs" onClick={() => isActive ? t.resumeTimer() : t.startTimer(taskId, taskTitle)}><Play className="h-3 w-3" />{isActive ? "Retomar" : "Iniciar"}</Button>
+          <Button size="sm" className="rounded-full gap-1 h-7 text-xs" onClick={() => setRunning(true)}><Play className="h-3 w-3" />Iniciar</Button>
         )}
-        {isActive && (
-          <Button size="sm" variant="ghost" className="rounded-full gap-1 h-7 text-xs" onClick={() => t.stopTimer()}><Square className="h-3 w-3" />Parar</Button>
-        )}
+        <Button size="sm" variant="ghost" className="rounded-full gap-1 h-7 text-xs" onClick={() => { setRunning(false); setSeconds(0); }}><Square className="h-3 w-3" />Parar</Button>
       </div>
     </Card>
   );
 }
-

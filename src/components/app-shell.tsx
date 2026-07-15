@@ -3,7 +3,6 @@ import {
   LayoutGrid, User, PieChart, Bell, Calendar, Inbox, ClipboardList,
   MessageCircle, Search, Settings, Download, Plus, Moon, Sun, Sparkles, LogOut,
   Users, FileText, FileSignature, Target, Briefcase, DollarSign, UsersRound,
-  Truck, Megaphone, Contact,
 } from "lucide-react";
 import type { ReactNode } from "react";
 import { Button } from "@/components/ui/button";
@@ -14,8 +13,6 @@ import { supabase } from "@/integrations/supabase/client";
 const primaryNav = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutGrid },
   { to: "/crm", label: "CRM", icon: Users },
-  { to: "/clients", label: "Clientes", icon: Contact },
-  { to: "/suppliers", label: "Fornecedores", icon: Truck },
   { to: "/proposals", label: "Propostas", icon: FileText },
   { to: "/contracts", label: "Contratos", icon: FileSignature },
   { to: "/marketing-plans", label: "Planos", icon: Target },
@@ -23,28 +20,19 @@ const primaryNav = [
   { to: "/tasks", label: "Tarefas", icon: ClipboardList },
   { to: "/finance", label: "Financeiro", icon: DollarSign },
   { to: "/team", label: "Time", icon: UsersRound },
-  { to: "/goals", label: "Metas", icon: Target },
-  { to: "/marketing-interno", label: "Marketing", icon: Megaphone },
 ];
 
 // Compact side nav (as-literal-to-the-reference sidebar)
 const sideIcons = [
   { to: "/dashboard", icon: LayoutGrid, label: "Dashboard" },
-  { to: "/clients", icon: Contact, label: "Clientes" },
-  { to: "/projects", icon: Briefcase, label: "Projetos" },
-  { to: "/tasks", icon: ClipboardList, label: "Tarefas" },
-  { to: "/finance", icon: PieChart, label: "Financeiro" },
-  { to: "/contracts", icon: FileSignature, label: "Contratos" },
-  { to: "/calendar", icon: Calendar, label: "Agenda" },
-  { to: "/goals", icon: Target, label: "Metas" },
-  { to: "/marketing-interno", icon: Megaphone, label: "Marketing" },
   { to: "/team", icon: User, label: "Time" },
-  { to: "/suppliers", icon: Truck, label: "Fornecedores" },
+  { to: "/finance", icon: PieChart, label: "Financeiro" },
   { to: "/notifications", icon: Bell, label: "Notificações" },
+  { to: "/calendar", icon: Calendar, label: "Agenda" },
   { to: "/inbox", icon: Inbox, label: "Caixa de entrada" },
+  { to: "/tasks", icon: ClipboardList, label: "Tarefas" },
   { to: "/messages", icon: MessageCircle, label: "Mensagens" },
 ];
-
 
 export function AppShell({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
@@ -149,23 +137,14 @@ function TopBar({
             <Moon className="h-3.5 w-3.5" /> Escuro
           </button>
         </div>
-        <Button asChild variant="ghost" size="icon" className="rounded-full" aria-label="Notificações">
-          <Link to="/notifications"><Bell className="h-4 w-4" /></Link>
-        </Button>
-        <Button asChild variant="ghost" size="icon" className="rounded-full" aria-label="Configurações">
-          <Link to="/team"><Settings className="h-4 w-4" /></Link>
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          className="hidden md:inline-flex rounded-full gap-2"
-          onClick={() => import("sonner").then(({ toast }) => toast.info("Exportação em XLS chega na próxima versão."))}
-        >
+        <Button variant="ghost" size="icon" className="rounded-full"><Bell className="h-4 w-4" /></Button>
+        <Button variant="ghost" size="icon" className="rounded-full"><Settings className="h-4 w-4" /></Button>
+        <Button variant="outline" size="sm" className="hidden md:inline-flex rounded-full gap-2">
           <Download className="h-4 w-4" /> Exportar
           <span className="ml-1 rounded-md bg-primary/10 px-1.5 py-0.5 text-[10px] font-bold text-primary">xls</span>
         </Button>
-        <Button asChild size="sm" className="rounded-full gap-1.5">
-          <Link to="/projects"><Plus className="h-4 w-4" /> Novo projeto</Link>
+        <Button size="sm" className="rounded-full gap-1.5">
+          <Plus className="h-4 w-4" /> Novo projeto
         </Button>
       </div>
     </header>
