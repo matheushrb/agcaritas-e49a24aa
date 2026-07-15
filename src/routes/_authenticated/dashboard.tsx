@@ -30,7 +30,11 @@ const profileQuery = {
   queryFn: async () => {
     const { data: userRes } = await supabase.auth.getUser();
     if (!userRes.user) return null;
-    const { data } = await supabase.from("profiles").select("full_name, organization_id").eq("id", userRes.user.id).maybeSingle();
+    const { data } = await supabase
+      .from("profiles")
+      .select("full_name, display_name, role_title, organization_id")
+      .eq("id", userRes.user.id)
+      .maybeSingle();
     return { user: userRes.user, profile: data };
   },
 };
