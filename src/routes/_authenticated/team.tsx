@@ -62,7 +62,7 @@ function TeamPage() {
   const kpis = useMemo(() => ({
     total: members.length,
     active: members.filter(m => m.status === "active").length,
-    onboarding: members.filter(m => m.status === "onboarding").length,
+    away: members.filter(m => m.status === "away" || m.status === "vacation").length,
   }), [members]);
 
   const create = useMutation({
