@@ -249,27 +249,17 @@ function DashboardContent() {
   );
 }
 
-function QuickAddCard() {
+function InlineActionButton({ title, icon: Icon }: { title: string; icon: any }) {
   return (
-    <button className="group grid place-items-center aspect-square rounded-4xl border-2 border-dashed border-border bg-transparent hover:border-primary transition-colors">
-      <div className="grid h-12 w-12 place-items-center rounded-2xl bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
-        <Plus className="h-5 w-5" />
-      </div>
+    <button
+      type="button"
+      className="group inline-flex items-center gap-2 rounded-full border border-border bg-card px-3.5 py-2 text-sm font-medium text-foreground shadow-sm transition hover:border-primary/50 hover:bg-primary/5"
+    >
+      <span className="grid h-7 w-7 place-items-center rounded-full bg-primary/10 text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
+        <Icon className="h-3.5 w-3.5" />
+      </span>
+      {title}
     </button>
-  );
-}
-
-function QuickCard({ title, desc, icon: Icon }: { title: string; desc: string; icon: any }) {
-  return (
-    <Card className="card-surface p-4 flex flex-col justify-between aspect-square">
-      <div className="grid h-11 w-11 place-items-center rounded-2xl bg-primary/10 text-primary">
-        <Icon className="h-5 w-5" />
-      </div>
-      <div>
-        <p className="font-display font-semibold text-sm">{title}</p>
-        <p className="text-xs text-muted-foreground line-clamp-2">{desc}</p>
-      </div>
-    </Card>
   );
 }
 
