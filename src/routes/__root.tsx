@@ -55,9 +55,9 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Pixie Pro — ERP para agências de marketing" },
-      { name: "description", content: "Pixie Pro: gestão completa do funil comercial ao faturamento para agências de marketing." },
-      { property: "og:title", content: "Pixie Pro — ERP para agências de marketing" },
+      { title: "Caritas Agência — ERP interno" },
+      { name: "description", content: "Sistema interno da Caritas Agência: do lead ao faturamento em um único painel." },
+      { property: "og:title", content: "Caritas Agência — ERP interno" },
       { property: "og:description", content: "Do lead à cobrança em um único painel." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
