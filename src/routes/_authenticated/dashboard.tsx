@@ -9,8 +9,71 @@ import { Skeleton } from "@/components/ui/skeleton";
 import {
   Plus, Calendar, ClipboardList, Users, MoreHorizontal, ChevronLeft,
   ChevronRight, Paperclip, MessageCircle, Trash2, Pencil, Check,
-  FolderKanban, Bell, Sparkles, TrendingUp,
+  FolderKanban, Bell, Sparkles, TrendingUp, TrendingDown, Wallet,
+  Activity, BarChart3, Target, FolderOpen, CheckCircle2, CalendarClock,
+  CheckSquare,
 } from "lucide-react";
+
+type StatTone = "success" | "destructive" | "primary" | "accent" | "warning" | "info";
+
+function StatCard({
+  label, value, hint, icon: Icon, tone = "primary", delta,
+}: {
+  label: string; value: string; hint?: string; icon: any; tone?: StatTone;
+  delta?: { value: string; direction: "up" | "down" | "flat" };
+}) {
+  const toneClasses: Record<StatTone, string> = {
+    success: "bg-success/10 text-success",
+    destructive: "bg-destructive/10 text-destructive",
+    primary: "bg-primary/10 text-primary",
+    accent: "bg-accent/20 text-accent-foreground",
+    warning: "bg-warning/15 text-warning",
+    info: "bg-info/15 text-info",
+  };
+  return (
+    <Card className="card-surface p-4 md:p-5">
+      <div className="flex items-start justify-between gap-3">
+        <span className="text-[10px] font-semibold tracking-wider text-muted-foreground uppercase">
+          {label}
+        </span>
+        <span className={`grid h-8 w-8 place-items-center rounded-xl ${toneClasses[tone]}`}>
+          <Icon className="h-4 w-4" />
+        </span>
+      </div>
+      <p className="mt-3 font-display text-2xl md:text-3xl font-bold leading-none">{value}</p>
+      <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
+        <span className="truncate">{hint}</span>
+        {delta && (
+          <span
+            className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium ${
+              delta.direction === "down"
+                ? "bg-destructive/10 text-destructive"
+                : "bg-success/10 text-success"
+            }`}
+          >
+            {delta.direction === "down" ? (
+              <TrendingDown className="h-3 w-3" />
+            ) : (
+              <TrendingUp className="h-3 w-3" />
+            )}
+            {delta.value}
+          </span>
+        )}
+      </div>
+    </Card>
+  );
+}
+
+function SectionLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <p className="text-[10px] font-semibold tracking-[0.18em] text-muted-foreground uppercase mb-3">
+      {children}
+    </p>
+  );
+}
+
+const BRL = (n: number) =>
+  n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({ meta: [{ title: "Dashboard · Caritas Agência" }] }),
@@ -46,11 +109,13 @@ const dashboardQuery = {
     const start = new Date(today.getFullYear(), today.getMonth(), today.getDate()).toISOString();
     const end = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1).toISOString();
 
-    const [tasksRes, notifsRes, eventsRes, proposalsRes] = await Promise.all([
+    const [tasksRes, notifsRes, eventsRes, proposalsRes, projectsRes, allTasksRes] = await Promise.all([
       supabase.from("tasks").select("*").order("due_date", { ascending: true }).limit(6),
       supabase.from("notifications").select("*").order("created_at", { ascending: false }).limit(5),
       supabase.from("calendar_events").select("*").gte("starts_at", start).lt("starts_at", end).order("starts_at"),
       supabase.from("proposals").select("id, status, total_value"),
+      supabase.from("projects").select("id, status"),
+      supabase.from("tasks").select("id, status, due_date, updated_at"),
     ]);
 
     return {
@@ -58,6 +123,8 @@ const dashboardQuery = {
       notifications: notifsRes.data ?? [],
       events: eventsRes.data ?? [],
       proposals: proposalsRes.data ?? [],
+      projects: projectsRes.data ?? [],
+      allTasks: allTasksRes.data ?? [],
     };
   },
 };
@@ -95,6 +162,32 @@ function DashboardContent() {
           </div>
         </div>
       </section>
+
+      {/* Financeiro */}
+      <section className="lg:col-span-12">
+        <SectionLabel>Financeiro</SectionLabel>
+        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">
+          <StatCard label="Faturamento" value={BRL(0)} hint="vs mês anterior" icon={TrendingUp} tone="success" delta={{ value: "0%", direction: "up" }} />
+          <StatCard label="Despesas" value={BRL(0)} hint="vs mês anterior" icon={TrendingDown} tone="destructive" delta={{ value: "0%", direction: "up" }} />
+          <StatCard label="Lucro Líquido" value={BRL(0)} hint="Margem 0%" icon={Wallet} tone="primary" delta={{ value: "0%", direction: "up" }} />
+          <StatCard label="MRR" value={BRL(0)} hint="Recorrente mensal" icon={Activity} tone="info" />
+          <StatCard label="Pipeline" value={BRL(pipelineValue(data.proposals))} hint={`${data.proposals.length} deals`} icon={BarChart3} tone="accent" />
+          <StatCard label="Conversão" value={`${proposalsRate(data.proposals)}%`} hint="Taxa de fechamento" icon={Target} tone="warning" />
+        </div>
+      </section>
+
+      {/* Operacional */}
+      <section className="lg:col-span-12">
+        <SectionLabel>Operacional</SectionLabel>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <StatCard label="Projetos Ativos" value={String(activeProjects(data.projects))} hint="em andamento" icon={FolderOpen} tone="primary" />
+          <StatCard label="Tarefas Abertas" value={String(openTasks(data.allTasks))} hint="aguardando conclusão" icon={CheckSquare} tone="info" />
+          <StatCard label="Concluídas Hoje" value={String(completedToday(data.allTasks))} hint="entregues hoje" icon={CheckCircle2} tone="success" />
+          <StatCard label="Prazos em 7 dias" value={String(dueSoon(data.allTasks))} hint="vencem em breve" icon={CalendarClock} tone="warning" />
+        </div>
+      </section>
+
+
 
 
       {/* Right column: Calendar + agenda */}
@@ -377,6 +470,38 @@ function proposalsRate(proposals: { status: string }[]): number {
   const approved = proposals.filter(p => p.status === "approved").length;
   return Math.round((approved / proposals.length) * 100);
 }
+
+function pipelineValue(proposals: { status: string; total_value: number | null }[]): number {
+  return proposals
+    .filter(p => p.status !== "approved" && p.status !== "rejected")
+    .reduce((sum, p) => sum + (Number(p.total_value) || 0), 0);
+}
+
+function activeProjects(projects: { status: string }[]): number {
+  return projects.filter(p => p.status !== "completed" && p.status !== "archived" && p.status !== "cancelled").length;
+}
+
+function openTasks(tasks: { status: string }[]): number {
+  return tasks.filter(t => t.status !== "done" && t.status !== "completed" && t.status !== "cancelled").length;
+}
+
+function completedToday(tasks: { status: string; updated_at: string }[]): number {
+  const today = new Date().toDateString();
+  return tasks.filter(t => t.status === "done" && new Date(t.updated_at).toDateString() === today).length;
+}
+
+function dueSoon(tasks: { status: string; due_date: string | null }[]): number {
+  const now = new Date();
+  const in7 = new Date();
+  in7.setDate(now.getDate() + 7);
+  return tasks.filter(t => {
+    if (!t.due_date) return false;
+    if (t.status === "done" || t.status === "completed") return false;
+    const d = new Date(t.due_date);
+    return d >= now && d <= in7;
+  }).length;
+}
+
 
 function upcomingText(events: any[]) {
   if (!events.length) return "Sem reuniões";
