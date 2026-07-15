@@ -137,7 +137,7 @@ function AuthPage() {
             </div>
             <h1 className="font-display text-5xl font-bold leading-[1.05] tracking-tight">
               Do primeiro lead <br />
-              <span className="bg-gradient-to-r from-primary via-primary-glow to-primary bg-clip-text text-transparent">
+              <span className="text-primary">
                 até a última fatura.
               </span>
             </h1>
@@ -250,7 +250,7 @@ function AuthPage() {
                 </div>
                 <Button
                   type="submit"
-                  className="w-full h-11 rounded-xl bg-gradient-to-r from-primary to-primary-glow font-semibold shadow-lg shadow-primary/25 hover:opacity-95"
+                  className="w-full h-11 rounded-xl bg-primary text-primary-foreground font-semibold shadow-lg shadow-primary/25 hover:opacity-95"
                   disabled={loading || googleLoading}
                 >
                   {loading && <Loader2 className="h-4 w-4 animate-spin" />}
