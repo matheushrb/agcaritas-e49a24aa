@@ -274,7 +274,7 @@ function OnboardingWizard() {
                 type="button"
                 onClick={next}
                 disabled={!canNext}
-                className="rounded-full bg-gradient-to-r from-primary to-primary-glow shadow-lg shadow-primary/25"
+                className="rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/25"
               >
                 Continuar <ArrowRight className="h-4 w-4" />
               </Button>
@@ -283,7 +283,7 @@ function OnboardingWizard() {
                 type="button"
                 onClick={finish}
                 disabled={saving}
-                className="rounded-full bg-gradient-to-r from-primary to-primary-glow shadow-lg shadow-primary/25"
+                className="rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/25"
               >
                 {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
                 Entrar no painel
