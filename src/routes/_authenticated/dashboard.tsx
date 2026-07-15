@@ -9,8 +9,71 @@ import { Skeleton } from "@/components/ui/skeleton";
 import {
   Plus, Calendar, ClipboardList, Users, MoreHorizontal, ChevronLeft,
   ChevronRight, Paperclip, MessageCircle, Trash2, Pencil, Check,
-  FolderKanban, Bell, Sparkles, TrendingUp,
+  FolderKanban, Bell, Sparkles, TrendingUp, TrendingDown, Wallet,
+  Activity, BarChart3, Target, FolderOpen, CheckCircle2, CalendarClock,
+  CheckSquare,
 } from "lucide-react";
+
+type StatTone = "success" | "destructive" | "primary" | "accent" | "warning" | "info";
+
+function StatCard({
+  label, value, hint, icon: Icon, tone = "primary", delta,
+}: {
+  label: string; value: string; hint?: string; icon: any; tone?: StatTone;
+  delta?: { value: string; direction: "up" | "down" | "flat" };
+}) {
+  const toneClasses: Record<StatTone, string> = {
+    success: "bg-success/10 text-success",
+    destructive: "bg-destructive/10 text-destructive",
+    primary: "bg-primary/10 text-primary",
+    accent: "bg-accent/20 text-accent-foreground",
+    warning: "bg-warning/15 text-warning",
+    info: "bg-info/15 text-info",
+  };
+  return (
+    <Card className="card-surface p-4 md:p-5">
+      <div className="flex items-start justify-between gap-3">
+        <span className="text-[10px] font-semibold tracking-wider text-muted-foreground uppercase">
+          {label}
+        </span>
+        <span className={`grid h-8 w-8 place-items-center rounded-xl ${toneClasses[tone]}`}>
+          <Icon className="h-4 w-4" />
+        </span>
+      </div>
+      <p className="mt-3 font-display text-2xl md:text-3xl font-bold leading-none">{value}</p>
+      <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
+        <span className="truncate">{hint}</span>
+        {delta && (
+          <span
+            className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium ${
+              delta.direction === "down"
+                ? "bg-destructive/10 text-destructive"
+                : "bg-success/10 text-success"
+            }`}
+          >
+            {delta.direction === "down" ? (
+              <TrendingDown className="h-3 w-3" />
+            ) : (
+              <TrendingUp className="h-3 w-3" />
+            )}
+            {delta.value}
+          </span>
+        )}
+      </div>
+    </Card>
+  );
+}
+
+function SectionLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <p className="text-[10px] font-semibold tracking-[0.18em] text-muted-foreground uppercase mb-3">
+      {children}
+    </p>
+  );
+}
+
+const BRL = (n: number) =>
+  n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({ meta: [{ title: "Dashboard · Caritas Agência" }] }),
