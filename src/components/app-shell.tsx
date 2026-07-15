@@ -75,7 +75,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       </aside>
 
       {/* Main content, padded left to make room for floating sidebar */}
-      <div className="md:pl-24 px-4 py-6 sm:px-6 lg:px-8">
+      <div className="pl-4 pr-4 sm:pl-6 sm:pr-6 md:pl-24 lg:pl-28 lg:pr-8 py-6">
         <TopBar theme={theme} onToggleTheme={setTheme} pathname={pathname} />
         <main className="mt-6">
           {children}
