@@ -605,7 +605,7 @@ function TaskModal({ task, onClose }: { task: Task | null; onClose: () => void }
                     </div>
                   </SidebarRow>
                   <div className="pt-1">
-                    <TaskTimer />
+                    <TaskTimer taskId={task.id} taskTitle={task.title} />
                   </div>
                 </SidebarSection>
               </aside>
