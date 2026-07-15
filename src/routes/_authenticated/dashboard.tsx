@@ -61,31 +61,35 @@ const dashboardQuery = {
 function DashboardContent() {
   const { data: me } = useSuspenseQuery(profileQuery);
   const { data } = useSuspenseQuery(dashboardQuery);
-  const firstName = me?.profile?.full_name?.split(" ")[0] ?? "por aí";
+  const displayName =
+    me?.profile?.full_name?.trim() ||
+    me?.user?.user_metadata?.full_name ||
+    me?.user?.email?.split("@")[0] ||
+    "por aí";
+  const firstName = displayName.split(" ")[0];
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-5">
-      {/* Header greeting + 3 quick cards */}
+      {/* Header greeting + 3 inline quick actions */}
       <section className="lg:col-span-8 space-y-5">
-        <div className="grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_auto] gap-6 items-end">
+        <div className="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
           <div className="min-w-0">
             <h1 className="font-display text-3xl md:text-4xl font-bold leading-tight">
               Olá, {firstName}!<br />
-              Quais são seus planos<br className="hidden md:inline" /> para hoje?
+              Quais são seus planos para hoje?
             </h1>
             <p className="mt-3 text-sm text-muted-foreground max-w-md">
-              O ERP da sua agência: organize leads, propostas, projetos e faturamento em um único painel.
+              O ERP da Caritas Agência: organize leads, propostas, projetos e faturamento em um único painel.
             </p>
           </div>
-        </div>
-
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
-          <QuickAddCard />
-          <QuickCard title="Organizar" desc="Estrutura clara para seus planos." icon={FolderKanban} />
-          <QuickCard title="Sincronizar" desc="Tudo do lead ao faturamento." icon={TrendingUp} />
-          <QuickCard title="Colaborar" desc="Compartilhe com o time." icon={Users} />
+          <div className="flex flex-wrap gap-2 shrink-0">
+            <InlineActionButton title="Organizar" icon={FolderKanban} />
+            <InlineActionButton title="Sincronizar" icon={TrendingUp} />
+            <InlineActionButton title="Colaborar" icon={Users} />
+          </div>
         </div>
       </section>
+
 
       {/* Right column: Calendar + agenda */}
       <section className="lg:col-span-4 lg:row-span-2">
