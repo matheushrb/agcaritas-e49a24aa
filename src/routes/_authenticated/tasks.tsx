@@ -757,42 +757,38 @@ function Subtasks() {
   );
 }
 
-/* ---------- Timer ---------- */
-function TaskTimer() {
-  const [running, setRunning] = useState(false);
-  const [seconds, setSeconds] = useState(0);
-  const iv = useRef<ReturnType<typeof setInterval> | null>(null);
+/* ---------- Timer (wired to global context) ---------- */
+function TaskTimer({ taskId, taskTitle }: { taskId: string; taskTitle: string }) {
+  const t = useTimer();
+  const [, setTick] = useState(0);
+  const isActive = t.taskId === taskId;
+  const running = isActive && t.running;
 
   useEffect(() => {
-    if (running) {
-      iv.current = setInterval(() => setSeconds(s => s + 1), 1000);
-    } else if (iv.current) {
-      clearInterval(iv.current); iv.current = null;
-    }
-    return () => { if (iv.current) clearInterval(iv.current); };
+    if (!running) return;
+    const iv = setInterval(() => setTick(x => x + 1), 1000);
+    return () => clearInterval(iv);
   }, [running]);
 
-  const fmt = (s: number) => {
-    const h = Math.floor(s / 3600).toString().padStart(2, "0");
-    const m = Math.floor((s % 3600) / 60).toString().padStart(2, "0");
-    const sec = (s % 60).toString().padStart(2, "0");
-    return `${h}:${m}:${sec}`;
-  };
+  const seconds = isActive ? t.currentSeconds() : 0;
 
   return (
     <Card className="rounded-xl p-3 bg-card">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-1.5 text-xs text-muted-foreground"><Timer className="h-3.5 w-3.5" /> Timer</div>
-        <div className="font-mono text-sm tabular-nums">{fmt(seconds)}</div>
+        <div className="font-mono text-sm tabular-nums">{formatHMS(seconds)}</div>
       </div>
       <div className="mt-2 flex items-center gap-1.5">
         {running ? (
-          <Button size="sm" variant="outline" className="rounded-full gap-1 h-7 text-xs" onClick={() => setRunning(false)}><Pause className="h-3 w-3" />Pausar</Button>
+          <Button size="sm" variant="outline" className="rounded-full gap-1 h-7 text-xs" onClick={() => t.pauseTimer()}><Pause className="h-3 w-3" />Pausar</Button>
         ) : (
-          <Button size="sm" className="rounded-full gap-1 h-7 text-xs" onClick={() => setRunning(true)}><Play className="h-3 w-3" />Iniciar</Button>
+          <Button size="sm" className="rounded-full gap-1 h-7 text-xs" onClick={() => isActive ? t.resumeTimer() : t.startTimer(taskId, taskTitle)}><Play className="h-3 w-3" />{isActive ? "Retomar" : "Iniciar"}</Button>
         )}
-        <Button size="sm" variant="ghost" className="rounded-full gap-1 h-7 text-xs" onClick={() => { setRunning(false); setSeconds(0); }}><Square className="h-3 w-3" />Parar</Button>
+        {isActive && (
+          <Button size="sm" variant="ghost" className="rounded-full gap-1 h-7 text-xs" onClick={() => t.stopTimer()}><Square className="h-3 w-3" />Parar</Button>
+        )}
       </div>
     </Card>
   );
 }
+
