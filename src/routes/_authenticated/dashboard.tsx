@@ -126,13 +126,6 @@ const dashboardQuery = {
       projects: projectsRes.data ?? [],
       allTasks: allTasksRes.data ?? [],
     };
-
-    return {
-      tasks: tasksRes.data ?? [],
-      notifications: notifsRes.data ?? [],
-      events: eventsRes.data ?? [],
-      proposals: proposalsRes.data ?? [],
-    };
   },
 };
 
