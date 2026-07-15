@@ -141,9 +141,7 @@ function ProjectDetail() {
     const total = tasks.length;
     const overdue = tasks.filter(t => t.due_date && new Date(t.due_date) < new Date() && t.status !== "done").length;
     const done = tasks.filter(t => t.status === "done").length;
-    const invoiced = charges
-      .filter(c => (c.direction ?? "in") !== "out")
-      .reduce((s, c) => s + Number(c.amount ?? 0), 0);
+    const invoiced = charges.reduce((s, c) => s + Number(c.amount ?? 0), 0);
     return { total, overdue, done, invoiced };
   }, [tasks, charges]);
 
