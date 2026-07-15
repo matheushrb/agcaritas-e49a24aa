@@ -509,23 +509,32 @@ export type Database = {
         Row: {
           avatar_url: string | null
           created_at: string
+          display_name: string | null
           full_name: string
           id: string
+          onboarding_completed: boolean
           organization_id: string
+          role_title: string | null
         }
         Insert: {
           avatar_url?: string | null
           created_at?: string
+          display_name?: string | null
           full_name: string
           id: string
+          onboarding_completed?: boolean
           organization_id: string
+          role_title?: string | null
         }
         Update: {
           avatar_url?: string | null
           created_at?: string
+          display_name?: string | null
           full_name?: string
           id?: string
+          onboarding_completed?: boolean
           organization_id?: string
+          role_title?: string | null
         }
         Relationships: [
           {

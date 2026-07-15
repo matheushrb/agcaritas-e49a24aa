@@ -26,7 +26,7 @@ const primaryNav = [
 const sideIcons = [
   { to: "/dashboard", icon: LayoutGrid, label: "Dashboard" },
   { to: "/team", icon: User, label: "Time" },
-  { to: "/finance", icon: PieChart, label: "Financeiro", badge: "PRO" as const },
+  { to: "/finance", icon: PieChart, label: "Financeiro" },
   { to: "/notifications", icon: Bell, label: "Notificações" },
   { to: "/calendar", icon: Calendar, label: "Agenda" },
   { to: "/inbox", icon: Inbox, label: "Caixa de entrada" },
@@ -60,11 +60,6 @@ export function AppShell({ children }: { children: ReactNode }) {
               style={active ? { backgroundColor: "var(--sidebar-active)", color: "var(--primary-foreground)" } : undefined}
             >
               <Icon className={`h-5 w-5 ${active ? "" : "text-sidebar-foreground group-hover:text-foreground"}`} />
-              {item.badge && (
-                <span className="absolute -right-1 -top-1 rounded-full bg-success px-1.5 py-0.5 text-[9px] font-bold text-success-foreground">
-                  {item.badge}
-                </span>
-              )}
             </Link>
           );
         })}
@@ -80,7 +75,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       </aside>
 
       {/* Main content, padded left to make room for floating sidebar */}
-      <div className="md:pl-24 px-4 py-6 sm:px-6 lg:px-8">
+      <div className="pl-4 pr-4 sm:pl-6 sm:pr-6 md:pl-24 lg:pl-28 lg:pr-8 py-6">
         <TopBar theme={theme} onToggleTheme={setTheme} pathname={pathname} />
         <main className="mt-6">
           {children}

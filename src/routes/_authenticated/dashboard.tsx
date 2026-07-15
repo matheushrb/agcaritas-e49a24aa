@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
-  head: () => ({ meta: [{ title: "Dashboard · Pixie Pro" }] }),
+  head: () => ({ meta: [{ title: "Dashboard · Caritas Agência" }] }),
   component: DashboardPage,
 });
 
@@ -30,7 +30,11 @@ const profileQuery = {
   queryFn: async () => {
     const { data: userRes } = await supabase.auth.getUser();
     if (!userRes.user) return null;
-    const { data } = await supabase.from("profiles").select("full_name, organization_id").eq("id", userRes.user.id).maybeSingle();
+    const { data } = await supabase
+      .from("profiles")
+      .select("full_name, display_name, role_title, organization_id")
+      .eq("id", userRes.user.id)
+      .maybeSingle();
     return { user: userRes.user, profile: data };
   },
 };
@@ -61,31 +65,37 @@ const dashboardQuery = {
 function DashboardContent() {
   const { data: me } = useSuspenseQuery(profileQuery);
   const { data } = useSuspenseQuery(dashboardQuery);
-  const firstName = me?.profile?.full_name?.split(" ")[0] ?? "por aí";
+  const profile = me?.profile as any;
+  const displayName =
+    profile?.display_name?.trim() ||
+    profile?.full_name?.trim().split(" ")[0] ||
+    me?.user?.user_metadata?.full_name?.split(" ")[0] ||
+    me?.user?.email?.split("@")[0] ||
+    "por aí";
+  const firstName = displayName;
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-5">
-      {/* Header greeting + 3 quick cards */}
+      {/* Header greeting + 3 inline quick actions */}
       <section className="lg:col-span-8 space-y-5">
-        <div className="grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_auto] gap-6 items-end">
+        <div className="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
           <div className="min-w-0">
             <h1 className="font-display text-3xl md:text-4xl font-bold leading-tight">
               Olá, {firstName}!<br />
-              Quais são seus planos<br className="hidden md:inline" /> para hoje?
+              Quais são seus planos para hoje?
             </h1>
             <p className="mt-3 text-sm text-muted-foreground max-w-md">
-              O ERP da sua agência: organize leads, propostas, projetos e faturamento em um único painel.
+              O ERP da Caritas Agência: organize leads, propostas, projetos e faturamento em um único painel.
             </p>
           </div>
-        </div>
-
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
-          <QuickAddCard />
-          <QuickCard title="Organizar" desc="Estrutura clara para seus planos." icon={FolderKanban} />
-          <QuickCard title="Sincronizar" desc="Tudo do lead ao faturamento." icon={TrendingUp} />
-          <QuickCard title="Colaborar" desc="Compartilhe com o time." icon={Users} />
+          <div className="flex flex-wrap gap-2 shrink-0">
+            <InlineActionButton title="Organizar" icon={FolderKanban} />
+            <InlineActionButton title="Sincronizar" icon={TrendingUp} />
+            <InlineActionButton title="Colaborar" icon={Users} />
+          </div>
         </div>
       </section>
+
 
       {/* Right column: Calendar + agenda */}
       <section className="lg:col-span-4 lg:row-span-2">
@@ -204,27 +214,14 @@ function DashboardContent() {
         </Card>
       </section>
 
-      {/* Go premium */}
-      <section className="lg:col-span-4 grid grid-cols-1 gap-4">
-        <Card className="p-5 rounded-4xl bg-primary text-primary-foreground relative overflow-hidden">
-          <div className="absolute -right-8 -bottom-8 h-40 w-40 rounded-full bg-primary-glow/40 blur-2xl" />
-          <div className="relative">
-            <div className="grid h-12 w-12 place-items-center rounded-2xl bg-primary-foreground/15 backdrop-blur">
-              <Sparkles className="h-6 w-6" />
-            </div>
-            <h3 className="mt-6 font-display text-xl font-bold">Vá para o Premium!</h3>
-            <p className="mt-1 text-sm text-primary-foreground/80">
-              Recursos avançados para escalar sua agência.
-            </p>
-            <Button variant="secondary" className="mt-4 rounded-full">Saber mais</Button>
-          </div>
-        </Card>
-
-        <div className="grid grid-cols-2 gap-3">
+      {/* KPIs */}
+      <section className="lg:col-span-4">
+        <div className="grid grid-cols-2 gap-3 h-full">
           <KpiRing label="PROPOSTAS" percent={proposalsRate(data.proposals)} note="taxa de conversão" tone="success" />
           <KpiRing label="FATURAMENTO" percent={65} note="da meta do mês" tone="destructive" />
         </div>
       </section>
+
 
       {/* Next meeting */}
       <section className="lg:col-span-8">
@@ -258,27 +255,17 @@ function DashboardContent() {
   );
 }
 
-function QuickAddCard() {
+function InlineActionButton({ title, icon: Icon }: { title: string; icon: any }) {
   return (
-    <button className="group grid place-items-center aspect-square rounded-4xl border-2 border-dashed border-border bg-transparent hover:border-primary transition-colors">
-      <div className="grid h-12 w-12 place-items-center rounded-2xl bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
-        <Plus className="h-5 w-5" />
-      </div>
+    <button
+      type="button"
+      className="group inline-flex items-center gap-2 rounded-full border border-border bg-card px-3.5 py-2 text-sm font-medium text-foreground shadow-sm transition hover:border-primary/50 hover:bg-primary/5"
+    >
+      <span className="grid h-7 w-7 place-items-center rounded-full bg-primary/10 text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
+        <Icon className="h-3.5 w-3.5" />
+      </span>
+      {title}
     </button>
-  );
-}
-
-function QuickCard({ title, desc, icon: Icon }: { title: string; desc: string; icon: any }) {
-  return (
-    <Card className="card-surface p-4 flex flex-col justify-between aspect-square">
-      <div className="grid h-11 w-11 place-items-center rounded-2xl bg-primary/10 text-primary">
-        <Icon className="h-5 w-5" />
-      </div>
-      <div>
-        <p className="font-display font-semibold text-sm">{title}</p>
-        <p className="text-xs text-muted-foreground line-clamp-2">{desc}</p>
-      </div>
-    </Card>
   );
 }
 
