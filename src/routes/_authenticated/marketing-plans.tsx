@@ -6,10 +6,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Megaphone, Plus, Search, Calendar } from "lucide-react";
+import { EntityDialog, DialogField, DialogCancelButton } from "@/components/entity-dialog";
+import { Megaphone, Plus, Search, Calendar, Rocket } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/marketing-plans")({
@@ -159,27 +159,57 @@ function NewPlanDialog({ open, onOpenChange, clients, onCreate }: {
   open: boolean; onOpenChange: (v: boolean) => void; clients: Client[]; onCreate: (v: Partial<Plan>) => void;
 }) {
   const [f, setF] = useState<Partial<Plan>>({ status: "draft" });
+  const [briefing, setBriefing] = useState("");
+  const clientName = clients.find(c => c.id === f.client_id)?.name;
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader><DialogTitle>Novo plano de marketing</DialogTitle></DialogHeader>
-        <div className="space-y-3">
-          <Input placeholder="Nome do plano" value={f.name ?? ""} onChange={e => setF({ ...f, name: e.target.value })} />
-          <Input placeholder="Segmento (ex.: e-commerce, saúde…)" value={f.segment ?? ""} onChange={e => setF({ ...f, segment: e.target.value })} />
-          <Select value={f.client_id ?? undefined} onValueChange={(v) => setF({ ...f, client_id: v })}>
-            <SelectTrigger><SelectValue placeholder="Cliente (opcional)" /></SelectTrigger>
-            <SelectContent>{clients.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
-          </Select>
-          <div className="grid grid-cols-2 gap-3">
-            <Input type="date" value={f.start_date ?? ""} onChange={e => setF({ ...f, start_date: e.target.value })} />
-            <Input type="date" value={f.end_date ?? ""} onChange={e => setF({ ...f, end_date: e.target.value })} />
+    <EntityDialog
+      open={open} onOpenChange={onOpenChange}
+      icon={Rocket} tone="pink"
+      eyebrow="Marketing"
+      title="Novo plano de marketing"
+      subtitle="Ao aprovar, um projeto é criado automaticamente."
+      main={
+        <>
+          <DialogField label="Nome do plano">
+            <Input placeholder="Ex.: Lançamento Bella Estética · Verão 26" value={f.name ?? ""} onChange={e => setF({ ...f, name: e.target.value })} autoFocus />
+          </DialogField>
+          <DialogField label="Segmento" hint="Setor de mercado ou nicho principal.">
+            <Input placeholder="Ex.: e-commerce, saúde, educação…" value={f.segment ?? ""} onChange={e => setF({ ...f, segment: e.target.value })} />
+          </DialogField>
+          <DialogField label="Briefing inicial">
+            <Textarea rows={4} placeholder="Objetivos, canais, público, metas de KPI…" value={briefing} onChange={e => setBriefing(e.target.value)} />
+          </DialogField>
+        </>
+      }
+      sidebar={
+        <>
+          <DialogField label="Cliente">
+            <Select value={f.client_id ?? undefined} onValueChange={(v) => setF({ ...f, client_id: v })}>
+              <SelectTrigger><SelectValue placeholder="Selecionar…" /></SelectTrigger>
+              <SelectContent>{clients.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
+            </Select>
+          </DialogField>
+          <div className="grid grid-cols-2 gap-2">
+            <DialogField label="Início"><Input type="date" value={f.start_date ?? ""} onChange={e => setF({ ...f, start_date: e.target.value })} /></DialogField>
+            <DialogField label="Fim"><Input type="date" value={f.end_date ?? ""} onChange={e => setF({ ...f, end_date: e.target.value })} /></DialogField>
           </div>
-        </div>
-        <DialogFooter>
-          <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancelar</Button>
-          <Button onClick={() => onCreate(f)} disabled={!f.name}>Criar</Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+          <div className="rounded-lg border p-3 bg-pink-500/5">
+            <div className="text-[11px] uppercase tracking-wider text-muted-foreground mb-1">Resumo</div>
+            <p className="text-xs">
+              <span className="font-medium">{f.name || "Sem título"}</span>
+              {clientName && <> · {clientName}</>}
+              {f.segment && <> · {f.segment}</>}
+            </p>
+          </div>
+        </>
+      }
+      footer={
+        <>
+          <DialogCancelButton onClick={() => onOpenChange(false)} />
+          <Button className="rounded-full" onClick={() => onCreate(f)} disabled={!f.name}>Criar plano</Button>
+        </>
+      }
+    />
   );
 }
