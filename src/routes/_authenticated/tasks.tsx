@@ -462,7 +462,7 @@ function TaskModal({ task, onClose }: { task: Task | null; onClose: () => void }
                       <Paperclip className="h-6 w-6 mx-auto text-muted-foreground" />
                       <div className="text-sm font-medium">Arraste arquivos ou clique para enviar</div>
                       <div className="text-xs text-muted-foreground">PDF, PNG, JPG, MP4, PSD, AI — até 50 MB</div>
-                      <Button variant="outline" size="sm" className="rounded-full mt-2">Selecionar arquivo</Button>
+                      <Button variant="outline" size="sm" className="rounded-full mt-2" onClick={() => toast.info("Upload de anexos chega em breve.")}>Selecionar arquivo</Button>
                     </Card>
                     <div className="mt-3 text-xs text-muted-foreground">
                       Uploads por plataforma (Instagram, TikTok, Meta Ads) serão vinculados quando o módulo de Plataformas estiver ativo em Configurações.
@@ -473,7 +473,7 @@ function TaskModal({ task, onClose }: { task: Task | null; onClose: () => void }
                     <Card className="rounded-2xl p-3">
                       <Textarea placeholder="Escreva um comentário… @mencione um membro" rows={2} className="rounded-xl border-none focus-visible:ring-0 resize-none" />
                       <div className="flex justify-end mt-2">
-                        <Button size="sm" className="rounded-full">Comentar</Button>
+                        <Button size="sm" className="rounded-full" onClick={() => toast.info("Comentários em tarefas chegam em breve.")}>Comentar</Button>
                       </div>
                     </Card>
                     <div className="text-xs text-muted-foreground text-center py-6">Nenhum comentário ainda.</div>

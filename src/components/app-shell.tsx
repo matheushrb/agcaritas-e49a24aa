@@ -149,14 +149,23 @@ function TopBar({
             <Moon className="h-3.5 w-3.5" /> Escuro
           </button>
         </div>
-        <Button variant="ghost" size="icon" className="rounded-full"><Bell className="h-4 w-4" /></Button>
-        <Button variant="ghost" size="icon" className="rounded-full"><Settings className="h-4 w-4" /></Button>
-        <Button variant="outline" size="sm" className="hidden md:inline-flex rounded-full gap-2">
+        <Button asChild variant="ghost" size="icon" className="rounded-full" aria-label="Notificações">
+          <Link to="/notifications"><Bell className="h-4 w-4" /></Link>
+        </Button>
+        <Button asChild variant="ghost" size="icon" className="rounded-full" aria-label="Configurações">
+          <Link to="/team"><Settings className="h-4 w-4" /></Link>
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          className="hidden md:inline-flex rounded-full gap-2"
+          onClick={() => import("sonner").then(({ toast }) => toast.info("Exportação em XLS chega na próxima versão."))}
+        >
           <Download className="h-4 w-4" /> Exportar
           <span className="ml-1 rounded-md bg-primary/10 px-1.5 py-0.5 text-[10px] font-bold text-primary">xls</span>
         </Button>
-        <Button size="sm" className="rounded-full gap-1.5">
-          <Plus className="h-4 w-4" /> Novo projeto
+        <Button asChild size="sm" className="rounded-full gap-1.5">
+          <Link to="/projects"><Plus className="h-4 w-4" /> Novo projeto</Link>
         </Button>
       </div>
     </header>

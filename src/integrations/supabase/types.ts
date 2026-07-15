@@ -1057,6 +1057,103 @@ export type Database = {
           },
         ]
       }
+      project_action_items: {
+        Row: {
+          assignee_id: string | null
+          created_at: string
+          description: string | null
+          due_date: string | null
+          id: string
+          order_index: number
+          organization_id: string
+          project_id: string
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          assignee_id?: string | null
+          created_at?: string
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          order_index?: number
+          organization_id: string
+          project_id: string
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          assignee_id?: string | null
+          created_at?: string
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          order_index?: number
+          organization_id?: string
+          project_id?: string
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_action_items_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_benchmarks: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          notes: string | null
+          organization_id: string
+          project_id: string
+          strengths: string | null
+          updated_at: string
+          url: string | null
+          weaknesses: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          notes?: string | null
+          organization_id: string
+          project_id: string
+          strengths?: string | null
+          updated_at?: string
+          url?: string | null
+          weaknesses?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          notes?: string | null
+          organization_id?: string
+          project_id?: string
+          strengths?: string | null
+          updated_at?: string
+          url?: string | null
+          weaknesses?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_benchmarks_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       project_personas: {
         Row: {
           age: number | null
@@ -1164,46 +1261,73 @@ export type Database = {
       }
       projects: {
         Row: {
+          billing_model: string | null
           client_id: string | null
+          contract_id: string | null
           created_at: string
           description: string | null
           end_date: string | null
+          fixed_value: number | null
           id: string
           marketing_plan_id: string | null
           name: string
+          notes: string | null
           organization_id: string
+          other_budgets: Json | null
           owner_id: string | null
+          project_type: string | null
+          scope_flags: Json | null
           start_date: string | null
           status: Database["public"]["Enums"]["project_status"]
+          traffic_budget: Json | null
           updated_at: string
+          urgency: string | null
         }
         Insert: {
+          billing_model?: string | null
           client_id?: string | null
+          contract_id?: string | null
           created_at?: string
           description?: string | null
           end_date?: string | null
+          fixed_value?: number | null
           id?: string
           marketing_plan_id?: string | null
           name: string
+          notes?: string | null
           organization_id: string
+          other_budgets?: Json | null
           owner_id?: string | null
+          project_type?: string | null
+          scope_flags?: Json | null
           start_date?: string | null
           status?: Database["public"]["Enums"]["project_status"]
+          traffic_budget?: Json | null
           updated_at?: string
+          urgency?: string | null
         }
         Update: {
+          billing_model?: string | null
           client_id?: string | null
+          contract_id?: string | null
           created_at?: string
           description?: string | null
           end_date?: string | null
+          fixed_value?: number | null
           id?: string
           marketing_plan_id?: string | null
           name?: string
+          notes?: string | null
           organization_id?: string
+          other_budgets?: Json | null
           owner_id?: string | null
+          project_type?: string | null
+          scope_flags?: Json | null
           start_date?: string | null
           status?: Database["public"]["Enums"]["project_status"]
+          traffic_budget?: Json | null
           updated_at?: string
+          urgency?: string | null
         }
         Relationships: [
           {
@@ -1211,6 +1335,13 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projects_contract_id_fkey"
+            columns: ["contract_id"]
+            isOneToOne: false
+            referencedRelation: "contracts"
             referencedColumns: ["id"]
           },
           {
