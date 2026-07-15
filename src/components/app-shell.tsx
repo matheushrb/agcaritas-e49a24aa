@@ -100,7 +100,7 @@ function TopBar({
           <div className="grid h-9 w-9 place-items-center rounded-xl bg-primary text-primary-foreground">
             <Sparkles className="h-4 w-4" />
           </div>
-          <span className="font-display text-lg font-bold hidden sm:inline">Pixie</span>
+          <span className="font-display text-lg font-bold hidden sm:inline">Caritas</span>
         </Link>
         <nav className="hidden lg:flex items-center gap-6 text-sm">
           {[
