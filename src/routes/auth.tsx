@@ -137,7 +137,7 @@ function AuthPage() {
             </div>
             <h1 className="font-display text-5xl font-bold leading-[1.05] tracking-tight">
               Do primeiro lead <br />
-              <span className="bg-gradient-to-r from-primary via-primary-glow to-primary bg-clip-text text-transparent">
+              <span className="text-primary">
                 até a última fatura.
               </span>
             </h1>
