@@ -208,27 +208,14 @@ function DashboardContent() {
         </Card>
       </section>
 
-      {/* Go premium */}
-      <section className="lg:col-span-4 grid grid-cols-1 gap-4">
-        <Card className="p-5 rounded-4xl bg-primary text-primary-foreground relative overflow-hidden">
-          <div className="absolute -right-8 -bottom-8 h-40 w-40 rounded-full bg-primary-glow/40 blur-2xl" />
-          <div className="relative">
-            <div className="grid h-12 w-12 place-items-center rounded-2xl bg-primary-foreground/15 backdrop-blur">
-              <Sparkles className="h-6 w-6" />
-            </div>
-            <h3 className="mt-6 font-display text-xl font-bold">Vá para o Premium!</h3>
-            <p className="mt-1 text-sm text-primary-foreground/80">
-              Recursos avançados para escalar sua agência.
-            </p>
-            <Button variant="secondary" className="mt-4 rounded-full">Saber mais</Button>
-          </div>
-        </Card>
-
-        <div className="grid grid-cols-2 gap-3">
+      {/* KPIs */}
+      <section className="lg:col-span-4">
+        <div className="grid grid-cols-2 gap-3 h-full">
           <KpiRing label="PROPOSTAS" percent={proposalsRate(data.proposals)} note="taxa de conversão" tone="success" />
           <KpiRing label="FATURAMENTO" percent={65} note="da meta do mês" tone="destructive" />
         </div>
       </section>
+
 
       {/* Next meeting */}
       <section className="lg:col-span-8">
