@@ -6,10 +6,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Search, Plus, Briefcase, Calendar, Users } from "lucide-react";
+import { EntityDialog, DialogField, DialogCancelButton } from "@/components/entity-dialog";
+import { Search, Plus, Briefcase, Calendar, Users, FolderPlus } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
@@ -266,49 +266,65 @@ function NewProjectDialog({
     setName(""); setClientId("none"); setDescription("");
     setStatus("planning"); setStart(""); setEnd("");
   };
+  const handleOpenChange = (v: boolean) => { onOpenChange(v); if (!v) reset(); };
+  const clientName = clientId === "none" ? "Sem cliente" : clients.find(c => c.id === clientId)?.name;
 
   return (
-    <Dialog open={open} onOpenChange={v => { onOpenChange(v); if (!v) reset(); }}>
-      <DialogContent className="rounded-2xl sm:max-w-lg">
-        <DialogHeader><DialogTitle>Novo projeto</DialogTitle></DialogHeader>
-        <div className="space-y-3">
-          <Field label="Nome">
-            <Input value={name} onChange={e => setName(e.target.value)} placeholder="Ex: Rebrand Bella Estética" autoFocus />
-          </Field>
+    <EntityDialog
+      open={open} onOpenChange={handleOpenChange}
+      icon={FolderPlus} tone="blue"
+      eyebrow="Projetos"
+      title="Novo projeto"
+      subtitle="Escopo, cliente e cronograma inicial."
+      size="lg"
+      main={
+        <>
+          <DialogField label="Nome do projeto">
+            <Input value={name} onChange={e => setName(e.target.value)} placeholder="Ex.: Rebrand Bella Estética" autoFocus />
+          </DialogField>
+          <DialogField label="Descrição" hint="Escopo, objetivo e entregáveis principais.">
+            <Textarea value={description} onChange={e => setDescription(e.target.value)} rows={5}
+              placeholder="Ex.: Reposicionamento visual, novo site institucional, kit de mídias sociais…" />
+          </DialogField>
           <div className="grid grid-cols-2 gap-3">
-            <Field label="Cliente">
-              <Select value={clientId} onValueChange={setClientId}>
-                <SelectTrigger><SelectValue placeholder="Selecionar" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">Sem cliente</SelectItem>
-                  {clients.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </Field>
-            <Field label="Status">
-              <Select value={status} onValueChange={v => setStatus(v as ProjectStatus)}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {(Object.keys(STATUS_META) as ProjectStatus[]).map(s => (
-                    <SelectItem key={s} value={s}>{STATUS_META[s].label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </Field>
+            <DialogField label="Início"><Input type="date" value={start} onChange={e => setStart(e.target.value)} /></DialogField>
+            <DialogField label="Prazo final"><Input type="date" value={end} onChange={e => setEnd(e.target.value)} /></DialogField>
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            <Field label="Início"><Input type="date" value={start} onChange={e => setStart(e.target.value)} /></Field>
-            <Field label="Prazo final"><Input type="date" value={end} onChange={e => setEnd(e.target.value)} /></Field>
+        </>
+      }
+      sidebar={
+        <>
+          <DialogField label="Cliente">
+            <Select value={clientId} onValueChange={setClientId}>
+              <SelectTrigger><SelectValue placeholder="Selecionar" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">Sem cliente</SelectItem>
+                {clients.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </DialogField>
+          <DialogField label="Status inicial">
+            <Select value={status} onValueChange={v => setStatus(v as ProjectStatus)}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {(Object.keys(STATUS_META) as ProjectStatus[]).map(s => (
+                  <SelectItem key={s} value={s}>{STATUS_META[s].label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </DialogField>
+          <div className="rounded-lg border p-3 bg-blue-500/5">
+            <div className="text-[11px] uppercase tracking-wider text-muted-foreground mb-1">Prévia</div>
+            <div className="text-sm font-medium truncate">{name || "Sem título"}</div>
+            <div className="text-xs text-muted-foreground truncate">{clientName}</div>
+            {(start || end) && <div className="text-xs text-muted-foreground mt-1">{start || "—"} → {end || "—"}</div>}
           </div>
-          <Field label="Descrição">
-            <Textarea value={description} onChange={e => setDescription(e.target.value)} rows={3} placeholder="Escopo, objetivo, entregáveis..." />
-          </Field>
-        </div>
-        <DialogFooter>
-          <Button variant="outline" className="rounded-full" onClick={() => onOpenChange(false)}>Cancelar</Button>
-          <Button
-            className="rounded-full"
-            disabled={!name.trim() || pending}
+        </>
+      }
+      footer={
+        <>
+          <DialogCancelButton onClick={() => handleOpenChange(false)} />
+          <Button className="rounded-full" disabled={!name.trim() || pending}
             onClick={() => onCreate({
               name: name.trim(),
               client_id: clientId === "none" ? null : clientId,
@@ -316,19 +332,9 @@ function NewProjectDialog({
               status,
               start_date: start || null,
               end_date: end || null,
-            })}
-          >Criar projeto</Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <label className="block space-y-1">
-      <span className="text-xs font-medium text-muted-foreground">{label}</span>
-      {children}
-    </label>
+            })}>Criar projeto</Button>
+        </>
+      }
+    />
   );
 }
