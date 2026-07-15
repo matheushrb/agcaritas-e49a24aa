@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { EntityDialog, DialogField, DialogCancelButton } from "@/components/entity-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Calendar as CalendarIcon, Plus, ChevronLeft, ChevronRight } from "lucide-react";
@@ -196,35 +196,66 @@ function NewEventDialog({ open, onOpenChange, defaultDate, onCreate }: {
   const [endTime, setEndTime] = useState("10:00");
   const [kind, setKind] = useState<EventKind>("meeting");
 
+  const kindColor = KIND_META[kind]?.color ?? "bg-muted";
+  const durationMin = (() => {
+    const [sh, sm] = startTime.split(":").map(Number);
+    const [eh, em] = endTime.split(":").map(Number);
+    return Math.max(0, eh * 60 + em - (sh * 60 + sm));
+  })();
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader><DialogTitle>Novo evento</DialogTitle></DialogHeader>
-        <div className="space-y-3">
-          <Input placeholder="Título" value={title} onChange={e => setTitle(e.target.value)} />
-          <div className="grid grid-cols-3 gap-2">
-            <Input type="date" value={date} onChange={e => setDate(e.target.value)} />
-            <Input type="time" value={startTime} onChange={e => setStartTime(e.target.value)} />
-            <Input type="time" value={endTime} onChange={e => setEndTime(e.target.value)} />
+    <EntityDialog
+      open={open} onOpenChange={onOpenChange}
+      icon={CalendarIcon} tone="blue"
+      eyebrow="Agenda"
+      title="Novo evento"
+      subtitle="Reuniões, entregas e compromissos internos."
+      main={
+        <>
+          <DialogField label="Título">
+            <Input placeholder="Ex.: Kickoff cliente Bella Estética" value={title} onChange={e => setTitle(e.target.value)} autoFocus />
+          </DialogField>
+          <div className="grid grid-cols-3 gap-3">
+            <DialogField label="Data"><Input type="date" value={date} onChange={e => setDate(e.target.value)} /></DialogField>
+            <DialogField label="Início"><Input type="time" value={startTime} onChange={e => setStartTime(e.target.value)} /></DialogField>
+            <DialogField label="Término"><Input type="time" value={endTime} onChange={e => setEndTime(e.target.value)} /></DialogField>
           </div>
-          <Select value={kind} onValueChange={(v) => setKind(v as EventKind)}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
-            <SelectContent>
-              {Object.entries(KIND_META).map(([k, m]) => <SelectItem key={k} value={k}>{m.label}</SelectItem>)}
-            </SelectContent>
-          </Select>
-          <Textarea placeholder="Descrição (opcional)" value={description} onChange={e => setDescription(e.target.value)} />
-        </div>
-        <DialogFooter>
-          <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancelar</Button>
-          <Button onClick={() => onCreate({
+          <DialogField label="Descrição">
+            <Textarea rows={4} placeholder="Agenda, pauta, links de reunião…" value={description} onChange={e => setDescription(e.target.value)} />
+          </DialogField>
+        </>
+      }
+      sidebar={
+        <>
+          <DialogField label="Tipo">
+            <Select value={kind} onValueChange={(v) => setKind(v as EventKind)}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {Object.entries(KIND_META).map(([k, m]) => <SelectItem key={k} value={k}>{m.label}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </DialogField>
+          <div className="rounded-lg border p-3">
+            <div className="text-[11px] uppercase tracking-wider text-muted-foreground mb-1">Prévia</div>
+            <Badge className={kindColor}>{KIND_META[kind]?.label}</Badge>
+            <div className="text-xs text-muted-foreground mt-2">
+              {new Date(date).toLocaleDateString("pt-BR", { weekday: "short", day: "2-digit", month: "short" })}
+              <br />{startTime} – {endTime} · {durationMin} min
+            </div>
+          </div>
+        </>
+      }
+      footer={
+        <>
+          <DialogCancelButton onClick={() => onOpenChange(false)} />
+          <Button className="rounded-full" onClick={() => onCreate({
             title, description,
             starts_at: new Date(`${date}T${startTime}:00`).toISOString(),
             ends_at: endTime ? new Date(`${date}T${endTime}:00`).toISOString() : null,
             kind,
-          })} disabled={!title}>Criar</Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+          })} disabled={!title}>Criar evento</Button>
+        </>
+      }
+    />
   );
 }
