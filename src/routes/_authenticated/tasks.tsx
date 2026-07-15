@@ -137,7 +137,7 @@ function TasksPage() {
   };
 
   return (
-    <AppShell>
+    <>
       <div className="space-y-6">
         <header className="flex flex-wrap items-end justify-between gap-4">
           <div>
@@ -146,7 +146,7 @@ function TasksPage() {
           </div>
           <Button
             className="rounded-full gap-1.5"
-            onClick={() => createTask.mutate({ title: "Nova tarefa", status: "todo" })}
+            onClick={() => { setNewTitle(""); setNewStatus("todo"); setNewPriority("medium"); setNewOpen(true); }}
           >
             <Plus className="h-4 w-4" /> Nova tarefa
           </Button>
