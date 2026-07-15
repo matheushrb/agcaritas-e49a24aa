@@ -1,8 +1,7 @@
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
 import {
-  LayoutGrid, User, PieChart, Bell, Calendar, Inbox, ClipboardList,
-  MessageCircle, Search, Settings, Download, Plus, Moon, Sun, Sparkles, LogOut,
-  Users, FileText, FileSignature, Target, Briefcase, DollarSign, UsersRound,
+  LayoutGrid, Users, FileText, Briefcase, DollarSign, Calendar, UsersRound,
+  Search, Settings, Moon, Sun, Sparkles, LogOut, Bell,
 } from "lucide-react";
 import type { ReactNode } from "react";
 import { Button } from "@/components/ui/button";
@@ -10,29 +9,17 @@ import { Input } from "@/components/ui/input";
 import { useTheme } from "@/components/theme-provider";
 import { supabase } from "@/integrations/supabase/client";
 
-const primaryNav = [
-  { to: "/dashboard", label: "Dashboard", icon: LayoutGrid },
-  { to: "/crm", label: "CRM", icon: Users },
-  { to: "/proposals", label: "Propostas", icon: FileText },
-  { to: "/contracts", label: "Contratos", icon: FileSignature },
-  { to: "/marketing-plans", label: "Planos", icon: Target },
-  { to: "/projects", label: "Projetos", icon: Briefcase },
-  { to: "/tasks", label: "Tarefas", icon: ClipboardList },
-  { to: "/finance", label: "Financeiro", icon: DollarSign },
-  { to: "/team", label: "Time", icon: UsersRound },
-];
-
-// Compact side nav (as-literal-to-the-reference sidebar)
+// Sidebar principal — 7 ícones conforme documento Pixie v2 (Dashboard, CRM,
+// Propostas, Projetos, Financeiro, Agenda, RH). Configurações no rodapé.
 const sideIcons = [
-  { to: "/dashboard", icon: LayoutGrid, label: "Dashboard" },
-  { to: "/team", icon: User, label: "Time" },
-  { to: "/finance", icon: PieChart, label: "Financeiro" },
-  { to: "/notifications", icon: Bell, label: "Notificações" },
-  { to: "/calendar", icon: Calendar, label: "Agenda" },
-  { to: "/inbox", icon: Inbox, label: "Caixa de entrada" },
-  { to: "/tasks", icon: ClipboardList, label: "Tarefas" },
-  { to: "/messages", icon: MessageCircle, label: "Mensagens" },
-];
+  { to: "/dashboard",  icon: LayoutGrid, label: "Dashboard" },
+  { to: "/crm",        icon: Users,      label: "CRM" },
+  { to: "/proposals",  icon: FileText,   label: "Propostas" },
+  { to: "/projects",   icon: Briefcase,  label: "Projetos" },
+  { to: "/finance",    icon: DollarSign, label: "Financeiro" },
+  { to: "/calendar",   icon: Calendar,   label: "Agenda" },
+  { to: "/team",       icon: UsersRound, label: "RH" },
+] as const;
 
 export function AppShell({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
@@ -63,7 +50,15 @@ export function AppShell({ children }: { children: ReactNode }) {
             </Link>
           );
         })}
-        <div className="mt-auto">
+        <div className="mt-auto flex flex-col items-center gap-1">
+          <Link
+            to="/settings"
+            title="Configurações"
+            className="grid h-11 w-11 place-items-center rounded-2xl transition-colors"
+            style={pathname.startsWith("/settings") ? { backgroundColor: "var(--sidebar-active)", color: "var(--primary-foreground)" } : undefined}
+          >
+            <Settings className={`h-5 w-5 ${pathname.startsWith("/settings") ? "" : "text-sidebar-foreground hover:text-foreground"}`} />
+          </Link>
           <button
             onClick={handleSignOut}
             className="grid h-11 w-11 place-items-center rounded-2xl text-sidebar-foreground hover:text-destructive"
@@ -97,28 +92,9 @@ function TopBar({
           </div>
           <span className="font-display text-lg font-bold hidden sm:inline">Caritas</span>
         </Link>
-        <nav className="hidden lg:flex items-center gap-6 text-sm">
-          {[
-            { to: "/dashboard", label: "Dashboard" },
-            { to: "/projects", label: "Projetos" },
-            { to: "/crm", label: "CRM" },
-          ].map(link => {
-            const active = pathname.startsWith(link.to);
-            return (
-              <Link
-                key={link.to}
-                to={link.to}
-                className={`relative py-1 ${active ? "text-foreground font-semibold" : "text-muted-foreground hover:text-foreground"}`}
-              >
-                {link.label}
-                {active && <span className="absolute -bottom-1 left-0 right-0 h-0.5 rounded-full bg-primary" />}
-              </Link>
-            );
-          })}
-        </nav>
         <div className="relative hidden md:block min-w-0 flex-1 max-w-sm">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input placeholder="Buscar ou digite um comando" className="pl-9 bg-card border-border rounded-full" />
+          <Input placeholder="Buscar tarefas, clientes, projetos, propostas..." className="pl-9 bg-card border-border rounded-full" />
         </div>
       </div>
 
@@ -137,15 +113,14 @@ function TopBar({
             <Moon className="h-3.5 w-3.5" /> Escuro
           </button>
         </div>
-        <Button variant="ghost" size="icon" className="rounded-full"><Bell className="h-4 w-4" /></Button>
-        <Button variant="ghost" size="icon" className="rounded-full"><Settings className="h-4 w-4" /></Button>
-        <Button variant="outline" size="sm" className="hidden md:inline-flex rounded-full gap-2">
-          <Download className="h-4 w-4" /> Exportar
-          <span className="ml-1 rounded-md bg-primary/10 px-1.5 py-0.5 text-[10px] font-bold text-primary">xls</span>
-        </Button>
-        <Button size="sm" className="rounded-full gap-1.5">
-          <Plus className="h-4 w-4" /> Novo projeto
-        </Button>
+        <Link to="/notifications" title="Notificações"
+          className={`grid h-9 w-9 place-items-center rounded-full ${pathname.startsWith("/notifications") ? "bg-primary/10 text-primary" : "text-muted-foreground hover:text-foreground"}`}>
+          <Bell className="h-4 w-4" />
+        </Link>
+        <Link to="/settings" title="Configurações"
+          className={`grid h-9 w-9 place-items-center rounded-full ${pathname.startsWith("/settings") ? "bg-primary/10 text-primary" : "text-muted-foreground hover:text-foreground"}`}>
+          <Settings className="h-4 w-4" />
+        </Link>
       </div>
     </header>
   );
