@@ -306,44 +306,78 @@ function NewChargeDialog({ open, onOpenChange, clients, projects, onCreate }: {
   const [clientId, setClientId] = useState<string>("");
   const [projectId, setProjectId] = useState<string>("");
   const [status, setStatus] = useState<ChargeStatus>("pending");
+  const [notes, setNotes] = useState("");
 
-  const reset = () => { setDescription(""); setAmount(""); setDueDate(""); setClientId(""); setProjectId(""); setStatus("pending"); };
+  const reset = () => { setDescription(""); setAmount(""); setDueDate(""); setClientId(""); setProjectId(""); setStatus("pending"); setNotes(""); };
+  const handleOpenChange = (v: boolean) => { onOpenChange(v); if (!v) reset(); };
+
+  const previewAmount = Number(amount || 0);
 
   return (
-    <Dialog open={open} onOpenChange={(v) => { onOpenChange(v); if (!v) reset(); }}>
-      <DialogContent>
-        <DialogHeader><DialogTitle>Novo lançamento</DialogTitle></DialogHeader>
-        <div className="space-y-3">
-          <Input placeholder="Descrição" value={description} onChange={e => setDescription(e.target.value)} />
+    <EntityDialog
+      open={open} onOpenChange={handleOpenChange}
+      icon={Receipt} tone="emerald"
+      eyebrow="Financeiro"
+      title="Novo lançamento"
+      subtitle="Registre uma cobrança, recebimento ou faturamento."
+      main={
+        <>
+          <DialogField label="Descrição">
+            <Input placeholder="Ex.: Mensalidade Bella Estética - Nov/25" value={description}
+              onChange={e => setDescription(e.target.value)} autoFocus />
+          </DialogField>
           <div className="grid grid-cols-2 gap-3">
-            <Input type="number" step="0.01" placeholder="Valor (R$)" value={amount} onChange={e => setAmount(e.target.value)} />
-            <Input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} />
+            <DialogField label="Valor (R$)">
+              <Input type="number" step="0.01" placeholder="0,00" value={amount} onChange={e => setAmount(e.target.value)} />
+            </DialogField>
+            <DialogField label="Vencimento">
+              <Input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} />
+            </DialogField>
           </div>
-          <Select value={clientId} onValueChange={setClientId}>
-            <SelectTrigger><SelectValue placeholder="Cliente (opcional)" /></SelectTrigger>
-            <SelectContent>{clients.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
-          </Select>
-          <Select value={projectId} onValueChange={setProjectId}>
-            <SelectTrigger><SelectValue placeholder="Projeto (opcional)" /></SelectTrigger>
-            <SelectContent>{projects.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}</SelectContent>
-          </Select>
-          <Select value={status} onValueChange={(v) => setStatus(v as ChargeStatus)}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
-            <SelectContent>
-              {(Object.keys(STATUS_META) as ChargeStatus[]).map(s => (
-                <SelectItem key={s} value={s}>{STATUS_META[s].label}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <DialogFooter>
-          <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancelar</Button>
-          <Button onClick={() => onCreate({
-            description, amount: Number(amount || 0), due_date: dueDate || null,
+          <DialogField label="Observações">
+            <Textarea rows={3} placeholder="Notas internas (opcional)" value={notes} onChange={e => setNotes(e.target.value)} />
+          </DialogField>
+          <div className="rounded-xl border bg-emerald-500/5 p-3 flex items-center justify-between">
+            <span className="text-xs text-muted-foreground">Valor previsto</span>
+            <span className="text-lg font-semibold text-emerald-600 dark:text-emerald-400">{money(previewAmount)}</span>
+          </div>
+        </>
+      }
+      sidebar={
+        <>
+          <DialogField label="Status">
+            <Select value={status} onValueChange={(v) => setStatus(v as ChargeStatus)}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {(Object.keys(STATUS_META) as ChargeStatus[]).map(s => (
+                  <SelectItem key={s} value={s}>{STATUS_META[s].label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </DialogField>
+          <DialogField label="Cliente">
+            <Select value={clientId} onValueChange={setClientId}>
+              <SelectTrigger><SelectValue placeholder="Selecionar…" /></SelectTrigger>
+              <SelectContent>{clients.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
+            </Select>
+          </DialogField>
+          <DialogField label="Projeto">
+            <Select value={projectId} onValueChange={setProjectId}>
+              <SelectTrigger><SelectValue placeholder="Selecionar…" /></SelectTrigger>
+              <SelectContent>{projects.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}</SelectContent>
+            </Select>
+          </DialogField>
+        </>
+      }
+      footer={
+        <>
+          <DialogCancelButton onClick={() => handleOpenChange(false)} />
+          <UIButton className="rounded-full" onClick={() => onCreate({
+            description, amount: previewAmount, due_date: dueDate || null,
             client_id: clientId || null, project_id: projectId || null, status,
-          })} disabled={!description || !amount}>Criar</Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+          })} disabled={!description || !amount}>Criar lançamento</UIButton>
+        </>
+      }
+    />
   );
 }
