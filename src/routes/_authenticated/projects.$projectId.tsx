@@ -412,7 +412,7 @@ function StratCard({ title, hint }: { title: string; hint: string }) {
 }
 
 function FinanceTab({ charges }: { charges: Charge[] }) {
-  const invoiced = charges.filter(c => (c.direction ?? "in") !== "out").reduce((s, c) => s + Number(c.amount ?? 0), 0);
+  const invoiced = charges.reduce((s, c) => s + Number(c.amount ?? 0), 0);
   const paid = charges.filter(c => c.status === "paid").reduce((s, c) => s + Number(c.amount ?? 0), 0);
   const pending = invoiced - paid;
 
@@ -431,11 +431,11 @@ function FinanceTab({ charges }: { charges: Charge[] }) {
           {charges.map(c => (
             <li key={c.id} className="px-4 py-3 flex items-center gap-3">
               <div className="min-w-0 flex-1">
-                <div className="truncate text-sm font-medium">{c.title}</div>
+                <div className="truncate text-sm font-medium">{c.description}</div>
                 {c.due_date && <div className="text-xs text-muted-foreground">Vence {new Date(c.due_date).toLocaleDateString("pt-BR")}</div>}
               </div>
               <Badge variant="outline" className="rounded-full">{c.status}</Badge>
-              <span className={cn("text-sm font-medium w-32 text-right", (c.direction ?? "in") === "out" ? "text-red-600 dark:text-red-400" : "text-emerald-600 dark:text-emerald-400")}>
+              <span className="text-sm font-medium w-32 text-right text-emerald-600 dark:text-emerald-400">
                 R$ {Number(c.amount).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
               </span>
             </li>
