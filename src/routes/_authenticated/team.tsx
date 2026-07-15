@@ -6,9 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Users, Plus, Search, Mail, Phone } from "lucide-react";
+import { EntityDialog, DialogField, DialogCancelButton } from "@/components/entity-dialog";
+import { Users, UserPlus, Plus, Search, Mail, Phone } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/team")({
@@ -144,38 +144,73 @@ function NewMemberDialog({ open, onOpenChange, onCreate }: {
   open: boolean; onOpenChange: (v: boolean) => void; onCreate: (v: Partial<Member>) => void;
 }) {
   const [f, setF] = useState<Partial<Member>>({ status: "active", level: "mid" });
+  const initials = (f.name ?? "").split(" ").filter(Boolean).map(n => n[0]).slice(0, 2).join("").toUpperCase() || "?";
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader><DialogTitle>Novo membro</DialogTitle></DialogHeader>
-        <div className="space-y-3">
-          <Input placeholder="Nome completo" value={f.name ?? ""} onChange={e => setF({ ...f, name: e.target.value })} />
+    <EntityDialog
+      open={open} onOpenChange={onOpenChange}
+      icon={UserPlus} tone="purple"
+      eyebrow="RH"
+      title="Novo membro da equipe"
+      subtitle="Cadastre um talento interno com custo por hora e especialidade."
+      main={
+        <>
+          <DialogField label="Nome completo">
+            <Input placeholder="Ex.: Ana Beatriz Souza" value={f.name ?? ""} onChange={e => setF({ ...f, name: e.target.value })} autoFocus />
+          </DialogField>
           <div className="grid grid-cols-2 gap-3">
-            <Input placeholder="E-mail" value={f.email ?? ""} onChange={e => setF({ ...f, email: e.target.value })} />
-            <Input placeholder="Telefone" value={f.phone ?? ""} onChange={e => setF({ ...f, phone: e.target.value })} />
+            <DialogField label="E-mail">
+              <Input type="email" placeholder="ana@empresa.com" value={f.email ?? ""} onChange={e => setF({ ...f, email: e.target.value })} />
+            </DialogField>
+            <DialogField label="Telefone">
+              <Input placeholder="(11) 99999-0000" value={f.phone ?? ""} onChange={e => setF({ ...f, phone: e.target.value })} />
+            </DialogField>
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <Input placeholder="Cargo" value={f.role ?? ""} onChange={e => setF({ ...f, role: e.target.value })} />
-            <Input placeholder="Especialidade" value={f.specialty ?? ""} onChange={e => setF({ ...f, specialty: e.target.value })} />
+            <DialogField label="Cargo">
+              <Input placeholder="Ex.: Designer" value={f.role ?? ""} onChange={e => setF({ ...f, role: e.target.value })} />
+            </DialogField>
+            <DialogField label="Especialidade">
+              <Input placeholder="Ex.: Motion, UI, tráfego pago" value={f.specialty ?? ""} onChange={e => setF({ ...f, specialty: e.target.value })} />
+            </DialogField>
           </div>
-          <div className="grid grid-cols-3 gap-3">
+        </>
+      }
+      sidebar={
+        <>
+          <div className="flex items-center gap-3">
+            <div className="size-14 rounded-full bg-purple-500/15 text-purple-600 dark:text-purple-400 flex items-center justify-center font-semibold text-lg">
+              {initials}
+            </div>
+            <div className="min-w-0">
+              <div className="text-sm font-medium truncate">{f.name || "Novo membro"}</div>
+              <div className="text-xs text-muted-foreground truncate">{f.role || "—"}</div>
+            </div>
+          </div>
+          <DialogField label="Nível">
             <Select value={f.level ?? undefined} onValueChange={(v) => setF({ ...f, level: v as Level })}>
               <SelectTrigger><SelectValue placeholder="Nível" /></SelectTrigger>
               <SelectContent>{Object.entries(LEVEL_LABEL).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}</SelectContent>
             </Select>
+          </DialogField>
+          <DialogField label="Status">
             <Select value={f.status ?? undefined} onValueChange={(v) => setF({ ...f, status: v as Status })}>
               <SelectTrigger><SelectValue placeholder="Status" /></SelectTrigger>
               <SelectContent>{Object.entries(STATUS_LABEL).map(([k, v]) => <SelectItem key={k} value={k}>{v.label}</SelectItem>)}</SelectContent>
             </Select>
-            <Input type="number" step="0.01" placeholder="R$/h"
+          </DialogField>
+          <DialogField label="Custo (R$/h)" hint="Usado para calcular custos de projeto.">
+            <Input type="number" step="0.01" placeholder="0,00"
               value={f.hourly_rate ?? ""} onChange={e => setF({ ...f, hourly_rate: e.target.value ? Number(e.target.value) : null })} />
-          </div>
-        </div>
-        <DialogFooter>
-          <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancelar</Button>
-          <Button onClick={() => onCreate(f)} disabled={!f.name}>Adicionar</Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+          </DialogField>
+        </>
+      }
+      footer={
+        <>
+          <DialogCancelButton onClick={() => onOpenChange(false)} />
+          <Button className="rounded-full" onClick={() => onCreate(f)} disabled={!f.name}>Adicionar membro</Button>
+        </>
+      }
+    />
   );
 }
