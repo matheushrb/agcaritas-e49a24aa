@@ -53,7 +53,7 @@ export function EntityDialog({
         )}
       >
         {/* Header */}
-        <div className={cn("relative px-6 pt-6 pb-5 bg-gradient-to-b", toneMap[tone])}>
+        <div className={cn("relative px-6 pt-6 pb-5", toneMap[tone])}>
           <div className="flex items-start gap-3">
             <div className={cn("size-10 rounded-xl bg-background/80 backdrop-blur flex items-center justify-center shadow-sm")}>
               <Icon className="size-5" />
