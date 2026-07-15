@@ -462,7 +462,7 @@ function TaskModal({ task, onClose }: { task: Task | null; onClose: () => void }
                       <Paperclip className="h-6 w-6 mx-auto text-muted-foreground" />
                       <div className="text-sm font-medium">Arraste arquivos ou clique para enviar</div>
                       <div className="text-xs text-muted-foreground">PDF, PNG, JPG, MP4, PSD, AI — até 50 MB</div>
-                      <Button variant="outline" size="sm" className="rounded-full mt-2">Selecionar arquivo</Button>
+                      <Button variant="outline" size="sm" className="rounded-full mt-2" onClick={() => toast.info("Upload de anexos chega em breve.")}>Selecionar arquivo</Button>
                     </Card>
                     <div className="mt-3 text-xs text-muted-foreground">
                       Uploads por plataforma (Instagram, TikTok, Meta Ads) serão vinculados quando o módulo de Plataformas estiver ativo em Configurações.
