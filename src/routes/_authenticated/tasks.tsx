@@ -398,17 +398,17 @@ export function TaskModal({ task, onClose }: { task: Task | null; onClose: () =>
       if (!value || value <= 0) throw new Error("Defina um valor de faturamento primeiro");
       const { data: profile } = await supabase.from("profiles").select("organization_id").maybeSingle();
       if (!profile?.organization_id) throw new Error("Sem organização");
-      let clientId: string | null = null;
-      if (task.project_id) {
+      let resolvedClient: string | null = task.client_id ?? null;
+      if (!resolvedClient && task.project_id) {
         const { data: proj } = await supabase.from("projects").select("client_id").eq("id", task.project_id).maybeSingle();
-        clientId = (proj?.client_id as string) ?? null;
+        resolvedClient = (proj?.client_id as string) ?? null;
       }
       const today = new Date().toISOString().slice(0, 10);
       const { error } = await supabase.from("charges").insert({
         organization_id: profile.organization_id,
         project_id: task.project_id,
         task_id: task.id,
-        client_id: clientId,
+        client_id: resolvedClient,
         description: `Tarefa: ${task.title}`,
         amount: value,
         status: "pending",
