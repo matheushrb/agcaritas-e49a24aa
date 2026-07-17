@@ -104,20 +104,24 @@ function ProjectsPage() {
   }, [projects]);
 
   const createProject = useMutation({
-    mutationFn: async (input: {
-      name: string; client_id: string | null; description: string; status: ProjectStatus;
-      start_date: string | null; end_date: string | null;
-    }) => {
+    mutationFn: async (input: ProjectWizardValue) => {
       const { data: profile } = await supabase.from("profiles").select("organization_id").maybeSingle();
       if (!profile?.organization_id) throw new Error("Sem organização");
       const { error } = await supabase.from("projects").insert({
+        organization_id: profile.organization_id,
         name: input.name,
         client_id: input.client_id,
         description: input.description || null,
-        status: input.status,
+        status: "planning",
         start_date: input.start_date,
         end_date: input.end_date,
-        organization_id: profile.organization_id,
+        project_type: input.project_type,
+        billing_model: input.billing_model,
+        fixed_value: input.fixed_value,
+        urgency: input.urgency,
+        scope_flags: { ...input.scope_flags, tools: input.tools } as any,
+        traffic_budget: input.traffic_budget as any,
+        other_budgets: input.other_budgets as any,
       });
       if (error) throw error;
     },
