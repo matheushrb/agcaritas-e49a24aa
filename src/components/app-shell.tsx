@@ -1,7 +1,7 @@
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
 import {
   LayoutGrid, Users, FileText, Briefcase, DollarSign, Calendar, UsersRound,
-  Search, Settings, Moon, Sun, Sparkles, LogOut, Bell,
+  Search, Settings, Moon, Sun, Sparkles, LogOut, Bell, CheckSquare,
   Target, Truck, Lightbulb, Megaphone, Grid3x3,
 } from "lucide-react";
 import type { ReactNode } from "react";
