@@ -313,6 +313,7 @@ function createLocalTask(overrides: Partial<Task> = {}): Task {
     estimated_hours: null,
     stage: "creation",
     deliverables: [],
+    subtasks: [],
     created_at: new Date().toISOString(),
     ...overrides,
   };
