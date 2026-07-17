@@ -585,3 +585,57 @@ function StageRow({ stage, canUp, canDown, onMove, onPatch, onDelete }:{
     </li>
   );
 }
+
+function AgencySuggestion({ onApply }: { onApply: (price: number) => void }) {
+  const { data: pricing } = useAgencyPricing();
+  const [open, setOpen] = useState(false);
+  const [hours, setHours] = useState<string>("1");
+  const rate = pricing ? computeAgencyRate(pricing).suggested : 0;
+  const suggested = Math.max(0, (Number(hours) || 0) * rate);
+  const BRL = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button type="button" size="sm" variant="outline" className="rounded-full gap-1 h-9">
+          Preço sugerido
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent align="end" className="w-72 rounded-xl p-3 space-y-3">
+        <div>
+          <div className="text-xs font-semibold">Sugestão pela agência</div>
+          <p className="text-[11px] text-muted-foreground">
+            Baseado na hora sugerida configurada em <b>Precificação</b>.
+          </p>
+        </div>
+        <div className="flex items-center justify-between text-xs">
+          <span className="text-muted-foreground">Hora da agência</span>
+          <span className="tabular-nums font-medium">{BRL(rate)}</span>
+        </div>
+        <div className="space-y-1">
+          <Label className="text-xs">Horas estimadas por tarefa</Label>
+          <Input
+            type="number" min={0} step={0.5}
+            value={hours}
+            onChange={e => setHours(e.target.value)}
+            className="h-9 rounded-lg"
+          />
+        </div>
+        <div className="rounded-lg bg-primary/10 px-3 py-2 flex items-center justify-between">
+          <span className="text-xs text-primary">Preço sugerido</span>
+          <span className="text-sm font-semibold tabular-nums">{BRL(suggested)}</span>
+        </div>
+        <div className="flex justify-end gap-2">
+          <Button size="sm" variant="ghost" className="rounded-full" onClick={() => setOpen(false)}>Cancelar</Button>
+          <Button
+            size="sm"
+            className="rounded-full"
+            disabled={!rate || !suggested}
+            onClick={() => { onApply(Number(suggested.toFixed(2))); setOpen(false); }}
+          >
+            Aplicar
+          </Button>
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
