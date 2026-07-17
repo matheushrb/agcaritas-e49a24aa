@@ -177,9 +177,12 @@ function ClientsPage() {
               <SelectTrigger className="w-[170px] rounded-full"><SelectValue placeholder="Segmento" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todos segmentos</SelectItem>
-                {SEGMENTS.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                {(segments.length ? segments : DEFAULT_SEGMENTS).map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
               </SelectContent>
             </Select>
+            <Button variant="outline" className="rounded-full gap-1.5" onClick={() => setSegmentsOpen(true)}>
+              <Tag className="h-4 w-4" /> Segmentos
+            </Button>
           </div>
         </Card>
 
