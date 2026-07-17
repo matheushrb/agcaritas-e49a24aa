@@ -62,9 +62,9 @@ function SettingsPage() {
         <TabsContent value="agency" className="mt-4"><AgencyTab /></TabsContent>
         <TabsContent value="pricing" className="mt-4"><AgencyPricingTab /></TabsContent>
         <TabsContent value="project-types" className="mt-4">
-          <CatalogEditor table="project_types" title="Tipos de Projeto"
-            hint="Categorias usadas ao criar um projeto (ex.: Marketing, Branding, Site)." />
+          <ProjectTypesEditor />
         </TabsContent>
+
         <TabsContent value="services" className="mt-4"><ComingSoonCard title="Serviços" hint="Catálogo de serviços (nome, valor base, descrição). Usado nas linhas de proposta." /></TabsContent>
         <TabsContent value="platforms" className="mt-4">
           <CatalogEditor table="platforms" showCategory title="Plataformas"
