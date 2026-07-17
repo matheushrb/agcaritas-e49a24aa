@@ -832,7 +832,7 @@ export function TaskModal({
     lastProgressRef.current = computedProgress;
     if (progress !== computedProgress) setProgress(computedProgress);
     if (!isLocalDraft || persistedDraftIdRef.current) {
-      save.mutate({ progress: computedProgress });
+      markDirty();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [computedProgress, task?.id]);
@@ -894,18 +894,18 @@ export function TaskModal({
                         patch.billing_value = t.default_price;
                       }
                     }
-                    save.mutate(patch);
+                    markDirty();
                   }}
                 />
               </div>
 
               <div className="ml-auto flex items-center gap-1">
-                <StatusPicker value={status} onChange={v => { setStatus(v); save.mutate({ status: v }); }} />
-                <PriorityPicker value={priority} onChange={v => { setPriority(v); save.mutate({ priority: v }); }} />
+                <StatusPicker value={status} onChange={v => { setStatus(v); markDirty(); }} />
+                <PriorityPicker value={priority} onChange={v => { setPriority(v); markDirty(); }} />
                 <DatePicker
                   value={dueDate}
                   overdue={!!overdue}
-                  onChange={v => { setDueDate(v); save.mutate({ due_date: v || null }); }}
+                  onChange={v => { setDueDate(v); markDirty(); }}
                 />
                 <Button size="icon" variant="ghost" className="h-8 w-8 rounded-full text-muted-foreground hover:text-destructive" onClick={() => removeTask.mutate()} title="Excluir">
                   <Trash2 className="h-4 w-4" />
@@ -942,7 +942,7 @@ export function TaskModal({
                 <input
                   value={title}
                   onChange={e => setTitle(e.target.value)}
-                  onBlur={() => title.trim() && title !== task.title && save.mutate({ title: title.trim() })}
+                  onBlur={() => title.trim() && title !== task.title && markDirty()}
                   placeholder="Título da tarefa"
                   className="w-full bg-transparent outline-none text-2xl font-semibold tracking-tight placeholder:text-muted-foreground/50"
                 />
@@ -950,16 +950,16 @@ export function TaskModal({
                 {/* Propriedades — estilo ClickUp / Monday / Notion (inline, sem cards) */}
                 <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
                   <InlineField label="Status">
-                    <StatusPicker value={status} onChange={v => { setStatus(v); save.mutate({ status: v }); }} inline />
+                    <StatusPicker value={status} onChange={v => { setStatus(v); markDirty(); }} inline />
                   </InlineField>
                   <InlineField label="Prioridade">
-                    <PriorityPicker value={priority} onChange={v => { setPriority(v); save.mutate({ priority: v }); }} inline />
+                    <PriorityPicker value={priority} onChange={v => { setPriority(v); markDirty(); }} inline />
                   </InlineField>
                   <InlineField label="Prazo">
                     <DueDatePicker
                       value={dueDate}
                       overdue={!!overdue}
-                      onChange={v => { setDueDate(v); save.mutate({ due_date: v || null }); }}
+                      onChange={v => { setDueDate(v); markDirty(); }}
                     />
                   </InlineField>
                   <InlineField label="Responsável">
@@ -968,7 +968,7 @@ export function TaskModal({
                       members={teamMembers}
                       onChange={v => {
                         setAssigneeId(v);
-                        save.mutate({ assignee_id: v || null });
+                        markDirty();
                         if (!v) return;
                         const m = costMembers.find(cm => cm.user_id === v);
                         if (!m) return;
@@ -1035,7 +1035,7 @@ export function TaskModal({
                         type="number" min={0} step={0.5}
                         value={estimatedHours}
                         onChange={e => setEstimatedHours(e.target.value)}
-                        onBlur={() => save.mutate({ estimated_hours: estimatedHours ? Number(estimatedHours) : null })}
+                        onBlur={() => markDirty()}
                         className="h-6 w-14 border-none bg-transparent p-0 text-xs text-right shadow-none focus-visible:ring-0"
                         placeholder="0"
                       />
@@ -1073,9 +1073,9 @@ export function TaskModal({
                         toast.success(`${toAdd.length} subtarefa(s) criadas por “${s.name}”`);
                       }
                     }
-                    save.mutate({ current_stage_id: s.id, status: nextStatus, subtasks: nextSubtasks });
+                    markDirty();
                   }}
-                  onStageChange={v => { setStage(v); save.mutate({ stage: v }); }}
+                  onStageChange={v => { setStage(v); markDirty(); }}
                 />
 
 
@@ -1086,7 +1086,7 @@ export function TaskModal({
                   <Textarea
                     value={description}
                     onChange={e => setDescription(e.target.value)}
-                    onBlur={() => save.mutate({ description })}
+                    onBlur={() => markDirty()}
                     rows={5}
                     placeholder="Adicione contexto, briefing, links de referência..."
                     className="mt-2 rounded-xl resize-none"
@@ -1099,7 +1099,7 @@ export function TaskModal({
                     setDeliverables(next);
                     const legacyPlatform = next.map(d => d.platform).filter(Boolean).join(",");
                     setPlatform(legacyPlatform);
-                    save.mutate({ deliverables: next, platform: legacyPlatform || null });
+                    markDirty();
                   }}
                   onBill={(d) => billDeliverable.mutate(d)}
                   billingPending={billDeliverable.isPending}
@@ -1136,7 +1136,7 @@ export function TaskModal({
                           <button
                             key={k.value}
                             type="button"
-                            onClick={() => { setBroadcastKind(k.value); save.mutate({ broadcast_kind: k.value } as any); }}
+                            onClick={() => { setBroadcastKind(k.value); markDirty(); }}
                             className={cn(
                               "h-8 rounded-full px-3 text-xs border transition-colors",
                               broadcastKind === k.value
@@ -1150,7 +1150,7 @@ export function TaskModal({
                         {broadcastKind && (
                           <button
                             type="button"
-                            onClick={() => { setBroadcastKind(""); save.mutate({ broadcast_kind: null } as any); }}
+                            onClick={() => { setBroadcastKind(""); markDirty(); }}
                             className="h-8 rounded-full px-3 text-xs text-muted-foreground hover:text-foreground"
                           >
                             Limpar
@@ -1163,7 +1163,7 @@ export function TaskModal({
                           <div className="mt-1">
                             <DueDatePicker
                               value={recordedAt}
-                              onChange={v => { setRecordedAt(v); save.mutate({ recorded_at: v || null } as any); }}
+                              onChange={v => { setRecordedAt(v); markDirty(); }}
                             />
                           </div>
                         </div>
@@ -1174,7 +1174,7 @@ export function TaskModal({
                           <div className="mt-1">
                             <DueDatePicker
                               value={airedAt}
-                              onChange={v => { setAiredAt(v); save.mutate({ aired_at: v || null } as any); }}
+                              onChange={v => { setAiredAt(v); markDirty(); }}
                             />
                           </div>
                         </div>
@@ -1195,7 +1195,7 @@ export function TaskModal({
                   <TabsContent value="subtasks" className="mt-4">
                     <Subtasks
                       items={subtasks}
-                      onChange={next => { setSubtasks(next); save.mutate({ subtasks: next }); }}
+                      onChange={next => { setSubtasks(next); markDirty(); }}
                     />
                   </TabsContent>
 
@@ -1278,7 +1278,7 @@ export function TaskModal({
                         const proj = projectsList.find(p => p.id === nv);
                         const nextClient = proj?.client_id ?? clientId ?? "";
                         if (proj?.client_id) setClientId(proj.client_id);
-                        save.mutate({ project_id: nv || null, client_id: (nextClient || null) as string | null });
+                        markDirty();
                       }}
                     >
                       <SelectTrigger className="h-8 rounded-lg border-none bg-transparent hover:bg-muted/60 text-sm px-2 shadow-none">
@@ -1296,7 +1296,7 @@ export function TaskModal({
                       onValueChange={v => {
                         const nv = v === "none" ? "" : v;
                         setClientId(nv);
-                        save.mutate({ client_id: nv || null });
+                        markDirty();
                       }}
                     >
                       <SelectTrigger className="h-8 rounded-lg border-none bg-transparent hover:bg-muted/60 text-sm px-2 shadow-none">
@@ -1323,13 +1323,13 @@ export function TaskModal({
                       <span className="text-[11px] text-muted-foreground">{billingEnabled ? "Ativado" : "Desligado"}</span>
                       <Switch
                         checked={billingEnabled}
-                        onCheckedChange={v => { setBillingEnabled(v); save.mutate({ billing_enabled: v }); }}
+                        onCheckedChange={v => { setBillingEnabled(v); markDirty(); }}
                       />
                     </div>
                   </div>
                   <div className={cn("rounded-xl bg-card border border-border divide-y divide-border transition-opacity", !billingEnabled && "opacity-50 pointer-events-none")}>
                     <SidebarRow label="Modelo">
-                      <Select value={billingModel || "none"} onValueChange={v => { const nv = v === "none" ? "" : v; setBillingModel(nv as BillingModel | ""); save.mutate({ billing_model: (nv || null) as BillingModel | null }); }}>
+                      <Select value={billingModel || "none"} onValueChange={v => { const nv = v === "none" ? "" : v; setBillingModel(nv as BillingModel | ""); markDirty(); }}>
                         <SelectTrigger className="h-8 rounded-lg border-none bg-transparent hover:bg-muted/60 text-sm px-2 shadow-none">
                           <SelectValue placeholder="—" />
                         </SelectTrigger>
@@ -1350,7 +1350,7 @@ export function TaskModal({
                           type="number" min={0} step={0.01}
                           value={billingValue}
                           onChange={e => setBillingValue(e.target.value)}
-                          onBlur={() => save.mutate({ billing_value: billingValue ? Number(billingValue) : null })}
+                          onBlur={() => markDirty()}
                           className="h-8 rounded-lg border-none bg-transparent hover:bg-muted/60 text-sm px-2 shadow-none focus-visible:ring-0"
                           placeholder="0,00"
                         />
