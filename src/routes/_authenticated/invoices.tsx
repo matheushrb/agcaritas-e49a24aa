@@ -520,7 +520,7 @@ function InvoiceDetail({ id, clients, onClose }: { id: string; clients: Client[]
       number: invoice.number,
       issue_date: invoice.issue_date,
       due_date: invoice.due_date,
-      client: { name: client?.name ?? "—", document: client?.document, email: client?.email },
+      client: { name: client?.name ?? "—", document: client?.tax_id, email: client?.email },
       lines: charges.map(c => ({ title: c.description, amount: Number(c.amount ?? 0) })),
       notes: invoice.notes ?? undefined,
     });
