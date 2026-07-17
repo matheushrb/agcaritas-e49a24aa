@@ -281,11 +281,13 @@ function ClientsPage() {
       </div>
 
       <NewClientDialog open={newOpen} onOpenChange={setNewOpen}
+        segments={segments.length ? segments : DEFAULT_SEGMENTS}
         onSubmit={v => create.mutate(v)} pending={create.isPending} />
 
       <NewClientDialog
         open={!!editingId && !!editingClient}
         onOpenChange={(v) => { if (!v) setEditingId(null); }}
+        segments={segments.length ? segments : DEFAULT_SEGMENTS}
         onSubmit={v => update.mutate(v)}
         pending={update.isPending}
         mode="edit"
@@ -325,6 +327,9 @@ function ClientsPage() {
           notes: editingClient.notes ?? "",
         } : undefined}
       />
+
+      <SegmentsDialog open={segmentsOpen} onOpenChange={setSegmentsOpen} />
+
 
     </>
   );
