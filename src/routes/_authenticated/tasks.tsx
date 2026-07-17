@@ -292,7 +292,7 @@ function TasksPage() {
         )}
       </div>
 
-      <TaskModal task={selected} onClose={() => setSelectedId(null)} />
+      <TaskModal task={selected} onClose={handleCloseModal} />
     </>
   );
 }
