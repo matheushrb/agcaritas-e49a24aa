@@ -442,6 +442,8 @@ export function TaskModal({
     setClientId(task.client_id ?? "");
     setBillingEnabled(task.billing_enabled ?? false);
     setDeliverables(Array.isArray(task.deliverables) ? task.deliverables : []);
+    setSubtasks(Array.isArray(task.subtasks) ? task.subtasks : []);
+    setAssigneeId(task.assignee_id ?? "");
   }, [task]);
 
   const isLocalDraft = !!task?.id.startsWith("draft-");
