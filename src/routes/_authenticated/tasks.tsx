@@ -521,14 +521,17 @@ export function TaskModal({
       const tools: string[] = Array.isArray((proj?.scope_flags as any)?.tools)
         ? (proj!.scope_flags as any).tools
         : [];
-      if (tools.length === 0) return [] as { value: string; label: string }[];
+      if (tools.length === 0) return [] as { value: string; label: string; icon_url?: string | null; icon?: string | null; color?: string | null }[];
       const { data: plats } = await (supabase as any)
         .from("platforms")
-        .select("id,name")
+        .select("id,name,icon,icon_url,color")
         .in("name", tools);
-      return ((plats ?? []) as { id: string; name: string }[]).map(p => ({
+      return ((plats ?? []) as { id: string; name: string; icon?: string | null; icon_url?: string | null; color?: string | null }[]).map(p => ({
         value: p.name,
         label: p.name,
+        icon: p.icon,
+        icon_url: p.icon_url,
+        color: p.color,
       }));
     },
   });
