@@ -735,3 +735,84 @@ export function NewClientDialog({
     />
   );
 }
+
+function SegmentsDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (v: boolean) => void }) {
+  const qc = useQueryClient();
+  const [name, setName] = useState("");
+
+  const { data: rows = [], isLoading } = useQuery<{ id: string; name: string }[]>({
+    queryKey: ["client-segments-manage"],
+    enabled: open,
+    queryFn: async () => {
+      const { data, error } = await supabase.from("client_segments").select("id,name").order("name");
+      if (error) throw error;
+      return (data ?? []) as { id: string; name: string }[];
+    },
+  });
+
+  const invalidate = () => {
+    qc.invalidateQueries({ queryKey: ["client-segments"] });
+    qc.invalidateQueries({ queryKey: ["client-segments-manage"] });
+  };
+
+  const add = useMutation({
+    mutationFn: async (n: string) => {
+      const { data: profile } = await supabase.from("profiles").select("organization_id").maybeSingle();
+      if (!profile?.organization_id) throw new Error("Sem organização");
+      const { error } = await supabase.from("client_segments").insert({ name: n, organization_id: profile.organization_id });
+      if (error) throw error;
+    },
+    onSuccess: () => { invalidate(); setName(""); toast.success("Segmento adicionado"); },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const remove = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("client_segments").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => { invalidate(); toast.success("Segmento removido"); },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-md rounded-2xl">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2"><Tag className="h-4 w-4" /> Segmentos de cliente</DialogTitle>
+          <DialogDescription>Organize os segmentos usados no cadastro e filtros de clientes.</DialogDescription>
+        </DialogHeader>
+        <div className="flex gap-2">
+          <Input
+            placeholder="Novo segmento..."
+            value={name}
+            onChange={e => setName(e.target.value)}
+            onKeyDown={e => { if (e.key === "Enter" && name.trim()) add.mutate(name.trim()); }}
+          />
+          <Button onClick={() => name.trim() && add.mutate(name.trim())} disabled={!name.trim() || add.isPending} className="rounded-full">
+            <Plus className="h-4 w-4" />
+          </Button>
+        </div>
+        <div className="max-h-[320px] overflow-y-auto space-y-1 mt-2">
+          {isLoading ? (
+            <div className="text-sm text-muted-foreground">Carregando…</div>
+          ) : rows.length === 0 ? (
+            <div className="text-sm text-muted-foreground text-center py-6">Nenhum segmento cadastrado</div>
+          ) : rows.map(r => (
+            <div key={r.id} className="flex items-center justify-between px-3 py-2 rounded-lg border border-border">
+              <span className="text-sm">{r.name}</span>
+              <Button
+                size="icon"
+                variant="ghost"
+                className="h-7 w-7"
+                onClick={() => { if (confirm(`Remover "${r.name}"?`)) remove.mutate(r.id); }}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          ))}
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
