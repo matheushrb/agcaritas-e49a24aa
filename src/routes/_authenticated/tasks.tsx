@@ -30,7 +30,7 @@ export const Route = createFileRoute("/_authenticated/tasks")({
 });
 
 type TaskStatus = "todo" | "in_progress" | "review" | "done";
-type TaskPriority = "low" | "medium" | "high";
+type TaskPriority = "low" | "medium" | "high" | "urgent" | "critical";
 type BillingModel = "hourly" | "one_time" | "package" | "monthly" | "per_task";
 type TaskStage = "briefing" | "creation" | "review" | "approval" | "delivery";
 
