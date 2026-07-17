@@ -614,7 +614,7 @@ export function NewClientDialog({
                     <Select value={form.segment} onValueChange={v => set("segment", v)}>
                       <SelectTrigger><SelectValue placeholder="Selecionar" /></SelectTrigger>
                       <SelectContent>
-                        {SEGMENTS.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                        {segments.map((s: string) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
                       </SelectContent>
                     </Select>
                   </DialogField>
@@ -629,7 +629,7 @@ export function NewClientDialog({
                   <Select value={form.segment} onValueChange={v => set("segment", v)}>
                     <SelectTrigger><SelectValue placeholder="Selecionar" /></SelectTrigger>
                     <SelectContent>
-                      {SEGMENTS.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                      {segments.map((s: string) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
                     </SelectContent>
                   </Select>
                 </DialogField>
