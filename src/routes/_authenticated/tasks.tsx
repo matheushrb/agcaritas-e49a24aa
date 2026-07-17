@@ -565,14 +565,14 @@ export function TaskModal({
   const shell = (
     <div
       className={cn(
-        "fixed z-50 bg-background border border-border shadow-2xl flex flex-col overflow-hidden",
+        "fixed z-50 bg-white border border-border shadow-2xl flex flex-col overflow-hidden",
         mode === "modal"
           ? "left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[calc(100vw-2rem)] max-w-[1360px] h-[calc(100vh-3rem)] max-h-[900px] rounded-3xl"
           : "top-3 right-3 bottom-3 w-[calc(100vw-2rem)] sm:w-[560px] rounded-2xl"
       )}
     >
             {/* Top bar */}
-            <div className="flex items-center gap-2 px-6 py-3 border-b border-border bg-card/60 backdrop-blur">
+            <div className="flex items-center gap-2 px-6 py-3 border-b border-border bg-white">
               <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                 <span className="rounded-md bg-muted px-2 py-0.5 font-mono">#{task.id.slice(0, 6).toUpperCase()}</span>
                 <span>·</span>
