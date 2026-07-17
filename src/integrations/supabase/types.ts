@@ -1487,6 +1487,7 @@ export type Database = {
         Row: {
           assignee_id: string | null
           attachments_count: number
+          billing_enabled: boolean
           billing_model: Database["public"]["Enums"]["billing_model"] | null
           billing_value: number | null
           client_id: string | null
@@ -1511,6 +1512,7 @@ export type Database = {
         Insert: {
           assignee_id?: string | null
           attachments_count?: number
+          billing_enabled?: boolean
           billing_model?: Database["public"]["Enums"]["billing_model"] | null
           billing_value?: number | null
           client_id?: string | null
@@ -1535,6 +1537,7 @@ export type Database = {
         Update: {
           assignee_id?: string | null
           attachments_count?: number
+          billing_enabled?: boolean
           billing_model?: Database["public"]["Enums"]["billing_model"] | null
           billing_value?: number | null
           client_id?: string | null
@@ -1735,7 +1738,7 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "manager" | "member"
-      billing_model: "monthly" | "one_time" | "hourly" | "package"
+      billing_model: "monthly" | "one_time" | "hourly" | "package" | "per_task"
       charge_status: "pending" | "paid" | "overdue" | "cancelled"
       contract_status: "active" | "closed" | "suspended" | "renewing"
       lead_stage: "lead" | "contact" | "proposal" | "negotiation" | "closed"
@@ -1875,7 +1878,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "manager", "member"],
-      billing_model: ["monthly", "one_time", "hourly", "package"],
+      billing_model: ["monthly", "one_time", "hourly", "package", "per_task"],
       charge_status: ["pending", "paid", "overdue", "cancelled"],
       contract_status: ["active", "closed", "suspended", "renewing"],
       lead_stage: ["lead", "contact", "proposal", "negotiation", "closed"],
