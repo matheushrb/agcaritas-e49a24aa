@@ -160,12 +160,12 @@ function FinancePage() {
       </div>
 
       <Tabs value={tab} onValueChange={setTab}>
-        <TabsList>
-          <TabsTrigger value="overview">Visão geral</TabsTrigger>
-          <TabsTrigger value="movements">Movimentações</TabsTrigger>
-          <TabsTrigger value="invoicing">Faturamentos</TabsTrigger>
-          <TabsTrigger value="dre">DRE</TabsTrigger>
-          <TabsTrigger value="params">Parâmetros</TabsTrigger>
+        <TabsList className="rounded-full bg-primary p-1 dark:bg-primary">
+          <TabsTrigger value="overview" className="rounded-full gap-1.5 text-primary-foreground/80 dark:text-primary-foreground/90 data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-sm dark:data-[state=active]:bg-card dark:data-[state=active]:text-foreground">Visão geral</TabsTrigger>
+          <TabsTrigger value="movements" className="rounded-full gap-1.5 text-primary-foreground/80 dark:text-primary-foreground/90 data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-sm dark:data-[state=active]:bg-card dark:data-[state=active]:text-foreground">Movimentações</TabsTrigger>
+          <TabsTrigger value="invoicing" className="rounded-full gap-1.5 text-primary-foreground/80 dark:text-primary-foreground/90 data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-sm dark:data-[state=active]:bg-card dark:data-[state=active]:text-foreground">Faturamentos</TabsTrigger>
+          <TabsTrigger value="dre" className="rounded-full gap-1.5 text-primary-foreground/80 dark:text-primary-foreground/90 data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-sm dark:data-[state=active]:bg-card dark:data-[state=active]:text-foreground">DRE</TabsTrigger>
+          <TabsTrigger value="params" className="rounded-full gap-1.5 text-primary-foreground/80 dark:text-primary-foreground/90 data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-sm dark:data-[state=active]:bg-card dark:data-[state=active]:text-foreground">Parâmetros</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="mt-4">
