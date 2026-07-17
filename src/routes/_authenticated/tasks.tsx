@@ -932,10 +932,10 @@ export function TaskModal({
 
                 <Tabs defaultValue="subtasks" className="w-full">
                   <TabsList className="rounded-full bg-primary p-1">
-                    <TabsTrigger value="subtasks" className="rounded-full gap-1.5 text-primary-foreground/80 data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-sm"><ListChecks className="h-4 w-4" />Subtarefas</TabsTrigger>
-                    <TabsTrigger value="uploads" className="rounded-full gap-1.5 text-primary-foreground/80 data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-sm"><Paperclip className="h-4 w-4" />Anexos</TabsTrigger>
-                    <TabsTrigger value="comments" className="rounded-full gap-1.5 text-primary-foreground/80 data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-sm"><MessageSquare className="h-4 w-4" />Comentários</TabsTrigger>
-                    <TabsTrigger value="activity" className="rounded-full gap-1.5 text-primary-foreground/80 data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-sm"><Activity className="h-4 w-4" />Atividade</TabsTrigger>
+                    <TabsTrigger value="subtasks" className="rounded-full gap-1.5 text-primary-foreground/80 data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-sm"><ListChecks className="h-4 w-4" />Subtarefas</TabsTrigger>
+                    <TabsTrigger value="uploads" className="rounded-full gap-1.5 text-primary-foreground/80 data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-sm"><Paperclip className="h-4 w-4" />Anexos</TabsTrigger>
+                    <TabsTrigger value="comments" className="rounded-full gap-1.5 text-primary-foreground/80 data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-sm"><MessageSquare className="h-4 w-4" />Comentários</TabsTrigger>
+                    <TabsTrigger value="activity" className="rounded-full gap-1.5 text-primary-foreground/80 data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-sm"><Activity className="h-4 w-4" />Atividade</TabsTrigger>
                   </TabsList>
 
                   <TabsContent value="subtasks" className="mt-4">
