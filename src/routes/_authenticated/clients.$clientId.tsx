@@ -213,9 +213,19 @@ function ClientDetailPage() {
         <TabsContent value="projects"><ProjectsTab projects={projects as any[]} /></TabsContent>
         <TabsContent value="proposals"><ProposalsTab proposals={proposals as any[]} /></TabsContent>
       </Tabs>
+
+      <NewClientDialog
+        open={editOpen}
+        onOpenChange={setEditOpen}
+        mode="edit"
+        initial={client as never}
+        onSubmit={v => updateClient.mutate(v)}
+        pending={updateClient.isPending}
+      />
     </div>
   );
 }
+
 
 function Kpi({ label, value, icon: Icon }: { label: string; value: string; icon?: any }) {
   return (
