@@ -57,6 +57,7 @@ export function CatalogEditor({
       if (row.id) {
         const { error } = await (supabase as any).from(table).update({
           name: row.name, color: row.color, icon: row.icon,
+          icon_url: row.icon_url ?? null,
           category: row.category, active: row.active,
           sort_order: row.sort_order,
         }).eq("id", row.id);
@@ -69,6 +70,7 @@ export function CatalogEditor({
           name: row.name,
           color: row.color ?? "#3B82F6",
           icon: row.icon ?? (table === "platforms" ? "Globe" : "Folder"),
+          icon_url: row.icon_url ?? null,
           category: row.category ?? null,
           sort_order: rows.length,
         });
