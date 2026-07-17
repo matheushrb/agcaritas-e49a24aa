@@ -898,23 +898,37 @@ export function TaskModal({
                   onChange={(id, t) => {
                     setTaskTypeId(id);
                     setCurrentStageId("");
-                    const patch: Partial<Task> = { task_type_id: id || null, current_stage_id: null };
                     if (t) {
                       if (!billingModel && t.default_billing_model) {
                         setBillingModel(t.default_billing_model as BillingModel);
-                        patch.billing_model = t.default_billing_model as BillingModel;
                       }
                       if (!billingValue && t.default_price != null) {
                         setBillingValue(String(t.default_price));
-                        patch.billing_value = t.default_price;
                       }
                     }
                     markDirty();
                   }}
                 />
+                {dirty && (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-400 px-2 py-0.5 text-[10px] font-medium">
+                    <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+                    Alterações não salvas
+                  </span>
+                )}
               </div>
 
               <div className="ml-auto flex items-center gap-1">
+                <Button
+                  size="sm"
+                  className="rounded-full gap-1.5 h-8 px-3"
+                  onClick={() => save.mutate()}
+                  disabled={!dirty || save.isPending}
+                  title="Salvar (Ctrl/Cmd + S)"
+                >
+                  <SaveIcon className="h-4 w-4" />
+                  {save.isPending ? "Salvando…" : "Salvar"}
+                </Button>
+                <div className="mx-1 h-5 w-px bg-border" />
                 <StatusPicker value={status} onChange={v => { setStatus(v); markDirty(); }} />
                 <PriorityPicker value={priority} onChange={v => { setPriority(v); markDirty(); }} />
                 <DatePicker
@@ -938,7 +952,7 @@ export function TaskModal({
                 >
                   {mode === "docked" ? <PanelLeftOpen className="h-4 w-4" /> : <PanelRightOpen className="h-4 w-4" />}
                 </Button>
-                <Button size="icon" variant="ghost" className="h-8 w-8 rounded-full" onClick={onClose} title="Fechar">
+                <Button size="icon" variant="ghost" className="h-8 w-8 rounded-full" onClick={requestClose} title="Fechar">
                   <X className="h-4 w-4" />
                 </Button>
               </div>
