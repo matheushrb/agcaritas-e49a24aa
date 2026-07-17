@@ -945,10 +945,30 @@ export function TaskModal({
                     // Deriva o status macro da etapa
                     const nextStatus = s.status_group as TaskStatus;
                     setStatus(nextStatus);
-                    save.mutate({ current_stage_id: s.id, status: nextStatus });
+                    // Injeta subtarefas automáticas da etapa (evita duplicar por título)
+                    const auto = (s as any).auto_checklist as string[] | undefined;
+                    let nextSubtasks = subtasks;
+                    if (Array.isArray(auto) && auto.length) {
+                      const existing = new Set(subtasks.map(x => x.title.trim().toLowerCase()));
+                      const toAdd = auto
+                        .map(t => t.trim())
+                        .filter(t => t && !existing.has(t.toLowerCase()))
+                        .map(title => ({
+                          id: (globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random()}`),
+                          title,
+                          done: false,
+                        }));
+                      if (toAdd.length) {
+                        nextSubtasks = [...subtasks, ...toAdd];
+                        setSubtasks(nextSubtasks);
+                        toast.success(`${toAdd.length} subtarefa(s) criadas por “${s.name}”`);
+                      }
+                    }
+                    save.mutate({ current_stage_id: s.id, status: nextStatus, subtasks: nextSubtasks });
                   }}
                   onStageChange={v => { setStage(v); save.mutate({ stage: v }); }}
                 />
+
 
 
 
