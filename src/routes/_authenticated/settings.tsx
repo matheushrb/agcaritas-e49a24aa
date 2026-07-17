@@ -9,12 +9,13 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
-  Building2, Wrench, Share2, Workflow, TrendingUp, UserCog, Plug, Zap, DollarSign,
+  Building2, Wrench, Share2, Workflow, TrendingUp, UserCog, Plug, Zap, DollarSign, FolderKanban,
 } from "lucide-react";
 import { toast } from "sonner";
 import { TaskTypesEditor } from "@/components/settings/task-types-editor";
 import { AutomationsTab } from "@/components/settings/automations-tab";
 import { AgencyPricingTab } from "@/components/settings/agency-pricing";
+import { CatalogEditor } from "@/components/settings/catalog-editor";
 
 export const Route = createFileRoute("/_authenticated/settings")({
   head: () => ({ meta: [{ title: "Configurações · Caritas" }] }),
@@ -22,15 +23,16 @@ export const Route = createFileRoute("/_authenticated/settings")({
 });
 
 const TABS = [
-  { value: "agency",       label: "Dados da Agência", icon: Building2 },
-  { value: "pricing",      label: "Precificação",     icon: DollarSign },
-  { value: "services",     label: "Serviços",         icon: Wrench },
-  { value: "platforms",    label: "Plataformas",      icon: Share2 },
-  { value: "task-flows",   label: "Tipos de Tarefa",  icon: Workflow },
-  { value: "automations",  label: "Automações",       icon: Zap },
-  { value: "crm-funnel",   label: "Funil CRM",        icon: TrendingUp },
-  { value: "users",        label: "Usuários",         icon: UserCog },
-  { value: "integrations", label: "Integrações",      icon: Plug },
+  { value: "agency",       label: "Dados da Agência",  icon: Building2 },
+  { value: "pricing",      label: "Precificação",      icon: DollarSign },
+  { value: "project-types",label: "Tipos de Projeto",  icon: FolderKanban },
+  { value: "services",     label: "Serviços",          icon: Wrench },
+  { value: "platforms",    label: "Plataformas",       icon: Share2 },
+  { value: "task-flows",   label: "Tipos de Tarefa",   icon: Workflow },
+  { value: "automations",  label: "Automações",        icon: Zap },
+  { value: "crm-funnel",   label: "Funil CRM",         icon: TrendingUp },
+  { value: "users",        label: "Usuários",          icon: UserCog },
+  { value: "integrations", label: "Integrações",       icon: Plug },
 ] as const;
 
 function SettingsPage() {
@@ -57,8 +59,15 @@ function SettingsPage() {
 
         <TabsContent value="agency" className="mt-4"><AgencyTab /></TabsContent>
         <TabsContent value="pricing" className="mt-4"><AgencyPricingTab /></TabsContent>
+        <TabsContent value="project-types" className="mt-4">
+          <CatalogEditor table="project_types" title="Tipos de Projeto"
+            hint="Categorias usadas ao criar um projeto (ex.: Marketing, Branding, Site)." />
+        </TabsContent>
         <TabsContent value="services" className="mt-4"><ComingSoonCard title="Serviços" hint="Catálogo de serviços (nome, valor base, descrição). Usado nas linhas de proposta." /></TabsContent>
-        <TabsContent value="platforms" className="mt-4"><ComingSoonCard title="Plataformas" hint="Instagram, TikTok, YouTube etc. — regras de prazo de entrega por tipo e cor por plataforma." /></TabsContent>
+        <TabsContent value="platforms" className="mt-4">
+          <CatalogEditor table="platforms" showCategory title="Plataformas"
+            hint="Redes sociais, canais e plataformas de mídia usadas nos projetos e entregáveis." />
+        </TabsContent>
         <TabsContent value="task-flows" className="mt-4"><TaskTypesEditor /></TabsContent>
         <TabsContent value="automations" className="mt-4"><AutomationsTab /></TabsContent>
         <TabsContent value="crm-funnel" className="mt-4"><ComingSoonCard title="Funil CRM" hint="Etapas do pipeline com probabilidade padrão, ordem e flags ganho/perdido." /></TabsContent>

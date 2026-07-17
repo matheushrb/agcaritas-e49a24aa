@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,8 +10,9 @@ import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import {
   FolderPlus, ChevronLeft, ChevronRight, Check, Zap, DollarSign,
-  Wrench, Target, Rocket, Flag, Sparkles,
+  Share2, Target, Rocket, Flag, Sparkles,
 } from "lucide-react";
+import * as Icons from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export type ProjectWizardValue = {
@@ -23,6 +26,7 @@ export type ProjectWizardValue = {
   start_date: string | null;
   end_date: string | null;
   tools: string[];
+  strategy_enabled: boolean;
   scope_flags: {
     swot: boolean;
     personas: boolean;
@@ -35,15 +39,10 @@ export type ProjectWizardValue = {
   other_budgets: { label: string; amount: number }[];
 };
 
-const PROJECT_TYPES = [
+type CatalogItem = { id: string; name: string; slug: string | null; color: string | null; icon: string | null; category?: string | null };
+
+const PROJECT_TYPES_FALLBACK = [
   { value: "marketing", label: "Marketing Digital" },
-  { value: "branding", label: "Branding & Identidade" },
-  { value: "social_media", label: "Social Media" },
-  { value: "traffic", label: "Tráfego Pago" },
-  { value: "web", label: "Site / Landing Page" },
-  { value: "content", label: "Conteúdo / Copy" },
-  { value: "consulting", label: "Consultoria" },
-  { value: "other", label: "Outro" },
 ];
 
 const BILLING_OPTIONS = [
@@ -60,12 +59,6 @@ const URGENCY = [
   { value: "critical", label: "Urgente", color: "bg-red-500/15 text-red-600 dark:text-red-400" },
 ];
 
-const TOOLS = [
-  "Meta Ads", "Google Ads", "TikTok Ads", "LinkedIn Ads", "Buffer", "RD Station",
-  "HubSpot", "Figma", "Canva", "Notion", "ClickUp", "Adobe CC", "CapCut",
-  "Google Analytics", "Search Console", "Hotjar", "Semrush", "WordPress",
-];
-
 const TRAFFIC_PLATFORMS = ["Meta", "Google", "TikTok", "LinkedIn", "YouTube", "Pinterest", "X (Twitter)"];
 
 const STRATEGY_ITEMS: { key: keyof ProjectWizardValue["scope_flags"]; label: string; desc: string }[] = [
@@ -78,19 +71,20 @@ const STRATEGY_ITEMS: { key: keyof ProjectWizardValue["scope_flags"]; label: str
 ];
 
 const STEPS = [
-  { id: 1, title: "Escopo",           icon: FolderPlus },
-  { id: 2, title: "Faturamento",      icon: DollarSign },
-  { id: 3, title: "Ferramentas",      icon: Wrench },
-  { id: 4, title: "Verbas",           icon: Target },
-  { id: 5, title: "Estratégia",       icon: Rocket },
+  { id: 1, title: "Escopo",       icon: FolderPlus },
+  { id: 2, title: "Faturamento",  icon: DollarSign },
+  { id: 3, title: "Plataformas",  icon: Share2 },
+  { id: 4, title: "Verbas",       icon: Target },
+  { id: 5, title: "Estratégia",   icon: Rocket },
 ];
 
 const defaultValue: ProjectWizardValue = {
   name: "", client_id: null, description: "",
-  project_type: "marketing", billing_model: "fixed",
+  project_type: "", billing_model: "fixed",
   fixed_value: null, urgency: "medium",
   start_date: null, end_date: null,
   tools: [],
+  strategy_enabled: false,
   scope_flags: { swot: false, personas: false, competitors: false, roadmap: false, kpis: false, action_plan: false },
   traffic_budget: { enabled: false, amount: null, platforms: [] },
   other_budgets: [],
@@ -107,6 +101,25 @@ export function NewProjectWizard({
 }) {
   const [step, setStep] = useState(1);
   const [v, setV] = useState<ProjectWizardValue>(defaultValue);
+
+  const { data: projectTypes = [] } = useQuery({
+    queryKey: ["project_types"],
+    queryFn: async () => {
+      const { data } = await (supabase as any).from("project_types").select("*").eq("active", true).order("sort_order");
+      return (data ?? []) as CatalogItem[];
+    },
+  });
+  const { data: platforms = [] } = useQuery({
+    queryKey: ["platforms"],
+    queryFn: async () => {
+      const { data } = await (supabase as any).from("platforms").select("*").eq("active", true).order("sort_order");
+      return (data ?? []) as CatalogItem[];
+    },
+  });
+
+  const typeOptions = projectTypes.length
+    ? projectTypes.map(t => ({ value: t.slug || t.id, label: t.name }))
+    : PROJECT_TYPES_FALLBACK;
 
   const reset = () => { setStep(1); setV(defaultValue); };
   const handleOpen = (o: boolean) => { onOpenChange(o); if (!o) reset(); };
@@ -177,11 +190,11 @@ export function NewProjectWizard({
 
         {/* Body */}
         <div className="flex-1 min-h-0 overflow-auto px-6 py-5">
-          {step === 1 && <StepScope v={v} patch={patch} clients={clients} />}
+          {step === 1 && <StepScope v={v} patch={patch} clients={clients} typeOptions={typeOptions} />}
           {step === 2 && <StepBilling v={v} patch={patch} />}
-          {step === 3 && <StepTools v={v} toggleTool={toggleTool} />}
+          {step === 3 && <StepTools v={v} toggleTool={toggleTool} platforms={platforms} />}
           {step === 4 && <StepBudgets v={v} patch={patch} togglePlatform={togglePlatform} />}
-          {step === 5 && <StepStrategy v={v} patch={patch} />}
+          {step === 5 && <StepStrategy v={v} patch={patch} typeOptions={typeOptions} />}
         </div>
 
         {/* Footer */}
@@ -191,7 +204,7 @@ export function NewProjectWizard({
             <ChevronLeft className="h-4 w-4" /> Voltar
           </Button>
           <div className="text-xs text-muted-foreground hidden sm:block">
-            {v.name || "Sem título"} · {PROJECT_TYPES.find(t => t.value === v.project_type)?.label}
+            {v.name || "Sem título"}{v.project_type ? ` · ${typeOptions.find(t => t.value === v.project_type)?.label ?? ""}` : ""}
           </div>
           {isLast ? (
             <Button className="rounded-full gap-1.5" disabled={pending || !v.name.trim()}
@@ -224,10 +237,11 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   );
 }
 
-function StepScope({ v, patch, clients }: {
+function StepScope({ v, patch, clients, typeOptions }: {
   v: ProjectWizardValue;
   patch: <K extends keyof ProjectWizardValue>(k: K, val: ProjectWizardValue[K]) => void;
   clients: { id: string; name: string }[];
+  typeOptions: { value: string; label: string }[];
 }) {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
@@ -266,12 +280,13 @@ function StepScope({ v, patch, clients }: {
         </div>
         <div className="space-y-1.5">
           <Label>Tipo de projeto</Label>
-          <Select value={v.project_type} onValueChange={val => patch("project_type", val)}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
+          <Select value={v.project_type || undefined} onValueChange={val => patch("project_type", val)}>
+            <SelectTrigger><SelectValue placeholder="Selecione…" /></SelectTrigger>
             <SelectContent>
-              {PROJECT_TYPES.map(t => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}
+              {typeOptions.map(t => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}
             </SelectContent>
           </Select>
+          <p className="text-[11px] text-muted-foreground">Gerencie os tipos em <b>Configurações → Tipos de Projeto</b>.</p>
         </div>
         <div className="space-y-2">
           <Label>Urgência</Label>
@@ -341,26 +356,55 @@ function StepBilling({ v, patch }: {
   );
 }
 
-function StepTools({ v, toggleTool }: { v: ProjectWizardValue; toggleTool: (t: string) => void }) {
+function StepTools({ v, toggleTool, platforms }: {
+  v: ProjectWizardValue;
+  toggleTool: (t: string) => void;
+  platforms: CatalogItem[];
+}) {
+  const groups: Record<string, CatalogItem[]> = {};
+  platforms.forEach(p => {
+    const k = p.category || "Outros";
+    (groups[k] ??= []).push(p);
+  });
   return (
-    <Section title="Ferramentas que serão utilizadas neste projeto">
-      <p className="text-xs text-muted-foreground -mt-1">Selecione quantas quiser — usado para relatórios e onboarding do time.</p>
-      <div className="flex flex-wrap gap-2">
-        {TOOLS.map(t => {
-          const on = v.tools.includes(t);
-          return (
-            <button
-              key={t}
-              type="button"
-              onClick={() => toggleTool(t)}
-              className={cn(
-                "rounded-full px-3 py-1.5 text-xs font-medium border transition-colors",
-                on ? "border-primary bg-primary text-primary-foreground" : "border-border hover:bg-muted",
-              )}
-            >{t}</button>
-          );
-        })}
-      </div>
+    <Section title="Plataformas usadas neste projeto">
+      <p className="text-xs text-muted-foreground -mt-1">
+        Selecione as redes, canais e mídias envolvidas. Gerencie a lista em <b>Configurações → Plataformas</b>.
+      </p>
+      {platforms.length === 0 ? (
+        <div className="text-sm text-muted-foreground py-8 text-center border border-dashed rounded-xl">
+          Nenhuma plataforma cadastrada ainda.
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {Object.entries(groups).map(([cat, items]) => (
+            <div key={cat}>
+              <div className="text-[11px] uppercase tracking-wider font-medium text-muted-foreground mb-2">{cat}</div>
+              <div className="flex flex-wrap gap-2">
+                {items.map(p => {
+                  const Icon = (p.icon && (Icons as any)[p.icon]) || Icons.Circle;
+                  const on = v.tools.includes(p.name);
+                  return (
+                    <button
+                      key={p.id}
+                      type="button"
+                      onClick={() => toggleTool(p.name)}
+                      className={cn(
+                        "rounded-full px-3 py-1.5 text-xs font-medium border transition-colors flex items-center gap-1.5",
+                        on ? "border-primary bg-primary text-primary-foreground" : "border-border hover:bg-muted",
+                      )}
+                      style={on ? undefined : { color: p.color ?? undefined, borderColor: (p.color ?? "") + "66" }}
+                    >
+                      <Icon className="h-3.5 w-3.5" />
+                      {p.name}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </Section>
   );
 }
@@ -444,58 +488,77 @@ function StepBudgets({ v, patch, togglePlatform }: {
   );
 }
 
-function StepStrategy({ v, patch }: {
+function StepStrategy({ v, patch, typeOptions }: {
   v: ProjectWizardValue;
   patch: <K extends keyof ProjectWizardValue>(k: K, val: ProjectWizardValue[K]) => void;
+  typeOptions: { value: string; label: string }[];
 }) {
   const toggle = (key: keyof ProjectWizardValue["scope_flags"]) =>
     patch("scope_flags", { ...v.scope_flags, [key]: !v.scope_flags[key] });
 
   return (
-    <Section title="Artefatos de planejamento estratégico">
-      <p className="text-xs text-muted-foreground -mt-1">Ative o que este projeto vai produzir. Cada item vira uma aba na página do projeto.</p>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-        {STRATEGY_ITEMS.map(item => {
-          const on = v.scope_flags[item.key];
-          return (
-            <button
-              key={item.key}
-              type="button"
-              onClick={() => toggle(item.key)}
-              className={cn(
-                "flex items-start gap-3 rounded-2xl border p-4 text-left transition-all",
-                on ? "border-primary bg-primary/5" : "border-border hover:bg-muted/50",
-              )}
-            >
-              <div className={cn(
-                "mt-0.5 h-5 w-5 rounded-md border grid place-items-center shrink-0",
-                on ? "bg-primary border-primary text-primary-foreground" : "border-border",
-              )}>{on && <Check className="h-3 w-3" />}</div>
-              <div className="min-w-0">
-                <div className="font-medium text-sm">{item.label}</div>
-                <div className="text-xs text-muted-foreground mt-0.5">{item.desc}</div>
-              </div>
-            </button>
-          );
-        })}
+    <div className="space-y-4">
+      <div className="rounded-2xl border border-border p-4 flex items-center justify-between gap-4">
+        <div>
+          <div className="font-medium text-sm">Este projeto terá planejamento estratégico?</div>
+          <p className="text-xs text-muted-foreground">Ative para escolher os artefatos (SWOT, Personas, KPIs…) que virarão abas do projeto.</p>
+        </div>
+        <Switch
+          checked={v.strategy_enabled}
+          onCheckedChange={c => {
+            patch("strategy_enabled", c);
+            if (!c) patch("scope_flags", { swot: false, personas: false, competitors: false, roadmap: false, kpis: false, action_plan: false });
+          }}
+        />
       </div>
 
-      <div className="rounded-2xl border border-border p-4 bg-muted/30 mt-3">
+      {v.strategy_enabled && (
+        <Section title="Artefatos de planejamento estratégico">
+          <p className="text-xs text-muted-foreground -mt-1">Cada item ativado vira uma aba na página do projeto.</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {STRATEGY_ITEMS.map(item => {
+              const on = v.scope_flags[item.key];
+              return (
+                <button
+                  key={item.key}
+                  type="button"
+                  onClick={() => toggle(item.key)}
+                  className={cn(
+                    "flex items-start gap-3 rounded-2xl border p-4 text-left transition-all",
+                    on ? "border-primary bg-primary/5" : "border-border hover:bg-muted/50",
+                  )}
+                >
+                  <div className={cn(
+                    "mt-0.5 h-5 w-5 rounded-md border grid place-items-center shrink-0",
+                    on ? "bg-primary border-primary text-primary-foreground" : "border-border",
+                  )}>{on && <Check className="h-3 w-3" />}</div>
+                  <div className="min-w-0">
+                    <div className="font-medium text-sm">{item.label}</div>
+                    <div className="text-xs text-muted-foreground mt-0.5">{item.desc}</div>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </Section>
+      )}
+
+      <div className="rounded-2xl border border-border p-4 bg-muted/30">
         <div className="text-[11px] uppercase tracking-wider text-muted-foreground mb-2">Resumo do projeto</div>
         <div className="text-sm font-semibold">{v.name || "Sem título"}</div>
         <div className="text-xs text-muted-foreground mt-1 flex flex-wrap gap-1">
-          <Badge variant="outline" className="rounded-full">{PROJECT_TYPES.find(t => t.value === v.project_type)?.label}</Badge>
+          {v.project_type && <Badge variant="outline" className="rounded-full">{typeOptions.find(t => t.value === v.project_type)?.label ?? v.project_type}</Badge>}
           <Badge variant="outline" className="rounded-full">{BILLING_OPTIONS.find(b => b.value === v.billing_model)?.label}</Badge>
           <Badge variant="outline" className="rounded-full">{URGENCY.find(u => u.value === v.urgency)?.label}</Badge>
-          {v.tools.length > 0 && <Badge variant="outline" className="rounded-full">{v.tools.length} ferramentas</Badge>}
+          {v.tools.length > 0 && <Badge variant="outline" className="rounded-full">{v.tools.length} plataformas</Badge>}
           {v.traffic_budget?.enabled && <Badge variant="outline" className="rounded-full">Tráfego pago</Badge>}
-          {Object.values(v.scope_flags).some(Boolean) && (
+          {v.strategy_enabled && Object.values(v.scope_flags).some(Boolean) && (
             <Badge variant="outline" className="rounded-full">
               {Object.values(v.scope_flags).filter(Boolean).length} artefatos estratégicos
             </Badge>
           )}
         </div>
       </div>
-    </Section>
+    </div>
   );
 }
