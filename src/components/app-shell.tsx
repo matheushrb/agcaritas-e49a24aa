@@ -127,6 +127,30 @@ function TopBar({
             <Moon className="h-3.5 w-3.5" /> Escuro
           </button>
         </div>
+        <Popover>
+          <PopoverTrigger className="grid h-9 w-9 place-items-center rounded-full text-muted-foreground hover:text-foreground" title="Mais módulos">
+            <Grid3x3 className="h-4 w-4" />
+          </PopoverTrigger>
+          <PopoverContent align="end" className="w-72 p-2 rounded-2xl">
+            <div className="text-[11px] uppercase tracking-wider font-medium text-muted-foreground px-2 pt-1 pb-2">Mais módulos</div>
+            {extraModules.map(m => {
+              const Icon = m.icon;
+              const active = pathname.startsWith(m.to);
+              return (
+                <Link key={m.to} to={m.to}
+                  className={`flex items-center gap-3 px-2 py-2 rounded-xl hover:bg-muted ${active ? "bg-primary/10" : ""}`}>
+                  <div className={`grid h-9 w-9 place-items-center rounded-xl ${active ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}>
+                    <Icon className="h-4 w-4" />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-sm font-medium">{m.label}</div>
+                    <div className="text-[11px] text-muted-foreground">{m.desc}</div>
+                  </div>
+                </Link>
+              );
+            })}
+          </PopoverContent>
+        </Popover>
         <Link to="/notifications" title="Notificações"
           className={`grid h-9 w-9 place-items-center rounded-full ${pathname.startsWith("/notifications") ? "bg-primary/10 text-primary" : "text-muted-foreground hover:text-foreground"}`}>
           <Bell className="h-4 w-4" />
