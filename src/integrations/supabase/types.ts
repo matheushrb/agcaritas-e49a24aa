@@ -2139,6 +2139,7 @@ export type Database = {
           default_billing_model: string | null
           default_price: number | null
           description: string | null
+          has_broadcast: boolean
           icon: string | null
           id: string
           name: string
@@ -2152,6 +2153,7 @@ export type Database = {
           default_billing_model?: string | null
           default_price?: number | null
           description?: string | null
+          has_broadcast?: boolean
           icon?: string | null
           id?: string
           name: string
@@ -2165,6 +2167,7 @@ export type Database = {
           default_billing_model?: string | null
           default_price?: number | null
           description?: string | null
+          has_broadcast?: boolean
           icon?: string | null
           id?: string
           name?: string
@@ -2175,6 +2178,7 @@ export type Database = {
       }
       tasks: {
         Row: {
+          aired_at: string | null
           assignee_id: string | null
           attachments_count: number
           billed: boolean
@@ -2182,6 +2186,7 @@ export type Database = {
           billing_enabled: boolean
           billing_model: Database["public"]["Enums"]["billing_model"] | null
           billing_value: number | null
+          broadcast_kind: string | null
           client_id: string | null
           comments_count: number
           created_at: string
@@ -2197,6 +2202,7 @@ export type Database = {
           priority: Database["public"]["Enums"]["task_priority"]
           progress: number
           project_id: string | null
+          recorded_at: string | null
           stage: Database["public"]["Enums"]["task_stage"]
           start_date: string | null
           status: Database["public"]["Enums"]["task_status"]
@@ -2206,6 +2212,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          aired_at?: string | null
           assignee_id?: string | null
           attachments_count?: number
           billed?: boolean
@@ -2213,6 +2220,7 @@ export type Database = {
           billing_enabled?: boolean
           billing_model?: Database["public"]["Enums"]["billing_model"] | null
           billing_value?: number | null
+          broadcast_kind?: string | null
           client_id?: string | null
           comments_count?: number
           created_at?: string
@@ -2228,6 +2236,7 @@ export type Database = {
           priority?: Database["public"]["Enums"]["task_priority"]
           progress?: number
           project_id?: string | null
+          recorded_at?: string | null
           stage?: Database["public"]["Enums"]["task_stage"]
           start_date?: string | null
           status?: Database["public"]["Enums"]["task_status"]
@@ -2237,6 +2246,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          aired_at?: string | null
           assignee_id?: string | null
           attachments_count?: number
           billed?: boolean
@@ -2244,6 +2254,7 @@ export type Database = {
           billing_enabled?: boolean
           billing_model?: Database["public"]["Enums"]["billing_model"] | null
           billing_value?: number | null
+          broadcast_kind?: string | null
           client_id?: string | null
           comments_count?: number
           created_at?: string
@@ -2259,6 +2270,7 @@ export type Database = {
           priority?: Database["public"]["Enums"]["task_priority"]
           progress?: number
           project_id?: string | null
+          recorded_at?: string | null
           stage?: Database["public"]["Enums"]["task_stage"]
           start_date?: string | null
           status?: Database["public"]["Enums"]["task_status"]

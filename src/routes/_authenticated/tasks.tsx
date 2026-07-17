@@ -17,7 +17,7 @@ import {
   Search, Plus, LayoutGrid, List as ListIcon, Play, Pause, Square, Clock, Zap,
   ChevronLeft, ChevronRight, X, Calendar as CalendarIcon, Flag, Circle,
   MessageSquare, Paperclip, ListChecks, Activity, Trash2, MoreHorizontal, Timer,
-  DollarSign, Check, Minus, PanelRightOpen, Maximize2, PanelLeftOpen,
+  DollarSign, Check, Minus, PanelRightOpen, Maximize2, PanelLeftOpen, Radio,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -74,6 +74,9 @@ type Task = {
   current_stage_id: string | null;
   deliverables: Deliverable[];
   subtasks: Subtask[];
+  broadcast_kind: "premiere" | "live" | "recorded" | null;
+  recorded_at: string | null;
+  aired_at: string | null;
   created_at?: string;
 };
 
@@ -112,7 +115,7 @@ function TasksPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("tasks")
-        .select("id,title,description,status,priority,project_id,client_id,assignee_id,due_date,billing_model,billing_value,billing_enabled,progress,platform,delivery_type,estimated_hours,stage,task_type_id,current_stage_id,deliverables,subtasks,created_at")
+        .select("id,title,description,status,priority,project_id,client_id,assignee_id,due_date,billing_model,billing_value,billing_enabled,progress,platform,delivery_type,estimated_hours,stage,task_type_id,current_stage_id,deliverables,subtasks,broadcast_kind,recorded_at,aired_at,created_at")
         .order("created_at", { ascending: false });
       if (error) throw error;
       return (data ?? []) as Task[];
@@ -340,6 +343,9 @@ function createLocalTask(overrides: Partial<Task> = {}): Task {
     current_stage_id: null,
     deliverables: [],
     subtasks: [],
+    broadcast_kind: null,
+    recorded_at: null,
+    aired_at: null,
     created_at: new Date().toISOString(),
     ...overrides,
   };
@@ -435,6 +441,9 @@ export function TaskModal({
   const [assigneeId, setAssigneeId] = useState<string>("");
   const [taskTypeId, setTaskTypeId] = useState<string>("");
   const [currentStageId, setCurrentStageId] = useState<string>("");
+  const [broadcastKind, setBroadcastKind] = useState<"premiere" | "live" | "recorded" | "">("");
+  const [recordedAt, setRecordedAt] = useState<string>("");
+  const [airedAt, setAiredAt] = useState<string>("");
   const [costPrompt, setCostPrompt] = useState<{
     member: { id: string; name: string; cost_mode: CostMode };
     suggestion: CostSuggestion;
@@ -517,6 +526,9 @@ export function TaskModal({
     setAssigneeId(task.assignee_id ?? "");
     setTaskTypeId(task.task_type_id ?? "");
     setCurrentStageId(task.current_stage_id ?? "");
+    setBroadcastKind((task.broadcast_kind ?? "") as any);
+    setRecordedAt(task.recorded_at ?? "");
+    setAiredAt(task.aired_at ?? "");
   }, [task]);
 
   const isLocalDraft = !!task?.id.startsWith("draft-");
@@ -1047,10 +1059,80 @@ export function TaskModal({
 
 
 
-
+                {(() => {
+                  const tt = taskTypes.find((t: any) => t.id === taskTypeId);
+                  if (!tt?.has_broadcast) return null;
+                  const KINDS: { value: "premiere" | "live" | "recorded"; label: string }[] = [
+                    { value: "live", label: "Ao vivo" },
+                    { value: "premiere", label: "Estreia" },
+                    { value: "recorded", label: "Gravado" },
+                  ];
+                  return (
+                    <div className="rounded-2xl border p-4 space-y-3">
+                      <div className="flex items-center gap-2">
+                        <span className="h-8 w-8 rounded-lg bg-primary/10 text-primary inline-flex items-center justify-center">
+                          <Radio className="h-4 w-4" />
+                        </span>
+                        <div>
+                          <div className="text-sm font-semibold">Transmissão / Estreia</div>
+                          <div className="text-[11px] text-muted-foreground">Registre quando foi gravado e quando vai ao ar.</div>
+                        </div>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {KINDS.map(k => (
+                          <button
+                            key={k.value}
+                            type="button"
+                            onClick={() => { setBroadcastKind(k.value); save.mutate({ broadcast_kind: k.value } as any); }}
+                            className={cn(
+                              "h-8 rounded-full px-3 text-xs border transition-colors",
+                              broadcastKind === k.value
+                                ? "bg-primary text-primary-foreground border-primary"
+                                : "bg-background hover:bg-muted",
+                            )}
+                          >
+                            {k.label}
+                          </button>
+                        ))}
+                        {broadcastKind && (
+                          <button
+                            type="button"
+                            onClick={() => { setBroadcastKind(""); save.mutate({ broadcast_kind: null } as any); }}
+                            className="h-8 rounded-full px-3 text-xs text-muted-foreground hover:text-foreground"
+                          >
+                            Limpar
+                          </button>
+                        )}
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div>
+                          <label className="text-[10px] uppercase tracking-wide text-muted-foreground">Data de gravação</label>
+                          <div className="mt-1">
+                            <DueDatePicker
+                              value={recordedAt}
+                              onChange={v => { setRecordedAt(v); save.mutate({ recorded_at: v || null } as any); }}
+                            />
+                          </div>
+                        </div>
+                        <div>
+                          <label className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                            {broadcastKind === "live" ? "Data de transmissão" : "Data de estreia"}
+                          </label>
+                          <div className="mt-1">
+                            <DueDatePicker
+                              value={airedAt}
+                              onChange={v => { setAiredAt(v); save.mutate({ aired_at: v || null } as any); }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
 
                 <Tabs defaultValue="subtasks" className="w-full">
                   <TabsList className="rounded-full bg-primary p-1 dark:bg-primary">
+
                     <TabsTrigger value="subtasks" className="rounded-full gap-1.5 text-primary-foreground/80 dark:text-primary-foreground/90 data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-sm dark:data-[state=active]:bg-card dark:data-[state=active]:text-foreground"><ListChecks className="h-4 w-4" />Subtarefas</TabsTrigger>
                     <TabsTrigger value="uploads" className="rounded-full gap-1.5 text-primary-foreground/80 dark:text-primary-foreground/90 data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-sm dark:data-[state=active]:bg-card dark:data-[state=active]:text-foreground"><Paperclip className="h-4 w-4" />Anexos</TabsTrigger>
                     <TabsTrigger value="comments" className="rounded-full gap-1.5 text-primary-foreground/80 dark:text-primary-foreground/90 data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-sm dark:data-[state=active]:bg-card dark:data-[state=active]:text-foreground"><MessageSquare className="h-4 w-4" />Comentários</TabsTrigger>

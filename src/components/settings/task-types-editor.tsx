@@ -9,7 +9,8 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
-import { Plus, Trash2, GripVertical, Layers, Palette, Copy, Pencil, ChevronRight, ChevronDown, ListChecks, Info } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Plus, Trash2, GripVertical, Layers, Palette, Copy, Pencil, ChevronRight, ChevronDown, ListChecks, Info, Radio } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -27,6 +28,7 @@ export type TaskType = {
   default_billing_model: string | null;
   default_price: number | null;
   active: boolean;
+  has_broadcast: boolean;
 };
 
 export type TaskTypeStage = {
@@ -68,7 +70,7 @@ export function TaskTypesEditor() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("task_types")
-        .select("id,name,description,color,icon,default_billing_model,default_price,active")
+        .select("id,name,description,color,icon,default_billing_model,default_price,active,has_broadcast")
         .order("name");
       if (error) throw error;
       return (data ?? []) as TaskType[];
@@ -475,6 +477,25 @@ function TypeEditorPanel({ type, stages, onDelete, onDuplicate }:{
       <p className="text-[10px] text-muted-foreground -mt-2">
         Valor sugerido — pode ser sobrescrito manualmente em cada tarefa.
       </p>
+
+      {/* Transmissão / Estreia */}
+      <div className="rounded-xl border p-3 flex items-start justify-between gap-3">
+        <div className="flex items-start gap-2.5 min-w-0">
+          <span className="h-8 w-8 rounded-lg bg-primary/10 text-primary inline-flex items-center justify-center shrink-0">
+            <Radio className="h-4 w-4" />
+          </span>
+          <div className="min-w-0">
+            <div className="text-sm font-medium">Tem transmissão / estreia</div>
+            <p className="text-[11px] text-muted-foreground leading-snug">
+              Ativa em cada tarefa deste tipo os campos <b>data de gravação</b> e <b>data de estreia/transmissão</b>, além de escolher o formato (ao vivo, estreia gravada, gravado).
+            </p>
+          </div>
+        </div>
+        <Switch
+          checked={type.has_broadcast}
+          onCheckedChange={v => updateType.mutate({ has_broadcast: v })}
+        />
+      </div>
 
       {/* Stages */}
       <div className="space-y-2">
