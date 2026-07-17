@@ -12,6 +12,8 @@ import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Plus, Trash2, GripVertical, Layers, Palette, Copy, Pencil, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { IconPicker, TaskTypeIcon } from "./icon-picker";
+import { PriceCalculatorButton } from "./price-calculator";
 
 export type StatusGroup = "todo" | "in_progress" | "review" | "done";
 
@@ -88,13 +90,14 @@ export function TaskTypesEditor() {
   });
 
   const createType = useMutation({
-    mutationFn: async (input: { name: string; description: string; color: string }) => {
+    mutationFn: async (input: { name: string; description: string; color: string; icon: string | null }) => {
       const organization_id = await getOrgId();
       const { data, error } = await supabase.from("task_types").insert({
         organization_id,
         name: input.name,
         description: input.description || null,
         color: input.color,
+        icon: input.icon,
       }).select("id").single();
       if (error) throw error;
       return data.id as string;
@@ -188,7 +191,12 @@ export function TaskTypesEditor() {
                     active && "bg-muted",
                   )}
                 >
-                  <span className="h-3 w-3 rounded-md shrink-0" style={{ backgroundColor: t.color }} />
+                  <span
+                    className="h-6 w-6 rounded-md shrink-0 flex items-center justify-center"
+                    style={{ backgroundColor: `${t.color}22`, color: t.color }}
+                  >
+                    {t.icon ? <TaskTypeIcon name={t.icon} className="h-3.5 w-3.5" /> : <span className="h-2 w-2 rounded-sm" style={{ backgroundColor: t.color }} />}
+                  </span>
                   <div className="min-w-0 flex-1">
                     <div className="text-sm font-medium truncate">{t.name}</div>
                     <div className="text-[11px] text-muted-foreground">{stageCount} etapa{stageCount === 1 ? "" : "s"}</div>
@@ -234,12 +242,13 @@ export function TaskTypesEditor() {
 
 function NewTypeDialog({ onCancel, onCreate, pending }:{
   onCancel: () => void;
-  onCreate: (v: { name: string; description: string; color: string }) => void;
+  onCreate: (v: { name: string; description: string; color: string; icon: string | null }) => void;
   pending: boolean;
 }) {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [color, setColor] = useState(COLOR_PRESETS[0]);
+  const [icon, setIcon] = useState<string | null>(null);
   return (
     <Dialog open onOpenChange={v => !v && onCancel()}>
       <DialogContent className="max-w-md rounded-2xl">
@@ -253,21 +262,27 @@ function NewTypeDialog({ onCancel, onCreate, pending }:{
             <Label>Descrição</Label>
             <Textarea value={description} onChange={e => setDescription(e.target.value)} rows={2} placeholder="Opcional" />
           </div>
-          <div className="space-y-1.5">
-            <Label>Cor</Label>
-            <div className="flex gap-1.5 flex-wrap">
-              {COLOR_PRESETS.map(c => (
-                <button key={c} onClick={() => setColor(c)}
-                  className={cn("h-7 w-7 rounded-lg border-2 transition-all", color === c ? "border-foreground scale-110" : "border-transparent")}
-                  style={{ backgroundColor: c }} />
-              ))}
+          <div className="grid grid-cols-[auto_1fr] gap-3 items-start">
+            <div className="space-y-1.5">
+              <Label>Ícone</Label>
+              <IconPicker value={icon} onChange={setIcon} color={color} />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Cor</Label>
+              <div className="flex gap-1.5 flex-wrap">
+                {COLOR_PRESETS.map(c => (
+                  <button key={c} onClick={() => setColor(c)}
+                    className={cn("h-7 w-7 rounded-lg border-2 transition-all", color === c ? "border-foreground scale-110" : "border-transparent")}
+                    style={{ backgroundColor: c }} />
+                ))}
+              </div>
             </div>
           </div>
         </div>
         <div className="flex justify-end gap-2 mt-4">
           <Button variant="ghost" className="rounded-full" onClick={onCancel}>Cancelar</Button>
           <Button className="rounded-full" disabled={!name.trim() || pending}
-            onClick={() => onCreate({ name: name.trim(), description, color })}>
+            onClick={() => onCreate({ name: name.trim(), description, color, icon })}>
             Criar tipo
           </Button>
         </div>
@@ -286,6 +301,7 @@ function TypeEditorPanel({ type, stages, onDelete, onDuplicate }:{
   const [name, setName] = useState(type.name);
   const [description, setDescription] = useState(type.description ?? "");
   const [color, setColor] = useState(type.color);
+  const [icon, setIcon] = useState<string | null>(type.icon ?? null);
   const [billingModel, setBillingModel] = useState(type.default_billing_model ?? "");
   const [defaultPrice, setDefaultPrice] = useState(type.default_price?.toString() ?? "");
 
@@ -294,6 +310,7 @@ function TypeEditorPanel({ type, stages, onDelete, onDuplicate }:{
     setName(type.name);
     setDescription(type.description ?? "");
     setColor(type.color);
+    setIcon(type.icon ?? null);
     setBillingModel(type.default_billing_model ?? "");
     setDefaultPrice(type.default_price?.toString() ?? "");
   }, [type.id]);
@@ -359,7 +376,13 @@ function TypeEditorPanel({ type, stages, onDelete, onDuplicate }:{
     <Card className="rounded-2xl p-5 space-y-5">
       {/* Header */}
       <div className="flex items-start gap-3">
-        <button className="h-10 w-10 rounded-xl shrink-0" style={{ backgroundColor: color }} title="Cor do tipo" />
+        <div
+          className="h-10 w-10 rounded-xl shrink-0 flex items-center justify-center"
+          style={{ backgroundColor: `${color}22`, color }}
+          title="Prévia"
+        >
+          <TaskTypeIcon name={icon} className="h-5 w-5" />
+        </div>
         <div className="flex-1 min-w-0 space-y-2">
           <Input
             value={name}
@@ -386,8 +409,16 @@ function TypeEditorPanel({ type, stages, onDelete, onDuplicate }:{
         </div>
       </div>
 
-      {/* Cor + defaults */}
-      <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto_auto] gap-3 items-end">
+      {/* Cor + ícone + defaults */}
+      <div className="grid grid-cols-1 sm:grid-cols-[auto_1fr_auto_auto] gap-3 items-end">
+        <div className="space-y-1.5">
+          <Label className="text-xs">Ícone</Label>
+          <IconPicker
+            value={icon}
+            color={color}
+            onChange={v => { setIcon(v); updateType.mutate({ icon: v }); }}
+          />
+        </div>
         <div className="space-y-1.5">
           <Label className="text-xs">Cor</Label>
           <div className="flex gap-1.5 flex-wrap">
@@ -419,14 +450,22 @@ function TypeEditorPanel({ type, stages, onDelete, onDuplicate }:{
         </div>
         <div className="space-y-1.5">
           <Label className="text-xs">Preço padrão (R$)</Label>
-          <Input
-            type="number" min={0} step={0.01}
-            value={defaultPrice}
-            onChange={e => setDefaultPrice(e.target.value)}
-            onBlur={() => updateType.mutate({ default_price: defaultPrice ? Number(defaultPrice) : null })}
-            className="h-9 rounded-lg w-32"
-            placeholder="0,00"
-          />
+          <div className="flex items-center gap-2">
+            <Input
+              type="number" min={0} step={0.01}
+              value={defaultPrice}
+              onChange={e => setDefaultPrice(e.target.value)}
+              onBlur={() => updateType.mutate({ default_price: defaultPrice ? Number(defaultPrice) : null })}
+              className="h-9 rounded-lg w-32"
+              placeholder="0,00"
+            />
+            <PriceCalculatorButton
+              onApply={price => {
+                setDefaultPrice(price.toString());
+                updateType.mutate({ default_price: price });
+              }}
+            />
+          </div>
         </div>
       </div>
 

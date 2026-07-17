@@ -22,6 +22,7 @@ import {
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useTaskTypes, useTaskTypeStages, type TaskTypeRow, type TaskTypeStageRow, type StatusGroup } from "@/lib/task-types";
+import { TaskTypeIcon } from "@/components/settings/icon-picker";
 import { Link } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/_authenticated/tasks")({
@@ -1317,7 +1318,9 @@ function TaskTypePicker({
           >
             {selected ? (
               <>
-                <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: color }} />
+                {selected.icon
+                  ? <TaskTypeIcon name={selected.icon} className="h-3 w-3" />
+                  : <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: color }} />}
                 {selected.name}
               </>
             ) : (
@@ -1328,7 +1331,9 @@ function TaskTypePicker({
           <button className="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium hover:bg-muted transition-colors">
             {selected ? (
               <>
-                <span className="h-2 w-2 rounded-full" style={{ backgroundColor: color }} />
+                {selected.icon
+                  ? <TaskTypeIcon name={selected.icon} className="h-3.5 w-3.5" color={color} />
+                  : <span className="h-2 w-2 rounded-full" style={{ backgroundColor: color }} />}
                 {selected.name}
               </>
             ) : (
@@ -1356,7 +1361,14 @@ function TaskTypePicker({
             onClick={() => onChange(t.id, t)}
             className={cn("w-full flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm hover:bg-muted", value === t.id && "bg-muted/60")}
           >
-            <span className="h-2 w-2 rounded-full" style={{ backgroundColor: t.color }} />
+            <span
+              className="h-5 w-5 rounded-md flex items-center justify-center shrink-0"
+              style={{ backgroundColor: `${t.color}22`, color: t.color }}
+            >
+              {t.icon
+                ? <TaskTypeIcon name={t.icon} className="h-3 w-3" />
+                : <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: t.color }} />}
+            </span>
             {t.name}
           </button>
         ))}
