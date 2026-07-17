@@ -233,7 +233,7 @@ function Kpi({ label, value, tone = "default" }: { label: string; value: string;
   );
 }
 
-function ProjectCard({ project, clientName, counts }: { project: Project; clientName: string | null; counts: { total: number; overdue: number } }) {
+function ProjectCard({ project, clientName, counts, revenue }: { project: Project; clientName: string | null; counts: { total: number; overdue: number }; revenue: number }) {
   const fmt = (d: string | null) => d ? new Date(d).toLocaleDateString("pt-BR", { day: "2-digit", month: "short" }) : "—";
   return (
     <Link to="/projects/$projectId" params={{ projectId: project.id }} className="block">
