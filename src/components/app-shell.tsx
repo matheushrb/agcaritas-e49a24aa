@@ -2,12 +2,20 @@ import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
 import {
   LayoutGrid, Users, FileText, Briefcase, DollarSign, Calendar, UsersRound,
   Search, Settings, Moon, Sun, Sparkles, LogOut, Bell,
+  Target, Truck, Lightbulb, Megaphone, Grid3x3,
 } from "lucide-react";
 import type { ReactNode } from "react";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useTheme } from "@/components/theme-provider";
 import { supabase } from "@/integrations/supabase/client";
+
+const extraModules = [
+  { to: "/goals",     icon: Target,    label: "Metas",         desc: "Objetivos e progresso" },
+  { to: "/suppliers", icon: Truck,     label: "Fornecedores",  desc: "Freelas, softwares e parceiros" },
+  { to: "/ideas",     icon: Lightbulb, label: "Banco de Ideias", desc: "Pautas e conteúdos futuros" },
+  { to: "/campaigns", icon: Megaphone, label: "Campanhas Internas", desc: "Marketing próprio da agência" },
+] as const;
 
 // Sidebar principal — 7 ícones conforme documento Pixie v2 (Dashboard, CRM,
 // Propostas, Projetos, Financeiro, Agenda, RH). Configurações no rodapé.
