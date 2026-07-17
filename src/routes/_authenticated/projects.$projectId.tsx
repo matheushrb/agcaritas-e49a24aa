@@ -179,6 +179,18 @@ function ProjectDetail() {
     },
   });
 
+  const { data: costs = [] } = useQuery<{ id: string; amount: number; status: string; kind: string; description: string | null; occurred_on: string }[]>({
+    queryKey: ["project-costs-finance", projectId],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("project_costs")
+        .select("id,amount,status,kind,description,occurred_on")
+        .eq("project_id", projectId);
+      if (error) return [];
+      return (data ?? []) as any[];
+    },
+  });
+
   // Base tasks from the project's project_type
   const { data: projectTypeRow } = useQuery({
     queryKey: ["project-type-row", project?.project_type],
