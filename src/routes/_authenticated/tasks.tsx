@@ -903,7 +903,31 @@ export function TaskModal({
                     <AssigneePicker
                       value={assigneeId}
                       members={teamMembers}
-                      onChange={v => { setAssigneeId(v); save.mutate({ assignee_id: v || null }); }}
+                      onChange={v => {
+                        setAssigneeId(v);
+                        save.mutate({ assignee_id: v || null });
+                        if (!v) return;
+                        const m = costMembers.find(cm => cm.user_id === v);
+                        if (!m) return;
+                        const est = estimatedHours ? Number(estimatedHours) : null;
+                        const s = suggestTaskCost(
+                          {
+                            cost_mode: m.cost_mode,
+                            hourly_rate: m.hourly_rate,
+                            monthly_salary: m.monthly_salary,
+                            monthly_hours: m.monthly_hours,
+                            default_task_rate: m.default_task_rate,
+                            task_rate_overrides: m.task_rate_overrides ?? {},
+                          },
+                          { task_type_id: taskTypeId || null, estimated_hours: est }
+                        );
+                        if (!s) return;
+                        setCostPrompt({
+                          member: { id: m.id, name: m.name, cost_mode: m.cost_mode },
+                          suggestion: s,
+                          assigneeId: v,
+                        });
+                      }}
                     />
                   </InlineField>
                   <InlineField label="Progresso">
