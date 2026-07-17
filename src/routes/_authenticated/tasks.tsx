@@ -205,6 +205,8 @@ function TasksPage() {
               <SelectTrigger className="w-[140px] rounded-full"><SelectValue placeholder="Prioridade" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todas prioridades</SelectItem>
+                <SelectItem value="critical">Crítica</SelectItem>
+                <SelectItem value="urgent">Urgente</SelectItem>
                 <SelectItem value="high">Alta</SelectItem>
                 <SelectItem value="medium">Média</SelectItem>
                 <SelectItem value="low">Baixa</SelectItem>
