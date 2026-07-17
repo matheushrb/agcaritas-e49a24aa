@@ -160,13 +160,53 @@ export function CatalogEditor({
                   onChange={e => setDraft({ ...editing, category: e.target.value })} />
               </div>
             )}
+            {table === "platforms" && (
+              <div className="space-y-1.5">
+                <Label className="text-xs">Logo (PNG)</Label>
+                <div className="flex items-center gap-3">
+                  <IconPreview name={editing.icon} color={editing.color} iconUrl={editing.icon_url} size={48} />
+                  <div className="flex-1 flex flex-wrap gap-2">
+                    <label className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full border border-border hover:bg-muted/60 cursor-pointer transition">
+                      <Upload className="h-3.5 w-3.5" />
+                      {editing.icon_url ? "Trocar logo" : "Enviar PNG"}
+                      <input
+                        type="file"
+                        accept="image/png,image/jpeg,image/webp,image/svg+xml"
+                        className="hidden"
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          if (file.size > 512 * 1024) {
+                            toast.error("Imagem muito grande (máx. 512 KB)");
+                            return;
+                          }
+                          const reader = new FileReader();
+                          reader.onload = () => setDraft({ ...editing, icon_url: String(reader.result) });
+                          reader.readAsDataURL(file);
+                        }}
+                      />
+                    </label>
+                    {editing.icon_url && (
+                      <button
+                        type="button"
+                        onClick={() => setDraft({ ...editing, icon_url: null })}
+                        className="inline-flex items-center gap-1 text-xs px-3 py-1.5 rounded-full border border-border hover:bg-muted/60 transition text-destructive"
+                      >
+                        <X className="h-3.5 w-3.5" /> Remover
+                      </button>
+                    )}
+                  </div>
+                </div>
+                <p className="text-[10px] text-muted-foreground">Use a logo real da plataforma para facilitar a identificação. Se não enviar, um ícone será usado.</p>
+              </div>
+            )}
             <div className="flex flex-wrap items-center gap-3">
               <div className="space-y-1.5">
                 <Label className="text-xs">Cor</Label>
                 <ColorPicker value={editing.color ?? "#3B82F6"} onChange={c => setDraft({ ...editing, color: c })} />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs">Ícone</Label>
+                <Label className="text-xs">Ícone {table === "platforms" && <span className="text-muted-foreground">(fallback)</span>}</Label>
                 <IconPicker value={editing.icon ?? null} color={editing.color ?? "#3B82F6"}
                   onChange={n => setDraft({ ...editing, icon: n })} />
               </div>
