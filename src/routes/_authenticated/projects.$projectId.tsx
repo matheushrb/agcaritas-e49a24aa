@@ -47,11 +47,19 @@ type Project = {
 type Task = {
   id: string;
   title: string;
+  description: string | null;
   status: "todo" | "in_progress" | "review" | "done";
   priority: "low" | "medium" | "high";
   due_date: string | null;
   billing_value: number | null;
+  billing_model: "hourly" | "one_time" | "package" | "monthly" | null;
   project_id: string | null;
+  assignee_id: string | null;
+  platform: string | null;
+  delivery_type: string | null;
+  estimated_hours: number | null;
+  progress: number;
+  created_at?: string;
 };
 type Charge = {
   id: string;
@@ -118,7 +126,7 @@ function ProjectDetail() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("tasks")
-        .select("id,title,status,priority,due_date,billing_value,project_id")
+        .select("id,title,description,status,priority,due_date,billing_value,billing_model,project_id,assignee_id,platform,delivery_type,estimated_hours,progress,created_at")
         .eq("project_id", projectId)
         .order("created_at", { ascending: false });
       if (error) throw error;
