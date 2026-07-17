@@ -1087,6 +1087,8 @@ export function TaskModal({
                   canBill={invoiced && status !== "done"}
                   taskFinalized={status === "done"}
                   taskInvoiced={invoiced}
+                  platformOptions={projectPlatforms ?? PLATFORM_OPTIONS}
+
                 />
 
 
