@@ -518,7 +518,7 @@ export function NewClientDialog({
       title={mode === "edit" ? "Editar cliente" : "Novo cliente"}
       subtitle="Cadastro fiscal, comercial e operacional — CNPJ preenche o restante automaticamente."
 
-      size="lg"
+      size="md"
       main={
         <Tabs value={tab} onValueChange={setTab} className="w-full">
           <TabsList className="rounded-full bg-muted p-1">
