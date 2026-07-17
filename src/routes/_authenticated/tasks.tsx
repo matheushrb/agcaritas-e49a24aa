@@ -30,6 +30,16 @@ type TaskPriority = "low" | "medium" | "high";
 type BillingModel = "hourly" | "one_time" | "package" | "monthly" | "per_task";
 type TaskStage = "briefing" | "creation" | "review" | "approval" | "delivery";
 
+type Deliverable = {
+  id: string;
+  platform: string;
+  type: string;
+  billing_enabled: boolean;
+  billing_model: BillingModel | null;
+  billing_value: number | null;
+  invoiced?: boolean;
+};
+
 type Task = {
   id: string;
   title: string;
@@ -48,6 +58,7 @@ type Task = {
   delivery_type: string | null;
   estimated_hours: number | null;
   stage: TaskStage;
+  deliverables: Deliverable[];
   created_at?: string;
 };
 
