@@ -34,7 +34,7 @@ function SettingsPage() {
     <div className="space-y-6">
       <header>
         <h1 className="font-display text-3xl font-bold tracking-tight">Configurações</h1>
-        <p className="text-sm text-muted-foreground">Configurações globais da agência — dados cadastrais, serviços, plataformas, fluxos, funil, usuários e integrações.</p>
+        <p className="text-sm text-muted-foreground">Configurações globais da agência — dados cadastrais, serviços, plataformas, tipos de tarefa, funil, usuários e integrações.</p>
       </header>
 
       <Tabs defaultValue="agency">
