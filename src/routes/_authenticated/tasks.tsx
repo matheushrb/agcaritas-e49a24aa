@@ -636,6 +636,18 @@ export function TaskModal({
     return () => window.removeEventListener("keydown", onKey);
   }, [task, mode, onClose]);
 
+  // Modo docked: empurra o conteúdo principal via CSS var lida pelo AppShell.
+  const DOCK_WIDTH = 640;
+  useEffect(() => {
+    const root = document.documentElement;
+    if (task && mode === "docked") {
+      root.style.setProperty("--dock-offset", `${DOCK_WIDTH + 24}px`);
+    } else {
+      root.style.setProperty("--dock-offset", "0px");
+    }
+    return () => { root.style.setProperty("--dock-offset", "0px"); };
+  }, [task, mode]);
+
   // Índice da etapa atual — dinâmico se houver tipo, senão usa o enum antigo.
   const useDynamicStages = taskTypeId && typeStages.length > 0;
   const dynamicStageIndex = useDynamicStages
@@ -704,8 +716,9 @@ export function TaskModal({
         "fixed z-50 bg-white border border-border shadow-2xl flex flex-col overflow-hidden",
         mode === "modal"
           ? "left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[calc(100vw-2rem)] max-w-[1360px] h-[calc(100vh-3rem)] max-h-[900px] rounded-3xl"
-          : "top-3 right-3 bottom-3 w-[calc(100vw-2rem)] sm:w-[560px] rounded-2xl"
+          : "top-3 right-3 bottom-3 rounded-2xl"
       )}
+      style={mode === "docked" ? { width: `min(calc(100vw - 1.5rem), ${DOCK_WIDTH}px)` } : undefined}
     >
             {/* Top bar */}
             <div className="flex items-center gap-2 px-6 py-3 border-b border-border bg-white">
@@ -745,10 +758,16 @@ export function TaskModal({
               </div>
             </div>
 
-            {/* Body */}
-            <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-[1fr_320px]">
+            {/* Body — split em modal, coluna única em docked */}
+            <div className={cn(
+              "flex-1 min-h-0 grid grid-cols-1",
+              mode === "modal" && "lg:grid-cols-[1fr_320px]",
+            )}>
               {/* ---------- MAIN ---------- */}
-              <div className="min-h-0 overflow-y-auto px-6 py-6 space-y-5 border-r border-border">
+              <div className={cn(
+                "min-h-0 overflow-y-auto px-6 py-6 space-y-5",
+                mode === "modal" && "border-r border-border",
+              )}>
                 <input
                   value={title}
                   onChange={e => setTitle(e.target.value)}
@@ -960,8 +979,13 @@ export function TaskModal({
                 </Tabs>
               </div>
 
-              {/* ---------- SIDEBAR ---------- */}
-              <aside className="min-h-0 overflow-y-auto bg-muted/20 px-5 py-6 space-y-5">
+              {/* ---------- SIDEBAR (vira seção inline em docked) ---------- */}
+              <aside className={cn(
+                "min-h-0 space-y-5",
+                mode === "modal"
+                  ? "overflow-y-auto bg-muted/20 px-5 py-6"
+                  : "border-t border-border px-6 py-5",
+              )}>
                 <SidebarSection title="Vínculo">
                   <SidebarRow label="Projeto">
                     <Select

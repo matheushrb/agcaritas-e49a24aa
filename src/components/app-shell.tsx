@@ -84,8 +84,12 @@ export function AppShell({ children }: { children: ReactNode }) {
         </div>
       </aside>
 
-      {/* Main content, padded left to make room for floating sidebar */}
-      <div className="pl-4 pr-4 sm:pl-6 sm:pr-6 md:pl-24 lg:pl-28 lg:pr-8 py-6">
+      {/* Main content, padded left to make room for floating sidebar.
+          paddingRight reserva espaço para janelas encaixadas (dock) via --dock-offset. */}
+      <div
+        className="pl-4 sm:pl-6 md:pl-24 lg:pl-28 py-6 transition-[padding] duration-200"
+        style={{ paddingRight: "max(1rem, calc(var(--dock-offset, 0px) + 1rem))" }}
+      >
         <TopBar theme={theme} onToggleTheme={setTheme} pathname={pathname} />
         <main className="mt-6">
           {children}
