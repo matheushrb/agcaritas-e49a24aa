@@ -25,6 +25,8 @@ import { useTaskTypes, useTaskTypeStages, type TaskTypeRow, type TaskTypeStageRo
 import { TaskTypeIcon } from "@/components/settings/icon-picker";
 import { useAutomationSettings, effectivePriority, DEFAULT_AUTOMATION_SETTINGS } from "@/lib/automation-settings";
 import { Link } from "@tanstack/react-router";
+import { CostConfirmDialog, type CostSuggestion } from "@/components/cost-confirm-dialog";
+import { suggestTaskCost, type CostMode } from "@/components/team-cost-fields";
 
 export const Route = createFileRoute("/_authenticated/tasks")({
   component: TasksPage,
@@ -433,6 +435,11 @@ export function TaskModal({
   const [assigneeId, setAssigneeId] = useState<string>("");
   const [taskTypeId, setTaskTypeId] = useState<string>("");
   const [currentStageId, setCurrentStageId] = useState<string>("");
+  const [costPrompt, setCostPrompt] = useState<{
+    member: { id: string; name: string; cost_mode: CostMode };
+    suggestion: CostSuggestion;
+    assigneeId: string;
+  } | null>(null);
   const persistedDraftIdRef = useRef<string | null>(null);
   const creatingDraftRef = useRef<Promise<string> | null>(null);
 
@@ -453,6 +460,21 @@ export function TaskModal({
           name: (p.full_name || "Sem nome") as string,
           avatar_url: (p.avatar_url ?? null) as string | null,
         }));
+    },
+  });
+
+  // team_members com dados de custo — indexados por user_id para lookup rápido ao atribuir
+  const { data: costMembers = [] } = useQuery({
+    queryKey: ["tasks-modal-cost-members"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("team_members")
+        .select("id,user_id,name,cost_mode,hourly_rate,monthly_salary,monthly_hours,default_task_rate,task_rate_overrides");
+      return (data ?? []) as Array<{
+        id: string; user_id: string | null; name: string; cost_mode: CostMode;
+        hourly_rate: number | null; monthly_salary: number | null; monthly_hours: number | null;
+        default_task_rate: number | null; task_rate_overrides: Record<string, number> | null;
+      }>;
     },
   });
 
@@ -881,7 +903,31 @@ export function TaskModal({
                     <AssigneePicker
                       value={assigneeId}
                       members={teamMembers}
-                      onChange={v => { setAssigneeId(v); save.mutate({ assignee_id: v || null }); }}
+                      onChange={v => {
+                        setAssigneeId(v);
+                        save.mutate({ assignee_id: v || null });
+                        if (!v) return;
+                        const m = costMembers.find(cm => cm.user_id === v);
+                        if (!m) return;
+                        const est = estimatedHours ? Number(estimatedHours) : null;
+                        const s = suggestTaskCost(
+                          {
+                            cost_mode: m.cost_mode,
+                            hourly_rate: m.hourly_rate,
+                            monthly_salary: m.monthly_salary,
+                            monthly_hours: m.monthly_hours,
+                            default_task_rate: m.default_task_rate,
+                            task_rate_overrides: m.task_rate_overrides ?? {},
+                          },
+                          { task_type_id: taskTypeId || null, estimated_hours: est }
+                        );
+                        if (!s) return;
+                        setCostPrompt({
+                          member: { id: m.id, name: m.name, cost_mode: m.cost_mode },
+                          suggestion: s,
+                          assigneeId: v,
+                        });
+                      }}
                     />
                   </InlineField>
                   <InlineField label="Progresso">
@@ -1205,6 +1251,44 @@ export function TaskModal({
         <div className="fixed inset-0 z-40 bg-black/50 animate-in fade-in-0" onClick={onClose} />
       )}
       {shell}
+      {costPrompt && (
+        <CostConfirmDialog
+          open={!!costPrompt}
+          onOpenChange={(v) => { if (!v) setCostPrompt(null); }}
+          memberName={costPrompt.member.name}
+          costMode={costPrompt.member.cost_mode}
+          suggestion={costPrompt.suggestion}
+          onSkip={() => setCostPrompt(null)}
+          onConfirm={async ({ amount, hours, description }) => {
+            try {
+              const { data: proj } = await supabase.from("projects").select("organization_id").eq("id", projectId || "").maybeSingle();
+              if (!projectId || !proj?.organization_id) {
+                toast.error("Vincule a tarefa a um projeto antes de gerar custo.");
+                setCostPrompt(null);
+                return;
+              }
+              const { error } = await supabase.from("project_costs").insert({
+                organization_id: proj.organization_id,
+                project_id: projectId,
+                task_id: task?.id.startsWith("draft-") ? null : task?.id ?? null,
+                team_member_id: costPrompt.member.id,
+                kind: costPrompt.suggestion.kind,
+                amount,
+                hours,
+                description: description || null,
+                status: costPrompt.member.cost_mode === "internal_fixed" ? "confirmed" : "pending",
+              });
+              if (error) throw error;
+              toast.success("Custo registrado");
+              qc.invalidateQueries({ queryKey: ["project-costs", projectId] });
+            } catch (e: any) {
+              toast.error(e.message ?? "Falha ao registrar custo");
+            } finally {
+              setCostPrompt(null);
+            }
+          }}
+        />
+      )}
     </>
   );
 }

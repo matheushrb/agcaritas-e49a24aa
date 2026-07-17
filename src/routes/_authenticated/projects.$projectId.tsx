@@ -12,12 +12,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import {
   ArrowLeft, Calendar, CheckSquare, FileText, Grid3x3, Timer as TimerIcon,
   Megaphone, Compass, Rocket, DollarSign, Plus, Flag, Zap,
-  Building2, CheckCircle2, RotateCcw, Pencil, AlertTriangle, Users as UsersIcon,
+  Building2, CheckCircle2, RotateCcw, Pencil, AlertTriangle, Users as UsersIcon, Wallet,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { TaskModal } from "./tasks";
 import { EditProjectDialog, type EditableProject } from "@/components/edit-project-dialog";
+import { ProjectCostsTab } from "@/components/project-costs-tab";
 
 export const Route = createFileRoute("/_authenticated/projects/$projectId")({
   component: ProjectDetail,
@@ -38,6 +39,7 @@ export const Route = createFileRoute("/_authenticated/projects/$projectId")({
 type ProjectStatus = "planning" | "active" | "review" | "done" | "paused";
 type Project = {
   id: string;
+  organization_id: string;
   name: string;
   description: string | null;
   status: ProjectStatus;
@@ -124,7 +126,7 @@ function ProjectDetail() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("projects")
-        .select("id,name,description,status,client_id,start_date,end_date,created_at,project_type,billing_model,urgency,fixed_value,monthly_value,hourly_rate,printing_budget,notes,has_content_calendar,has_content_grid,has_timeline,traffic_budget,scope_flags")
+        .select("id,organization_id,name,description,status,client_id,start_date,end_date,created_at,project_type,billing_model,urgency,fixed_value,monthly_value,hourly_rate,printing_budget,notes,has_content_calendar,has_content_grid,has_timeline,traffic_budget,scope_flags")
         .eq("id", projectId)
         .maybeSingle();
       if (error) throw error;
@@ -396,6 +398,7 @@ function ProjectDetail() {
                 {showTraffic && <TabsTrigger value="traffic"   className="rounded-full gap-1.5"><Megaphone className="h-4 w-4" />Tráfego</TabsTrigger>}
                 {showStrategy && <TabsTrigger value="strategy"  className="rounded-full gap-1.5"><Compass className="h-4 w-4" />Estratégia</TabsTrigger>}
                 {showCampaigns && <TabsTrigger value="campaigns" className="rounded-full gap-1.5"><Rocket className="h-4 w-4" />Campanhas</TabsTrigger>}
+                <TabsTrigger value="costs"     className="rounded-full gap-1.5"><Wallet className="h-4 w-4" />Custos</TabsTrigger>
                 <TabsTrigger value="finance"   className="rounded-full gap-1.5"><DollarSign className="h-4 w-4" />Financeiro</TabsTrigger>
               </TabsList>
             </div>
@@ -481,6 +484,10 @@ function ProjectDetail() {
                 />
               </TabsContent>
             )}
+
+            <TabsContent value="costs" className="mt-4">
+              <ProjectCostsTab projectId={projectId} organizationId={project.organization_id} />
+            </TabsContent>
 
             <TabsContent value="finance" className="mt-4">
               <FinanceTab charges={charges} />

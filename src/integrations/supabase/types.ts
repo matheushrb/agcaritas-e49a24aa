@@ -1434,6 +1434,79 @@ export type Database = {
           },
         ]
       }
+      project_costs: {
+        Row: {
+          amount: number
+          created_at: string
+          created_by: string | null
+          description: string | null
+          hours: number | null
+          id: string
+          kind: Database["public"]["Enums"]["project_cost_kind"]
+          occurred_on: string
+          organization_id: string
+          project_id: string
+          status: Database["public"]["Enums"]["project_cost_status"]
+          task_id: string | null
+          team_member_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          hours?: number | null
+          id?: string
+          kind: Database["public"]["Enums"]["project_cost_kind"]
+          occurred_on?: string
+          organization_id: string
+          project_id: string
+          status?: Database["public"]["Enums"]["project_cost_status"]
+          task_id?: string | null
+          team_member_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          hours?: number | null
+          id?: string
+          kind?: Database["public"]["Enums"]["project_cost_kind"]
+          occurred_on?: string
+          organization_id?: string
+          project_id?: string
+          status?: Database["public"]["Enums"]["project_cost_status"]
+          task_id?: string | null
+          team_member_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_costs_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_costs_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_costs_team_member_id_fkey"
+            columns: ["team_member_id"]
+            isOneToOne: false
+            referencedRelation: "team_members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       project_members: {
         Row: {
           created_at: string
@@ -2242,49 +2315,67 @@ export type Database = {
       team_members: {
         Row: {
           avatar_url: string | null
+          cost_mode: Database["public"]["Enums"]["team_cost_mode"]
+          cost_notes: string | null
           created_at: string
+          default_task_rate: number | null
           email: string | null
           hourly_rate: number | null
           id: string
           level: Database["public"]["Enums"]["team_level"] | null
+          monthly_hours: number | null
+          monthly_salary: number | null
           name: string
           organization_id: string
           phone: string | null
           role: string | null
           specialty: string | null
           status: Database["public"]["Enums"]["team_status"]
+          task_rate_overrides: Json
           updated_at: string
           user_id: string | null
         }
         Insert: {
           avatar_url?: string | null
+          cost_mode?: Database["public"]["Enums"]["team_cost_mode"]
+          cost_notes?: string | null
           created_at?: string
+          default_task_rate?: number | null
           email?: string | null
           hourly_rate?: number | null
           id?: string
           level?: Database["public"]["Enums"]["team_level"] | null
+          monthly_hours?: number | null
+          monthly_salary?: number | null
           name: string
           organization_id: string
           phone?: string | null
           role?: string | null
           specialty?: string | null
           status?: Database["public"]["Enums"]["team_status"]
+          task_rate_overrides?: Json
           updated_at?: string
           user_id?: string | null
         }
         Update: {
           avatar_url?: string | null
+          cost_mode?: Database["public"]["Enums"]["team_cost_mode"]
+          cost_notes?: string | null
           created_at?: string
+          default_task_rate?: number | null
           email?: string | null
           hourly_rate?: number | null
           id?: string
           level?: Database["public"]["Enums"]["team_level"] | null
+          monthly_hours?: number | null
+          monthly_salary?: number | null
           name?: string
           organization_id?: string
           phone?: string | null
           role?: string | null
           specialty?: string | null
           status?: Database["public"]["Enums"]["team_status"]
+          task_rate_overrides?: Json
           updated_at?: string
           user_id?: string | null
         }
@@ -2399,12 +2490,23 @@ export type Database = {
       contract_status: "active" | "closed" | "suspended" | "renewing"
       lead_stage: "lead" | "contact" | "proposal" | "negotiation" | "closed"
       plan_status: "draft" | "in_review" | "approved" | "archived"
+      project_cost_kind:
+        | "per_task"
+        | "per_hour"
+        | "one_off"
+        | "allocated_internal"
+      project_cost_status: "pending" | "confirmed" | "paid" | "cancelled"
       project_status: "planning" | "active" | "review" | "done" | "paused"
       proposal_status: "draft" | "sent" | "viewed" | "approved" | "declined"
       stage_status_group: "todo" | "in_progress" | "review" | "done"
       task_priority: "low" | "medium" | "high" | "urgent" | "critical"
       task_stage: "briefing" | "creation" | "review" | "approval" | "delivery"
       task_status: "todo" | "in_progress" | "review" | "done"
+      team_cost_mode:
+        | "internal_fixed"
+        | "freelancer_per_task"
+        | "freelancer_per_hour"
+        | "one_off"
       team_level: "junior" | "mid" | "senior" | "lead"
       team_status: "active" | "vacation" | "away" | "inactive"
     }
@@ -2540,12 +2642,25 @@ export const Constants = {
       contract_status: ["active", "closed", "suspended", "renewing"],
       lead_stage: ["lead", "contact", "proposal", "negotiation", "closed"],
       plan_status: ["draft", "in_review", "approved", "archived"],
+      project_cost_kind: [
+        "per_task",
+        "per_hour",
+        "one_off",
+        "allocated_internal",
+      ],
+      project_cost_status: ["pending", "confirmed", "paid", "cancelled"],
       project_status: ["planning", "active", "review", "done", "paused"],
       proposal_status: ["draft", "sent", "viewed", "approved", "declined"],
       stage_status_group: ["todo", "in_progress", "review", "done"],
       task_priority: ["low", "medium", "high", "urgent", "critical"],
       task_stage: ["briefing", "creation", "review", "approval", "delivery"],
       task_status: ["todo", "in_progress", "review", "done"],
+      team_cost_mode: [
+        "internal_fixed",
+        "freelancer_per_task",
+        "freelancer_per_hour",
+        "one_off",
+      ],
       team_level: ["junior", "mid", "senior", "lead"],
       team_status: ["active", "vacation", "away", "inactive"],
     },
