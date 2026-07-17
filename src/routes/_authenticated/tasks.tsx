@@ -435,6 +435,11 @@ export function TaskModal({
   const [assigneeId, setAssigneeId] = useState<string>("");
   const [taskTypeId, setTaskTypeId] = useState<string>("");
   const [currentStageId, setCurrentStageId] = useState<string>("");
+  const [costPrompt, setCostPrompt] = useState<{
+    member: { id: string; name: string; cost_mode: CostMode };
+    suggestion: CostSuggestion;
+    assigneeId: string;
+  } | null>(null);
   const persistedDraftIdRef = useRef<string | null>(null);
   const creatingDraftRef = useRef<Promise<string> | null>(null);
 
