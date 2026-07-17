@@ -7,6 +7,7 @@ export type TaskTypeRow = {
   id: string;
   name: string;
   color: string;
+  icon: string | null;
   default_billing_model: string | null;
   default_price: number | null;
 };
@@ -28,7 +29,7 @@ export function useTaskTypes() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("task_types")
-        .select("id,name,color,default_billing_model,default_price")
+        .select("id,name,color,icon,default_billing_model,default_price")
         .eq("active", true)
         .order("name");
       if (error) throw error;
