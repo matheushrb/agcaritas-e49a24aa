@@ -1059,10 +1059,80 @@ export function TaskModal({
 
 
 
-
+                {(() => {
+                  const tt = taskTypes.find((t: any) => t.id === taskTypeId);
+                  if (!tt?.has_broadcast) return null;
+                  const KINDS: { value: "premiere" | "live" | "recorded"; label: string }[] = [
+                    { value: "live", label: "Ao vivo" },
+                    { value: "premiere", label: "Estreia" },
+                    { value: "recorded", label: "Gravado" },
+                  ];
+                  return (
+                    <div className="rounded-2xl border p-4 space-y-3">
+                      <div className="flex items-center gap-2">
+                        <span className="h-8 w-8 rounded-lg bg-primary/10 text-primary inline-flex items-center justify-center">
+                          <Radio className="h-4 w-4" />
+                        </span>
+                        <div>
+                          <div className="text-sm font-semibold">Transmissão / Estreia</div>
+                          <div className="text-[11px] text-muted-foreground">Registre quando foi gravado e quando vai ao ar.</div>
+                        </div>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {KINDS.map(k => (
+                          <button
+                            key={k.value}
+                            type="button"
+                            onClick={() => { setBroadcastKind(k.value); save.mutate({ broadcast_kind: k.value } as any); }}
+                            className={cn(
+                              "h-8 rounded-full px-3 text-xs border transition-colors",
+                              broadcastKind === k.value
+                                ? "bg-primary text-primary-foreground border-primary"
+                                : "bg-background hover:bg-muted",
+                            )}
+                          >
+                            {k.label}
+                          </button>
+                        ))}
+                        {broadcastKind && (
+                          <button
+                            type="button"
+                            onClick={() => { setBroadcastKind(""); save.mutate({ broadcast_kind: null } as any); }}
+                            className="h-8 rounded-full px-3 text-xs text-muted-foreground hover:text-foreground"
+                          >
+                            Limpar
+                          </button>
+                        )}
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div>
+                          <label className="text-[10px] uppercase tracking-wide text-muted-foreground">Data de gravação</label>
+                          <div className="mt-1">
+                            <DueDatePicker
+                              value={recordedAt}
+                              onChange={v => { setRecordedAt(v); save.mutate({ recorded_at: v || null } as any); }}
+                            />
+                          </div>
+                        </div>
+                        <div>
+                          <label className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                            {broadcastKind === "live" ? "Data de transmissão" : "Data de estreia"}
+                          </label>
+                          <div className="mt-1">
+                            <DueDatePicker
+                              value={airedAt}
+                              onChange={v => { setAiredAt(v); save.mutate({ aired_at: v || null } as any); }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
 
                 <Tabs defaultValue="subtasks" className="w-full">
                   <TabsList className="rounded-full bg-primary p-1 dark:bg-primary">
+
                     <TabsTrigger value="subtasks" className="rounded-full gap-1.5 text-primary-foreground/80 dark:text-primary-foreground/90 data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-sm dark:data-[state=active]:bg-card dark:data-[state=active]:text-foreground"><ListChecks className="h-4 w-4" />Subtarefas</TabsTrigger>
                     <TabsTrigger value="uploads" className="rounded-full gap-1.5 text-primary-foreground/80 dark:text-primary-foreground/90 data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-sm dark:data-[state=active]:bg-card dark:data-[state=active]:text-foreground"><Paperclip className="h-4 w-4" />Anexos</TabsTrigger>
                     <TabsTrigger value="comments" className="rounded-full gap-1.5 text-primary-foreground/80 dark:text-primary-foreground/90 data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-sm dark:data-[state=active]:bg-card dark:data-[state=active]:text-foreground"><MessageSquare className="h-4 w-4" />Comentários</TabsTrigger>
