@@ -333,11 +333,6 @@ function ProjectDetail() {
       </div>
 
       {/* Tabs */}
-      <Tabs defaultValue="tasks">
-        <div className="overflow-x-auto">
-          <TabsList className="rounded-full bg-muted/60 h-auto flex-wrap">
-            <TabsTrigger value="tasks"     className="rounded-full gap-1.5"><CheckSquare className="h-4 w-4" />Tarefas</TabsTrigger>
-      {/* Tabs */}
       {(() => {
         const showCalendar = !!project.has_content_calendar;
         const showGrid = !!project.has_content_grid;
