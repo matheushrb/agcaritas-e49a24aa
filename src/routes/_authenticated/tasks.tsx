@@ -693,50 +693,65 @@ export function TaskModal({ task, onClose }: { task: Task | null; onClose: () =>
                   </SidebarRow>
                 </SidebarSection>
 
-                <SidebarSection title="Faturamento">
-                  <SidebarRow label="Modelo">
-                    <Select value={billingModel || "none"} onValueChange={v => { const nv = v === "none" ? "" : v; setBillingModel(nv as BillingModel | ""); save.mutate({ billing_model: (nv || null) as BillingModel | null }); }}>
-                      <SelectTrigger className="h-8 rounded-lg border-none bg-transparent hover:bg-muted/60 text-sm px-2 shadow-none">
-                        <SelectValue placeholder="—" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="none">—</SelectItem>
-                        <SelectItem value="hourly">Por hora</SelectItem>
-                        <SelectItem value="one_time">Fixo</SelectItem>
-                        <SelectItem value="package">Pacote</SelectItem>
-                        <SelectItem value="monthly">Recorrente</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </SidebarRow>
-                  <SidebarRow label="Valor">
-                    <div className="flex items-center gap-1.5 w-full">
-                      <span className="text-xs text-muted-foreground">R$</span>
-                      <Input
-                        type="number" min={0} step={0.01}
-                        value={billingValue}
-                        onChange={e => setBillingValue(e.target.value)}
-                        onBlur={() => save.mutate({ billing_value: billingValue ? Number(billingValue) : null })}
-                        className="h-8 rounded-lg border-none bg-transparent hover:bg-muted/60 text-sm px-2 shadow-none focus-visible:ring-0"
-                        placeholder="0,00"
+                <div>
+                  <div className="flex items-center justify-between mb-2 px-1">
+                    <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Faturamento</span>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[11px] text-muted-foreground">{billingEnabled ? "Ativado" : "Desligado"}</span>
+                      <Switch
+                        checked={billingEnabled}
+                        onCheckedChange={v => { setBillingEnabled(v); save.mutate({ billing_enabled: v }); }}
                       />
                     </div>
-                  </SidebarRow>
-                  <div className="p-3 space-y-2">
-                    <Button
-                      className="w-full rounded-full gap-1.5"
-                      disabled={!billingValue || Number(billingValue) <= 0 || bill.isPending || invoiced}
-                      onClick={() => bill.mutate()}
-                    >
-                      {invoiced ? <><Check className="h-4 w-4" />Lançado no Financeiro</> : <><DollarSign className="h-4 w-4" />Faturar tarefa</>}
-                    </Button>
-                    <p className="text-[11px] text-muted-foreground leading-snug">
-                      Cria uma cobrança pendente vinculada ao projeto e cliente, com o valor definido acima.
-                    </p>
                   </div>
-                  <div className="pt-1">
-                    <TaskTimer />
+                  <div className={cn("rounded-xl bg-card border border-border divide-y divide-border transition-opacity", !billingEnabled && "opacity-50 pointer-events-none")}>
+                    <SidebarRow label="Modelo">
+                      <Select value={billingModel || "none"} onValueChange={v => { const nv = v === "none" ? "" : v; setBillingModel(nv as BillingModel | ""); save.mutate({ billing_model: (nv || null) as BillingModel | null }); }}>
+                        <SelectTrigger className="h-8 rounded-lg border-none bg-transparent hover:bg-muted/60 text-sm px-2 shadow-none">
+                          <SelectValue placeholder="—" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">—</SelectItem>
+                          <SelectItem value="per_task">Por tarefa</SelectItem>
+                          <SelectItem value="hourly">Por hora</SelectItem>
+                          <SelectItem value="one_time">Fixo</SelectItem>
+                          <SelectItem value="package">Pacote</SelectItem>
+                          <SelectItem value="monthly">Recorrente</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </SidebarRow>
+                    <SidebarRow label="Valor">
+                      <div className="flex items-center gap-1.5 w-full">
+                        <span className="text-xs text-muted-foreground">R$</span>
+                        <Input
+                          type="number" min={0} step={0.01}
+                          value={billingValue}
+                          onChange={e => setBillingValue(e.target.value)}
+                          onBlur={() => save.mutate({ billing_value: billingValue ? Number(billingValue) : null })}
+                          className="h-8 rounded-lg border-none bg-transparent hover:bg-muted/60 text-sm px-2 shadow-none focus-visible:ring-0"
+                          placeholder="0,00"
+                        />
+                      </div>
+                    </SidebarRow>
+                    <div className="p-3 space-y-2">
+                      <Button
+                        className="w-full rounded-full gap-1.5"
+                        disabled={!billingEnabled || !billingValue || Number(billingValue) <= 0 || bill.isPending || invoiced}
+                        onClick={() => bill.mutate()}
+                      >
+                        {invoiced ? <><Check className="h-4 w-4" />Lançado no Financeiro</> : <><DollarSign className="h-4 w-4" />Faturar tarefa</>}
+                      </Button>
+                    </div>
+                    <div className="pt-1">
+                      <TaskTimer />
+                    </div>
                   </div>
-                </SidebarSection>
+                  <p className="text-[11px] text-muted-foreground leading-snug mt-2 px-1">
+                    {billingEnabled
+                      ? "Ative uma tarefa como faturável, defina o modelo e o valor, e lance no Financeiro."
+                      : "Sem a chave ativada, a tarefa fica na sua lista mas não gera cobrança."}
+                  </p>
+                </div>
               </aside>
             </div>
     </div>
