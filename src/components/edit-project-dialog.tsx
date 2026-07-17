@@ -97,6 +97,15 @@ export function EditProjectDialog({
     enabled: open,
   });
 
+  const { data: platformsCatalog = [] } = useQuery<Array<{ id: string; name: string; category: string | null; color: string | null; icon_url: string | null }>>({
+    queryKey: ["platforms-catalog"],
+    queryFn: async () => {
+      const { data } = await (supabase as any).from("platforms").select("id,name,category,color,icon_url").eq("active", true).order("sort_order");
+      return (data ?? []) as any;
+    },
+    enabled: open,
+  });
+
   const { data: members = [] } = useQuery<Member[]>({
     queryKey: ["project-members", project?.id],
     enabled: open && !!project?.id,
