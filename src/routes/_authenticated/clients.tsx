@@ -558,7 +558,7 @@ export function NewClientDialog({
         <>
           <DialogCancelButton onClick={() => handleOpen(false)} />
           <Button className="rounded-full" disabled={!canSave || pending} onClick={handleSubmit}>
-            {pending ? <><Loader2 className="h-4 w-4 mr-1.5 animate-spin" />Salvando</> : "Criar cliente"}
+            {pending ? <><Loader2 className="h-4 w-4 mr-1.5 animate-spin" />Salvando</> : (mode === "edit" ? "Salvar alterações" : "Criar cliente")}
           </Button>
         </>
       }
