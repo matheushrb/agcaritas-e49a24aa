@@ -370,10 +370,14 @@ function TaskRow({ task, onClick }: { task: Task; onClick: () => void }) {
 }
 
 function KanbanCard({ task, onClick }: { task: Task; onClick: () => void }) {
+  const overdue = isOverdue(task);
   return (
     <button onClick={onClick} className="w-full text-left rounded-xl bg-card border border-border p-3 hover:shadow-sm transition-shadow">
       <div className="flex items-start justify-between gap-2">
-        <span className="text-sm font-medium line-clamp-2">{task.title}</span>
+        <div className="text-sm font-medium line-clamp-2">
+          {overdue && <Badge className="mr-1.5 rounded-full bg-red-500/15 text-red-600 dark:text-red-400 text-[10px] px-1.5 py-0">Atrasada</Badge>}
+          {task.title}
+        </div>
         <Badge className={cn("rounded-full shrink-0 text-[10px]", PRIORITY_META[task.priority].badge)}>{PRIORITY_META[task.priority].label}</Badge>
       </div>
       <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
