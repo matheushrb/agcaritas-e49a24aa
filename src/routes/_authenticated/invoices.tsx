@@ -424,6 +424,8 @@ function NewInvoiceWizard({
         subtotal: total,
         status: "issued",
         notes: notes || null,
+        payment_terms: paymentTerms || null,
+        payment_link: paymentLink || null,
       }).select("id").single();
       if (invErr) throw invErr;
 
