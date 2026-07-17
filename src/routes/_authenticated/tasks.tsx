@@ -1694,6 +1694,7 @@ function DeliverablesSection({
   canBill,
   taskFinalized,
   taskInvoiced,
+  platformOptions,
 }: {
   deliverables: Deliverable[];
   onChange: (next: Deliverable[]) => void;
@@ -1702,6 +1703,7 @@ function DeliverablesSection({
   canBill: boolean;
   taskFinalized: boolean;
   taskInvoiced: boolean;
+  platformOptions: { value: string; label: string }[];
 }) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
