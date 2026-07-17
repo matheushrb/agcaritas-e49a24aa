@@ -16,6 +16,8 @@ import { TaskTypesEditor } from "@/components/settings/task-types-editor";
 import { AutomationsTab } from "@/components/settings/automations-tab";
 import { AgencyPricingTab } from "@/components/settings/agency-pricing";
 import { CatalogEditor } from "@/components/settings/catalog-editor";
+import { ProjectTypesEditor } from "@/components/settings/project-types-editor";
+
 
 export const Route = createFileRoute("/_authenticated/settings")({
   head: () => ({ meta: [{ title: "Configurações · Caritas" }] }),
