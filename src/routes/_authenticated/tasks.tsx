@@ -684,6 +684,7 @@ export function TaskModal({
   const bill = useMutation({
     mutationFn: async () => {
       if (!task) return;
+      if (dirty) throw new Error("Salve as alterações da tarefa antes de faturar");
       if (!billingEnabled) throw new Error("Ative a chave de faturamento nesta tarefa");
       const value = billingValue ? Number(billingValue) : 0;
       if (!value || value <= 0) throw new Error("Defina um valor de faturamento primeiro");
