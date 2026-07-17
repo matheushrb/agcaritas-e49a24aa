@@ -337,7 +337,7 @@ function NewClientDialog({
       icon={UsersIcon} tone="emerald" eyebrow="Clientes"
       title="Novo cliente"
       subtitle="Cadastro fiscal, comercial e operacional — CNPJ preenche o restante automaticamente."
-      size="xl"
+      size="lg"
       main={
         <Tabs value={tab} onValueChange={setTab} className="w-full">
           <TabsList className="rounded-full bg-muted p-1">
