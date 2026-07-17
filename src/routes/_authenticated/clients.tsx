@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -10,7 +10,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { EntityDialog, DialogField, DialogCancelButton } from "@/components/entity-dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Search, Plus, Users as UsersIcon, Building2, Mail, Phone, Loader2, Sparkles } from "lucide-react";
+import {
+  Search, Plus, Users as UsersIcon, Building2, Mail, Phone, Loader2, Sparkles,
+  Pencil, Archive, Trash2, ArchiveRestore,
+} from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { lookupCNPJ, lookupCEP, maskCNPJ, maskCPF, maskCEP, maskPhone, onlyDigits } from "@/lib/br-lookup";
@@ -53,6 +56,8 @@ function ClientsPage() {
   const [status, setStatus] = useState("all");
   const [segment, setSegment] = useState("all");
   const [newOpen, setNewOpen] = useState(false);
+  const [revealedId, setRevealedId] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   const { data: clients = [], isLoading } = useQuery<Client[]>({
     queryKey: ["clients-list"],
@@ -63,6 +68,16 @@ function ClientsPage() {
         .order("name");
       if (error) throw error;
       return (data ?? []) as Client[];
+    },
+  });
+
+  const { data: editingClient } = useQuery({
+    queryKey: ["client-edit", editingId],
+    enabled: !!editingId,
+    queryFn: async () => {
+      const { data, error } = await supabase.from("clients").select("*").eq("id", editingId!).maybeSingle();
+      if (error) throw error;
+      return data;
     },
   });
 
@@ -85,6 +100,39 @@ function ClientsPage() {
       if (error) throw error;
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["clients-list"] }); toast.success("Cliente criado"); setNewOpen(false); },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const update = useMutation({
+    mutationFn: async (input: Record<string, unknown>) => {
+      if (!editingId) throw new Error("Sem cliente");
+      const { error } = await supabase.from("clients").update(input as never).eq("id", editingId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["clients-list"] });
+      qc.invalidateQueries({ queryKey: ["client-edit", editingId] });
+      toast.success("Cliente atualizado");
+      setEditingId(null);
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const archive = useMutation({
+    mutationFn: async ({ id, archived }: { id: string; archived: boolean }) => {
+      const { error } = await supabase.from("clients").update({ status: archived ? "inactive" : "active" }).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: (_d, v) => { qc.invalidateQueries({ queryKey: ["clients-list"] }); toast.success(v.archived ? "Cliente arquivado" : "Cliente reativado"); setRevealedId(null); },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const remove = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("clients").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["clients-list"] }); toast.success("Cliente excluído"); setRevealedId(null); },
     onError: (e: Error) => toast.error(e.message),
   });
 
@@ -135,32 +183,128 @@ function ClientsPage() {
           </Card>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-            {filtered.map(c => (
-              <Link key={c.id} to="/clients/$clientId" params={{ clientId: c.id }} className="block">
-                <Card className="rounded-2xl p-5 hover:shadow-md transition-shadow h-full flex flex-col gap-3">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="min-w-0">
-                      <div className="text-base font-semibold truncate">{c.name}</div>
-                      {c.segment && <div className="text-xs text-muted-foreground truncate">{c.segment}</div>}
-                    </div>
-                    <Badge className={cn("rounded-full shrink-0", STATUS[c.status ?? "prospect"]?.color ?? "bg-muted")}>
-                      {STATUS[c.status ?? "prospect"]?.label ?? "—"}
-                    </Badge>
+            {filtered.map(c => {
+              const revealed = revealedId === c.id;
+              const isArchived = (c.status ?? "") === "inactive";
+              return (
+                <div key={c.id} className="relative">
+                  {/* Actions revealed behind the card */}
+                  <div
+                    className={cn(
+                      "absolute inset-y-0 right-0 flex items-center gap-1.5 pr-2 transition-opacity",
+                      revealed ? "opacity-100" : "opacity-0 pointer-events-none",
+                    )}
+                    aria-hidden={!revealed}
+                  >
+                    <Button
+                      size="icon"
+                      variant="outline"
+                      className="h-10 w-10 rounded-full shadow-sm"
+                      title={isArchived ? "Reativar" : "Arquivar"}
+                      onClick={(e) => { e.stopPropagation(); archive.mutate({ id: c.id, archived: !isArchived }); }}
+                    >
+                      {isArchived ? <ArchiveRestore className="h-4 w-4" /> : <Archive className="h-4 w-4" />}
+                    </Button>
+                    <Button
+                      size="icon"
+                      variant="outline"
+                      className="h-10 w-10 rounded-full shadow-sm"
+                      title="Editar"
+                      onClick={(e) => { e.stopPropagation(); setEditingId(c.id); setRevealedId(null); }}
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      size="icon"
+                      variant="outline"
+                      className="h-10 w-10 rounded-full shadow-sm text-destructive hover:text-destructive"
+                      title="Excluir"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (confirm(`Excluir cliente "${c.name}"? Esta ação não pode ser desfeita.`)) remove.mutate(c.id);
+                      }}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
                   </div>
-                  <div className="mt-auto space-y-1 text-xs text-muted-foreground pt-2 border-t border-border">
-                    {c.email && <div className="inline-flex items-center gap-1.5 truncate"><Mail className="h-3.5 w-3.5" />{c.email}</div>}
-                    {c.phone && <div className="inline-flex items-center gap-1.5"><Phone className="h-3.5 w-3.5" />{c.phone}</div>}
-                    {c.tax_id && <div className="inline-flex items-center gap-1.5"><Building2 className="h-3.5 w-3.5" />{c.tax_id}</div>}
-                  </div>
-                </Card>
-              </Link>
-            ))}
+
+                  <button
+                    type="button"
+                    onClick={() => setRevealedId(revealed ? null : c.id)}
+                    className={cn(
+                      "block w-full text-left transition-transform duration-300 ease-out will-change-transform",
+                      revealed ? "-translate-x-[152px] scale-[0.96]" : "translate-x-0",
+                    )}
+                  >
+                    <Card className="rounded-2xl p-5 hover:shadow-md transition-shadow h-full flex flex-col gap-3">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <div className="text-base font-semibold truncate">{c.name}</div>
+                          {c.segment && <div className="text-xs text-muted-foreground truncate">{c.segment}</div>}
+                        </div>
+                        <Badge className={cn("rounded-full shrink-0", STATUS[c.status ?? "prospect"]?.color ?? "bg-muted")}>
+                          {STATUS[c.status ?? "prospect"]?.label ?? "—"}
+                        </Badge>
+                      </div>
+                      <div className="mt-auto space-y-1 text-xs text-muted-foreground pt-2 border-t border-border">
+                        {c.email && <div className="inline-flex items-center gap-1.5 truncate"><Mail className="h-3.5 w-3.5" />{c.email}</div>}
+                        {c.phone && <div className="inline-flex items-center gap-1.5"><Phone className="h-3.5 w-3.5" />{c.phone}</div>}
+                        {c.tax_id && <div className="inline-flex items-center gap-1.5"><Building2 className="h-3.5 w-3.5" />{c.tax_id}</div>}
+                      </div>
+                    </Card>
+                  </button>
+                </div>
+              );
+            })}
           </div>
         )}
       </div>
 
       <NewClientDialog open={newOpen} onOpenChange={setNewOpen}
         onSubmit={v => create.mutate(v)} pending={create.isPending} />
+
+      <NewClientDialog
+        open={!!editingId && !!editingClient}
+        onOpenChange={(v) => { if (!v) setEditingId(null); }}
+        onSubmit={v => update.mutate(v)}
+        pending={update.isPending}
+        mode="edit"
+        initial={editingClient ? {
+          person_type: (editingClient.person_type as "PJ"|"PF") ?? "PJ",
+          tax_id: editingClient.tax_id ?? "",
+          name: editingClient.name ?? "",
+          legal_name: editingClient.legal_name ?? "",
+          trade_name: editingClient.trade_name ?? "",
+          state_registration: editingClient.state_registration ?? "",
+          municipal_registration: editingClient.municipal_registration ?? "",
+          cnae: editingClient.cnae ?? "",
+          legal_nature: editingClient.legal_nature ?? "",
+          opening_date: editingClient.opening_date ?? "",
+          size: editingClient.size ?? "",
+          segment: editingClient.segment ?? "",
+          status: editingClient.status ?? "prospect",
+          website: editingClient.website ?? "",
+          instagram: editingClient.instagram ?? "",
+          linkedin: editingClient.linkedin ?? "",
+          email: editingClient.email ?? "",
+          phone: editingClient.phone ?? "",
+          contact_name: editingClient.contact_name ?? "",
+          contact_role: editingClient.contact_role ?? "",
+          contact_email: editingClient.contact_email ?? "",
+          contact_phone: editingClient.contact_phone ?? "",
+          billing_email: editingClient.billing_email ?? "",
+          payment_terms: editingClient.payment_terms ?? "",
+          address_zip: editingClient.address_zip ?? "",
+          address_street: editingClient.address_street ?? "",
+          address_number: editingClient.address_number ?? "",
+          address_complement: editingClient.address_complement ?? "",
+          address_neighborhood: editingClient.address_neighborhood ?? "",
+          address_city: editingClient.address_city ?? "",
+          address_state: editingClient.address_state ?? "",
+          address_country: editingClient.address_country ?? "Brasil",
+          notes: editingClient.notes ?? "",
+        } : undefined}
+      />
 
     </>
   );
