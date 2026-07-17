@@ -167,22 +167,27 @@ function ProjectDetail() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
+  const selectedTask = tasks.find(t => t.id === selectedTaskId) ?? null;
+
   const addTask = useMutation({
     mutationFn: async (title: string) => {
       const { data: profile } = await supabase.from("profiles").select("organization_id").maybeSingle();
       if (!profile?.organization_id) throw new Error("Sem organização");
-      const { error } = await supabase.from("tasks").insert({
+      const { data, error } = await supabase.from("tasks").insert({
         title,
         status: "todo",
         priority: "medium",
         project_id: projectId,
         organization_id: profile.organization_id,
-      });
+      }).select("id").single();
       if (error) throw error;
+      return data.id as string;
     },
-    onSuccess: () => {
+    onSuccess: (id: string) => {
       qc.invalidateQueries({ queryKey: ["project-tasks", projectId] });
       qc.invalidateQueries({ queryKey: ["tasks"] });
+      setSelectedTaskId(id);
     },
     onError: (e: Error) => toast.error(e.message),
   });
