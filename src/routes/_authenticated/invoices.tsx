@@ -197,12 +197,16 @@ function NewInvoiceWizard({
       const { data } = await supabase
         .from("tasks")
         .select("id,title,billing_value,billing_enabled,client_id,project_id,status")
-        .eq("billing_enabled", true)
-        .eq("status", "done");
+        .eq("billing_enabled", true);
       const ts = (data ?? []) as BillableTask[];
-      // Tasks that already have any charge are considered billed already
-      const { data: chargedTaskIds } = await supabase.from("charges").select("task_id").not("task_id", "is", null);
-      const set = new Set((chargedTaskIds ?? []).map(r => r.task_id as string));
+      // Só ocultamos tarefas cujo valor principal (charge sem deliverable_id) já foi faturado.
+      // Cobranças de entregáveis não bloqueiam — permitem faturar o principal antes e entregáveis depois (e vice-versa).
+      const { data: mainCharges } = await supabase
+        .from("charges")
+        .select("task_id")
+        .not("task_id", "is", null)
+        .is("deliverable_id", null);
+      const set = new Set((mainCharges ?? []).map(r => r.task_id as string));
       return ts.filter(t => !set.has(t.id));
     },
   });
@@ -377,9 +381,11 @@ function NewInvoiceWizard({
 
             <section>
               <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1.5">Tarefas prontas para faturar</h3>
-              {filteredTasks.length === 0 && <p className="text-xs text-muted-foreground py-2">Nenhuma tarefa concluída sem cobrança.</p>}
+              {filteredTasks.length === 0 && <p className="text-xs text-muted-foreground py-2">Nenhuma tarefa faturável sem cobrança principal. Ative "Faturamento" na tarefa e defina um valor.</p>}
               <div className="space-y-1">
-                {filteredTasks.map(t => (
+                {filteredTasks.map(t => {
+                  const done = t.status === "done";
+                  return (
                   <label key={t.id} className="flex items-center gap-3 px-3 py-2 rounded-lg border hover:bg-muted/40 cursor-pointer">
                     <Checkbox
                       checked={selectedTasks.has(t.id)}
@@ -390,7 +396,15 @@ function NewInvoiceWizard({
                       }}
                     />
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm truncate">Tarefa: {t.title}</p>
+                      <p className="text-sm truncate flex items-center gap-2">
+                        Tarefa: {t.title}
+                        <span className={cn(
+                          "text-[10px] px-1.5 py-0.5 rounded-full font-medium",
+                          done ? "bg-emerald-500/15 text-emerald-600" : "bg-amber-500/15 text-amber-600"
+                        )}>
+                          {done ? "Concluída" : "Em andamento"}
+                        </span>
+                      </p>
                       <p className="text-[11px] text-muted-foreground">
                         {t.client_id ? clients.find(cl => cl.id === t.client_id)?.name : "—"}
                         {t.project_id && ` • ${projects.find(p => p.id === t.project_id)?.name ?? ""}`}
@@ -398,7 +412,8 @@ function NewInvoiceWizard({
                     </div>
                     <div className="text-sm font-medium">{money(Number(t.billing_value ?? 0))}</div>
                   </label>
-                ))}
+                  );
+                })}
               </div>
             </section>
 
