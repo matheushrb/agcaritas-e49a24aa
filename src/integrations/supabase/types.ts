@@ -1877,7 +1877,7 @@ export type Database = {
       project_status: "planning" | "active" | "review" | "done" | "paused"
       proposal_status: "draft" | "sent" | "viewed" | "approved" | "declined"
       stage_status_group: "todo" | "in_progress" | "review" | "done"
-      task_priority: "low" | "medium" | "high"
+      task_priority: "low" | "medium" | "high" | "urgent" | "critical"
       task_stage: "briefing" | "creation" | "review" | "approval" | "delivery"
       task_status: "todo" | "in_progress" | "review" | "done"
       team_level: "junior" | "mid" | "senior" | "lead"
@@ -2018,7 +2018,7 @@ export const Constants = {
       project_status: ["planning", "active", "review", "done", "paused"],
       proposal_status: ["draft", "sent", "viewed", "approved", "declined"],
       stage_status_group: ["todo", "in_progress", "review", "done"],
-      task_priority: ["low", "medium", "high"],
+      task_priority: ["low", "medium", "high", "urgent", "critical"],
       task_stage: ["briefing", "creation", "review", "approval", "delivery"],
       task_status: ["todo", "in_progress", "review", "done"],
       team_level: ["junior", "mid", "senior", "lead"],
