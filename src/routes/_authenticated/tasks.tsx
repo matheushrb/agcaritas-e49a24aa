@@ -600,18 +600,33 @@ export function TaskModal({
         const { data: proj } = await supabase.from("projects").select("client_id").eq("id", resolvedProjectId).maybeSingle();
         resolvedClient = (proj?.client_id as string) ?? null;
       }
-      const today = new Date().toISOString().slice(0, 10);
+      const deliveredDate = d.delivered_date || new Date().toISOString().slice(0, 10);
       const platLabel = d.platform ? platformLabel(d.platform) : "Entregável";
       const typeLabel = d.type ? (DELIVERY_TYPE_OPTIONS.find(o => o.value === d.type)?.label ?? d.type) : "";
+      const channelLabel = d.channel ? ` (${d.channel})` : "";
+      const dateLabel = new Date(deliveredDate + "T00:00:00").toLocaleDateString("pt-BR");
+      const description = `${typeLabel ? `${typeLabel} no ${platLabel}` : platLabel}${channelLabel}: R$ ${value.toLocaleString("pt-BR", { minimumFractionDigits: 2 })} - ${dateLabel}`;
+
+      // Localiza cobrança-pai da tarefa (se já existir) para linkar como sub-item.
+      const { data: parentCharge } = await supabase
+        .from("charges")
+        .select("id")
+        .eq("task_id", persistedTaskId)
+        .is("parent_charge_id", null)
+        .is("deliverable_id", null)
+        .maybeSingle();
+
       const { error } = await supabase.from("charges").insert({
         organization_id: profile.organization_id,
         project_id: resolvedProjectId,
         task_id: persistedTaskId,
         client_id: resolvedClient,
-        description: `${title.trim() || task.title || "Tarefa"} — ${platLabel}${typeLabel ? ` (${typeLabel})` : ""}`,
+        parent_charge_id: parentCharge?.id ?? null,
+        deliverable_id: d.id,
+        description,
         amount: value,
         status: "pending",
-        due_date: today,
+        due_date: deliveredDate,
         type: "income",
       });
       if (error) throw error;
