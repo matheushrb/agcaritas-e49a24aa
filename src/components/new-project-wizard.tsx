@@ -384,22 +384,30 @@ function StepTools({ v, toggleTool, platforms }: {
                 {items.map(p => {
                   const Icon = (p.icon && (Icons as any)[p.icon]) || Icons.Circle;
                   const on = v.tools.includes(p.name);
+                  const iconUrl = (p as any).icon_url as string | undefined;
                   return (
                     <button
                       key={p.id}
                       type="button"
                       onClick={() => toggleTool(p.name)}
                       className={cn(
-                        "rounded-full px-3 py-1.5 text-xs font-medium border transition-colors flex items-center gap-1.5",
+                        "rounded-full pl-1 pr-3 py-1 text-xs font-medium border transition-colors flex items-center gap-1.5",
                         on ? "border-primary bg-primary text-primary-foreground" : "border-border hover:bg-muted",
                       )}
                       style={on ? undefined : { color: p.color ?? undefined, borderColor: (p.color ?? "") + "66" }}
                     >
-                      <Icon className="h-3.5 w-3.5" />
+                      <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-background overflow-hidden shrink-0">
+                        {iconUrl ? (
+                          <img src={iconUrl} alt="" className="h-[70%] w-[70%] object-contain" />
+                        ) : (
+                          <Icon className="h-3.5 w-3.5" style={{ color: p.color ?? undefined }} />
+                        )}
+                      </span>
                       {p.name}
                     </button>
                   );
                 })}
+
               </div>
             </div>
           ))}
