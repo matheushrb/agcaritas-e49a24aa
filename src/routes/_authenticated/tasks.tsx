@@ -102,7 +102,10 @@ function TasksPage() {
   const [draftTask, setDraftTask] = useState<Task | null>(null);
   const [quickTitle, setQuickTitle] = useState<Record<string, string>>({});
 
-  const { data: tasks = [], isLoading } = useQuery<Task[]>({
+  const { data: automation } = useAutomationSettings();
+  const settings = automation?.settings ?? DEFAULT_AUTOMATION_SETTINGS;
+
+  const { data: rawTasks = [], isLoading } = useQuery<Task[]>({
     queryKey: ["tasks"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -113,6 +116,11 @@ function TasksPage() {
       return (data ?? []) as Task[];
     },
   });
+
+  const tasks = useMemo(() => rawTasks.map(t => {
+    const eff = effectivePriority(t, settings);
+    return eff.escalated ? { ...t, priority: eff.priority } as Task : t;
+  }), [rawTasks, settings]);
 
   const filtered = useMemo(() => {
     let arr = tasks;
