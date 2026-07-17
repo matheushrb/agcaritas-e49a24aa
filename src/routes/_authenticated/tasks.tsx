@@ -133,7 +133,33 @@ function TasksPage() {
 
   const handleNew = async () => {
     const id = await createTask.mutateAsync({ title: "Nova tarefa", status: "todo" });
+    setDraftId(id);
     setSelectedId(id);
+  };
+
+  const handleCloseModal = async () => {
+    const id = selectedId;
+    setSelectedId(null);
+    if (!id || draftId !== id) return;
+    setDraftId(null);
+    // Descarta rascunho não editado (usuário abriu "Nova tarefa" e fechou sem mudar nada)
+    const t = tasks.find(x => x.id === id);
+    const untouched = t
+      && t.title === "Nova tarefa"
+      && !t.description
+      && !t.due_date
+      && t.billing_value == null
+      && !t.project_id
+      && !t.client_id
+      && !t.platform
+      && !t.delivery_type
+      && !t.estimated_hours
+      && !t.billing_enabled
+      && (t.progress ?? 0) === 0;
+    if (untouched) {
+      await supabase.from("tasks").delete().eq("id", id);
+      qc.invalidateQueries({ queryKey: ["tasks"] });
+    }
   };
 
   const selected = tasks.find(t => t.id === selectedId) ?? null;
