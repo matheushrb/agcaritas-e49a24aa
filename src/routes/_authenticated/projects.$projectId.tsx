@@ -14,7 +14,7 @@ import {
   Megaphone, Compass, Rocket, DollarSign, Plus, Flag, Zap,
   Building2, CheckCircle2, RotateCcw, Pencil, AlertTriangle, Users as UsersIcon, Wallet, Receipt,
 } from "lucide-react";
-import { Link } from "@tanstack/react-router";
+
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { TaskModal } from "./tasks";
