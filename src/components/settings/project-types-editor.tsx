@@ -305,7 +305,7 @@ export function ProjectTypesEditor() {
                     if (!p) return null;
                     return (
                       <Badge key={pid} variant="secondary" className="gap-1 pl-1 pr-1.5 py-0.5">
-                        <IconPreview name={p.icon} color={p.color} size={16} />
+                        <IconPreview name={p.icon} color={p.color} iconUrl={p.icon_url} size={16} />
                         <span className="text-[11px]">{p.name}</span>
                         <button onClick={() => togglePlatform(pid)} className="ml-0.5 text-muted-foreground hover:text-destructive">
                           <Trash2 className="h-3 w-3" />
