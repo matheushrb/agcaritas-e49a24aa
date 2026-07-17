@@ -466,11 +466,11 @@ function TypeEditorPanel({ type, stages, onDelete, onDuplicate }:{
               }}
             />
           </div>
-          <p className="text-[10px] text-muted-foreground">
-            Valor sugerido — pode ser sobrescrito manualmente em cada tarefa.
-          </p>
         </div>
       </div>
+      <p className="text-[10px] text-muted-foreground -mt-2">
+        Valor sugerido — pode ser sobrescrito manualmente em cada tarefa.
+      </p>
 
       {/* Stages */}
       <div className="space-y-2">
