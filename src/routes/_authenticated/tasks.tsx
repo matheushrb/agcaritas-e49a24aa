@@ -17,7 +17,7 @@ import {
   Search, Plus, LayoutGrid, List as ListIcon, Play, Pause, Square, Clock, Zap,
   ChevronLeft, ChevronRight, X, Calendar as CalendarIcon, Flag, Circle,
   MessageSquare, Paperclip, ListChecks, Activity, Trash2, MoreHorizontal, Timer,
-  DollarSign, Check, Minus, PanelRightOpen, Maximize2, PanelLeftOpen,
+  DollarSign, Check, Minus, PanelRightOpen, Maximize2, PanelLeftOpen, Radio,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
