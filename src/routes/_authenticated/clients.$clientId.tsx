@@ -128,7 +128,8 @@ function ClientDetailPage() {
 
   const updateClient = useMutation({
     mutationFn: async (payload: Record<string, unknown>) => {
-      const { error } = await supabase.from("clients").update(payload).eq("id", clientId);
+      const { error } = await supabase.from("clients").update(payload as never).eq("id", clientId);
+
       if (error) throw error;
     },
     onSuccess: () => {
