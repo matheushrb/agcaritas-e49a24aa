@@ -8,10 +8,12 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { Plus, Trash2, GripVertical, ListPlus, Clock, CalendarDays } from "lucide-react";
+import { Plus, Trash2, GripVertical, ListPlus, Clock, CalendarDays, Layers, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { IconPicker, ColorPicker, IconPreview } from "./icon-color-pickers";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Badge } from "@/components/ui/badge";
 
 type BaseTask = {
   name: string;
