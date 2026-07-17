@@ -526,7 +526,7 @@ function InvoiceDetail({ id, clients, onClose }: { id: string; clients: Client[]
       const total = charges.reduce((a, c) => a + Number(c.amount ?? 0), 0);
       const { error } = await supabase.from("invoices")
         .update({
-          issue_date: editIssue || null,
+          issue_date: editIssue || undefined,
           due_date: editDue || null,
           notes: editNotes || null,
           amount: total,
