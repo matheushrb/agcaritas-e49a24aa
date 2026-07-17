@@ -12,10 +12,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
-  Search, Plus, LayoutGrid, List as ListIcon, Play, Pause, Square, Clock, Zap,
-  ChevronLeft, ChevronRight, X, Calendar as CalendarIcon, Flag, Circle,
-  MessageSquare, Paperclip, ListChecks, Activity, Trash2, MoreHorizontal, Timer,
+  Search, Plus, LayoutGrid, List as ListIcon, Play, Pause, Square, Zap,
+  X, Calendar as CalendarIcon, Flag, Circle,
+  MessageSquare, Paperclip, ListChecks, Activity, Trash2, Timer,
   DollarSign, Check, Minus, PanelRightOpen, Maximize2, PanelLeftOpen,
+  Tag, User as UserIcon, Hourglass, Folder, Layers, FileType, Percent, Link2, ChevronDown,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
