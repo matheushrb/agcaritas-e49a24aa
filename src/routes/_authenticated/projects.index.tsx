@@ -94,6 +94,14 @@ function ProjectsPage() {
   });
 
   const clientById = useMemo(() => Object.fromEntries(clients.map(c => [c.id, c.name])), [clients]);
+  const revenueByProject = useMemo(() => {
+    const acc: Record<string, number> = {};
+    for (const c of charges) {
+      if (!c.project_id) continue;
+      acc[c.project_id] = (acc[c.project_id] ?? 0) + Number(c.amount ?? 0);
+    }
+    return acc;
+  }, [charges]);
 
   const filtered = useMemo(() => {
     let arr = projects;
