@@ -458,6 +458,21 @@ export function TaskModal({
     },
   });
 
+  // team_members com dados de custo — indexados por user_id para lookup rápido ao atribuir
+  const { data: costMembers = [] } = useQuery({
+    queryKey: ["tasks-modal-cost-members"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("team_members")
+        .select("id,user_id,name,cost_mode,hourly_rate,monthly_salary,monthly_hours,default_task_rate,task_rate_overrides");
+      return (data ?? []) as Array<{
+        id: string; user_id: string | null; name: string; cost_mode: CostMode;
+        hourly_rate: number | null; monthly_salary: number | null; monthly_hours: number | null;
+        default_task_rate: number | null; task_rate_overrides: Record<string, number> | null;
+      }>;
+    },
+  });
+
   const { data: projectsList = [] } = useQuery({
     queryKey: ["tasks-modal-projects"],
     queryFn: async () => {
