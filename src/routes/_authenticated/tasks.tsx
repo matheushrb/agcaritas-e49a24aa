@@ -723,6 +723,7 @@ export function TaskModal({
   const billDeliverable = useMutation({
     mutationFn: async (d: Deliverable) => {
       if (!task) return;
+      if (dirty) throw new Error("Salve as alterações da tarefa antes de faturar o entregável");
       if (!d.billing_enabled) throw new Error("Ative o faturamento deste entregável");
       const value = d.billing_value ?? 0;
       if (!value || value <= 0) throw new Error("Defina um valor para este entregável");
