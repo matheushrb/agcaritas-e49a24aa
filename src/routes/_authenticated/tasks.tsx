@@ -731,7 +731,7 @@ export function TaskModal({
   const shell = (
     <div
       className={cn(
-        "fixed z-50 bg-white border border-border shadow-2xl flex flex-col overflow-hidden",
+        "fixed z-50 bg-card text-card-foreground border border-border shadow-2xl flex flex-col overflow-hidden",
         mode === "modal"
           ? "left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[calc(100vw-2rem)] max-w-[1360px] h-[calc(100vh-3rem)] max-h-[900px] rounded-3xl"
           : "top-3 right-3 bottom-3 rounded-2xl"
@@ -739,7 +739,7 @@ export function TaskModal({
       style={mode === "docked" ? { width: `min(calc(100vw - 1.5rem), ${DOCK_WIDTH}px)` } : undefined}
     >
             {/* Top bar */}
-            <div className="flex items-center gap-2 px-6 py-3 border-b border-border bg-white">
+            <div className="flex items-center gap-2 px-6 py-3 border-b border-border bg-card">
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
                 <span className="rounded-md bg-muted px-2 py-0.5 font-mono">#{task.id.slice(0, 6).toUpperCase()}</span>
                 <TaskTypePicker
@@ -932,10 +932,10 @@ export function TaskModal({
 
                 <Tabs defaultValue="subtasks" className="w-full">
                   <TabsList className="rounded-full bg-primary p-1">
-                    <TabsTrigger value="subtasks" className="rounded-full gap-1.5 text-primary-foreground/80 data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-sm"><ListChecks className="h-4 w-4" />Subtarefas</TabsTrigger>
-                    <TabsTrigger value="uploads" className="rounded-full gap-1.5 text-primary-foreground/80 data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-sm"><Paperclip className="h-4 w-4" />Anexos</TabsTrigger>
-                    <TabsTrigger value="comments" className="rounded-full gap-1.5 text-primary-foreground/80 data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-sm"><MessageSquare className="h-4 w-4" />Comentários</TabsTrigger>
-                    <TabsTrigger value="activity" className="rounded-full gap-1.5 text-primary-foreground/80 data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-sm"><Activity className="h-4 w-4" />Atividade</TabsTrigger>
+                    <TabsTrigger value="subtasks" className="rounded-full gap-1.5 text-primary-foreground/80 data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-sm"><ListChecks className="h-4 w-4" />Subtarefas</TabsTrigger>
+                    <TabsTrigger value="uploads" className="rounded-full gap-1.5 text-primary-foreground/80 data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-sm"><Paperclip className="h-4 w-4" />Anexos</TabsTrigger>
+                    <TabsTrigger value="comments" className="rounded-full gap-1.5 text-primary-foreground/80 data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-sm"><MessageSquare className="h-4 w-4" />Comentários</TabsTrigger>
+                    <TabsTrigger value="activity" className="rounded-full gap-1.5 text-primary-foreground/80 data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-sm"><Activity className="h-4 w-4" />Atividade</TabsTrigger>
                   </TabsList>
 
                   <TabsContent value="subtasks" className="mt-4">
@@ -1009,10 +1009,10 @@ export function TaskModal({
 
               {/* ---------- SIDEBAR (vira seção inline em docked) ---------- */}
               <aside className={cn(
-                "min-h-0 space-y-5",
+                "min-h-0",
                 mode === "modal"
-                  ? "overflow-y-auto bg-muted/20 px-5 py-6"
-                  : "border-t border-border px-6 py-5",
+                  ? "overflow-y-auto bg-muted/20 px-5 py-6 space-y-5"
+                  : "border-t border-border px-6 py-5 grid grid-cols-1 md:grid-cols-2 gap-5 items-start",
               )}>
                 <SidebarSection title="Vínculo">
                   <SidebarRow label="Projeto">
