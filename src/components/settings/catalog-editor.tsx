@@ -8,8 +8,8 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { Plus, Trash2, GripVertical } from "lucide-react";
-import * as Icons from "lucide-react";
 import { cn } from "@/lib/utils";
+import { IconPicker, ColorPicker, IconPreview } from "./icon-color-pickers";
 
 type Row = {
   id: string;
@@ -24,17 +24,6 @@ type Row = {
   active: boolean;
 };
 
-function IconPreview({ name, color }: { name: string | null; color: string | null }) {
-  const Comp = (name && (Icons as any)[name]) || Icons.Circle;
-  return (
-    <div
-      className="grid h-8 w-8 place-items-center rounded-lg shrink-0"
-      style={{ backgroundColor: (color ?? "#3B82F6") + "22", color: color ?? "#3B82F6" }}
-    >
-      <Comp className="h-4 w-4" />
-    </div>
-  );
-}
 
 export function CatalogEditor({
   table,
