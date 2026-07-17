@@ -16,7 +16,7 @@ import {
   X, Calendar as CalendarIcon, Flag, Circle,
   MessageSquare, Paperclip, ListChecks, Activity, Trash2, Timer,
   DollarSign, Check, Minus, PanelRightOpen, Maximize2, PanelLeftOpen,
-  UserIcon, Hourglass, Folder, Layers, FileType, Percent, ChevronDown,
+  User as UserIcon, Hourglass, Folder, Layers, FileType, Percent, ChevronDown,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
