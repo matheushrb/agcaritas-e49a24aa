@@ -508,13 +508,17 @@ function Kpi({ label, value, tone = "default" }: { label: string; value: string;
   );
 }
 
+type BaseTaskType = { id: string; name: string; color: string | null; icon: string | null; default_price: number | null; default_billing_model: string | null };
+
 function TasksTab({
-  tasks, onAdd, onOpen, onQuickCreate, pending,
+  tasks, baseTaskTypes, onAdd, onOpen, onQuickCreate, onCreateFromBase, pending,
 }: {
   tasks: Task[];
+  baseTaskTypes: BaseTaskType[];
   onAdd: (title: string) => void;
   onOpen: (id: string) => void;
   onQuickCreate: () => void;
+  onCreateFromBase: (bt: BaseTaskType) => void;
   pending: boolean;
 }) {
   const [draft, setDraft] = useState("");
@@ -532,6 +536,33 @@ function TasksTab({
           <Plus className="h-4 w-4" /> Nova tarefa
         </Button>
       </div>
+
+      {baseTaskTypes.length > 0 && (
+        <Card className="rounded-2xl p-3">
+          <div className="text-xs text-muted-foreground mb-2 px-1">Modelos deste tipo de projeto — clique para criar</div>
+          <div className="flex flex-wrap gap-2">
+            {baseTaskTypes.map(bt => (
+              <button
+                key={bt.id}
+                onClick={() => onCreateFromBase(bt)}
+                disabled={pending}
+                className="inline-flex items-center gap-2 rounded-full border border-border bg-background hover:bg-muted/60 px-3 py-1.5 text-xs font-medium transition disabled:opacity-50"
+                title={`Criar tarefa: ${bt.name}`}
+              >
+                <span
+                  className="inline-block h-2.5 w-2.5 rounded-full"
+                  style={{ backgroundColor: bt.color ?? "hsl(var(--primary))" }}
+                />
+                {bt.name}
+                {bt.default_price != null && bt.default_price > 0 && (
+                  <span className="text-muted-foreground">· R$ {Number(bt.default_price).toLocaleString("pt-BR")}</span>
+                )}
+              </button>
+            ))}
+          </div>
+        </Card>
+      )}
+
 
       <Card className="rounded-2xl overflow-hidden">
         <ul className="divide-y divide-border">
