@@ -739,10 +739,16 @@ export function TaskModal({ task, onClose }: { task: Task | null; onClose: () =>
                 </SidebarSection>
               </aside>
             </div>
-          </>
-        )}
-      </DialogContent>
-    </Dialog>
+    </div>
+  );
+
+  return (
+    <>
+      {mode === "modal" && (
+        <div className="fixed inset-0 z-40 bg-black/50 animate-in fade-in-0" onClick={onClose} />
+      )}
+      {shell}
+    </>
   );
 }
 
