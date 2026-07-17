@@ -846,9 +846,8 @@ export function TaskModal({
     if (lastProgressRef.current === computedProgress) return;
     lastProgressRef.current = computedProgress;
     if (progress !== computedProgress) setProgress(computedProgress);
-    if (!isLocalDraft || persistedDraftIdRef.current) {
-      markDirty();
-    }
+    // Não marcamos dirty aqui: progresso é derivado das subtarefas/etapa,
+    // que já chamam markDirty quando alteradas pelo usuário.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [computedProgress, task?.id]);
 
