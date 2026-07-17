@@ -54,7 +54,7 @@ function SettingsPage() {
         <TabsContent value="agency" className="mt-4"><AgencyTab /></TabsContent>
         <TabsContent value="services" className="mt-4"><ComingSoonCard title="Serviços" hint="Catálogo de serviços (nome, valor base, descrição). Usado nas linhas de proposta." /></TabsContent>
         <TabsContent value="platforms" className="mt-4"><ComingSoonCard title="Plataformas" hint="Instagram, TikTok, YouTube etc. — regras de prazo de entrega por tipo e cor por plataforma." /></TabsContent>
-        <TabsContent value="task-flows" className="mt-4"><ComingSoonCard title="Fluxos de Tarefa" hint="Stage sets com checklist por etapa, tipo associado e briefing template." /></TabsContent>
+        <TabsContent value="task-flows" className="mt-4"><TaskTypesEditor /></TabsContent>
         <TabsContent value="crm-funnel" className="mt-4"><ComingSoonCard title="Funil CRM" hint="Etapas do pipeline com probabilidade padrão, ordem e flags ganho/perdido." /></TabsContent>
         <TabsContent value="users" className="mt-4"><UsersTab /></TabsContent>
         <TabsContent value="integrations" className="mt-4"><ComingSoonCard title="Integrações" hint="Buffer (token + profile IDs), Google Calendar (OAuth) — configuração centralizada." /></TabsContent>
