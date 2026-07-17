@@ -25,6 +25,8 @@ import { useTaskTypes, useTaskTypeStages, type TaskTypeRow, type TaskTypeStageRo
 import { TaskTypeIcon } from "@/components/settings/icon-picker";
 import { useAutomationSettings, effectivePriority, DEFAULT_AUTOMATION_SETTINGS } from "@/lib/automation-settings";
 import { Link } from "@tanstack/react-router";
+import { CostConfirmDialog, type CostSuggestion } from "@/components/cost-confirm-dialog";
+import { suggestTaskCost, type CostMode } from "@/components/team-cost-fields";
 
 export const Route = createFileRoute("/_authenticated/tasks")({
   component: TasksPage,
