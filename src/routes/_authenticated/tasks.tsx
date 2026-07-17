@@ -900,6 +900,20 @@ export function TaskModal({
                   />
                 </div>
 
+                <DeliverablesSection
+                  deliverables={deliverables}
+                  onChange={(next) => {
+                    setDeliverables(next);
+                    const legacyPlatform = next.map(d => d.platform).filter(Boolean).join(",");
+                    setPlatform(legacyPlatform);
+                    save.mutate({ deliverables: next, platform: legacyPlatform || null });
+                  }}
+                  onBill={(d) => billDeliverable.mutate(d)}
+                  billingPending={billDeliverable.isPending}
+                />
+
+
+
 
                 <Tabs defaultValue="subtasks" className="w-full">
                   <TabsList className="rounded-full bg-primary p-1">
