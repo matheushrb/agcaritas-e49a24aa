@@ -36,9 +36,21 @@ type PendingCharge = {
   id: string; description: string; amount: number; due_date: string;
   client_id: string | null; project_id: string | null; task_id: string | null;
 };
+type Deliverable = {
+  id: string; platform?: string | null; type?: string | null; channel?: string | null;
+  billing_enabled?: boolean; billing_value?: number | null;
+  delivered?: boolean; invoiced?: boolean;
+};
 type BillableTask = {
   id: string; title: string; billing_value: number | null; billing_enabled: boolean;
   client_id: string | null; project_id: string | null; status: string | null;
+  deliverables?: Deliverable[] | null;
+};
+type BillableDeliverable = {
+  key: string; // taskId::deliverableId
+  taskId: string; deliverableId: string; taskTitle: string;
+  label: string; amount: number;
+  client_id: string | null; project_id: string | null;
 };
 
 const STATUS_META: Record<InvoiceStatus, { label: string; className: string }> = {
