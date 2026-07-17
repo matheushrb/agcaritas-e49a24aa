@@ -21,6 +21,8 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { useTaskTypes, useTaskTypeStages, type TaskTypeRow, type TaskTypeStageRow, type StatusGroup } from "@/lib/task-types";
+import { Link } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/_authenticated/tasks")({
   component: TasksPage,
@@ -61,6 +63,8 @@ type Task = {
   delivery_type: string | null;
   estimated_hours: number | null;
   stage: TaskStage;
+  task_type_id: string | null;
+  current_stage_id: string | null;
   deliverables: Deliverable[];
   subtasks: Subtask[];
   created_at?: string;
@@ -96,7 +100,7 @@ function TasksPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("tasks")
-        .select("id,title,description,status,priority,project_id,client_id,assignee_id,due_date,billing_model,billing_value,billing_enabled,progress,platform,delivery_type,estimated_hours,stage,deliverables,subtasks,created_at")
+        .select("id,title,description,status,priority,project_id,client_id,assignee_id,due_date,billing_model,billing_value,billing_enabled,progress,platform,delivery_type,estimated_hours,stage,task_type_id,current_stage_id,deliverables,subtasks,created_at")
         .order("created_at", { ascending: false });
       if (error) throw error;
       return (data ?? []) as Task[];
@@ -313,6 +317,8 @@ function createLocalTask(overrides: Partial<Task> = {}): Task {
     delivery_type: null,
     estimated_hours: null,
     stage: "creation",
+    task_type_id: null,
+    current_stage_id: null,
     deliverables: [],
     subtasks: [],
     created_at: new Date().toISOString(),
@@ -397,8 +403,13 @@ export function TaskModal({
   const [deliverables, setDeliverables] = useState<Deliverable[]>([]);
   const [subtasks, setSubtasks] = useState<Subtask[]>([]);
   const [assigneeId, setAssigneeId] = useState<string>("");
+  const [taskTypeId, setTaskTypeId] = useState<string>("");
+  const [currentStageId, setCurrentStageId] = useState<string>("");
   const persistedDraftIdRef = useRef<string | null>(null);
   const creatingDraftRef = useRef<Promise<string> | null>(null);
+
+  const { data: taskTypes = [] } = useTaskTypes();
+  const { data: typeStages = [] } = useTaskTypeStages(taskTypeId || null);
 
   const { data: teamMembers = [] } = useQuery({
     queryKey: ["tasks-modal-team"],
@@ -445,6 +456,8 @@ export function TaskModal({
     setDeliverables(Array.isArray(task.deliverables) ? task.deliverables : []);
     setSubtasks(Array.isArray(task.subtasks) ? task.subtasks : []);
     setAssigneeId(task.assignee_id ?? "");
+    setTaskTypeId(task.task_type_id ?? "");
+    setCurrentStageId(task.current_stage_id ?? "");
   }, [task]);
 
   const isLocalDraft = !!task?.id.startsWith("draft-");
@@ -472,6 +485,8 @@ export function TaskModal({
       deliverables: patch.deliverables ?? deliverables,
       subtasks: patch.subtasks ?? subtasks,
       assignee_id: patch.assignee_id ?? (assigneeId || null),
+      task_type_id: patch.task_type_id ?? (taskTypeId || null),
+      current_stage_id: patch.current_stage_id ?? (currentStageId || null),
     };
   };
 
@@ -621,14 +636,30 @@ export function TaskModal({
     return () => window.removeEventListener("keydown", onKey);
   }, [task, mode, onClose]);
 
-  // Progresso automático: subtarefas concluídas + etapas passadas ÷ total
+  // Índice da etapa atual — dinâmico se houver tipo, senão usa o enum antigo.
+  const useDynamicStages = taskTypeId && typeStages.length > 0;
+  const dynamicStageIndex = useDynamicStages
+    ? Math.max(0, typeStages.findIndex(s => s.id === currentStageId))
+    : -1;
+
+  // Progresso automático: usa pesos das etapas quando há tipo, senão fallback.
   const computedProgress = useMemo(() => {
-    const total = subtasks.length + STAGE_ORDER.length;
+    const subDone = subtasks.filter(s => s.done).length;
+    const subTotal = subtasks.length;
+    if (useDynamicStages) {
+      const totalWeight = typeStages.reduce((a, s) => a + s.weight, 0);
+      const doneWeight = status === "done"
+        ? totalWeight
+        : typeStages.slice(0, dynamicStageIndex).reduce((a, s) => a + s.weight, 0);
+      const denom = totalWeight + subTotal;
+      if (denom === 0) return 0;
+      return Math.round(((doneWeight + subDone) / denom) * 100);
+    }
+    const total = subTotal + STAGE_ORDER.length;
     if (total === 0) return 0;
     const stagesDone = status === "done" ? STAGE_ORDER.length : Math.max(0, STAGE_ORDER.indexOf(stage));
-    const subDone = subtasks.filter(s => s.done).length;
     return Math.round(((subDone + stagesDone) / total) * 100);
-  }, [subtasks, stage, status]);
+  }, [subtasks, stage, status, useDynamicStages, typeStages, dynamicStageIndex]);
 
   const lastProgressRef = useRef<number | null>(null);
   useEffect(() => {
@@ -645,7 +676,10 @@ export function TaskModal({
   if (!task) return null;
   const overdue = dueDate && new Date(dueDate) < new Date() && status !== "done";
   const subtasksDone = subtasks.filter(s => s.done).length;
-  const stagesDoneCount = status === "done" ? STAGE_ORDER.length : Math.max(0, STAGE_ORDER.indexOf(stage));
+  const stagesTotal = useDynamicStages ? typeStages.length : STAGE_ORDER.length;
+  const stagesDoneCount = useDynamicStages
+    ? (status === "done" ? stagesTotal : dynamicStageIndex)
+    : (status === "done" ? STAGE_ORDER.length : Math.max(0, STAGE_ORDER.indexOf(stage)));
 
   // Minimized pill
   if (mode === "minimized") {
@@ -725,6 +759,29 @@ export function TaskModal({
 
                 {/* Propriedades — estilo ClickUp / Monday / Notion (inline, sem cards) */}
                 <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
+                  <InlineField label="Tipo">
+                    <TaskTypePicker
+                      value={taskTypeId}
+                      types={taskTypes}
+                      onChange={(id, t) => {
+                        setTaskTypeId(id);
+                        setCurrentStageId(""); // reset — usuário escolhe a etapa
+                        const patch: Partial<Task> = { task_type_id: id || null, current_stage_id: null };
+                        // aplica defaults do tipo se ainda não configurado nesta task
+                        if (t) {
+                          if (!billingModel && t.default_billing_model) {
+                            setBillingModel(t.default_billing_model as BillingModel);
+                            patch.billing_model = t.default_billing_model as BillingModel;
+                          }
+                          if (!billingValue && t.default_price != null) {
+                            setBillingValue(String(t.default_price));
+                            patch.billing_value = t.default_price;
+                          }
+                        }
+                        save.mutate(patch);
+                      }}
+                    />
+                  </InlineField>
                   <InlineField label="Status">
                     <StatusPicker value={status} onChange={v => { setStatus(v); save.mutate({ status: v }); }} inline />
                   </InlineField>
@@ -764,7 +821,7 @@ export function TaskModal({
                         <ul className="space-y-1 text-xs text-muted-foreground">
                           <li className="flex items-center justify-between">
                             <span>Etapas concluídas</span>
-                            <span className="tabular-nums text-foreground">{stagesDoneCount} / {STAGE_ORDER.length}</span>
+                            <span className="tabular-nums text-foreground">{stagesDoneCount} / {stagesTotal}</span>
                           </li>
                           <li className="flex items-center justify-between">
                             <span>Subtarefas feitas</span>
@@ -796,11 +853,21 @@ export function TaskModal({
                   </InlineField>
                 </div>
 
-                {/* Etapa da tarefa — workflow de produção */}
+                {/* Etapa da tarefa — workflow dinâmico (tipo) ou fluxo padrão */}
                 <TaskStageSection
+                  dynamicStages={useDynamicStages ? typeStages : null}
+                  currentStageId={currentStageId}
                   stage={stage}
+                  onDynamicChange={s => {
+                    setCurrentStageId(s.id);
+                    // Deriva o status macro da etapa
+                    const nextStatus = s.status_group as TaskStatus;
+                    setStatus(nextStatus);
+                    save.mutate({ current_stage_id: s.id, status: nextStatus });
+                  }}
                   onStageChange={v => { setStage(v); save.mutate({ stage: v }); }}
                 />
+
 
 
                 <div>
@@ -1081,20 +1148,66 @@ function platformLabel(v: string) {
 }
 
 function TaskStageSection({
-  stage, onStageChange,
+  stage, onStageChange, dynamicStages, currentStageId, onDynamicChange,
 }: {
   stage: TaskStage;
   onStageChange: (v: TaskStage) => void;
+  dynamicStages: TaskTypeStageRow[] | null;
+  currentStageId: string;
+  onDynamicChange: (s: TaskTypeStageRow) => void;
 }) {
+  // Modo dinâmico — usa etapas configuradas do tipo
+  if (dynamicStages && dynamicStages.length > 0) {
+    const currentIdx = Math.max(0, dynamicStages.findIndex(s => s.id === currentStageId));
+    return (
+      <div className="rounded-2xl border border-border bg-card p-4 space-y-3">
+        <div className="flex items-center gap-2">
+          <ListChecks className="h-3.5 w-3.5 text-muted-foreground" />
+          <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Etapa da tarefa</span>
+        </div>
+        <div className="flex items-center gap-1 overflow-x-auto pb-1">
+          {dynamicStages.map((s, i) => {
+            const isCurrent = s.id === currentStageId;
+            const isPast = i < currentIdx && !!currentStageId;
+            return (
+              <button
+                key={s.id}
+                onClick={() => onDynamicChange(s)}
+                className={cn(
+                  "shrink-0 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium transition-colors border",
+                  isCurrent && "border-transparent text-white",
+                  !isCurrent && !isPast && "border-transparent text-muted-foreground hover:bg-muted",
+                  isPast && !isCurrent && "border-transparent text-emerald-600 dark:text-emerald-400 bg-emerald-500/10",
+                )}
+                style={isCurrent ? { backgroundColor: s.color } : undefined}
+              >
+                {isPast && !isCurrent ? (
+                  <Check className="h-3 w-3" />
+                ) : (
+                  <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: isCurrent ? "#fff" : s.color }} />
+                )}
+                {s.name}
+                {i < dynamicStages.length - 1 && <ChevronRight className="h-3 w-3 text-muted-foreground/50" />}
+              </button>
+            );
+          })}
+        </div>
+        <p className="text-[11px] text-muted-foreground">
+          O status macro (a fazer / andamento / revisão / concluído) é atualizado automaticamente pela etapa.
+        </p>
+      </div>
+    );
+  }
+
+  // Modo padrão (fallback quando não há tipo)
   const currentIndex = STAGE_ORDER.indexOf(stage);
   return (
     <div className="rounded-2xl border border-border bg-card p-4 space-y-3">
       <div className="flex items-center gap-2">
         <ListChecks className="h-3.5 w-3.5 text-muted-foreground" />
         <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Etapa da tarefa</span>
+        <span className="ml-auto text-[10px] text-muted-foreground">Escolha um tipo para usar etapas personalizadas</span>
       </div>
-
-      {/* Timeline */}
       <div className="flex items-center gap-1 overflow-x-auto pb-1">
         {STAGE_ORDER.map((s, i) => {
           const meta = STAGE_META[s];
@@ -1109,7 +1222,7 @@ function TaskStageSection({
                 "shrink-0 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium transition-colors border",
                 isCurrent && [tone.bg, tone.text, tone.border],
                 !isCurrent && !isPast && "border-transparent text-muted-foreground hover:bg-muted",
-                isPast && !isCurrent && "border-transparent text-emerald-600 dark:text-emerald-400 bg-emerald-500/10"
+                isPast && !isCurrent && "border-transparent text-emerald-600 dark:text-emerald-400 bg-emerald-500/10",
               )}
             >
               {isPast && !isCurrent ? (
@@ -1123,11 +1236,58 @@ function TaskStageSection({
           );
         })}
       </div>
-
-      <p className="text-[11px] text-muted-foreground">
-        Avance a etapa para acompanhar onde a tarefa está no fluxo de produção.
-      </p>
     </div>
+  );
+}
+
+/* ---------- Task type picker (inline field) ---------- */
+function TaskTypePicker({
+  value, types, onChange,
+}: {
+  value: string;
+  types: TaskTypeRow[];
+  onChange: (id: string, type: TaskTypeRow | null) => void;
+}) {
+  const selected = types.find(t => t.id === value) ?? null;
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <button className="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium hover:bg-muted transition-colors">
+          {selected ? (
+            <>
+              <span className="h-2 w-2 rounded-full" style={{ backgroundColor: selected.color }} />
+              {selected.name}
+            </>
+          ) : (
+            <span className="text-muted-foreground">Sem tipo</span>
+          )}
+        </button>
+      </PopoverTrigger>
+      <PopoverContent align="start" className="p-1 w-64 rounded-xl">
+        <button
+          onClick={() => onChange("", null)}
+          className={cn("w-full flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm hover:bg-muted", !value && "bg-muted/60")}
+        >
+          <span className="h-2 w-2 rounded-full bg-muted-foreground/40" />
+          <span className="text-muted-foreground">Sem tipo</span>
+        </button>
+        {types.length === 0 && (
+          <div className="px-2 py-3 text-[11px] text-muted-foreground">
+            Nenhum tipo configurado. Vá em Configurações → Tipos de Tarefa.
+          </div>
+        )}
+        {types.map(t => (
+          <button
+            key={t.id}
+            onClick={() => onChange(t.id, t)}
+            className={cn("w-full flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm hover:bg-muted", value === t.id && "bg-muted/60")}
+          >
+            <span className="h-2 w-2 rounded-full" style={{ backgroundColor: t.color }} />
+            {t.name}
+          </button>
+        ))}
+      </PopoverContent>
+    </Popover>
   );
 }
 

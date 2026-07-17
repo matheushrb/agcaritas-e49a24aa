@@ -12,6 +12,7 @@ import {
   Building2, Wrench, Share2, Workflow, TrendingUp, UserCog, Plug,
 } from "lucide-react";
 import { toast } from "sonner";
+import { TaskTypesEditor } from "@/components/settings/task-types-editor";
 
 export const Route = createFileRoute("/_authenticated/settings")({
   head: () => ({ meta: [{ title: "Configurações · Caritas" }] }),
@@ -22,7 +23,7 @@ const TABS = [
   { value: "agency",       label: "Dados da Agência", icon: Building2 },
   { value: "services",     label: "Serviços",         icon: Wrench },
   { value: "platforms",    label: "Plataformas",      icon: Share2 },
-  { value: "task-flows",   label: "Fluxos de Tarefa", icon: Workflow },
+  { value: "task-flows",   label: "Tipos de Tarefa",  icon: Workflow },
   { value: "crm-funnel",   label: "Funil CRM",        icon: TrendingUp },
   { value: "users",        label: "Usuários",         icon: UserCog },
   { value: "integrations", label: "Integrações",      icon: Plug },
@@ -33,7 +34,7 @@ function SettingsPage() {
     <div className="space-y-6">
       <header>
         <h1 className="font-display text-3xl font-bold tracking-tight">Configurações</h1>
-        <p className="text-sm text-muted-foreground">Configurações globais da agência — dados cadastrais, serviços, plataformas, fluxos, funil, usuários e integrações.</p>
+        <p className="text-sm text-muted-foreground">Configurações globais da agência — dados cadastrais, serviços, plataformas, tipos de tarefa, funil, usuários e integrações.</p>
       </header>
 
       <Tabs defaultValue="agency">
@@ -53,7 +54,7 @@ function SettingsPage() {
         <TabsContent value="agency" className="mt-4"><AgencyTab /></TabsContent>
         <TabsContent value="services" className="mt-4"><ComingSoonCard title="Serviços" hint="Catálogo de serviços (nome, valor base, descrição). Usado nas linhas de proposta." /></TabsContent>
         <TabsContent value="platforms" className="mt-4"><ComingSoonCard title="Plataformas" hint="Instagram, TikTok, YouTube etc. — regras de prazo de entrega por tipo e cor por plataforma." /></TabsContent>
-        <TabsContent value="task-flows" className="mt-4"><ComingSoonCard title="Fluxos de Tarefa" hint="Stage sets com checklist por etapa, tipo associado e briefing template." /></TabsContent>
+        <TabsContent value="task-flows" className="mt-4"><TaskTypesEditor /></TabsContent>
         <TabsContent value="crm-funnel" className="mt-4"><ComingSoonCard title="Funil CRM" hint="Etapas do pipeline com probabilidade padrão, ordem e flags ganho/perdido." /></TabsContent>
         <TabsContent value="users" className="mt-4"><UsersTab /></TabsContent>
         <TabsContent value="integrations" className="mt-4"><ComingSoonCard title="Integrações" hint="Buffer (token + profile IDs), Google Calendar (OAuth) — configuração centralizada." /></TabsContent>
