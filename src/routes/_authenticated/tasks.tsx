@@ -1884,10 +1884,15 @@ function DeliverablesSection({
                   <div className="flex items-start justify-between gap-2">
                     <IconPreview name={platOpt?.icon ?? null} color={platOpt?.color ?? null} iconUrl={platOpt?.icon_url ?? null} size={36} />
                     <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-1.5 mb-1">
+                      <div className="flex items-center gap-1.5 mb-1 flex-wrap">
                         <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">#{i + 1}</span>
+                        {d.delivered ? (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 px-1.5 py-0.5 text-[10px] font-medium"><Check className="h-2.5 w-2.5" />Entregue</span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-400 px-1.5 py-0.5 text-[10px] font-medium">Pendente</span>
+                        )}
                         {d.invoiced && (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 px-1.5 py-0.5 text-[10px] font-medium"><Check className="h-2.5 w-2.5" />Lançado</span>
+                          <span className="inline-flex items-center gap-1 rounded-full bg-primary/15 text-primary px-1.5 py-0.5 text-[10px] font-medium"><Check className="h-2.5 w-2.5" />Faturado</span>
                         )}
                         {d.billing_enabled && !d.invoiced && (
                           <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 text-primary px-1.5 py-0.5 text-[10px] font-medium">Faturável</span>
