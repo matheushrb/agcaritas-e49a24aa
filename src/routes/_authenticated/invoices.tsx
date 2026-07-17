@@ -36,9 +36,21 @@ type PendingCharge = {
   id: string; description: string; amount: number; due_date: string;
   client_id: string | null; project_id: string | null; task_id: string | null;
 };
+type Deliverable = {
+  id: string; platform?: string | null; type?: string | null; channel?: string | null;
+  billing_enabled?: boolean; billing_value?: number | null;
+  delivered?: boolean; invoiced?: boolean;
+};
 type BillableTask = {
   id: string; title: string; billing_value: number | null; billing_enabled: boolean;
   client_id: string | null; project_id: string | null; status: string | null;
+  deliverables?: Deliverable[] | null;
+};
+type BillableDeliverable = {
+  key: string; // taskId::deliverableId
+  taskId: string; deliverableId: string; taskTitle: string;
+  label: string; amount: number;
+  client_id: string | null; project_id: string | null;
 };
 
 const STATUS_META: Record<InvoiceStatus, { label: string; className: string }> = {
@@ -178,6 +190,8 @@ function NewInvoiceWizard({
   const [notes, setNotes] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
+  const [selectedDeliverables, setSelectedDeliverables] = useState<Set<string>>(new Set());
+
   // Pending charges + billable tasks
   const { data: charges = [] } = useQuery<PendingCharge[]>({
     queryKey: ["invoices-pending-charges"],
@@ -192,25 +206,33 @@ function NewInvoiceWizard({
     },
   });
 
-  const { data: tasks = [] } = useQuery<BillableTask[]>({
+  const { data: tasksData = { tasks: [], invoicedMainTaskIds: new Set<string>(), invoicedDeliverableIds: new Set<string>() } } = useQuery({
     queryKey: ["invoices-billable-tasks"],
     queryFn: async () => {
       const { data } = await supabase
         .from("tasks")
-        .select("id,title,billing_value,billing_enabled,client_id,project_id,status")
+        .select("id,title,billing_value,billing_enabled,client_id,project_id,status,deliverables")
         .eq("billing_enabled", true);
       const ts = (data ?? []) as BillableTask[];
-      // Só ocultamos tarefas cujo valor principal (charge sem deliverable_id) já foi faturado.
-      // Cobranças de entregáveis não bloqueiam — permitem faturar o principal antes e entregáveis depois (e vice-versa).
-      const { data: mainCharges } = await supabase
+      // Cobranças já existentes (main sem deliverable_id, e por entregável)
+      const { data: existingCharges } = await supabase
         .from("charges")
-        .select("task_id")
-        .not("task_id", "is", null)
-        .is("deliverable_id", null);
-      const set = new Set((mainCharges ?? []).map(r => r.task_id as string));
-      return ts.filter(t => !set.has(t.id));
+        .select("task_id,deliverable_id")
+        .not("task_id", "is", null);
+      const invoicedMainTaskIds = new Set<string>();
+      const invoicedDeliverableIds = new Set<string>();
+      for (const r of (existingCharges ?? []) as Array<{ task_id: string | null; deliverable_id: string | null }>) {
+        if (!r.task_id) continue;
+        if (r.deliverable_id) invoicedDeliverableIds.add(r.deliverable_id);
+        else invoicedMainTaskIds.add(r.task_id);
+      }
+      return { tasks: ts, invoicedMainTaskIds, invoicedDeliverableIds };
     },
   });
+
+  const tasks = tasksData.tasks;
+  const invoicedMainTaskIds = tasksData.invoicedMainTaskIds;
+  const invoicedDeliverableIds = tasksData.invoicedDeliverableIds;
 
   const filteredCharges = useMemo(() => charges.filter(c =>
     (!filterClient || c.client_id === filterClient) &&
@@ -218,21 +240,53 @@ function NewInvoiceWizard({
   ), [charges, filterClient, filterProject]);
 
   const filteredTasks = useMemo(() => tasks.filter(t =>
+    !invoicedMainTaskIds.has(t.id) &&
     (!filterClient || t.client_id === filterClient) &&
     (!filterProject || t.project_id === filterProject) &&
     (t.billing_value ?? 0) > 0,
-  ), [tasks, filterClient, filterProject]);
+  ), [tasks, invoicedMainTaskIds, filterClient, filterProject]);
+
+  const billableDeliverables = useMemo<BillableDeliverable[]>(() => {
+    const out: BillableDeliverable[] = [];
+    for (const t of tasks) {
+      if (filterClient && t.client_id !== filterClient) continue;
+      if (filterProject && t.project_id !== filterProject) continue;
+      const list = Array.isArray(t.deliverables) ? t.deliverables : [];
+      for (const d of list) {
+        if (!d?.id) continue;
+        if (!d.delivered) continue;
+        if (!d.billing_enabled) continue;
+        const amount = Number(d.billing_value ?? 0);
+        if (amount <= 0) continue;
+        if (d.invoiced) continue;
+        if (invoicedDeliverableIds.has(d.id)) continue;
+        const parts = [d.platform, d.channel, d.type].filter(Boolean).join(" • ");
+        out.push({
+          key: `${t.id}::${d.id}`,
+          taskId: t.id,
+          deliverableId: d.id,
+          taskTitle: t.title,
+          label: `Entregável: ${t.title}${parts ? ` — ${parts}` : ""}`,
+          amount,
+          client_id: t.client_id,
+          project_id: t.project_id,
+        });
+      }
+    }
+    return out;
+  }, [tasks, invoicedDeliverableIds, filterClient, filterProject]);
 
   const total = useMemo(() => {
     let t = 0;
     for (const c of filteredCharges) if (selectedCharges.has(c.id)) t += Number(c.amount ?? 0);
     for (const tk of filteredTasks) if (selectedTasks.has(tk.id)) t += Number(tk.billing_value ?? 0);
+    for (const d of billableDeliverables) if (selectedDeliverables.has(d.key)) t += d.amount;
     return t;
-  }, [filteredCharges, filteredTasks, selectedCharges, selectedTasks]);
+  }, [filteredCharges, filteredTasks, billableDeliverables, selectedCharges, selectedTasks, selectedDeliverables]);
 
   const canGoNext = step === 1
     ? true
-    : step === 2 ? (selectedCharges.size + selectedTasks.size) > 0
+    : step === 2 ? (selectedCharges.size + selectedTasks.size + selectedDeliverables.size) > 0
     : !!payerClient && !!issueDate;
 
   async function submit() {
@@ -260,6 +314,37 @@ function NewInvoiceWizard({
         if (inserted) newCharges.push(inserted.id);
       }
 
+      // Cria charges para os entregáveis selecionados e marca invoiced=true na tarefa
+      const deliverablesByTask = new Map<string, Set<string>>();
+      for (const d of billableDeliverables) {
+        if (!selectedDeliverables.has(d.key)) continue;
+        const { data: inserted, error } = await supabase.from("charges").insert({
+          organization_id: profile.organization_id,
+          project_id: d.project_id,
+          task_id: d.taskId,
+          deliverable_id: d.deliverableId,
+          client_id: d.client_id,
+          description: d.label,
+          amount: d.amount,
+          status: "pending_invoice",
+          due_date: dueDate || issueDate,
+          type: "income",
+        } as never).select("id").single();
+        if (error) throw error;
+        if (inserted) newCharges.push(inserted.id);
+        if (!deliverablesByTask.has(d.taskId)) deliverablesByTask.set(d.taskId, new Set());
+        deliverablesByTask.get(d.taskId)!.add(d.deliverableId);
+      }
+      // Marcar deliverables como invoiced na coluna JSONB da task
+      for (const [taskId, delIds] of deliverablesByTask) {
+        const task = tasks.find(t => t.id === taskId);
+        if (!task) continue;
+        const next = (task.deliverables ?? []).map(dd =>
+          delIds.has(dd.id) ? { ...dd, invoiced: true } : dd
+        );
+        await supabase.from("tasks").update({ deliverables: next } as never).eq("id", taskId);
+      }
+
       const chargeIds = [...selectedCharges, ...newCharges];
       const projectIds = new Set<string>();
       const clientIds = new Set<string>();
@@ -270,6 +355,10 @@ function NewInvoiceWizard({
       for (const tk of filteredTasks) if (selectedTasks.has(tk.id)) {
         if (tk.project_id) projectIds.add(tk.project_id);
         if (tk.client_id) clientIds.add(tk.client_id);
+      }
+      for (const d of billableDeliverables) if (selectedDeliverables.has(d.key)) {
+        if (d.project_id) projectIds.add(d.project_id);
+        if (d.client_id) clientIds.add(d.client_id);
       }
       const singleProject = projectIds.size === 1 ? [...projectIds][0] : null;
 
@@ -418,9 +507,43 @@ function NewInvoiceWizard({
               </div>
             </section>
 
+            <section>
+              <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1.5">Entregáveis prontos para faturar</h3>
+              {billableDeliverables.length === 0 && (
+                <p className="text-xs text-muted-foreground py-2">
+                  Nenhum entregável pronto. Marque o entregável como <strong>Entregue</strong> na tarefa e ative faturamento com valor.
+                </p>
+              )}
+              <div className="space-y-1">
+                {billableDeliverables.map(d => (
+                  <label key={d.key} className="flex items-center gap-3 px-3 py-2 rounded-lg border hover:bg-muted/40 cursor-pointer">
+                    <Checkbox
+                      checked={selectedDeliverables.has(d.key)}
+                      onCheckedChange={(v) => {
+                        const next = new Set(selectedDeliverables);
+                        v ? next.add(d.key) : next.delete(d.key);
+                        setSelectedDeliverables(next);
+                      }}
+                    />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm truncate flex items-center gap-2">
+                        {d.label}
+                        <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium bg-emerald-500/15 text-emerald-600">Entregue</span>
+                      </p>
+                      <p className="text-[11px] text-muted-foreground">
+                        {d.client_id ? clients.find(cl => cl.id === d.client_id)?.name : "—"}
+                        {d.project_id && ` • ${projects.find(p => p.id === d.project_id)?.name ?? ""}`}
+                      </p>
+                    </div>
+                    <div className="text-sm font-medium">{money(d.amount)}</div>
+                  </label>
+                ))}
+              </div>
+            </section>
+
             <div className="sticky bottom-0 bg-background pt-3 border-t flex items-center justify-between">
               <span className="text-xs text-muted-foreground">
-                {selectedCharges.size + selectedTasks.size} item(ns) selecionado(s)
+                {selectedCharges.size + selectedTasks.size + selectedDeliverables.size} item(ns) selecionado(s)
               </span>
               <span className="text-lg font-semibold">Total: {money(total)}</span>
             </div>
@@ -453,7 +576,7 @@ function NewInvoiceWizard({
               <Textarea value={notes} onChange={e => setNotes(e.target.value)} placeholder="Condições de pagamento, notas fiscais, etc." rows={3} />
             </div>
             <div className="rounded-lg border p-3 bg-muted/30 flex items-center justify-between">
-              <span className="text-sm">{selectedCharges.size + selectedTasks.size} item(ns)</span>
+              <span className="text-sm">{selectedCharges.size + selectedTasks.size + selectedDeliverables.size} item(ns)</span>
               <span className="text-lg font-semibold">{money(total)}</span>
             </div>
           </div>
