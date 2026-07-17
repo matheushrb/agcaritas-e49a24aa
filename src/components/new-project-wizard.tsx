@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,8 +10,9 @@ import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import {
   FolderPlus, ChevronLeft, ChevronRight, Check, Zap, DollarSign,
-  Wrench, Target, Rocket, Flag, Sparkles,
+  Share2, Target, Rocket, Flag, Sparkles,
 } from "lucide-react";
+import * as Icons from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export type ProjectWizardValue = {
