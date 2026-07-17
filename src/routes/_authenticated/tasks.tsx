@@ -1114,6 +1114,153 @@ function PlatformMultiSelect({ value, onChange }: { value: string; onChange: (v:
 }
 
 
+/* ---------- Deliverables (entregáveis por plataforma, cada um faturável) ---------- */
+function DeliverablesSection({
+  deliverables,
+  onChange,
+  onBill,
+  billingPending,
+}: {
+  deliverables: Deliverable[];
+  onChange: (next: Deliverable[]) => void;
+  onBill: (d: Deliverable) => void;
+  billingPending: boolean;
+}) {
+  const add = () => {
+    onChange([
+      ...deliverables,
+      {
+        id: `d-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+        platform: "",
+        type: "",
+        billing_enabled: false,
+        billing_model: null,
+        billing_value: null,
+      },
+    ]);
+  };
+  const update = (id: string, patch: Partial<Deliverable>) => {
+    onChange(deliverables.map(d => (d.id === id ? { ...d, ...patch } : d)));
+  };
+  const remove = (id: string) => onChange(deliverables.filter(d => d.id !== id));
+
+  const totalBillable = deliverables
+    .filter(d => d.billing_enabled && d.billing_value)
+    .reduce((sum, d) => sum + (d.billing_value ?? 0), 0);
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-2 px-1">
+        <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Entregáveis</span>
+        <Button size="sm" variant="ghost" className="h-6 px-2 rounded-full text-xs gap-1" onClick={add}>
+          <Plus className="h-3 w-3" /> Adicionar
+        </Button>
+      </div>
+
+      {deliverables.length === 0 ? (
+        <div className="rounded-xl bg-card border border-dashed border-border px-3 py-4 text-center text-xs text-muted-foreground">
+          Nenhum entregável ainda. Adicione uma plataforma para começar.
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {deliverables.map((d, i) => (
+            <div key={d.id} className="rounded-xl bg-card border border-border p-3 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+                  Entregável {i + 1}
+                  {d.invoiced && <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 px-1.5 py-0.5 text-[10px] font-medium normal-case tracking-normal"><Check className="h-2.5 w-2.5" />Faturado</span>}
+                </span>
+                <Button size="icon" variant="ghost" className="h-6 w-6 rounded-full text-muted-foreground hover:text-destructive" onClick={() => remove(d.id)}>
+                  <X className="h-3 w-3" />
+                </Button>
+              </div>
+
+              <div className="grid grid-cols-2 gap-1.5">
+                <Select value={d.platform || "none"} onValueChange={v => update(d.id, { platform: v === "none" ? "" : v })}>
+                  <SelectTrigger className="h-8 rounded-lg text-xs">
+                    <SelectValue placeholder="Plataforma" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">—</SelectItem>
+                    {PLATFORM_OPTIONS.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+                <Select value={d.type || "none"} onValueChange={v => update(d.id, { type: v === "none" ? "" : v })}>
+                  <SelectTrigger className="h-8 rounded-lg text-xs">
+                    <SelectValue placeholder="Tipo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">—</SelectItem>
+                    {DELIVERY_TYPE_OPTIONS.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="flex items-center justify-between pt-1 border-t border-border">
+                <span className="text-[11px] text-muted-foreground">Faturar este entregável</span>
+                <Switch
+                  checked={d.billing_enabled}
+                  onCheckedChange={v => update(d.id, { billing_enabled: v })}
+                />
+              </div>
+
+              {d.billing_enabled && (
+                <div className="space-y-1.5">
+                  <div className="grid grid-cols-2 gap-1.5">
+                    <Select
+                      value={d.billing_model ?? "none"}
+                      onValueChange={v => update(d.id, { billing_model: v === "none" ? null : (v as BillingModel) })}
+                    >
+                      <SelectTrigger className="h-8 rounded-lg text-xs">
+                        <SelectValue placeholder="Modelo" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">—</SelectItem>
+                        <SelectItem value="per_task">Por tarefa</SelectItem>
+                        <SelectItem value="hourly">Por hora</SelectItem>
+                        <SelectItem value="one_time">Fixo</SelectItem>
+                        <SelectItem value="package">Pacote</SelectItem>
+                        <SelectItem value="monthly">Recorrente</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <div className="flex items-center gap-1 rounded-lg border border-border px-2 h-8">
+                      <span className="text-[11px] text-muted-foreground">R$</span>
+                      <Input
+                        type="number"
+                        min={0}
+                        step={0.01}
+                        value={d.billing_value ?? ""}
+                        onChange={e => update(d.id, { billing_value: e.target.value ? Number(e.target.value) : null })}
+                        className="h-7 border-none bg-transparent p-0 text-xs shadow-none focus-visible:ring-0"
+                        placeholder="0,00"
+                      />
+                    </div>
+                  </div>
+                  <Button
+                    size="sm"
+                    className="w-full rounded-full gap-1.5 h-8 text-xs"
+                    disabled={!d.billing_value || d.billing_value <= 0 || billingPending || d.invoiced}
+                    onClick={() => onBill(d)}
+                  >
+                    {d.invoiced ? <><Check className="h-3.5 w-3.5" />Lançado</> : <><DollarSign className="h-3.5 w-3.5" />Faturar entregável</>}
+                  </Button>
+                </div>
+              )}
+            </div>
+          ))}
+          {totalBillable > 0 && (
+            <div className="rounded-xl bg-muted/40 px-3 py-2 text-xs flex items-center justify-between">
+              <span className="text-muted-foreground">Total faturável</span>
+              <span className="font-semibold">R$ {totalBillable.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</span>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+
 /* ---------- Sidebar helpers ---------- */
 function SidebarSection({ title, children }: { title: string; children: React.ReactNode }) {
   return (
