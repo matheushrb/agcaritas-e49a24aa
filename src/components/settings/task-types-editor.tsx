@@ -37,6 +37,7 @@ export type TaskTypeStage = {
   color: string;
   status_group: StatusGroup;
   weight: number;
+  auto_checklist: string[];
 };
 
 const STATUS_GROUP_META: Record<StatusGroup, { label: string; dot: string }> = {
