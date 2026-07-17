@@ -758,10 +758,16 @@ export function TaskModal({
               </div>
             </div>
 
-            {/* Body */}
-            <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-[1fr_320px]">
+            {/* Body — split em modal, coluna única em docked */}
+            <div className={cn(
+              "flex-1 min-h-0 grid grid-cols-1",
+              mode === "modal" && "lg:grid-cols-[1fr_320px]",
+            )}>
               {/* ---------- MAIN ---------- */}
-              <div className="min-h-0 overflow-y-auto px-6 py-6 space-y-5 border-r border-border">
+              <div className={cn(
+                "min-h-0 overflow-y-auto px-6 py-6 space-y-5",
+                mode === "modal" && "border-r border-border",
+              )}>
                 <input
                   value={title}
                   onChange={e => setTitle(e.target.value)}
