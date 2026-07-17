@@ -525,59 +525,90 @@ function StageRow({ stage, canUp, canDown, onMove, onPatch, onDelete }:{
 }) {
   const [name, setName] = useState(stage.name);
   const [weight, setWeight] = useState(stage.weight.toString());
+  const [expanded, setExpanded] = useState(false);
+  const [newItem, setNewItem] = useState("");
+  const checklist = stage.auto_checklist ?? [];
   useMemo(() => { setName(stage.name); setWeight(stage.weight.toString()); }, [stage.id, stage.name, stage.weight]);
 
+  function addItem() {
+    const v = newItem.trim();
+    if (!v) return;
+    onPatch({ auto_checklist: [...checklist, v] });
+    setNewItem("");
+  }
+  function removeItem(idx: number) {
+    const next = checklist.filter((_, i) => i !== idx);
+    onPatch({ auto_checklist: next });
+  }
+  function updateItem(idx: number, value: string) {
+    const next = [...checklist];
+    next[idx] = value;
+    onPatch({ auto_checklist: next });
+  }
+
   return (
-    <li className="flex items-center gap-2 px-3 py-2 hover:bg-muted/30">
-      <div className="flex flex-col">
-        <button className="text-muted-foreground hover:text-foreground disabled:opacity-30" disabled={!canUp} onClick={() => onMove(-1)} title="Mover para cima">
-          <GripVertical className="h-3 w-3 rotate-90" />
-        </button>
-        <button className="text-muted-foreground hover:text-foreground disabled:opacity-30" disabled={!canDown} onClick={() => onMove(1)} title="Mover para baixo">
-          <GripVertical className="h-3 w-3 -rotate-90" />
-        </button>
-      </div>
+    <li className="hover:bg-muted/30">
+      <div className="flex items-center gap-2 px-3 py-2">
+        <div className="flex flex-col">
+          <button className="text-muted-foreground hover:text-foreground disabled:opacity-30" disabled={!canUp} onClick={() => onMove(-1)} title="Mover para cima">
+            <GripVertical className="h-3 w-3 rotate-90" />
+          </button>
+          <button className="text-muted-foreground hover:text-foreground disabled:opacity-30" disabled={!canDown} onClick={() => onMove(1)} title="Mover para baixo">
+            <GripVertical className="h-3 w-3 -rotate-90" />
+          </button>
+        </div>
 
-      <Popover>
-        <PopoverTrigger asChild>
-          <button className="h-6 w-6 rounded-md shrink-0" style={{ backgroundColor: stage.color }} title="Cor" />
-        </PopoverTrigger>
-        <PopoverContent className="p-2 w-auto rounded-xl">
-          <div className="flex gap-1.5 flex-wrap max-w-[180px]">
-            {COLOR_PRESETS.map(c => (
-              <button key={c} onClick={() => onPatch({ color: c })}
-                className={cn("h-6 w-6 rounded-md border-2", stage.color === c ? "border-foreground" : "border-transparent")}
-                style={{ backgroundColor: c }} />
+        <Popover>
+          <PopoverTrigger asChild>
+            <button className="h-6 w-6 rounded-md shrink-0" style={{ backgroundColor: stage.color }} title="Cor" />
+          </PopoverTrigger>
+          <PopoverContent className="p-2 w-auto rounded-xl">
+            <div className="flex gap-1.5 flex-wrap max-w-[180px]">
+              {COLOR_PRESETS.map(c => (
+                <button key={c} onClick={() => onPatch({ color: c })}
+                  className={cn("h-6 w-6 rounded-md border-2", stage.color === c ? "border-foreground" : "border-transparent")}
+                  style={{ backgroundColor: c }} />
+              ))}
+            </div>
+          </PopoverContent>
+        </Popover>
+
+        <Input
+          value={name}
+          onChange={e => setName(e.target.value)}
+          onBlur={() => name.trim() && name !== stage.name && onPatch({ name: name.trim() })}
+          className="h-8 flex-1 rounded-lg border-none shadow-none focus-visible:ring-1"
+        />
+
+        <Select value={stage.status_group} onValueChange={v => onPatch({ status_group: v as StatusGroup })}>
+          <SelectTrigger className="h-8 rounded-lg w-40 text-xs">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {(Object.keys(STATUS_GROUP_META) as StatusGroup[]).map(k => (
+              <SelectItem key={k} value={k}>
+                <span className="flex items-center gap-2">
+                  <span className={cn("h-2 w-2 rounded-full", STATUS_GROUP_META[k].dot)} />
+                  {STATUS_GROUP_META[k].label}
+                </span>
+              </SelectItem>
             ))}
-          </div>
-        </PopoverContent>
-      </Popover>
+          </SelectContent>
+        </Select>
 
-      <Input
-        value={name}
-        onChange={e => setName(e.target.value)}
-        onBlur={() => name.trim() && name !== stage.name && onPatch({ name: name.trim() })}
-        className="h-8 flex-1 rounded-lg border-none shadow-none focus-visible:ring-1"
-      />
-
-      <Select value={stage.status_group} onValueChange={v => onPatch({ status_group: v as StatusGroup })}>
-        <SelectTrigger className="h-8 rounded-lg w-40 text-xs">
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          {(Object.keys(STATUS_GROUP_META) as StatusGroup[]).map(k => (
-            <SelectItem key={k} value={k}>
-              <span className="flex items-center gap-2">
-                <span className={cn("h-2 w-2 rounded-full", STATUS_GROUP_META[k].dot)} />
-                {STATUS_GROUP_META[k].label}
-              </span>
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-
-      <div className="flex items-center gap-1 text-xs text-muted-foreground">
-        <span>peso</span>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="flex items-center gap-1 text-xs text-muted-foreground cursor-help">
+                <span>peso</span>
+                <Info className="h-3 w-3" />
+              </div>
+            </TooltipTrigger>
+            <TooltipContent className="max-w-[240px] text-xs">
+              Quanto essa etapa vale no <b>progresso automático</b> da tarefa. Ex.: com etapas de peso 1, 3 e 1 (total 5), concluir a etapa do meio adiciona 60% ao progresso.
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
         <Input
           type="number" min={0.1} step={0.1}
           value={weight}
@@ -585,11 +616,72 @@ function StageRow({ stage, canUp, canDown, onMove, onPatch, onDelete }:{
           onBlur={() => onPatch({ weight: Number(weight) || 1 })}
           className="h-8 w-16 rounded-lg text-xs"
         />
+
+        <Button
+          size="icon" variant="ghost"
+          className={cn("h-8 w-8 rounded-full", checklist.length > 0 && "text-primary")}
+          onClick={() => setExpanded(v => !v)}
+          title="Checklist automático"
+        >
+          <span className="relative inline-flex items-center">
+            <ListChecks className="h-4 w-4" />
+            {checklist.length > 0 && (
+              <span className="absolute -top-1.5 -right-2 text-[9px] font-semibold bg-primary text-primary-foreground rounded-full min-w-[14px] h-[14px] px-1 flex items-center justify-center">
+                {checklist.length}
+              </span>
+            )}
+          </span>
+        </Button>
+
+        <Button size="icon" variant="ghost" className="h-8 w-8 rounded-full text-muted-foreground hover:text-destructive" onClick={onDelete} title="Excluir">
+          <Trash2 className="h-3.5 w-3.5" />
+        </Button>
       </div>
 
-      <Button size="icon" variant="ghost" className="h-8 w-8 rounded-full text-muted-foreground hover:text-destructive" onClick={onDelete} title="Excluir">
-        <Trash2 className="h-3.5 w-3.5" />
-      </Button>
+      {expanded && (
+        <div className="px-3 pb-3 pl-14 space-y-1.5">
+          <div className="text-[11px] text-muted-foreground flex items-center gap-1">
+            <ListChecks className="h-3 w-3" />
+            Ao atingir esta etapa, estes itens são criados como subtarefas automaticamente.
+          </div>
+          {checklist.length > 0 && (
+            <ul className="space-y-1">
+              {checklist.map((item, idx) => (
+                <li key={idx} className="flex items-center gap-2">
+                  <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/50" />
+                  <Input
+                    value={item}
+                    onChange={e => {
+                      const v = e.target.value;
+                      const next = [...checklist]; next[idx] = v;
+                      // local update only; commit on blur
+                      onPatch({ auto_checklist: next });
+                    }}
+                    onBlur={e => updateItem(idx, e.target.value)}
+                    className="h-7 text-xs rounded-lg"
+                  />
+                  <Button size="icon" variant="ghost" className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                    onClick={() => removeItem(idx)}>
+                    <Trash2 className="h-3 w-3" />
+                  </Button>
+                </li>
+              ))}
+            </ul>
+          )}
+          <div className="flex items-center gap-2 pt-1">
+            <Input
+              value={newItem}
+              onChange={e => setNewItem(e.target.value)}
+              onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); addItem(); } }}
+              placeholder="Novo item da checklist…"
+              className="h-7 text-xs rounded-lg"
+            />
+            <Button size="sm" variant="outline" className="h-7 rounded-full gap-1" onClick={addItem}>
+              <Plus className="h-3 w-3" /> Adicionar
+            </Button>
+          </div>
+        </div>
+      )}
     </li>
   );
 }
