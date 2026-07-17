@@ -965,16 +965,19 @@ export type Database = {
       }
       organizations: {
         Row: {
+          automation_settings: Json
           created_at: string
           id: string
           name: string
         }
         Insert: {
+          automation_settings?: Json
           created_at?: string
           id?: string
           name: string
         }
         Update: {
+          automation_settings?: Json
           created_at?: string
           id?: string
           name?: string
