@@ -66,14 +66,6 @@ function ProjectsPage() {
     },
   });
 
-  const { data: charges = [] } = useQuery<Charge[]>({
-    queryKey: ["projects-charges"],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("charges").select("id,project_id,amount");
-      if (error) throw error;
-      return (data ?? []) as Charge[];
-    },
-  });
 
   const { data: tasksAgg = { counts: {}, projected: {} } } = useQuery<{
     counts: Record<string, { total: number; overdue: number }>;
