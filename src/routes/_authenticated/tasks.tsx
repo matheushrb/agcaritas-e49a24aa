@@ -368,6 +368,44 @@ export function TaskModal({ task, onClose }: { task: Task | null; onClose: () =>
     },
   });
 
+  const [invoiced, setInvoiced] = useState(false);
+  useEffect(() => { setInvoiced(false); }, [task?.id]);
+
+  const bill = useMutation({
+    mutationFn: async () => {
+      if (!task) return;
+      const value = billingValue ? Number(billingValue) : 0;
+      if (!value || value <= 0) throw new Error("Defina um valor de faturamento primeiro");
+      const { data: profile } = await supabase.from("profiles").select("organization_id").maybeSingle();
+      if (!profile?.organization_id) throw new Error("Sem organização");
+      let clientId: string | null = null;
+      if (task.project_id) {
+        const { data: proj } = await supabase.from("projects").select("client_id").eq("id", task.project_id).maybeSingle();
+        clientId = (proj?.client_id as string) ?? null;
+      }
+      const today = new Date().toISOString().slice(0, 10);
+      const { error } = await supabase.from("charges").insert({
+        organization_id: profile.organization_id,
+        project_id: task.project_id,
+        task_id: task.id,
+        client_id: clientId,
+        description: `Tarefa: ${task.title}`,
+        amount: value,
+        status: "pending",
+        due_date: today,
+        type: "income",
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["charges"] });
+      qc.invalidateQueries({ queryKey: ["project-charges"] });
+      setInvoiced(true);
+      toast.success("Tarefa lançada no Financeiro");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   const overdue = dueDate && new Date(dueDate) < new Date() && status !== "done";
 
   return (
