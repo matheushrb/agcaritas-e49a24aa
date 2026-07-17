@@ -687,7 +687,7 @@ export function TaskModal({
       if (!billingEnabled) throw new Error("Ative a chave de faturamento nesta tarefa");
       const value = billingValue ? Number(billingValue) : 0;
       if (!value || value <= 0) throw new Error("Defina um valor de faturamento primeiro");
-      const persistedTaskId = isLocalDraft ? (await createDraftRecord({})).id : task.id;
+      const persistedTaskId = isLocalDraft ? (await createDraftRecord()).id : task.id;
       const { data: profile } = await supabase.from("profiles").select("organization_id").maybeSingle();
       if (!profile?.organization_id) throw new Error("Sem organização");
       const resolvedProjectId = projectId || task.project_id || null;
@@ -725,7 +725,7 @@ export function TaskModal({
       if (!d.billing_enabled) throw new Error("Ative o faturamento deste entregável");
       const value = d.billing_value ?? 0;
       if (!value || value <= 0) throw new Error("Defina um valor para este entregável");
-      const persistedTaskId = isLocalDraft ? (await createDraftRecord({})).id : task.id;
+      const persistedTaskId = isLocalDraft ? (await createDraftRecord()).id : task.id;
       const { data: profile } = await supabase.from("profiles").select("organization_id").maybeSingle();
       if (!profile?.organization_id) throw new Error("Sem organização");
       const resolvedProjectId = projectId || task.project_id || null;
