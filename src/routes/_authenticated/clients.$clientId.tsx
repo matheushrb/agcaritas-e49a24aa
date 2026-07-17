@@ -68,6 +68,8 @@ function ClientDetailPage() {
   const { clientId } = Route.useParams();
   const navigate = useNavigate();
   const qc = useQueryClient();
+  const [editOpen, setEditOpen] = useState(false);
+
 
   const { data: client, isLoading } = useQuery<Client | null>({
     queryKey: ["client", clientId],
