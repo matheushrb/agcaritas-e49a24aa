@@ -60,6 +60,7 @@ type Task = {
   delivery_type: string | null;
   estimated_hours: number | null;
   progress: number;
+  stage: "briefing" | "creation" | "review" | "approval" | "delivery";
   created_at?: string;
 };
 type Charge = {
