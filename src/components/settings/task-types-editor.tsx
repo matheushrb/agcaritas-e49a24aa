@@ -459,13 +459,16 @@ function TypeEditorPanel({ type, stages, onDelete, onDuplicate }:{
               className="h-9 rounded-lg w-32"
               placeholder="0,00"
             />
-            <PriceCalculatorButton
+            <AgencySuggestion
               onApply={price => {
                 setDefaultPrice(price.toString());
                 updateType.mutate({ default_price: price });
               }}
             />
           </div>
+          <p className="text-[10px] text-muted-foreground">
+            Valor sugerido — pode ser sobrescrito manualmente em cada tarefa.
+          </p>
         </div>
       </div>
 
