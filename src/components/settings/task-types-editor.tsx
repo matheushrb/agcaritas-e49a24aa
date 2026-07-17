@@ -13,7 +13,7 @@ import { Plus, Trash2, GripVertical, Layers, Palette, Copy, Pencil, ChevronRight
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { IconPicker, TaskTypeIcon } from "./icon-picker";
-import { PriceCalculatorButton } from "./price-calculator";
+import { useAgencyPricing, computeAgencyRate } from "./agency-pricing";
 
 export type StatusGroup = "todo" | "in_progress" | "review" | "done";
 
