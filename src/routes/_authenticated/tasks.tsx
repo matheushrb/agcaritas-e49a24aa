@@ -965,7 +965,11 @@ export function TaskModal({
                   }}
                   onBill={(d) => billDeliverable.mutate(d)}
                   billingPending={billDeliverable.isPending}
+                  canBill={invoiced && status !== "done"}
+                  taskFinalized={status === "done"}
+                  taskInvoiced={invoiced}
                 />
+
 
 
 
