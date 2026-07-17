@@ -102,6 +102,25 @@ export function NewProjectWizard({
   const [step, setStep] = useState(1);
   const [v, setV] = useState<ProjectWizardValue>(defaultValue);
 
+  const { data: projectTypes = [] } = useQuery({
+    queryKey: ["project_types"],
+    queryFn: async () => {
+      const { data } = await (supabase as any).from("project_types").select("*").eq("active", true).order("sort_order");
+      return (data ?? []) as CatalogItem[];
+    },
+  });
+  const { data: platforms = [] } = useQuery({
+    queryKey: ["platforms"],
+    queryFn: async () => {
+      const { data } = await (supabase as any).from("platforms").select("*").eq("active", true).order("sort_order");
+      return (data ?? []) as CatalogItem[];
+    },
+  });
+
+  const typeOptions = projectTypes.length
+    ? projectTypes.map(t => ({ value: t.slug || t.id, label: t.name }))
+    : PROJECT_TYPES_FALLBACK;
+
   const reset = () => { setStep(1); setV(defaultValue); };
   const handleOpen = (o: boolean) => { onOpenChange(o); if (!o) reset(); };
 
