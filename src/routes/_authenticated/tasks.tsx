@@ -853,11 +853,21 @@ export function TaskModal({
                   </InlineField>
                 </div>
 
-                {/* Etapa da tarefa — workflow de produção */}
+                {/* Etapa da tarefa — workflow dinâmico (tipo) ou fluxo padrão */}
                 <TaskStageSection
+                  dynamicStages={useDynamicStages ? typeStages : null}
+                  currentStageId={currentStageId}
                   stage={stage}
+                  onDynamicChange={s => {
+                    setCurrentStageId(s.id);
+                    // Deriva o status macro da etapa
+                    const nextStatus = s.status_group as TaskStatus;
+                    setStatus(nextStatus);
+                    save.mutate({ current_stage_id: s.id, status: nextStatus });
+                  }}
                   onStageChange={v => { setStage(v); save.mutate({ stage: v }); }}
                 />
+
 
 
                 <div>
