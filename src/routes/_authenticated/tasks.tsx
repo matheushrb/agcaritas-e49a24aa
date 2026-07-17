@@ -343,6 +343,9 @@ function createLocalTask(overrides: Partial<Task> = {}): Task {
     current_stage_id: null,
     deliverables: [],
     subtasks: [],
+    broadcast_kind: null,
+    recorded_at: null,
+    aired_at: null,
     created_at: new Date().toISOString(),
     ...overrides,
   };
