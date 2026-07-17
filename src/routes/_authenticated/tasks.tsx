@@ -2044,13 +2044,16 @@ function DeliverablesSection({
                     <Button
                       size="sm"
                       className="w-full rounded-full gap-1.5 h-8 text-xs"
-                      disabled={!d.billing_value || d.billing_value <= 0 || billingPending || d.invoiced || !canBill}
+                      disabled={!d.billing_value || d.billing_value <= 0 || billingPending || d.invoiced || !canBill || !d.delivered}
                       onClick={() => onBill(d)}
-                      title={billHelper ?? undefined}
+                      title={!d.delivered ? "Marque o entregável como entregue antes de faturar." : (billHelper ?? undefined)}
                     >
                       {d.invoiced ? <><Check className="h-3.5 w-3.5" />Lançado</> : <><DollarSign className="h-3.5 w-3.5" />Faturar entregável</>}
                     </Button>
-                    {billHelper && !d.invoiced && (
+                    {!d.delivered && !d.invoiced && (
+                      <p className="text-[10px] text-amber-600 dark:text-amber-400 leading-relaxed">Marque como entregue para liberar o faturamento.</p>
+                    )}
+                    {d.delivered && billHelper && !d.invoiced && (
                       <p className="text-[10px] text-muted-foreground leading-relaxed">{billHelper}</p>
                     )}
                   </div>
