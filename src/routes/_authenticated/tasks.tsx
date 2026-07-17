@@ -570,7 +570,22 @@ export function TaskModal({
   });
 
   const [invoiced, setInvoiced] = useState(false);
-  useEffect(() => { setInvoiced(false); }, [task?.id]);
+  useEffect(() => {
+    setInvoiced(false);
+    if (!task || isLocalDraft) return;
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase
+        .from("charges")
+        .select("id")
+        .eq("task_id", task.id)
+        .is("parent_charge_id", null)
+        .is("deliverable_id", null)
+        .maybeSingle();
+      if (!cancelled && data) setInvoiced(true);
+    })();
+    return () => { cancelled = true; };
+  }, [task?.id, isLocalDraft]);
 
   const bill = useMutation({
     mutationFn: async () => {
