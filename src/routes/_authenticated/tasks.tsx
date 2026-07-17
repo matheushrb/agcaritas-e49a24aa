@@ -586,6 +586,48 @@ export function TaskModal({ task, onClose }: { task: Task | null; onClose: () =>
                   </SidebarRow>
                 </SidebarSection>
 
+                <SidebarSection title="Vínculo">
+                  <SidebarRow label="Projeto">
+                    <Select
+                      value={projectId || "none"}
+                      onValueChange={v => {
+                        const nv = v === "none" ? "" : v;
+                        setProjectId(nv);
+                        const proj = projectsList.find(p => p.id === nv);
+                        const nextClient = proj?.client_id ?? clientId ?? "";
+                        if (proj?.client_id) setClientId(proj.client_id);
+                        save.mutate({ project_id: nv || null, client_id: (nextClient || null) as string | null });
+                      }}
+                    >
+                      <SelectTrigger className="h-8 rounded-lg border-none bg-transparent hover:bg-muted/60 text-sm px-2 shadow-none">
+                        <SelectValue placeholder="Avulsa" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">Sem projeto (avulsa)</SelectItem>
+                        {projectsList.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </SidebarRow>
+                  <SidebarRow label="Cliente">
+                    <Select
+                      value={clientId || "none"}
+                      onValueChange={v => {
+                        const nv = v === "none" ? "" : v;
+                        setClientId(nv);
+                        save.mutate({ client_id: nv || null });
+                      }}
+                    >
+                      <SelectTrigger className="h-8 rounded-lg border-none bg-transparent hover:bg-muted/60 text-sm px-2 shadow-none">
+                        <SelectValue placeholder="—" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">—</SelectItem>
+                        {clientsList.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </SidebarRow>
+                </SidebarSection>
+
                 <SidebarSection title="Execução">
                   <SidebarRow label="Plataforma">
                     <Select value={platform || "none"} onValueChange={v => { const nv = v === "none" ? "" : v; setPlatform(nv); save.mutate({ platform: nv || null }); }}>
