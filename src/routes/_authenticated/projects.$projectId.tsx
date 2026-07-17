@@ -310,7 +310,7 @@ function ProjectDetail() {
                 <CheckCircle2 className="h-4 w-4" /> Concluir Projeto
               </Button>
             )}
-            <Button variant="outline" className="rounded-full gap-1.5" disabled title="Em breve">
+            <Button variant="outline" className="rounded-full gap-1.5" onClick={() => setEditOpen(true)}>
               <Pencil className="h-4 w-4" /> Editar
             </Button>
           </div>
