@@ -21,7 +21,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { useTaskTypes, useTaskTypeStages, type TaskTypeStageRow, type StatusGroup } from "@/lib/task-types";
+import { useTaskTypes, useTaskTypeStages, type TaskTypeRow, type TaskTypeStageRow, type StatusGroup } from "@/lib/task-types";
 import { Link } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/_authenticated/tasks")({
