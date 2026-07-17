@@ -653,55 +653,6 @@ export function TaskModal({ task, onClose }: { task: Task | null; onClose: () =>
                   </SidebarRow>
                 </SidebarSection>
 
-                <SidebarSection title="Execução">
-                  <SidebarRow label="Plataforma">
-                    <Select value={platform || "none"} onValueChange={v => { const nv = v === "none" ? "" : v; setPlatform(nv); save.mutate({ platform: nv || null }); }}>
-                      <SelectTrigger className="h-8 rounded-lg border-none bg-transparent hover:bg-muted/60 text-sm px-2 shadow-none">
-                        <SelectValue placeholder="—" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="none">—</SelectItem>
-                        <SelectItem value="instagram">Instagram</SelectItem>
-                        <SelectItem value="tiktok">TikTok</SelectItem>
-                        <SelectItem value="youtube">YouTube</SelectItem>
-                        <SelectItem value="meta_ads">Meta Ads</SelectItem>
-                        <SelectItem value="google_ads">Google Ads</SelectItem>
-                        <SelectItem value="site">Site / Blog</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </SidebarRow>
-                  <SidebarRow label="Tipo">
-                    <Select value={deliveryType || "none"} onValueChange={v => { const nv = v === "none" ? "" : v; setDeliveryType(nv); save.mutate({ delivery_type: nv || null }); }}>
-                      <SelectTrigger className="h-8 rounded-lg border-none bg-transparent hover:bg-muted/60 text-sm px-2 shadow-none">
-                        <SelectValue placeholder="—" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="none">—</SelectItem>
-                        <SelectItem value="post">Post</SelectItem>
-                        <SelectItem value="reels">Reels</SelectItem>
-                        <SelectItem value="story">Story</SelectItem>
-                        <SelectItem value="carrossel">Carrossel</SelectItem>
-                        <SelectItem value="video">Vídeo</SelectItem>
-                        <SelectItem value="arte">Arte</SelectItem>
-                        <SelectItem value="copy">Copy</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </SidebarRow>
-                  <SidebarRow label="Estimativa">
-                    <div className="flex items-center gap-1.5 w-full">
-                      <Input
-                        type="number" min={0} step={0.5}
-                        value={estimatedHours}
-                        onChange={e => setEstimatedHours(e.target.value)}
-                        onBlur={() => save.mutate({ estimated_hours: estimatedHours ? Number(estimatedHours) : null })}
-                        className="h-8 rounded-lg border-none bg-transparent hover:bg-muted/60 text-sm px-2 shadow-none focus-visible:ring-0"
-                        placeholder="0"
-                      />
-                      <span className="text-xs text-muted-foreground">h</span>
-                    </div>
-                  </SidebarRow>
-                </SidebarSection>
-
                 <SidebarSection title="Faturamento">
                   <SidebarRow label="Modelo">
                     <Select value={billingModel || "none"} onValueChange={v => { const nv = v === "none" ? "" : v; setBillingModel(nv as BillingModel | ""); save.mutate({ billing_model: (nv || null) as BillingModel | null }); }}>
