@@ -576,7 +576,7 @@ function NewInvoiceWizard({
               <Textarea value={notes} onChange={e => setNotes(e.target.value)} placeholder="Condições de pagamento, notas fiscais, etc." rows={3} />
             </div>
             <div className="rounded-lg border p-3 bg-muted/30 flex items-center justify-between">
-              <span className="text-sm">{selectedCharges.size + selectedTasks.size} item(ns)</span>
+              <span className="text-sm">{selectedCharges.size + selectedTasks.size + selectedDeliverables.size} item(ns)</span>
               <span className="text-lg font-semibold">{money(total)}</span>
             </div>
           </div>
