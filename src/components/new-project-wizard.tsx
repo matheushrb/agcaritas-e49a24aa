@@ -38,15 +38,8 @@ export type ProjectWizardValue = {
   other_budgets: { label: string; amount: number }[];
 };
 
-const PROJECT_TYPES = [
+const PROJECT_TYPES_FALLBACK = [
   { value: "marketing", label: "Marketing Digital" },
-  { value: "branding", label: "Branding & Identidade" },
-  { value: "social_media", label: "Social Media" },
-  { value: "traffic", label: "Tráfego Pago" },
-  { value: "web", label: "Site / Landing Page" },
-  { value: "content", label: "Conteúdo / Copy" },
-  { value: "consulting", label: "Consultoria" },
-  { value: "other", label: "Outro" },
 ];
 
 const BILLING_OPTIONS = [
@@ -63,12 +56,6 @@ const URGENCY = [
   { value: "critical", label: "Urgente", color: "bg-red-500/15 text-red-600 dark:text-red-400" },
 ];
 
-const TOOLS = [
-  "Meta Ads", "Google Ads", "TikTok Ads", "LinkedIn Ads", "Buffer", "RD Station",
-  "HubSpot", "Figma", "Canva", "Notion", "ClickUp", "Adobe CC", "CapCut",
-  "Google Analytics", "Search Console", "Hotjar", "Semrush", "WordPress",
-];
-
 const TRAFFIC_PLATFORMS = ["Meta", "Google", "TikTok", "LinkedIn", "YouTube", "Pinterest", "X (Twitter)"];
 
 const STRATEGY_ITEMS: { key: keyof ProjectWizardValue["scope_flags"]; label: string; desc: string }[] = [
@@ -81,11 +68,11 @@ const STRATEGY_ITEMS: { key: keyof ProjectWizardValue["scope_flags"]; label: str
 ];
 
 const STEPS = [
-  { id: 1, title: "Escopo",           icon: FolderPlus },
-  { id: 2, title: "Faturamento",      icon: DollarSign },
-  { id: 3, title: "Ferramentas",      icon: Wrench },
-  { id: 4, title: "Verbas",           icon: Target },
-  { id: 5, title: "Estratégia",       icon: Rocket },
+  { id: 1, title: "Escopo",       icon: FolderPlus },
+  { id: 2, title: "Faturamento",  icon: DollarSign },
+  { id: 3, title: "Plataformas",  icon: Share2 },
+  { id: 4, title: "Verbas",       icon: Target },
+  { id: 5, title: "Estratégia",   icon: Rocket },
 ];
 
 const defaultValue: ProjectWizardValue = {
