@@ -44,9 +44,9 @@ type Project = {
   start_date: string | null;
   end_date: string | null;
   created_at: string;
-  has_content_calendar?: boolean | null;
-  has_content_grid?: boolean | null;
-  has_timeline?: boolean | null;
+  has_content_calendar?: boolean;
+  has_content_grid?: boolean;
+  has_timeline?: boolean;
   traffic_budget?: { enabled?: boolean; amount?: number | null; platforms?: string[] } | null;
   scope_flags?: Record<string, unknown> | null;
 };
