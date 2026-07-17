@@ -203,6 +203,7 @@ function ProjectDetail() {
 
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const selectedTask = tasks.find(t => t.id === selectedTaskId) ?? null;
+  const [editOpen, setEditOpen] = useState(false);
 
   const addTask = useMutation({
     mutationFn: async (title: string) => {
