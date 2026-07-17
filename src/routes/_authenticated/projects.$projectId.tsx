@@ -403,12 +403,20 @@ function ProjectDetail() {
             <TabsContent value="tasks" className="mt-4">
               <TasksTab
                 tasks={tasks}
+                baseTaskTypes={baseTaskTypes}
                 onAdd={(t) => addTask.mutate(t)}
                 onOpen={(id) => setSelectedTaskId(id)}
                 onQuickCreate={() => addTask.mutate("Nova tarefa")}
+                onCreateFromBase={(bt) => addTask.mutate({
+                  title: bt.name,
+                  task_type_id: bt.id,
+                  billing_model: bt.default_billing_model,
+                  billing_value: bt.default_price,
+                })}
                 pending={addTask.isPending}
               />
             </TabsContent>
+
 
             <TabsContent value="docs" className="mt-4">
               <ComingSoon
