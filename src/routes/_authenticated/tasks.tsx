@@ -73,6 +73,7 @@ function TasksPage() {
   const [view, setView] = useState<"list" | "kanban">("list");
   const [turbo, setTurbo] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [draftId, setDraftId] = useState<string | null>(null);
   const [quickTitle, setQuickTitle] = useState<Record<string, string>>({});
 
   const { data: tasks = [], isLoading } = useQuery<Task[]>({
