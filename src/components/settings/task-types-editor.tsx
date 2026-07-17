@@ -90,13 +90,14 @@ export function TaskTypesEditor() {
   });
 
   const createType = useMutation({
-    mutationFn: async (input: { name: string; description: string; color: string }) => {
+    mutationFn: async (input: { name: string; description: string; color: string; icon: string | null }) => {
       const organization_id = await getOrgId();
       const { data, error } = await supabase.from("task_types").insert({
         organization_id,
         name: input.name,
         description: input.description || null,
         color: input.color,
+        icon: input.icon,
       }).select("id").single();
       if (error) throw error;
       return data.id as string;
