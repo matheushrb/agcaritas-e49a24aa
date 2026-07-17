@@ -1,0 +1,23 @@
+
+ALTER TABLE public.clients
+  ADD COLUMN IF NOT EXISTS person_type text DEFAULT 'PJ',
+  ADD COLUMN IF NOT EXISTS trade_name text,
+  ADD COLUMN IF NOT EXISTS state_registration text,
+  ADD COLUMN IF NOT EXISTS municipal_registration text,
+  ADD COLUMN IF NOT EXISTS cnae text,
+  ADD COLUMN IF NOT EXISTS legal_nature text,
+  ADD COLUMN IF NOT EXISTS opening_date date,
+  ADD COLUMN IF NOT EXISTS size text,
+  ADD COLUMN IF NOT EXISTS address_number text,
+  ADD COLUMN IF NOT EXISTS address_complement text,
+  ADD COLUMN IF NOT EXISTS address_neighborhood text,
+  ADD COLUMN IF NOT EXISTS address_country text DEFAULT 'Brasil',
+  ADD COLUMN IF NOT EXISTS contact_name text,
+  ADD COLUMN IF NOT EXISTS contact_role text,
+  ADD COLUMN IF NOT EXISTS contact_email text,
+  ADD COLUMN IF NOT EXISTS contact_phone text,
+  ADD COLUMN IF NOT EXISTS billing_email text,
+  ADD COLUMN IF NOT EXISTS payment_terms text,
+  ADD COLUMN IF NOT EXISTS instagram text,
+  ADD COLUMN IF NOT EXISTS linkedin text,
+  ADD COLUMN IF NOT EXISTS tags text[];
