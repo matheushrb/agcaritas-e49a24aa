@@ -731,7 +731,7 @@ export function TaskModal({
   const shell = (
     <div
       className={cn(
-        "fixed z-50 bg-white border border-border shadow-2xl flex flex-col overflow-hidden",
+        "fixed z-50 bg-card text-card-foreground border border-border shadow-2xl flex flex-col overflow-hidden",
         mode === "modal"
           ? "left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[calc(100vw-2rem)] max-w-[1360px] h-[calc(100vh-3rem)] max-h-[900px] rounded-3xl"
           : "top-3 right-3 bottom-3 rounded-2xl"
