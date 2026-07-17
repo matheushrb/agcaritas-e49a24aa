@@ -402,6 +402,7 @@ export function TaskModal({ task, onClose }: { task: Task | null; onClose: () =>
   const bill = useMutation({
     mutationFn: async () => {
       if (!task) return;
+      if (!billingEnabled) throw new Error("Ative a chave de faturamento nesta tarefa");
       const value = billingValue ? Number(billingValue) : 0;
       if (!value || value <= 0) throw new Error("Defina um valor de faturamento primeiro");
       const { data: profile } = await supabase.from("profiles").select("organization_id").maybeSingle();
