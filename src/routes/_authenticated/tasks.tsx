@@ -519,6 +519,9 @@ export function TaskModal({
         label: p.name,
       }));
     },
+  });
+
+
 
   const { data: clientsList = [] } = useQuery({
     queryKey: ["tasks-modal-clients"],
