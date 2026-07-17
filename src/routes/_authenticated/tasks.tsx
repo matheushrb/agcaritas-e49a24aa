@@ -1912,10 +1912,13 @@ function DeliverablesSection({
             return (
               <div key={d.id} className="rounded-xl bg-card border border-primary/40 p-3 space-y-2.5 sm:col-span-2 col-span-1">
                 <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
-                    Entregável {i + 1}
-                    {d.invoiced && <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 px-1.5 py-0.5 text-[10px] font-medium normal-case tracking-normal"><Check className="h-2.5 w-2.5" />Faturado</span>}
-                  </span>
+                  <div className="flex items-center gap-2 min-w-0">
+                    <IconPreview name={platOpt?.icon ?? null} color={platOpt?.color ?? null} iconUrl={platOpt?.icon_url ?? null} size={28} />
+                    <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider truncate">
+                      {platLabel || `Entregável ${i + 1}`}
+                      {d.invoiced && <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 px-1.5 py-0.5 text-[10px] font-medium normal-case tracking-normal"><Check className="h-2.5 w-2.5" />Faturado</span>}
+                    </span>
+                  </div>
                   <div className="flex items-center gap-1">
                     <Button size="sm" variant="ghost" className="h-7 rounded-full text-xs" onClick={() => setExpandedId(null)}>
                       Recolher
