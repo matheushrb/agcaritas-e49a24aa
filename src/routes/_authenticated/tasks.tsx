@@ -1412,8 +1412,36 @@ export function TaskModal({
   return (
     <>
       {mode === "modal" && (
-        <div className="fixed inset-0 z-40 bg-black/50 animate-in fade-in-0" onClick={onClose} />
+        <div className="fixed inset-0 z-40 bg-black/50 animate-in fade-in-0" onClick={requestClose} />
       )}
+      {shell}
+      <AlertDialog open={unsavedOpen} onOpenChange={setUnsavedOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Alterações não salvas</AlertDialogTitle>
+            <AlertDialogDescription>
+              Você tem alterações nesta tarefa que ainda não foram salvas. O que deseja fazer?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="gap-2">
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => { setUnsavedOpen(false); setDirty(false); onClose(); }}
+            >
+              Sair sem salvar
+            </AlertDialogAction>
+            <AlertDialogAction
+              onClick={async () => {
+                setUnsavedOpen(false);
+                try { await save.mutateAsync(); onClose(); } catch { /* toast já mostrado */ }
+              }}
+            >
+              Salvar e sair
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
       {shell}
       {costPrompt && (
         <CostConfirmDialog
