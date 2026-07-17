@@ -83,9 +83,11 @@ const STATUS_META: Record<TaskStatus, { label: string; color: string; dot: strin
 const STATUS_ORDER: TaskStatus[] = ["todo", "in_progress", "review", "done"];
 
 const PRIORITY_META: Record<TaskPriority, { label: string; color: string; badge: string }> = {
-  low:    { label: "Baixa", color: "text-muted-foreground",                     badge: "bg-muted text-muted-foreground" },
-  medium: { label: "Média", color: "text-amber-600 dark:text-amber-400",        badge: "bg-amber-500/15 text-amber-600 dark:text-amber-400" },
-  high:   { label: "Alta",  color: "text-red-600 dark:text-red-400",            badge: "bg-red-500/15 text-red-600 dark:text-red-400" },
+  low:      { label: "Baixa",    color: "text-muted-foreground",                     badge: "bg-muted text-muted-foreground" },
+  medium:   { label: "Média",    color: "text-amber-600 dark:text-amber-400",        badge: "bg-amber-500/15 text-amber-600 dark:text-amber-400" },
+  high:     { label: "Alta",     color: "text-red-600 dark:text-red-400",            badge: "bg-red-500/15 text-red-600 dark:text-red-400" },
+  urgent:   { label: "Urgente",  color: "text-orange-600 dark:text-orange-400",      badge: "bg-orange-500/20 text-orange-700 dark:text-orange-300" },
+  critical: { label: "Crítica",  color: "text-red-700 dark:text-red-300",            badge: "bg-red-600/25 text-red-700 dark:text-red-200 font-semibold" },
 };
 
 function TasksPage() {
