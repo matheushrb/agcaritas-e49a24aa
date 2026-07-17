@@ -35,6 +35,7 @@ type Task = {
   status: TaskStatus;
   priority: TaskPriority;
   project_id: string | null;
+  client_id: string | null;
   assignee_id: string | null;
   due_date: string | null;
   billing_model: BillingModel | null;
@@ -75,7 +76,7 @@ function TasksPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("tasks")
-        .select("id,title,description,status,priority,project_id,assignee_id,due_date,billing_model,billing_value,progress,platform,delivery_type,estimated_hours,created_at")
+        .select("id,title,description,status,priority,project_id,client_id,assignee_id,due_date,billing_model,billing_value,progress,platform,delivery_type,estimated_hours,created_at")
         .order("created_at", { ascending: false });
       if (error) throw error;
       return (data ?? []) as Task[];
@@ -329,6 +330,23 @@ export function TaskModal({ task, onClose }: { task: Task | null; onClose: () =>
   const [platform, setPlatform] = useState<string>("");
   const [deliveryType, setDeliveryType] = useState<string>("");
   const [progress, setProgress] = useState<number>(0);
+  const [projectId, setProjectId] = useState<string>("");
+  const [clientId, setClientId] = useState<string>("");
+
+  const { data: projectsList = [] } = useQuery({
+    queryKey: ["tasks-modal-projects"],
+    queryFn: async () => {
+      const { data } = await supabase.from("projects").select("id,name,client_id").order("name");
+      return (data ?? []) as { id: string; name: string; client_id: string | null }[];
+    },
+  });
+  const { data: clientsList = [] } = useQuery({
+    queryKey: ["tasks-modal-clients"],
+    queryFn: async () => {
+      const { data } = await supabase.from("clients").select("id,name").order("name");
+      return (data ?? []) as { id: string; name: string }[];
+    },
+  });
 
   useEffect(() => {
     if (!task) return;
@@ -343,6 +361,8 @@ export function TaskModal({ task, onClose }: { task: Task | null; onClose: () =>
     setPlatform(task.platform ?? "");
     setDeliveryType(task.delivery_type ?? "");
     setProgress(task.progress ?? 0);
+    setProjectId(task.project_id ?? "");
+    setClientId(task.client_id ?? "");
   }, [task]);
 
   const save = useMutation({
@@ -378,17 +398,17 @@ export function TaskModal({ task, onClose }: { task: Task | null; onClose: () =>
       if (!value || value <= 0) throw new Error("Defina um valor de faturamento primeiro");
       const { data: profile } = await supabase.from("profiles").select("organization_id").maybeSingle();
       if (!profile?.organization_id) throw new Error("Sem organização");
-      let clientId: string | null = null;
-      if (task.project_id) {
+      let resolvedClient: string | null = task.client_id ?? null;
+      if (!resolvedClient && task.project_id) {
         const { data: proj } = await supabase.from("projects").select("client_id").eq("id", task.project_id).maybeSingle();
-        clientId = (proj?.client_id as string) ?? null;
+        resolvedClient = (proj?.client_id as string) ?? null;
       }
       const today = new Date().toISOString().slice(0, 10);
       const { error } = await supabase.from("charges").insert({
         organization_id: profile.organization_id,
         project_id: task.project_id,
         task_id: task.id,
-        client_id: clientId,
+        client_id: resolvedClient,
         description: `Tarefa: ${task.title}`,
         amount: value,
         status: "pending",
@@ -563,6 +583,48 @@ export function TaskModal({ task, onClose }: { task: Task | null; onClose: () =>
                       />
                       <span className="text-xs tabular-nums w-9 text-right">{progress}%</span>
                     </div>
+                  </SidebarRow>
+                </SidebarSection>
+
+                <SidebarSection title="Vínculo">
+                  <SidebarRow label="Projeto">
+                    <Select
+                      value={projectId || "none"}
+                      onValueChange={v => {
+                        const nv = v === "none" ? "" : v;
+                        setProjectId(nv);
+                        const proj = projectsList.find(p => p.id === nv);
+                        const nextClient = proj?.client_id ?? clientId ?? "";
+                        if (proj?.client_id) setClientId(proj.client_id);
+                        save.mutate({ project_id: nv || null, client_id: (nextClient || null) as string | null });
+                      }}
+                    >
+                      <SelectTrigger className="h-8 rounded-lg border-none bg-transparent hover:bg-muted/60 text-sm px-2 shadow-none">
+                        <SelectValue placeholder="Avulsa" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">Sem projeto (avulsa)</SelectItem>
+                        {projectsList.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </SidebarRow>
+                  <SidebarRow label="Cliente">
+                    <Select
+                      value={clientId || "none"}
+                      onValueChange={v => {
+                        const nv = v === "none" ? "" : v;
+                        setClientId(nv);
+                        save.mutate({ client_id: nv || null });
+                      }}
+                    >
+                      <SelectTrigger className="h-8 rounded-lg border-none bg-transparent hover:bg-muted/60 text-sm px-2 shadow-none">
+                        <SelectValue placeholder="—" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">—</SelectItem>
+                        {clientsList.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
                   </SidebarRow>
                 </SidebarSection>
 

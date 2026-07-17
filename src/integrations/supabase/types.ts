@@ -1489,6 +1489,7 @@ export type Database = {
           attachments_count: number
           billing_model: Database["public"]["Enums"]["billing_model"] | null
           billing_value: number | null
+          client_id: string | null
           comments_count: number
           created_at: string
           delivery_type: string | null
@@ -1511,6 +1512,7 @@ export type Database = {
           attachments_count?: number
           billing_model?: Database["public"]["Enums"]["billing_model"] | null
           billing_value?: number | null
+          client_id?: string | null
           comments_count?: number
           created_at?: string
           delivery_type?: string | null
@@ -1533,6 +1535,7 @@ export type Database = {
           attachments_count?: number
           billing_model?: Database["public"]["Enums"]["billing_model"] | null
           billing_value?: number | null
+          client_id?: string | null
           comments_count?: number
           created_at?: string
           delivery_type?: string | null
@@ -1551,6 +1554,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "tasks_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "tasks_organization_id_fkey"
             columns: ["organization_id"]
