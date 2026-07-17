@@ -526,6 +526,9 @@ export function TaskModal({
     setAssigneeId(task.assignee_id ?? "");
     setTaskTypeId(task.task_type_id ?? "");
     setCurrentStageId(task.current_stage_id ?? "");
+    setBroadcastKind((task.broadcast_kind ?? "") as any);
+    setRecordedAt(task.recorded_at ?? "");
+    setAiredAt(task.aired_at ?? "");
   }, [task]);
 
   const isLocalDraft = !!task?.id.startsWith("draft-");
