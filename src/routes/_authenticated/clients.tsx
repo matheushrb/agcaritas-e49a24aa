@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -10,7 +10,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { EntityDialog, DialogField, DialogCancelButton } from "@/components/entity-dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Search, Plus, Users as UsersIcon, Building2, Mail, Phone, Loader2, Sparkles } from "lucide-react";
+import {
+  Search, Plus, Users as UsersIcon, Building2, Mail, Phone, Loader2, Sparkles,
+  Pencil, Archive, Trash2, ArchiveRestore,
+} from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { lookupCNPJ, lookupCEP, maskCNPJ, maskCPF, maskCEP, maskPhone, onlyDigits } from "@/lib/br-lookup";
