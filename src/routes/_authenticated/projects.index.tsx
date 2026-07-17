@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { NewProjectWizard, type ProjectWizardValue } from "@/components/new-project-wizard";
-import { Search, Plus, Briefcase, Calendar, Users } from "lucide-react";
+import { Search, Plus, Briefcase, Calendar, Users, DollarSign } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
@@ -29,6 +29,7 @@ type Project = {
   created_at: string;
 };
 type Client = { id: string; name: string };
+type Charge = { id: string; project_id: string | null; amount: number };
 
 const STATUS_META: Record<ProjectStatus, { label: string; color: string }> = {
   planning: { label: "Planejamento", color: "bg-muted text-muted-foreground" },
@@ -65,6 +66,15 @@ function ProjectsPage() {
     },
   });
 
+  const { data: charges = [] } = useQuery<Charge[]>({
+    queryKey: ["projects-charges"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("charges").select("id,project_id,amount");
+      if (error) throw error;
+      return (data ?? []) as Charge[];
+    },
+  });
+
   const { data: taskCounts = {} } = useQuery<Record<string, { total: number; overdue: number }>>({
     queryKey: ["projects-task-counts"],
     queryFn: async () => {
@@ -84,6 +94,14 @@ function ProjectsPage() {
   });
 
   const clientById = useMemo(() => Object.fromEntries(clients.map(c => [c.id, c.name])), [clients]);
+  const revenueByProject = useMemo(() => {
+    const acc: Record<string, number> = {};
+    for (const c of charges) {
+      if (!c.project_id) continue;
+      acc[c.project_id] = (acc[c.project_id] ?? 0) + Number(c.amount ?? 0);
+    }
+    return acc;
+  }, [charges]);
 
   const filtered = useMemo(() => {
     let arr = projects;
@@ -188,6 +206,7 @@ function ProjectsPage() {
                 project={p}
                 clientName={p.client_id ? clientById[p.client_id] ?? "Cliente" : null}
                 counts={taskCounts[p.id] ?? { total: 0, overdue: 0 }}
+                revenue={revenueByProject[p.id] ?? 0}
               />
             ))}
           </div>
@@ -214,8 +233,9 @@ function Kpi({ label, value, tone = "default" }: { label: string; value: string;
   );
 }
 
-function ProjectCard({ project, clientName, counts }: { project: Project; clientName: string | null; counts: { total: number; overdue: number } }) {
+function ProjectCard({ project, clientName, counts, revenue }: { project: Project; clientName: string | null; counts: { total: number; overdue: number }; revenue: number }) {
   const fmt = (d: string | null) => d ? new Date(d).toLocaleDateString("pt-BR", { day: "2-digit", month: "short" }) : "—";
+  const fmtMoney = (n: number) => `R$ ${n.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   return (
     <Link to="/projects/$projectId" params={{ projectId: project.id }} className="block">
       <Card className="rounded-2xl p-5 hover:shadow-md transition-shadow h-full flex flex-col gap-3">
@@ -236,6 +256,9 @@ function ProjectCard({ project, clientName, counts }: { project: Project; client
         <div className="mt-auto flex items-center justify-between text-xs text-muted-foreground pt-2 border-t border-border">
           <span className="inline-flex items-center gap-1.5"><Calendar className="h-3.5 w-3.5" />{fmt(project.start_date)} → {fmt(project.end_date)}</span>
           <span className="inline-flex items-center gap-3">
+            <span className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-medium">
+              <DollarSign className="h-3.5 w-3.5" />{fmtMoney(revenue)}
+            </span>
             <span className="inline-flex items-center gap-1">
               <Users className="h-3.5 w-3.5" />{counts.total}
             </span>
