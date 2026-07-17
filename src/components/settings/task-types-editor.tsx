@@ -69,7 +69,7 @@ export function TaskTypesEditor() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("task_types")
-        .select("id,name,description,color,icon,default_billing_model,default_price,active")
+        .select("id,name,description,color,icon,default_billing_model,default_price,active,has_broadcast")
         .order("name");
       if (error) throw error;
       return (data ?? []) as TaskType[];
