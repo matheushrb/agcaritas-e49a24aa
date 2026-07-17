@@ -1263,28 +1263,50 @@ function TaskStageSection({
   );
 }
 
-/* ---------- Task type picker (inline field) ---------- */
+/* ---------- Task type picker ---------- */
 function TaskTypePicker({
-  value, types, onChange,
+  value, types, onChange, variant = "inline",
 }: {
   value: string;
   types: TaskTypeRow[];
+  variant?: "inline" | "badge";
   onChange: (id: string, type: TaskTypeRow | null) => void;
 }) {
   const selected = types.find(t => t.id === value) ?? null;
+  const color = selected?.color ?? "";
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <button className="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium hover:bg-muted transition-colors">
-          {selected ? (
-            <>
-              <span className="h-2 w-2 rounded-full" style={{ backgroundColor: selected.color }} />
-              {selected.name}
-            </>
-          ) : (
-            <span className="text-muted-foreground">Sem tipo</span>
-          )}
-        </button>
+        {variant === "badge" ? (
+          <button
+            className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium border transition-colors"
+            style={selected ? {
+              backgroundColor: `${color}22`,
+              color: color,
+              borderColor: `${color}55`,
+            } : undefined}
+          >
+            {selected ? (
+              <>
+                <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: color }} />
+                {selected.name}
+              </>
+            ) : (
+              <span className="text-muted-foreground">Definir tipo</span>
+            )}
+          </button>
+        ) : (
+          <button className="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium hover:bg-muted transition-colors">
+            {selected ? (
+              <>
+                <span className="h-2 w-2 rounded-full" style={{ backgroundColor: color }} />
+                {selected.name}
+              </>
+            ) : (
+              <span className="text-muted-foreground">Sem tipo</span>
+            )}
+          </button>
+        )}
       </PopoverTrigger>
       <PopoverContent align="start" className="p-1 w-64 rounded-xl">
         <button
