@@ -1,0 +1,1 @@
+ALTER TABLE public.task_type_stages ADD COLUMN IF NOT EXISTS auto_checklist jsonb NOT NULL DEFAULT '[]'::jsonb;

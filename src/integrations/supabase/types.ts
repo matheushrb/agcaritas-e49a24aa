@@ -1927,6 +1927,7 @@ export type Database = {
       }
       task_type_stages: {
         Row: {
+          auto_checklist: Json
           color: string
           created_at: string
           id: string
@@ -1939,6 +1940,7 @@ export type Database = {
           weight: number
         }
         Insert: {
+          auto_checklist?: Json
           color?: string
           created_at?: string
           id?: string
@@ -1951,6 +1953,7 @@ export type Database = {
           weight?: number
         }
         Update: {
+          auto_checklist?: Json
           color?: string
           created_at?: string
           id?: string
