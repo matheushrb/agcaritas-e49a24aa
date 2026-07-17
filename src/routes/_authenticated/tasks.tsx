@@ -742,7 +742,7 @@ export function TaskModal({
             client_id: resolvedClient,
             description: `Tarefa: ${baseTitle}`,
             amount: value,
-            status: "pending" as const,
+            status: "pending_invoice" as const,
             due_date: today,
             type: "income" as const,
           }];
