@@ -121,7 +121,7 @@ function TasksPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("tasks")
-        .select("id,title,description,status,priority,project_id,client_id,assignee_id,due_date,billing_model,billing_value,billing_enabled,progress,platform,delivery_type,estimated_hours,stage,task_type_id,current_stage_id,deliverables,subtasks,broadcast_kind,recorded_at,aired_at,created_at")
+        .select("id,title,description,status,priority,project_id,client_id,assignee_id,due_date,billing_model,billing_value,billing_enabled,progress,platform,delivery_type,estimated_hours,stage,task_type_id,current_stage_id,deliverables,subtasks,broadcast_kind,recorded_at,aired_at,recorded_dates,aired_dates,created_at")
         .order("created_at", { ascending: false });
       if (error) throw error;
       return (data ?? []) as Task[];
