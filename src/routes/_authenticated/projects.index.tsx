@@ -235,6 +235,7 @@ function Kpi({ label, value, tone = "default" }: { label: string; value: string;
 
 function ProjectCard({ project, clientName, counts, revenue }: { project: Project; clientName: string | null; counts: { total: number; overdue: number }; revenue: number }) {
   const fmt = (d: string | null) => d ? new Date(d).toLocaleDateString("pt-BR", { day: "2-digit", month: "short" }) : "—";
+  const fmtMoney = (n: number) => `R$ ${n.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   return (
     <Link to="/projects/$projectId" params={{ projectId: project.id }} className="block">
       <Card className="rounded-2xl p-5 hover:shadow-md transition-shadow h-full flex flex-col gap-3">
