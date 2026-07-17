@@ -675,15 +675,12 @@ export function TaskModal({
                   </InlineField>
                 </div>
 
-                {/* Etapa da tarefa — inspiração no workflow de produção de conteúdo */}
+                {/* Etapa da tarefa — workflow de produção */}
                 <TaskStageSection
                   stage={stage}
                   onStageChange={v => { setStage(v); save.mutate({ stage: v }); }}
-                  platform={platform}
-                  onPlatformChange={v => { setPlatform(v); save.mutate({ platform: v || null }); }}
-                  deliveryType={deliveryType}
-                  onDeliveryTypeChange={v => { setDeliveryType(v); save.mutate({ delivery_type: v || null }); }}
                 />
+
 
                 <div>
                   <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Descrição</label>
@@ -792,6 +789,38 @@ export function TaskModal({
                   </SidebarRow>
                 </SidebarSection>
 
+                <SidebarSection title="Entrega">
+                  <SidebarRow label="Plataforma">
+                    <PlatformMultiSelect
+                      value={platform}
+                      onChange={v => { setPlatform(v); save.mutate({ platform: v || null }); }}
+                    />
+                  </SidebarRow>
+                  <SidebarRow label="Tipo">
+                    <Select
+                      value={deliveryType || "none"}
+                      onValueChange={v => {
+                        const nv = v === "none" ? "" : v;
+                        setDeliveryType(nv);
+                        save.mutate({ delivery_type: nv || null });
+                      }}
+                    >
+                      <SelectTrigger className="h-8 rounded-lg border-none bg-transparent hover:bg-muted/60 text-sm px-2 shadow-none">
+                        <SelectValue placeholder="—" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">—</SelectItem>
+                        {DELIVERY_TYPE_OPTIONS.map(o => (
+                          <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </SidebarRow>
+                </SidebarSection>
+
+
+
+
                 <div>
                   <div className="flex items-center justify-between mb-2 px-1">
                     <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Faturamento</span>
@@ -892,17 +921,37 @@ const TONE_STYLES: Record<string, { bg: string; text: string; border: string; do
   emerald: { bg: "bg-emerald-500/10",text: "text-emerald-600 dark:text-emerald-400",border: "border-emerald-500/20",dot: "bg-emerald-500" },
 };
 
+const PLATFORM_OPTIONS: { value: string; label: string }[] = [
+  { value: "instagram", label: "Instagram" },
+  { value: "tiktok", label: "TikTok" },
+  { value: "youtube", label: "YouTube" },
+  { value: "meta_ads", label: "Meta Ads" },
+  { value: "google_ads", label: "Google Ads" },
+  { value: "linkedin", label: "LinkedIn" },
+  { value: "site", label: "Site / Blog" },
+];
+const DELIVERY_TYPE_OPTIONS: { value: string; label: string }[] = [
+  { value: "post", label: "Post" },
+  { value: "reels", label: "Reels" },
+  { value: "story", label: "Story" },
+  { value: "carrossel", label: "Carrossel" },
+  { value: "video", label: "Vídeo" },
+  { value: "arte", label: "Arte" },
+  { value: "copy", label: "Copy" },
+];
+
+function parsePlatforms(v: string): string[] {
+  return v ? v.split(",").map(s => s.trim()).filter(Boolean) : [];
+}
+function platformLabel(v: string) {
+  return PLATFORM_OPTIONS.find(p => p.value === v)?.label ?? v;
+}
+
 function TaskStageSection({
   stage, onStageChange,
-  platform, onPlatformChange,
-  deliveryType, onDeliveryTypeChange,
 }: {
   stage: TaskStage;
   onStageChange: (v: TaskStage) => void;
-  platform: string;
-  onPlatformChange: (v: string) => void;
-  deliveryType: string;
-  onDeliveryTypeChange: (v: string) => void;
 }) {
   const currentIndex = STAGE_ORDER.indexOf(stage);
   return (
@@ -943,48 +992,58 @@ function TaskStageSection({
       </div>
 
       <p className="text-[11px] text-muted-foreground">
-        Avance a etapa para acompanhar onde a tarefa está no fluxo de produção. Plataforma e tipo definem o canal e formato da entrega.
+        Avance a etapa para acompanhar onde a tarefa está no fluxo de produção.
       </p>
-
-      {/* Contexto da etapa */}
-      <div className="flex flex-wrap items-center gap-2">
-        <InlineField label="Plataforma">
-          <Select value={platform || "none"} onValueChange={v => { onPlatformChange(v === "none" ? "" : v); }}>
-            <SelectTrigger className="h-7 border-none bg-transparent hover:bg-muted rounded-md px-2 py-1 text-xs shadow-none focus:ring-0 gap-1">
-              <SelectValue placeholder="—" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="none">—</SelectItem>
-              <SelectItem value="instagram">Instagram</SelectItem>
-              <SelectItem value="tiktok">TikTok</SelectItem>
-              <SelectItem value="youtube">YouTube</SelectItem>
-              <SelectItem value="meta_ads">Meta Ads</SelectItem>
-              <SelectItem value="google_ads">Google Ads</SelectItem>
-              <SelectItem value="site">Site / Blog</SelectItem>
-            </SelectContent>
-          </Select>
-        </InlineField>
-        <InlineField label="Tipo">
-          <Select value={deliveryType || "none"} onValueChange={v => { onDeliveryTypeChange(v === "none" ? "" : v); }}>
-            <SelectTrigger className="h-7 border-none bg-transparent hover:bg-muted rounded-md px-2 py-1 text-xs shadow-none focus:ring-0 gap-1">
-              <SelectValue placeholder="—" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="none">—</SelectItem>
-              <SelectItem value="post">Post</SelectItem>
-              <SelectItem value="reels">Reels</SelectItem>
-              <SelectItem value="story">Story</SelectItem>
-              <SelectItem value="carrossel">Carrossel</SelectItem>
-              <SelectItem value="video">Vídeo</SelectItem>
-              <SelectItem value="arte">Arte</SelectItem>
-              <SelectItem value="copy">Copy</SelectItem>
-            </SelectContent>
-          </Select>
-        </InlineField>
-      </div>
     </div>
   );
 }
+
+/* ---------- Platform multi-select ---------- */
+function PlatformMultiSelect({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const selected = parsePlatforms(value);
+  const toggle = (v: string) => {
+    const next = selected.includes(v) ? selected.filter(s => s !== v) : [...selected, v];
+    onChange(next.join(","));
+  };
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <button className="w-full flex items-center flex-wrap gap-1 rounded-lg px-2 py-1 min-h-[32px] text-xs hover:bg-muted/60 text-left">
+          {selected.length === 0 && <span className="text-muted-foreground">—</span>}
+          {selected.map(s => (
+            <span key={s} className="inline-flex items-center gap-1 rounded-md bg-muted px-1.5 py-0.5 text-[11px]">
+              {platformLabel(s)}
+            </span>
+          ))}
+        </button>
+      </PopoverTrigger>
+      <PopoverContent align="end" className="p-1 w-52 rounded-xl">
+        {PLATFORM_OPTIONS.map(opt => {
+          const active = selected.includes(opt.value);
+          return (
+            <button
+              key={opt.value}
+              onClick={() => toggle(opt.value)}
+              className={cn(
+                "w-full flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm hover:bg-muted",
+                active && "bg-muted/60",
+              )}
+            >
+              <span className={cn(
+                "h-4 w-4 rounded border flex items-center justify-center",
+                active ? "bg-primary border-primary text-primary-foreground" : "border-border",
+              )}>
+                {active && <Check className="h-3 w-3" />}
+              </span>
+              {opt.label}
+            </button>
+          );
+        })}
+      </PopoverContent>
+    </Popover>
+  );
+}
+
 
 /* ---------- Sidebar helpers ---------- */
 function SidebarSection({ title, children }: { title: string; children: React.ReactNode }) {
