@@ -126,6 +126,21 @@ function ClientDetailPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const updateClient = useMutation({
+    mutationFn: async (payload: Record<string, unknown>) => {
+      const { error } = await supabase.from("clients").update(payload).eq("id", clientId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["client", clientId] });
+      qc.invalidateQueries({ queryKey: ["clients-list"] });
+      toast.success("Cliente atualizado");
+      setEditOpen(false);
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+
   if (isLoading) return <div className="text-sm text-muted-foreground">Carregando…</div>;
   if (!client) return (
     <Card className="rounded-3xl p-12 text-center border-dashed">
