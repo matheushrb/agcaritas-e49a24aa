@@ -27,6 +27,7 @@ export type TaskType = {
   default_billing_model: string | null;
   default_price: number | null;
   active: boolean;
+  has_broadcast: boolean;
 };
 
 export type TaskTypeStage = {
