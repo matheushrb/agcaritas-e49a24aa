@@ -12,8 +12,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import {
   ArrowLeft, Calendar, CheckSquare, FileText, Grid3x3, Timer as TimerIcon,
   Megaphone, Compass, Rocket, DollarSign, Plus, Flag, Zap,
-  Building2, CheckCircle2, RotateCcw, Pencil, AlertTriangle, Users as UsersIcon, Wallet,
+  Building2, CheckCircle2, RotateCcw, Pencil, AlertTriangle, Users as UsersIcon, Wallet, Receipt,
 } from "lucide-react";
+import { Link } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { TaskModal } from "./tasks";
@@ -366,6 +367,11 @@ function ProjectDetail() {
                 <CheckCircle2 className="h-4 w-4" /> Concluir Projeto
               </Button>
             )}
+            <Button asChild variant="outline" className="rounded-full gap-1.5">
+              <Link to="/invoices" search={{ projectId: project.id, new: "1" }}>
+                <Receipt className="h-4 w-4" /> Faturar
+              </Link>
+            </Button>
             <Button variant="outline" className="rounded-full gap-1.5" onClick={() => setEditOpen(true)}>
               <Pencil className="h-4 w-4" /> Editar
             </Button>
