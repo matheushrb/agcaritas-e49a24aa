@@ -665,8 +665,23 @@ function NewInvoiceWizard({
               </div>
             </div>
             <div>
-              <label className="text-xs font-medium text-muted-foreground">Observações</label>
-              <Textarea value={notes} onChange={e => setNotes(e.target.value)} placeholder="Condições de pagamento, notas fiscais, etc." rows={3} />
+              <label className="text-xs font-medium text-muted-foreground">Condições de pagamento</label>
+              <Textarea value={paymentTerms} onChange={e => setPaymentTerms(e.target.value)} rows={3}
+                placeholder="Prazo, forma de pagamento, chave PIX, etc." />
+              <p className="text-[10px] text-muted-foreground mt-1">Texto editável. Aparece com destaque no PDF da fatura.</p>
+            </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground">Observações legais / Nota Fiscal / Juros</label>
+              <Textarea value={notes} onChange={e => setNotes(e.target.value)} rows={4}
+                placeholder="Ex.: A NF será emitida após confirmação do pagamento. Multa e juros após vencimento." />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground">Link de pagamento (gera QR Code)</label>
+              <Input type="url" value={paymentLink} onChange={e => setPaymentLink(e.target.value)}
+                placeholder="https://... (PIX copia-e-cola, checkout Stripe, boleto, etc.)" />
+              <p className="text-[10px] text-muted-foreground mt-1">
+                Se preenchido, um QR Code é gerado no PDF apontando para este link.
+              </p>
             </div>
             <div className="rounded-lg border p-3 bg-muted/30 flex items-center justify-between">
               <span className="text-sm">{selectedCharges.size + selectedTasks.size + selectedDeliverables.size} item(ns)</span>
