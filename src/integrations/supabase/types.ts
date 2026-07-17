@@ -1517,6 +1517,7 @@ export type Database = {
           id: string
           name: string
           organization_id: string
+          platform_ids: string[]
           slug: string | null
           sort_order: number
           updated_at: string
@@ -1533,6 +1534,7 @@ export type Database = {
           id?: string
           name: string
           organization_id: string
+          platform_ids?: string[]
           slug?: string | null
           sort_order?: number
           updated_at?: string
@@ -1549,6 +1551,7 @@ export type Database = {
           id?: string
           name?: string
           organization_id?: string
+          platform_ids?: string[]
           slug?: string | null
           sort_order?: number
           updated_at?: string
