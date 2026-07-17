@@ -192,6 +192,13 @@ function NewInvoiceWizard({
 
   const [selectedDeliverables, setSelectedDeliverables] = useState<Set<string>>(new Set());
 
+  // Sincroniza o cliente pagador com o filtro (ou com o cliente do projeto filtrado)
+  useEffect(() => {
+    const derived = filterClient
+      || (filterProject ? projects.find(p => p.id === filterProject)?.client_id ?? "" : "");
+    if (derived && derived !== payerClient) setPayerClient(derived);
+  }, [filterClient, filterProject, projects, payerClient]);
+
   // Pending charges + billable tasks
   const { data: charges = [] } = useQuery<PendingCharge[]>({
     queryKey: ["invoices-pending-charges"],
