@@ -289,6 +289,44 @@ function NewInvoiceWizard({
     : step === 2 ? (selectedCharges.size + selectedTasks.size + selectedDeliverables.size) > 0
     : !!payerClient && !!issueDate;
 
+  const previewLines = useMemo(() => {
+    const lines: { title: string; detail?: string; amount: number; is_child?: boolean }[] = [];
+    for (const c of filteredCharges) if (selectedCharges.has(c.id)) {
+      lines.push({ title: c.description || "Cobrança", amount: Number(c.amount ?? 0) });
+    }
+    for (const tk of filteredTasks) if (selectedTasks.has(tk.id)) {
+      lines.push({ title: tk.title, amount: Number(tk.billing_value ?? 0) });
+      // entregáveis selecionados desta tarefa (indentados)
+      for (const d of billableDeliverables) {
+        if (d.taskId === tk.id && selectedDeliverables.has(d.key)) {
+          lines.push({ title: d.label, amount: d.amount, is_child: true });
+        }
+      }
+    }
+    // entregáveis órfãos (tarefa não selecionada, mas o entregável foi)
+    const includedTaskIds = new Set(Array.from(selectedTasks));
+    for (const d of billableDeliverables) {
+      if (selectedDeliverables.has(d.key) && !includedTaskIds.has(d.taskId)) {
+        lines.push({ title: d.label, amount: d.amount });
+      }
+    }
+    return lines;
+  }, [filteredCharges, filteredTasks, billableDeliverables, selectedCharges, selectedTasks, selectedDeliverables]);
+
+  function openPreviewPDF() {
+    const client = clients.find(c => c.id === payerClient);
+    const doc = generateInvoicePDF({
+      number: "PRÉVIA",
+      issue_date: issueDate || new Date().toISOString().slice(0, 10),
+      due_date: dueDate || null,
+      client: { name: client?.name ?? "—", document: client?.tax_id, email: client?.email },
+      lines: previewLines,
+      notes: notes || undefined,
+    });
+    const url = doc.output("bloburl") as unknown as string;
+    window.open(url, "_blank", "noopener,noreferrer");
+  }
+
   async function submit() {
     setSubmitting(true);
     try {
