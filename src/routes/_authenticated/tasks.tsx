@@ -1867,9 +1867,10 @@ function DeliverablesSection({
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           {deliverables.map((d, i) => {
             const isOpen = expandedId === d.id;
-            const platLabel = d.platform ? platformLabel(d.platform) : "—";
+            const platOpt = d.platform ? platformOptions.find(o => o.value === d.platform) : undefined;
+            const platLabel = platOpt?.label ?? (d.platform ? platformLabel(d.platform) : "");
             const typeLabel = d.type ? (DELIVERY_TYPE_OPTIONS.find(o => o.value === d.type)?.label ?? d.type) : "";
-            const title = [typeLabel, platLabel !== "—" ? `no ${platLabel}` : ""].filter(Boolean).join(" ") || `Entregável ${i + 1}`;
+            const title = platLabel || `Entregável ${i + 1}`;
 
             if (!isOpen) {
               return (
@@ -1880,6 +1881,7 @@ function DeliverablesSection({
                   className="text-left rounded-xl bg-card border border-border p-3 hover:border-primary/40 hover:shadow-sm transition-all group sm:col-span-1 col-span-1"
                 >
                   <div className="flex items-start justify-between gap-2">
+                    <IconPreview name={platOpt?.icon ?? null} color={platOpt?.color ?? null} iconUrl={platOpt?.icon_url ?? null} size={36} />
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-1.5 mb-1">
                         <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">#{i + 1}</span>
@@ -1892,7 +1894,8 @@ function DeliverablesSection({
                       </div>
                       <div className="text-sm font-medium truncate">{title}</div>
                       <div className="mt-1 flex items-center gap-2 text-[11px] text-muted-foreground">
-                        {d.channel && <span className="truncate">{d.channel}</span>}
+                        {typeLabel && <span className="truncate">{typeLabel}</span>}
+                        {d.channel && <span className="truncate">· {d.channel}</span>}
                         {d.delivered_date && <span>· {new Date(d.delivered_date + "T00:00:00").toLocaleDateString("pt-BR")}</span>}
                       </div>
                     </div>
