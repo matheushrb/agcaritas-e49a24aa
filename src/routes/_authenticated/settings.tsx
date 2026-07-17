@@ -12,6 +12,7 @@ import {
   Building2, Wrench, Share2, Workflow, TrendingUp, UserCog, Plug,
 } from "lucide-react";
 import { toast } from "sonner";
+import { TaskTypesEditor } from "@/components/settings/task-types-editor";
 
 export const Route = createFileRoute("/_authenticated/settings")({
   head: () => ({ meta: [{ title: "Configurações · Caritas" }] }),
