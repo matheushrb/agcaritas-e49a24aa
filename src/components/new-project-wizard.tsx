@@ -190,11 +190,11 @@ export function NewProjectWizard({
 
         {/* Body */}
         <div className="flex-1 min-h-0 overflow-auto px-6 py-5">
-          {step === 1 && <StepScope v={v} patch={patch} clients={clients} />}
+          {step === 1 && <StepScope v={v} patch={patch} clients={clients} typeOptions={typeOptions} />}
           {step === 2 && <StepBilling v={v} patch={patch} />}
-          {step === 3 && <StepTools v={v} toggleTool={toggleTool} />}
+          {step === 3 && <StepTools v={v} toggleTool={toggleTool} platforms={platforms} />}
           {step === 4 && <StepBudgets v={v} patch={patch} togglePlatform={togglePlatform} />}
-          {step === 5 && <StepStrategy v={v} patch={patch} />}
+          {step === 5 && <StepStrategy v={v} patch={patch} typeOptions={typeOptions} />}
         </div>
 
         {/* Footer */}
@@ -204,7 +204,7 @@ export function NewProjectWizard({
             <ChevronLeft className="h-4 w-4" /> Voltar
           </Button>
           <div className="text-xs text-muted-foreground hidden sm:block">
-            {v.name || "Sem título"} · {PROJECT_TYPES.find(t => t.value === v.project_type)?.label}
+            {v.name || "Sem título"}{v.project_type ? ` · ${typeOptions.find(t => t.value === v.project_type)?.label ?? ""}` : ""}
           </div>
           {isLast ? (
             <Button className="rounded-full gap-1.5" disabled={pending || !v.name.trim()}
