@@ -9,12 +9,13 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
-  Building2, Wrench, Share2, Workflow, TrendingUp, UserCog, Plug, Zap, DollarSign,
+  Building2, Wrench, Share2, Workflow, TrendingUp, UserCog, Plug, Zap, DollarSign, FolderKanban,
 } from "lucide-react";
 import { toast } from "sonner";
 import { TaskTypesEditor } from "@/components/settings/task-types-editor";
 import { AutomationsTab } from "@/components/settings/automations-tab";
 import { AgencyPricingTab } from "@/components/settings/agency-pricing";
+import { CatalogEditor } from "@/components/settings/catalog-editor";
 
 export const Route = createFileRoute("/_authenticated/settings")({
   head: () => ({ meta: [{ title: "Configurações · Caritas" }] }),
@@ -22,15 +23,16 @@ export const Route = createFileRoute("/_authenticated/settings")({
 });
 
 const TABS = [
-  { value: "agency",       label: "Dados da Agência", icon: Building2 },
-  { value: "pricing",      label: "Precificação",     icon: DollarSign },
-  { value: "services",     label: "Serviços",         icon: Wrench },
-  { value: "platforms",    label: "Plataformas",      icon: Share2 },
-  { value: "task-flows",   label: "Tipos de Tarefa",  icon: Workflow },
-  { value: "automations",  label: "Automações",       icon: Zap },
-  { value: "crm-funnel",   label: "Funil CRM",        icon: TrendingUp },
-  { value: "users",        label: "Usuários",         icon: UserCog },
-  { value: "integrations", label: "Integrações",      icon: Plug },
+  { value: "agency",       label: "Dados da Agência",  icon: Building2 },
+  { value: "pricing",      label: "Precificação",      icon: DollarSign },
+  { value: "project-types",label: "Tipos de Projeto",  icon: FolderKanban },
+  { value: "services",     label: "Serviços",          icon: Wrench },
+  { value: "platforms",    label: "Plataformas",       icon: Share2 },
+  { value: "task-flows",   label: "Tipos de Tarefa",   icon: Workflow },
+  { value: "automations",  label: "Automações",        icon: Zap },
+  { value: "crm-funnel",   label: "Funil CRM",         icon: TrendingUp },
+  { value: "users",        label: "Usuários",          icon: UserCog },
+  { value: "integrations", label: "Integrações",       icon: Plug },
 ] as const;
 
 function SettingsPage() {
