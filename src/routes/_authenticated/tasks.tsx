@@ -494,6 +494,32 @@ export function TaskModal({
       return (data ?? []) as { id: string; name: string; client_id: string | null }[];
     },
   });
+
+  // Plataformas permitidas: quando a tarefa pertence a um projeto, restringe às
+  // plataformas cadastradas naquele projeto (scope_flags.tools = lista de nomes).
+  const { data: projectPlatforms = null } = useQuery({
+    queryKey: ["tasks-modal-project-platforms", projectId],
+    enabled: !!projectId,
+    queryFn: async () => {
+      const { data: proj } = await supabase
+        .from("projects")
+        .select("scope_flags")
+        .eq("id", projectId)
+        .maybeSingle();
+      const tools: string[] = Array.isArray((proj?.scope_flags as any)?.tools)
+        ? (proj!.scope_flags as any).tools
+        : [];
+      if (tools.length === 0) return [] as { value: string; label: string }[];
+      const { data: plats } = await (supabase as any)
+        .from("platforms")
+        .select("id,name")
+        .in("name", tools);
+      return ((plats ?? []) as { id: string; name: string }[]).map(p => ({
+        value: p.name,
+        label: p.name,
+      }));
+    },
+
   const { data: clientsList = [] } = useQuery({
     queryKey: ["tasks-modal-clients"],
     queryFn: async () => {
