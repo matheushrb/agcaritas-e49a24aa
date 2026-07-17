@@ -168,6 +168,33 @@ function ProjectDetail() {
     },
   });
 
+  // Base tasks from the project's project_type
+  const { data: projectTypeRow } = useQuery({
+    queryKey: ["project-type-row", project?.project_type],
+    enabled: !!project?.project_type,
+    queryFn: async () => {
+      const key = project!.project_type!;
+      const { data } = await (supabase as any)
+        .from("project_types")
+        .select("id,slug,name,base_tasks")
+        .or(`slug.eq.${key},id.eq.${key}`)
+        .maybeSingle();
+      return data as { id: string; slug: string | null; name: string; base_tasks: { task_type_id: string }[] } | null;
+    },
+  });
+  const baseTaskTypeIds = (projectTypeRow?.base_tasks ?? []).map(b => b.task_type_id).filter(Boolean);
+  const { data: baseTaskTypes = [] } = useQuery({
+    queryKey: ["project-base-task-types", baseTaskTypeIds.join(",")],
+    enabled: baseTaskTypeIds.length > 0,
+    queryFn: async () => {
+      const { data } = await (supabase as any)
+        .from("task_types")
+        .select("id,name,color,icon,default_price,default_billing_model")
+        .in("id", baseTaskTypeIds);
+      return (data ?? []) as { id: string; name: string; color: string | null; icon: string | null; default_price: number | null; default_billing_model: string | null }[];
+    },
+  });
+
   const stats = useMemo(() => {
     const total = tasks.length;
     const now = new Date(); now.setHours(0, 0, 0, 0);
