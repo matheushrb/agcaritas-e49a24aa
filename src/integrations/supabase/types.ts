@@ -108,12 +108,16 @@ export type Database = {
           amount: number
           category: string | null
           client_id: string | null
+          collaborator_id: string | null
+          competence_month: string | null
           contract_id: string | null
           created_at: string
           deliverable_id: string | null
           description: string
           due_date: string
           id: string
+          invoice_id: string | null
+          nature: string | null
           organization_id: string
           paid_at: string | null
           parent_charge_id: string | null
@@ -128,12 +132,16 @@ export type Database = {
           amount: number
           category?: string | null
           client_id?: string | null
+          collaborator_id?: string | null
+          competence_month?: string | null
           contract_id?: string | null
           created_at?: string
           deliverable_id?: string | null
           description: string
           due_date: string
           id?: string
+          invoice_id?: string | null
+          nature?: string | null
           organization_id: string
           paid_at?: string | null
           parent_charge_id?: string | null
@@ -148,12 +156,16 @@ export type Database = {
           amount?: number
           category?: string | null
           client_id?: string | null
+          collaborator_id?: string | null
+          competence_month?: string | null
           contract_id?: string | null
           created_at?: string
           deliverable_id?: string | null
           description?: string
           due_date?: string
           id?: string
+          invoice_id?: string | null
+          nature?: string | null
           organization_id?: string
           paid_at?: string | null
           parent_charge_id?: string | null
@@ -177,6 +189,13 @@ export type Database = {
             columns: ["contract_id"]
             isOneToOne: false
             referencedRelation: "contracts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "charges_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
             referencedColumns: ["id"]
           },
           {
@@ -703,56 +722,158 @@ export type Database = {
           },
         ]
       }
+      invoice_items: {
+        Row: {
+          created_at: string
+          deliverable_key: string | null
+          description: string
+          id: string
+          invoice_id: string
+          is_subitem: boolean
+          item_date: string | null
+          organization_id: string
+          parent_item_id: string | null
+          project_id: string | null
+          quantity: number
+          service_label: string | null
+          sort_order: number
+          task_id: string | null
+          total: number
+          unit_price: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          deliverable_key?: string | null
+          description: string
+          id?: string
+          invoice_id: string
+          is_subitem?: boolean
+          item_date?: string | null
+          organization_id: string
+          parent_item_id?: string | null
+          project_id?: string | null
+          quantity?: number
+          service_label?: string | null
+          sort_order?: number
+          task_id?: string | null
+          total?: number
+          unit_price?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          deliverable_key?: string | null
+          description?: string
+          id?: string
+          invoice_id?: string
+          is_subitem?: boolean
+          item_date?: string | null
+          organization_id?: string
+          parent_item_id?: string | null
+          project_id?: string | null
+          quantity?: number
+          service_label?: string | null
+          sort_order?: number
+          task_id?: string | null
+          total?: number
+          unit_price?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoice_items_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoice_items_parent_item_id_fkey"
+            columns: ["parent_item_id"]
+            isOneToOne: false
+            referencedRelation: "invoice_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       invoices: {
         Row: {
           amount: number
           client_id: string | null
+          competence_month: string | null
           created_at: string
           description: string | null
+          discount: number
           due_date: string | null
+          financial_transaction_id: string | null
           id: string
+          issue_date: string
+          mode: string
           notes: string | null
           number: string
           organization_id: string
           paid_at: string | null
           payment_method: string | null
+          payment_terms: string | null
+          pdf_url: string | null
           project_id: string | null
           proposal_id: string | null
           status: string
+          subtotal: number | null
+          total: number | null
           updated_at: string
         }
         Insert: {
           amount?: number
           client_id?: string | null
+          competence_month?: string | null
           created_at?: string
           description?: string | null
+          discount?: number
           due_date?: string | null
+          financial_transaction_id?: string | null
           id?: string
+          issue_date?: string
+          mode?: string
           notes?: string | null
           number: string
           organization_id: string
           paid_at?: string | null
           payment_method?: string | null
+          payment_terms?: string | null
+          pdf_url?: string | null
           project_id?: string | null
           proposal_id?: string | null
           status?: string
+          subtotal?: number | null
+          total?: number | null
           updated_at?: string
         }
         Update: {
           amount?: number
           client_id?: string | null
+          competence_month?: string | null
           created_at?: string
           description?: string | null
+          discount?: number
           due_date?: string | null
+          financial_transaction_id?: string | null
           id?: string
+          issue_date?: string
+          mode?: string
           notes?: string | null
           number?: string
           organization_id?: string
           paid_at?: string | null
           payment_method?: string | null
+          payment_terms?: string | null
+          pdf_url?: string | null
           project_id?: string | null
           proposal_id?: string | null
           status?: string
+          subtotal?: number | null
+          total?: number | null
           updated_at?: string
         }
         Relationships: [
@@ -1287,15 +1408,22 @@ export type Database = {
           description: string | null
           end_date: string | null
           fixed_value: number | null
+          has_content_calendar: boolean
+          has_content_grid: boolean
+          has_timeline: boolean
+          hourly_rate: number | null
           id: string
           marketing_plan_id: string | null
+          monthly_value: number | null
           name: string
           notes: string | null
           organization_id: string
           other_budgets: Json | null
           owner_id: string | null
+          printing_budget: number | null
           project_type: string | null
           scope_flags: Json | null
+          social_platforms: Json
           start_date: string | null
           status: Database["public"]["Enums"]["project_status"]
           traffic_budget: Json | null
@@ -1310,15 +1438,22 @@ export type Database = {
           description?: string | null
           end_date?: string | null
           fixed_value?: number | null
+          has_content_calendar?: boolean
+          has_content_grid?: boolean
+          has_timeline?: boolean
+          hourly_rate?: number | null
           id?: string
           marketing_plan_id?: string | null
+          monthly_value?: number | null
           name: string
           notes?: string | null
           organization_id: string
           other_budgets?: Json | null
           owner_id?: string | null
+          printing_budget?: number | null
           project_type?: string | null
           scope_flags?: Json | null
+          social_platforms?: Json
           start_date?: string | null
           status?: Database["public"]["Enums"]["project_status"]
           traffic_budget?: Json | null
@@ -1333,15 +1468,22 @@ export type Database = {
           description?: string | null
           end_date?: string | null
           fixed_value?: number | null
+          has_content_calendar?: boolean
+          has_content_grid?: boolean
+          has_timeline?: boolean
+          hourly_rate?: number | null
           id?: string
           marketing_plan_id?: string | null
+          monthly_value?: number | null
           name?: string
           notes?: string | null
           organization_id?: string
           other_budgets?: Json | null
           owner_id?: string | null
+          printing_budget?: number | null
           project_type?: string | null
           scope_flags?: Json | null
+          social_platforms?: Json
           start_date?: string | null
           status?: Database["public"]["Enums"]["project_status"]
           traffic_budget?: Json | null
@@ -1379,48 +1521,173 @@ export type Database = {
           },
         ]
       }
+      proposal_items: {
+        Row: {
+          created_at: string
+          description: string
+          id: string
+          organization_id: string
+          proposal_id: string
+          quantity: number
+          sort_order: number
+          total: number
+          unit_price: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          id?: string
+          organization_id: string
+          proposal_id: string
+          quantity?: number
+          sort_order?: number
+          total?: number
+          unit_price?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          id?: string
+          organization_id?: string
+          proposal_id?: string
+          quantity?: number
+          sort_order?: number
+          total?: number
+          unit_price?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "proposal_items_proposal_id_fkey"
+            columns: ["proposal_id"]
+            isOneToOne: false
+            referencedRelation: "proposals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       proposals: {
         Row: {
+          approval_notes: string | null
+          approved_at: string | null
+          approved_by_email: string | null
+          approved_by_name: string | null
           billing_model: Database["public"]["Enums"]["billing_model"]
           client_id: string | null
           created_at: string
+          decline_reason: string | null
+          declined_at: string | null
+          diagnosis_blocks: Json
+          discount: number
+          doc_number: string | null
+          end_date_expected: string | null
+          exclusions_text: string | null
+          execution_plan_blocks: Json
+          first_due_date: string | null
           id: string
+          installments_count: number | null
+          intro_text: string | null
           items: Json
           lead_id: string | null
           number: string
           organization_id: string
+          payment_type: string
+          public_token: string
+          recurrence_interval: string | null
+          scope_text: string | null
+          sent_at: string | null
+          start_date_expected: string | null
           status: Database["public"]["Enums"]["proposal_status"]
+          subtotal: number | null
+          terms_text: string | null
+          title: string | null
           total_value: number
           updated_at: string
           valid_until: string | null
+          viewed_at: string | null
+          warranty_text: string | null
         }
         Insert: {
+          approval_notes?: string | null
+          approved_at?: string | null
+          approved_by_email?: string | null
+          approved_by_name?: string | null
           billing_model?: Database["public"]["Enums"]["billing_model"]
           client_id?: string | null
           created_at?: string
+          decline_reason?: string | null
+          declined_at?: string | null
+          diagnosis_blocks?: Json
+          discount?: number
+          doc_number?: string | null
+          end_date_expected?: string | null
+          exclusions_text?: string | null
+          execution_plan_blocks?: Json
+          first_due_date?: string | null
           id?: string
+          installments_count?: number | null
+          intro_text?: string | null
           items?: Json
           lead_id?: string | null
           number: string
           organization_id: string
+          payment_type?: string
+          public_token?: string
+          recurrence_interval?: string | null
+          scope_text?: string | null
+          sent_at?: string | null
+          start_date_expected?: string | null
           status?: Database["public"]["Enums"]["proposal_status"]
+          subtotal?: number | null
+          terms_text?: string | null
+          title?: string | null
           total_value?: number
           updated_at?: string
           valid_until?: string | null
+          viewed_at?: string | null
+          warranty_text?: string | null
         }
         Update: {
+          approval_notes?: string | null
+          approved_at?: string | null
+          approved_by_email?: string | null
+          approved_by_name?: string | null
           billing_model?: Database["public"]["Enums"]["billing_model"]
           client_id?: string | null
           created_at?: string
+          decline_reason?: string | null
+          declined_at?: string | null
+          diagnosis_blocks?: Json
+          discount?: number
+          doc_number?: string | null
+          end_date_expected?: string | null
+          exclusions_text?: string | null
+          execution_plan_blocks?: Json
+          first_due_date?: string | null
           id?: string
+          installments_count?: number | null
+          intro_text?: string | null
           items?: Json
           lead_id?: string | null
           number?: string
           organization_id?: string
+          payment_type?: string
+          public_token?: string
+          recurrence_interval?: string | null
+          scope_text?: string | null
+          sent_at?: string | null
+          start_date_expected?: string | null
           status?: Database["public"]["Enums"]["proposal_status"]
+          subtotal?: number | null
+          terms_text?: string | null
+          title?: string | null
           total_value?: number
           updated_at?: string
           valid_until?: string | null
+          viewed_at?: string | null
+          warranty_text?: string | null
         }
         Relationships: [
           {
@@ -1595,6 +1862,8 @@ export type Database = {
         Row: {
           assignee_id: string | null
           attachments_count: number
+          billed: boolean
+          billed_invoice_id: string | null
           billing_enabled: boolean
           billing_model: Database["public"]["Enums"]["billing_model"] | null
           billing_value: number | null
@@ -1624,6 +1893,8 @@ export type Database = {
         Insert: {
           assignee_id?: string | null
           attachments_count?: number
+          billed?: boolean
+          billed_invoice_id?: string | null
           billing_enabled?: boolean
           billing_model?: Database["public"]["Enums"]["billing_model"] | null
           billing_value?: number | null
@@ -1653,6 +1924,8 @@ export type Database = {
         Update: {
           assignee_id?: string | null
           attachments_count?: number
+          billed?: boolean
+          billed_invoice_id?: string | null
           billing_enabled?: boolean
           billing_model?: Database["public"]["Enums"]["billing_model"] | null
           billing_value?: number | null
@@ -1680,6 +1953,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "tasks_billed_invoice_id_fkey"
+            columns: ["billed_invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "tasks_client_id_fkey"
             columns: ["client_id"]
