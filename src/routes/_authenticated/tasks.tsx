@@ -1820,7 +1820,7 @@ function DeliverablesSection({
                       <SelectTrigger className="h-8 rounded-lg text-xs mt-1"><SelectValue placeholder="—" /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="none">—</SelectItem>
-                        {PLATFORM_OPTIONS.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
+                        {platformOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
                       </SelectContent>
                     </Select>
                   </div>
