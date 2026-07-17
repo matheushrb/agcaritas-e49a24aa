@@ -110,11 +110,13 @@ export type Database = {
           client_id: string | null
           contract_id: string | null
           created_at: string
+          deliverable_id: string | null
           description: string
           due_date: string
           id: string
           organization_id: string
           paid_at: string | null
+          parent_charge_id: string | null
           payment_method: string | null
           project_id: string | null
           status: Database["public"]["Enums"]["charge_status"]
@@ -128,11 +130,13 @@ export type Database = {
           client_id?: string | null
           contract_id?: string | null
           created_at?: string
+          deliverable_id?: string | null
           description: string
           due_date: string
           id?: string
           organization_id: string
           paid_at?: string | null
+          parent_charge_id?: string | null
           payment_method?: string | null
           project_id?: string | null
           status?: Database["public"]["Enums"]["charge_status"]
@@ -146,11 +150,13 @@ export type Database = {
           client_id?: string | null
           contract_id?: string | null
           created_at?: string
+          deliverable_id?: string | null
           description?: string
           due_date?: string
           id?: string
           organization_id?: string
           paid_at?: string | null
+          parent_charge_id?: string | null
           payment_method?: string | null
           project_id?: string | null
           status?: Database["public"]["Enums"]["charge_status"]
@@ -178,6 +184,13 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "charges_parent_charge_id_fkey"
+            columns: ["parent_charge_id"]
+            isOneToOne: false
+            referencedRelation: "charges"
             referencedColumns: ["id"]
           },
           {
