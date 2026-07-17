@@ -1483,6 +1483,95 @@ export type Database = {
           },
         ]
       }
+      task_type_stages: {
+        Row: {
+          color: string
+          created_at: string
+          id: string
+          name: string
+          order: number
+          organization_id: string
+          status_group: Database["public"]["Enums"]["stage_status_group"]
+          task_type_id: string
+          updated_at: string
+          weight: number
+        }
+        Insert: {
+          color?: string
+          created_at?: string
+          id?: string
+          name: string
+          order?: number
+          organization_id: string
+          status_group?: Database["public"]["Enums"]["stage_status_group"]
+          task_type_id: string
+          updated_at?: string
+          weight?: number
+        }
+        Update: {
+          color?: string
+          created_at?: string
+          id?: string
+          name?: string
+          order?: number
+          organization_id?: string
+          status_group?: Database["public"]["Enums"]["stage_status_group"]
+          task_type_id?: string
+          updated_at?: string
+          weight?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_type_stages_task_type_id_fkey"
+            columns: ["task_type_id"]
+            isOneToOne: false
+            referencedRelation: "task_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      task_types: {
+        Row: {
+          active: boolean
+          color: string
+          created_at: string
+          default_billing_model: string | null
+          default_price: number | null
+          description: string | null
+          icon: string | null
+          id: string
+          name: string
+          organization_id: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          color?: string
+          created_at?: string
+          default_billing_model?: string | null
+          default_price?: number | null
+          description?: string | null
+          icon?: string | null
+          id?: string
+          name: string
+          organization_id: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          color?: string
+          created_at?: string
+          default_billing_model?: string | null
+          default_price?: number | null
+          description?: string | null
+          icon?: string | null
+          id?: string
+          name?: string
+          organization_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       tasks: {
         Row: {
           assignee_id: string | null
@@ -1493,6 +1582,7 @@ export type Database = {
           client_id: string | null
           comments_count: number
           created_at: string
+          current_stage_id: string | null
           deliverables: Json
           delivery_type: string | null
           description: string | null
@@ -1508,6 +1598,7 @@ export type Database = {
           start_date: string | null
           status: Database["public"]["Enums"]["task_status"]
           subtasks: Json
+          task_type_id: string | null
           title: string
           updated_at: string
         }
@@ -1520,6 +1611,7 @@ export type Database = {
           client_id?: string | null
           comments_count?: number
           created_at?: string
+          current_stage_id?: string | null
           deliverables?: Json
           delivery_type?: string | null
           description?: string | null
@@ -1535,6 +1627,7 @@ export type Database = {
           start_date?: string | null
           status?: Database["public"]["Enums"]["task_status"]
           subtasks?: Json
+          task_type_id?: string | null
           title: string
           updated_at?: string
         }
@@ -1547,6 +1640,7 @@ export type Database = {
           client_id?: string | null
           comments_count?: number
           created_at?: string
+          current_stage_id?: string | null
           deliverables?: Json
           delivery_type?: string | null
           description?: string | null
@@ -1562,6 +1656,7 @@ export type Database = {
           start_date?: string | null
           status?: Database["public"]["Enums"]["task_status"]
           subtasks?: Json
+          task_type_id?: string | null
           title?: string
           updated_at?: string
         }
@@ -1571,6 +1666,13 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_current_stage_id_fkey"
+            columns: ["current_stage_id"]
+            isOneToOne: false
+            referencedRelation: "task_type_stages"
             referencedColumns: ["id"]
           },
           {
@@ -1585,6 +1687,13 @@ export type Database = {
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_task_type_id_fkey"
+            columns: ["task_type_id"]
+            isOneToOne: false
+            referencedRelation: "task_types"
             referencedColumns: ["id"]
           },
         ]
@@ -1751,6 +1860,7 @@ export type Database = {
       plan_status: "draft" | "in_review" | "approved" | "archived"
       project_status: "planning" | "active" | "review" | "done" | "paused"
       proposal_status: "draft" | "sent" | "viewed" | "approved" | "declined"
+      stage_status_group: "todo" | "in_progress" | "review" | "done"
       task_priority: "low" | "medium" | "high"
       task_stage: "briefing" | "creation" | "review" | "approval" | "delivery"
       task_status: "todo" | "in_progress" | "review" | "done"
@@ -1891,6 +2001,7 @@ export const Constants = {
       plan_status: ["draft", "in_review", "approved", "archived"],
       project_status: ["planning", "active", "review", "done", "paused"],
       proposal_status: ["draft", "sent", "viewed", "approved", "declined"],
+      stage_status_group: ["todo", "in_progress", "review", "done"],
       task_priority: ["low", "medium", "high"],
       task_stage: ["briefing", "creation", "review", "approval", "delivery"],
       task_status: ["todo", "in_progress", "review", "done"],

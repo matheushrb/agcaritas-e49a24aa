@@ -1,79 +1,61 @@
-# Plano — Pixie Pro v2 (baseado no PDF do usuário)
+# Tipos de Tarefa & Fluxos de Etapas
 
-Documento-guia: `Pixie_Telas_v2-2.pdf` — 13 módulos, 18 páginas, 8 drawers, 6 modais.
+Hoje as etapas da task são um enum fixo (`task_stage`) igual para toda tarefa. Você quer que cada **Tipo de Tarefa** tenha seu próprio conjunto de etapas, cada etapa com cor e vinculada a um **Status macro** (A fazer / Em andamento / Revisão / Concluído), e que isso influencie progresso e faturamento.
 
-## Regra de menu
-Sidebar segue o doc: **Dashboard · CRM · Propostas · Projetos · Financeiro · Agenda · RH** + **Configurações** no rodapé. Nada mais entra na sidebar; módulos como Metas, Campanhas Internas, Fornecedores, Ideias, Aprovação Pública ficam acessíveis por links contextuais (dentro do módulo pai).
+## Modelo de dados (novas tabelas)
 
-## Feito nesta rodada
-- [x] Sidebar realinhada aos 7 ícones do doc + Configurações + Sair
-- [x] TopBar limpa (removidos botões "Exportar" e "Novo projeto" que não funcionavam; Sino → /notifications, Engrenagem → /settings)
-- [x] Rota `/settings` com 7 abas (Dados Agência · Serviços · Plataformas · Fluxos de Tarefa · Funil CRM · Usuários · Integrações)
-- [x] Rota `/clients` (lista + filtros + novo cliente com EntityDialog)
-- [x] Financeiro já tem as 5 abas internas (Visão Geral · Movimentações · Faturamentos · DRE · Parâmetros)
+- `task_types` — catálogo de tipos por organização
+  - `name`, `description`, `color`, `default_billing_model` (`hourly` / `fixed` / `per_task`), `default_price`, `icon`, `active`
+- `task_type_stages` — etapas de cada tipo, ordenadas
+  - `task_type_id`, `name`, `order`, `color`, `status_group` (`todo` / `in_progress` / `review` / `done`), `weight` (peso opcional no cálculo de progresso)
 
-## Próximas rodadas (ordem sugerida)
+Alterações em `tasks`:
+- Nova coluna `task_type_id` (FK opcional para não quebrar tarefas antigas)
+- Nova coluna `current_stage_id` (FK opcional — substitui aos poucos o enum `stage`)
+- Coluna `stage` (enum antigo) permanece por compatibilidade; novas tasks passam a usar o fluxo dinâmico quando o tipo estiver preenchido
 
-### R2 — Cliente
-- [ ] `/clients/$clientId` com 4 abas: Dados · Contatos · Projetos · Propostas
-- [ ] Auto-fill de CNPJ (ReceitaWS) e CEP (ViaCEP)
-- [ ] Vínculo com projetos/propostas existentes
+RLS por `organization_id` em ambas tabelas, com GRANT para authenticated/service_role.
 
-### R3 — Tarefas (Módulo 02)
-- [ ] Split-panel desktop + drawer mobile
-- [ ] Drawer T03 com 4 abas: Detalhes · Uploads · Faturamento · Atividade
-- [ ] Turbo Financeiro (reordena por valor)
-- [ ] Kanban view (dnd)
-- [ ] Timer com widget flutuante ao minimizar
+## Configurações → nova aba "Tipos de Tarefa"
 
-### R4 — CRM (Módulo 03)
-- [ ] Kanban T04 com temperatura do lead + alerta de follow-up
-- [ ] Detalhe do Lead T05 com 6 abas: Atividades · Stakeholders · Reuniões · Briefing · Social · Agente IA
+Rota: `/settings` ganha uma aba (substitui o placeholder "Fluxos de Tarefa"):
 
-### R5 — Propostas (Módulo 04)
-- [ ] T06 Nova proposta com 2 colunas + resumo ao vivo
-- [ ] T14 Lista com status e ações (···)
-- [ ] T15 Detalhe com Diagnóstico · Plano de Execução · Contrato
-- [ ] Página pública `/p/$token` (T21)
+- Lista de tipos criados (cards com cor, nº de etapas, status default)
+- Botão "Novo tipo" → dialog com nome, descrição, cor, modelo de faturamento padrão, preço padrão
+- Ao abrir um tipo: editor de etapas
+  - Lista drag-and-drop das etapas (reordenar)
+  - Cada linha: nome, cor (color picker), status macro (select: A fazer / Em andamento / Revisão / Concluído), peso
+  - Adicionar / remover etapa
+  - Botão "Duplicar tipo" para partir de um existente
 
-### R6 — Projetos (Módulo 05)
-- [ ] Reorganizar abas em `/projects/$projectId` conforme doc
-- [ ] Aba Estratégia completa (SWOT · Personas · Concorrentes · Roadmap · KPIs · Plano de ação · IA)
-- [ ] T16 Calendário de Conteúdo (aba condicional)
-- [ ] T17 Grid de Conteúdo (Kanban por status)
-- [ ] Wizard de novo projeto (tipo · faturamento · urgência · ferramentas · verba tráfego · verbas outras · toggles de planejamento) — solicitado pelo usuário
+Seed inicial (só se a org não tiver nenhum tipo): 2 exemplos prontos —
+- "Produção Audiovisual — Teaser 3min" com as 10 etapas que você citou já mapeadas a status
+- "Post estático" mais simples (Briefing → Criação → Revisão → Aprovação → Publicado)
 
-### R7 — Agenda (Módulo 07)
-- [ ] T09 Grade semanal com 3 abas (Planejamento · Entregas pendentes · Vencimentos)
-- [ ] Snap 15min · drag para mover · resize
-- [ ] Sync Google Calendar
+## Impacto no TaskModal
 
-### R8 — RH (Módulo 08)
-- [ ] T10 Lista + detalhe com 5 abas (Dados · Custos · Folha · Acesso · Histórico)
-- [ ] Simulação de encargos por tipo de contrato
+- Novo campo inline **Tipo de Tarefa** (antes do Status). Ao escolher o tipo:
+  - As etapas do `TaskStageSection` passam a vir do `task_type_stages` (não mais do enum fixo)
+  - O **Status** vira derivado da etapa atual (`status_group` da etapa selecionada) — usuário ainda pode sobrescrever manualmente
+  - Modelo de faturamento e preço iniciais preenchem os defaults do tipo (sem travar edição)
+- Sem tipo escolhido: modal mantém o comportamento atual (fallback ao enum).
+- **Progresso automático** passa a considerar o peso das etapas do tipo + subtarefas concluídas, em vez de contar etapas fixas.
 
-### R9 — Módulos secundários
-- [ ] Metas (T18) — acessível via Dashboard
-- [ ] Campanhas Internas (T19) — acessível via Marketing/Projetos
-- [ ] Fornecedores (T20) — acessível via Financeiro
-- [ ] Banco de Ideias — acessível via Projetos/CRM
-- [ ] Aprovação Pública `/aprovar/$token` (T22)
+## Ordem de implementação
 
-### R10 — Configurações — editores dedicados
-- [ ] T23 Fluxos de Tarefa (stage sets)
-- [ ] T24 Plataformas com regras de prazo
-- [ ] Serviços (catálogo)
-- [ ] Funil CRM (etapas)
-- [ ] Usuários (papéis, convites)
-- [ ] Integrações (Buffer, Google Calendar)
+1. Migration: `task_types`, `task_type_stages`, colunas em `tasks`, RLS, GRANT, seed condicional dos 2 exemplos.
+2. Aba "Tipos de Tarefa" em `/settings` com CRUD e editor de etapas (drag/drop, cor, status macro).
+3. Refatorar `TaskModal`:
+   - Seletor de Tipo
+   - `TaskStageSection` dinâmico a partir das etapas do tipo
+   - Status derivado do `status_group` da etapa atual
+   - Progresso recalculado com pesos
+   - Defaults de faturamento herdados do tipo
+4. Manter compat: tarefas antigas sem `task_type_id` continuam funcionando exatamente como hoje.
 
-## Tabelas ainda não criadas
-Serão migradas por rodada, junto do módulo correspondente:
-- `stage_sets`, `stages`, `stage_checklist_items` (R10)
-- `platforms`, `platform_delivery_rules` (R10)
-- `services_catalog` (R10)
-- `crm_stages` (R10)
-- `time_entries` (já existe)
-- `subtasks`, `task_uploads`, `task_activity` (R3)
-- `content_items` (já existe — usar em R6)
-- `payroll_records` (R8)
+## Fora deste escopo (fica para depois)
+- Checklist obrigatório por etapa
+- Templates de briefing por tipo
+- Regras "só avança se subtarefas x concluídas"
+
+Confirma que posso seguir nessa direção? Se sim, começo pela migration.
