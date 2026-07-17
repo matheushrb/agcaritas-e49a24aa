@@ -219,7 +219,7 @@ function ProjectDetail() {
 
   const saveField = useMutation({
     mutationFn: async (patch: Partial<Project>) => {
-      const { error } = await supabase.from("projects").update(patch).eq("id", projectId);
+      const { error } = await supabase.from("projects").update(patch as never).eq("id", projectId);
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["project", projectId] }),
