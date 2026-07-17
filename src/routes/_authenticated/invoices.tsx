@@ -13,7 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Receipt, Plus, Download, CheckCircle2, XCircle, ArrowLeft, ArrowRight, FileText, Building2, Pencil, Trash2, RotateCcw, Save, X } from "lucide-react";
 import { toast } from "sonner";
-import { generateInvoicePDF } from "@/lib/pdf/invoice-pdf";
+import { generateInvoicePDF, DEFAULT_PAYMENT_TERMS, DEFAULT_LEGAL_NOTES } from "@/lib/pdf/invoice-pdf";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/invoices")({
@@ -29,6 +29,7 @@ type Invoice = {
   id: string; number: string; client_id: string | null; project_id: string | null;
   status: InvoiceStatus; issue_date: string; due_date: string | null;
   total: number | null; amount: number; paid_at: string | null; notes: string | null;
+  payment_terms: string | null; payment_link: string | null;
 };
 type Client = { id: string; name: string; tax_id?: string | null; email?: string | null };
 type Project = { id: string; name: string; client_id: string | null };
@@ -79,7 +80,7 @@ function InvoicesPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("invoices")
-        .select("id,number,client_id,project_id,status,issue_date,due_date,total,amount,paid_at,notes")
+        .select("id,number,client_id,project_id,status,issue_date,due_date,total,amount,paid_at,notes,payment_terms,payment_link")
         .order("issue_date", { ascending: false });
       if (error) throw error;
       return (data ?? []) as Invoice[];
@@ -187,7 +188,9 @@ function NewInvoiceWizard({
   const [payerClient, setPayerClient] = useState<string>(initialClient);
   const [issueDate, setIssueDate] = useState(new Date().toISOString().slice(0, 10));
   const [dueDate, setDueDate] = useState<string>("");
-  const [notes, setNotes] = useState("");
+  const [notes, setNotes] = useState(DEFAULT_LEGAL_NOTES);
+  const [paymentTerms, setPaymentTerms] = useState(DEFAULT_PAYMENT_TERMS);
+  const [paymentLink, setPaymentLink] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   const [selectedDeliverables, setSelectedDeliverables] = useState<Set<string>>(new Set());
@@ -320,15 +323,17 @@ function NewInvoiceWizard({
     return lines;
   }, [filteredCharges, filteredTasks, billableDeliverables, selectedCharges, selectedTasks, selectedDeliverables]);
 
-  function openPreviewPDF() {
+  async function openPreviewPDF() {
     const client = clients.find(c => c.id === payerClient);
-    const doc = generateInvoicePDF({
+    const doc = await generateInvoicePDF({
       number: "PRÉVIA",
       issue_date: issueDate || new Date().toISOString().slice(0, 10),
       due_date: dueDate || null,
       client: { name: client?.name ?? "—", document: client?.tax_id, email: client?.email },
       lines: previewLines,
       notes: notes || undefined,
+      payment_terms: paymentTerms || undefined,
+      payment_link: paymentLink || undefined,
     });
     const url = doc.output("bloburl") as unknown as string;
     window.open(url, "_blank", "noopener,noreferrer");
@@ -419,6 +424,8 @@ function NewInvoiceWizard({
         subtotal: total,
         status: "issued",
         notes: notes || null,
+        payment_terms: paymentTerms || null,
+        payment_link: paymentLink || null,
       }).select("id").single();
       if (invErr) throw invErr;
 
@@ -658,8 +665,23 @@ function NewInvoiceWizard({
               </div>
             </div>
             <div>
-              <label className="text-xs font-medium text-muted-foreground">Observações</label>
-              <Textarea value={notes} onChange={e => setNotes(e.target.value)} placeholder="Condições de pagamento, notas fiscais, etc." rows={3} />
+              <label className="text-xs font-medium text-muted-foreground">Condições de pagamento</label>
+              <Textarea value={paymentTerms} onChange={e => setPaymentTerms(e.target.value)} rows={3}
+                placeholder="Prazo, forma de pagamento, chave PIX, etc." />
+              <p className="text-[10px] text-muted-foreground mt-1">Texto editável. Aparece com destaque no PDF da fatura.</p>
+            </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground">Observações legais / Nota Fiscal / Juros</label>
+              <Textarea value={notes} onChange={e => setNotes(e.target.value)} rows={4}
+                placeholder="Ex.: A NF será emitida após confirmação do pagamento. Multa e juros após vencimento." />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground">Link de pagamento (gera QR Code)</label>
+              <Input type="url" value={paymentLink} onChange={e => setPaymentLink(e.target.value)}
+                placeholder="https://... (PIX copia-e-cola, checkout Stripe, boleto, etc.)" />
+              <p className="text-[10px] text-muted-foreground mt-1">
+                Se preenchido, um QR Code é gerado no PDF apontando para este link.
+              </p>
             </div>
             <div className="rounded-lg border p-3 bg-muted/30 flex items-center justify-between">
               <span className="text-sm">{selectedCharges.size + selectedTasks.size + selectedDeliverables.size} item(ns)</span>
@@ -698,7 +720,7 @@ function InvoiceDetail({ id, clients, onClose }: { id: string; clients: Client[]
     queryKey: ["invoice", id],
     queryFn: async () => {
       const { data } = await supabase.from("invoices")
-        .select("id,number,client_id,project_id,status,issue_date,due_date,total,amount,paid_at,notes")
+        .select("id,number,client_id,project_id,status,issue_date,due_date,total,amount,paid_at,notes,payment_terms,payment_link")
         .eq("id", id).maybeSingle();
       return (data ?? null) as Invoice | null;
     },
@@ -844,16 +866,18 @@ function InvoiceDetail({ id, clients, onClose }: { id: string; clients: Client[]
     onError: (e: Error) => toast.error(e.message),
   });
 
-  function downloadPDF() {
+  async function downloadPDF() {
     if (!invoice) return;
     const client = clients.find(c => c.id === invoice.client_id);
-    const doc = generateInvoicePDF({
+    const doc = await generateInvoicePDF({
       number: invoice.number,
       issue_date: invoice.issue_date,
       due_date: invoice.due_date,
       client: { name: client?.name ?? "—", document: client?.tax_id, email: client?.email },
       lines: charges.map(c => ({ title: c.description, amount: Number(c.amount ?? 0) })),
       notes: invoice.notes ?? undefined,
+      payment_terms: invoice.payment_terms ?? undefined,
+      payment_link: invoice.payment_link ?? undefined,
     });
     doc.save(`Fatura-${invoice.number}.pdf`);
   }

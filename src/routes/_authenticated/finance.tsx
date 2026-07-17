@@ -293,9 +293,9 @@ function ChargeTable({ rows, clients, projects, onStatus }: {
               <td className="text-right pr-2">
                 <UIButton
                   variant="ghost" size="sm" className="h-7 gap-1"
-                  onClick={() => {
+                  onClick={async () => {
                     const num = c.id.slice(0, 8).toUpperCase();
-                    const pdf = generateInvoicePDF({
+                    const pdf = await generateInvoicePDF({
                       number: num,
                       issue_date: c.created_at,
                       due_date: c.due_date,
