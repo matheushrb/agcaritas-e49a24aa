@@ -376,7 +376,13 @@ function TypeEditorPanel({ type, stages, onDelete, onDuplicate }:{
     <Card className="rounded-2xl p-5 space-y-5">
       {/* Header */}
       <div className="flex items-start gap-3">
-        <button className="h-10 w-10 rounded-xl shrink-0" style={{ backgroundColor: color }} title="Cor do tipo" />
+        <div
+          className="h-10 w-10 rounded-xl shrink-0 flex items-center justify-center"
+          style={{ backgroundColor: `${color}22`, color }}
+          title="Prévia"
+        >
+          <TaskTypeIcon name={icon} className="h-5 w-5" />
+        </div>
         <div className="flex-1 min-w-0 space-y-2">
           <Input
             value={name}
