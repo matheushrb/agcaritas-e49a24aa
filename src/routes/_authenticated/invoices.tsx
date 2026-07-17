@@ -574,7 +574,7 @@ function InvoiceDetail({ id, clients, onClose }: { id: string; clients: Client[]
         if (e2) throw e2;
       } else {
         // marca como canceladas
-        const { error: e2 } = await supabase.from("charges").update({ status: "canceled" }).eq("invoice_id", id);
+        const { error: e2 } = await supabase.from("charges").update({ status: "cancelled" }).eq("invoice_id", id);
         if (e2) throw e2;
       }
     },
