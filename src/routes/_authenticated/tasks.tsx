@@ -27,6 +27,7 @@ export const Route = createFileRoute("/_authenticated/tasks")({
 type TaskStatus = "todo" | "in_progress" | "review" | "done";
 type TaskPriority = "low" | "medium" | "high";
 type BillingModel = "hourly" | "one_time" | "package" | "monthly";
+type TaskStage = "briefing" | "creation" | "review" | "approval" | "delivery";
 
 type Task = {
   id: string;
@@ -44,6 +45,7 @@ type Task = {
   platform: string | null;
   delivery_type: string | null;
   estimated_hours: number | null;
+  stage: TaskStage;
   created_at?: string;
 };
 
