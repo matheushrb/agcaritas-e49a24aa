@@ -357,31 +357,13 @@ export function EditProjectDialog({
                         />
                       </Field>
                     </div>
-                    <div className="space-y-2">
-                      <Label className="text-xs">Plataformas</Label>
-                      <div className="flex flex-wrap gap-2">
-                        {["Meta", "Google", "TikTok", "LinkedIn", "YouTube", "Pinterest", "X (Twitter)"].map(p => {
-                          const current = traffic.platforms ?? [];
-                          const on = current.includes(p);
-                          return (
-                            <button
-                              key={p}
-                              type="button"
-                              onClick={() => set("traffic_budget", {
-                                ...traffic,
-                                platforms: on ? current.filter(x => x !== p) : [...current, p],
-                              })}
-                              className={cn(
-                                "rounded-full px-3 py-1 text-xs font-medium border transition-colors",
-                                on ? "border-primary bg-primary/10 text-primary" : "border-border hover:bg-muted",
-                              )}
-                            >{p}</button>
-                          );
-                        })}
-                      </div>
-                      <p className="text-xs text-muted-foreground">Clique para adicionar ou remover plataformas.</p>
-                    </div>
                   </div>
+                ) : (
+                  <p className="text-xs text-muted-foreground">Ative o interruptor acima para definir a verba mensal.</p>
+                )}
+              </Section>
+            </TabsContent>
+
                 ) : (
                   <p className="text-xs text-muted-foreground">Ative o interruptor acima para definir a verba mensal.</p>
                 )}
