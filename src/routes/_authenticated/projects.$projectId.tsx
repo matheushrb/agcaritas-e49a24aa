@@ -86,6 +86,8 @@ type Task = {
   broadcast_kind: "premiere" | "live" | "recorded" | null;
   recorded_at: string | null;
   aired_at: string | null;
+  recorded_dates: string[];
+  aired_dates: string[];
   created_at?: string;
 };
 type Charge = {
@@ -153,11 +155,15 @@ function ProjectDetail() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("tasks")
-        .select("id,title,description,status,priority,due_date,billing_value,billing_model,billing_enabled,project_id,client_id,assignee_id,platform,delivery_type,estimated_hours,progress,stage,task_type_id,current_stage_id,deliverables,subtasks,broadcast_kind,recorded_at,aired_at,created_at")
+        .select("id,title,description,status,priority,due_date,billing_value,billing_model,billing_enabled,project_id,client_id,assignee_id,platform,delivery_type,estimated_hours,progress,stage,task_type_id,current_stage_id,deliverables,subtasks,broadcast_kind,recorded_at,aired_at,recorded_dates,aired_dates,created_at")
         .eq("project_id", projectId)
         .order("created_at", { ascending: false });
       if (error) throw error;
-      return (data ?? []) as Task[];
+      return ((data ?? []) as any[]).map(t => ({
+        ...t,
+        recorded_dates: Array.isArray(t.recorded_dates) ? t.recorded_dates : [],
+        aired_dates: Array.isArray(t.aired_dates) ? t.aired_dates : [],
+      })) as Task[];
     },
   });
 

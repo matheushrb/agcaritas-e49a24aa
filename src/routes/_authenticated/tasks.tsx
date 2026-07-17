@@ -81,6 +81,8 @@ type Task = {
   broadcast_kind: "premiere" | "live" | "recorded" | null;
   recorded_at: string | null;
   aired_at: string | null;
+  recorded_dates: string[];
+  aired_dates: string[];
   created_at?: string;
 };
 
@@ -119,10 +121,14 @@ function TasksPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("tasks")
-        .select("id,title,description,status,priority,project_id,client_id,assignee_id,due_date,billing_model,billing_value,billing_enabled,progress,platform,delivery_type,estimated_hours,stage,task_type_id,current_stage_id,deliverables,subtasks,broadcast_kind,recorded_at,aired_at,created_at")
+        .select("id,title,description,status,priority,project_id,client_id,assignee_id,due_date,billing_model,billing_value,billing_enabled,progress,platform,delivery_type,estimated_hours,stage,task_type_id,current_stage_id,deliverables,subtasks,broadcast_kind,recorded_at,aired_at,recorded_dates,aired_dates,created_at")
         .order("created_at", { ascending: false });
       if (error) throw error;
-      return (data ?? []) as Task[];
+      return ((data ?? []) as any[]).map(t => ({
+        ...t,
+        recorded_dates: Array.isArray(t.recorded_dates) ? t.recorded_dates : [],
+        aired_dates: Array.isArray(t.aired_dates) ? t.aired_dates : [],
+      })) as Task[];
     },
   });
 
@@ -350,6 +356,8 @@ function createLocalTask(overrides: Partial<Task> = {}): Task {
     broadcast_kind: null,
     recorded_at: null,
     aired_at: null,
+    recorded_dates: [],
+    aired_dates: [],
     created_at: new Date().toISOString(),
     ...overrides,
   };
@@ -446,8 +454,8 @@ export function TaskModal({
   const [taskTypeId, setTaskTypeId] = useState<string>("");
   const [currentStageId, setCurrentStageId] = useState<string>("");
   const [broadcastKind, setBroadcastKind] = useState<"premiere" | "live" | "recorded" | "">("");
-  const [recordedAt, setRecordedAt] = useState<string>("");
-  const [airedAt, setAiredAt] = useState<string>("");
+  const [recordedDates, setRecordedDates] = useState<string[]>([]);
+  const [airedDates, setAiredDates] = useState<string[]>([]);
   const [costPrompt, setCostPrompt] = useState<{
     member: { id: string; name: string; cost_mode: CostMode };
     suggestion: CostSuggestion;
@@ -560,8 +568,14 @@ export function TaskModal({
     setTaskTypeId(task.task_type_id ?? "");
     setCurrentStageId(task.current_stage_id ?? "");
     setBroadcastKind((task.broadcast_kind ?? "") as any);
-    setRecordedAt(task.recorded_at ?? "");
-    setAiredAt(task.aired_at ?? "");
+    {
+      const legacyRec = task.recorded_at ? [task.recorded_at.slice(0, 10)] : [];
+      const legacyAir = task.aired_at ? [task.aired_at.slice(0, 10)] : [];
+      const rec = Array.isArray(task.recorded_dates) && task.recorded_dates.length > 0 ? task.recorded_dates : legacyRec;
+      const air = Array.isArray(task.aired_dates) && task.aired_dates.length > 0 ? task.aired_dates : legacyAir;
+      setRecordedDates(rec);
+      setAiredDates(air);
+    }
     setDirty(false);
   }, [task]);
 
@@ -598,8 +612,10 @@ export function TaskModal({
       task_type_id: taskTypeId || null,
       current_stage_id: currentStageId || null,
       broadcast_kind: broadcastKind || null,
-      recorded_at: recordedAt || null,
-      aired_at: airedAt || null,
+      recorded_at: recordedDates[0] || null,
+      aired_at: airedDates[0] || null,
+      recorded_dates: recordedDates,
+      aired_dates: airedDates,
     };
   };
 
@@ -698,24 +714,44 @@ export function TaskModal({
         resolvedClient = (proj?.client_id as string) ?? null;
       }
       const today = new Date().toISOString().slice(0, 10);
-      const { error } = await supabase.from("charges").insert({
-        organization_id: profile.organization_id,
-        project_id: resolvedProjectId,
-        task_id: persistedTaskId,
-        client_id: resolvedClient,
-        description: `Tarefa: ${title.trim() || task.title || "Nova tarefa"}`,
-        amount: value,
-        status: "pending",
-        due_date: today,
-        type: "income",
-      });
+      const baseTitle = title.trim() || task.title || "Nova tarefa";
+      // Se a tarefa é de transmissão/estreia com datas ao ar, gera uma cobrança por data.
+      const airDates = Array.isArray(airedDates) ? airedDates.filter(Boolean) : [];
+      const useAirDates = !!broadcastKind && airDates.length > 0;
+      const kindLabel = broadcastKind === "live" ? "Ao vivo" : broadcastKind === "premiere" ? "Estreia" : broadcastKind === "recorded" ? "Gravado" : "";
+      const rows = useAirDates
+        ? airDates.map(d => ({
+            organization_id: profile.organization_id,
+            project_id: resolvedProjectId,
+            task_id: persistedTaskId,
+            client_id: resolvedClient,
+            description: `Tarefa: ${baseTitle}${kindLabel ? ` — ${kindLabel}` : ""} em ${new Date(d + "T00:00:00").toLocaleDateString("pt-BR")}`,
+            amount: value,
+            status: "pending" as const,
+            due_date: d,
+            type: "income" as const,
+          }))
+        : [{
+            organization_id: profile.organization_id,
+            project_id: resolvedProjectId,
+            task_id: persistedTaskId,
+            client_id: resolvedClient,
+            description: `Tarefa: ${baseTitle}`,
+            amount: value,
+            status: "pending" as const,
+            due_date: today,
+            type: "income" as const,
+          }];
+      const { error } = await supabase.from("charges").insert(rows);
       if (error) throw error;
+      return { count: rows.length };
     },
-    onSuccess: () => {
+    onSuccess: (res) => {
       qc.invalidateQueries({ queryKey: ["charges"] });
       qc.invalidateQueries({ queryKey: ["project-charges"] });
       setInvoiced(true);
-      toast.success("Tarefa lançada no Financeiro");
+      const n = res?.count ?? 1;
+      toast.success(n > 1 ? `${n} cobranças lançadas no Financeiro` : "Tarefa lançada no Financeiro");
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -1188,26 +1224,19 @@ export function TaskModal({
                         )}
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        <div>
-                          <label className="text-[10px] uppercase tracking-wide text-muted-foreground">Data de gravação</label>
-                          <div className="mt-1">
-                            <DueDatePicker
-                              value={recordedAt}
-                              onChange={v => { setRecordedAt(v); markDirty(); }}
-                            />
-                          </div>
-                        </div>
-                        <div>
-                          <label className="text-[10px] uppercase tracking-wide text-muted-foreground">
-                            {broadcastKind === "live" ? "Data de transmissão" : "Data de estreia"}
-                          </label>
-                          <div className="mt-1">
-                            <DueDatePicker
-                              value={airedAt}
-                              onChange={v => { setAiredAt(v); markDirty(); }}
-                            />
-                          </div>
-                        </div>
+                        <DateListEditor
+                          label="Datas de gravação"
+                          emptyHint="Nenhuma data de gravação"
+                          dates={recordedDates}
+                          onChange={next => { setRecordedDates(next); markDirty(); }}
+                        />
+                        <DateListEditor
+                          label={broadcastKind === "live" ? "Datas de transmissão" : "Datas de estreia"}
+                          emptyHint={broadcastKind === "live" ? "Nenhuma data de transmissão" : "Nenhuma data de estreia"}
+                          helper="Cada data gera uma cobrança separada ao faturar."
+                          dates={airedDates}
+                          onChange={next => { setAiredDates(next); markDirty(); }}
+                        />
                       </div>
                     </div>
                   );
@@ -2135,6 +2164,52 @@ function DatePicker({ value, onChange, overdue, inline }: { value: string; onCha
 
 function DueDatePicker(props: { value: string; onChange: (v: string) => void; overdue?: boolean }) {
   return <DatePicker {...props} inline />;
+}
+
+function DateListEditor({ label, dates, onChange, emptyHint, helper }: {
+  label: string;
+  dates: string[];
+  onChange: (next: string[]) => void;
+  emptyHint?: string;
+  helper?: string;
+}) {
+  const [draft, setDraft] = useState("");
+  const add = (v: string) => {
+    if (!v) return;
+    const d = v.slice(0, 10);
+    if (dates.includes(d)) return;
+    onChange([...dates, d].sort());
+    setDraft("");
+  };
+  const remove = (d: string) => onChange(dates.filter(x => x !== d));
+  return (
+    <div>
+      <label className="text-[10px] uppercase tracking-wide text-muted-foreground">{label}</label>
+      <div className="mt-1 space-y-2">
+        {dates.length === 0 && emptyHint && (
+          <div className="text-xs text-muted-foreground">{emptyHint}</div>
+        )}
+        {dates.length > 0 && (
+          <div className="flex flex-wrap gap-1.5">
+            {dates.map(d => (
+              <span key={d} className="inline-flex items-center gap-1 h-7 rounded-full border bg-background px-2 text-xs">
+                {new Date(d + "T00:00:00").toLocaleDateString("pt-BR")}
+                <button type="button" onClick={() => remove(d)} className="text-muted-foreground hover:text-foreground">
+                  <X className="h-3 w-3" />
+                </button>
+              </span>
+            ))}
+          </div>
+        )}
+        <div className="flex items-center gap-2">
+          <div className="flex-1">
+            <DueDatePicker value={draft} onChange={v => add(v)} />
+          </div>
+        </div>
+        {helper && <div className="text-[10px] text-muted-foreground">{helper}</div>}
+      </div>
+    </div>
+  );
 }
 
 function AssigneePicker({ value, members, onChange }: { value: string; members: { id: string; name: string; avatar_url: string | null }[]; onChange: (v: string) => void }) {
