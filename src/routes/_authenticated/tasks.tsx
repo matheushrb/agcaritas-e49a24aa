@@ -1812,7 +1812,7 @@ function DeliverablesSection({
   canBill: boolean;
   taskFinalized: boolean;
   taskInvoiced: boolean;
-  platformOptions: { value: string; label: string }[];
+  platformOptions: { value: string; label: string; icon?: string | null; icon_url?: string | null; color?: string | null }[];
 }) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
