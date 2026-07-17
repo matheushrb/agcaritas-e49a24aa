@@ -35,6 +35,7 @@ type Task = {
   status: TaskStatus;
   priority: TaskPriority;
   project_id: string | null;
+  client_id: string | null;
   assignee_id: string | null;
   due_date: string | null;
   billing_model: BillingModel | null;
