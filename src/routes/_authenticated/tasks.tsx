@@ -469,6 +469,8 @@ export function TaskModal({
       estimated_hours: patch.estimated_hours ?? (estimatedHours ? Number(estimatedHours) : null),
       stage: patch.stage ?? stage,
       deliverables: patch.deliverables ?? deliverables,
+      subtasks: patch.subtasks ?? subtasks,
+      assignee_id: patch.assignee_id ?? (assigneeId || null),
     };
   };
 
