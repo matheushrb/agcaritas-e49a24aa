@@ -45,7 +45,11 @@ export function ProjectTypesEditor() {
       const { data, error } = await (supabase as any)
         .from("project_types").select("*").order("sort_order", { ascending: true });
       if (error) throw error;
-      return (data ?? []).map((r: any) => ({ ...r, base_tasks: r.base_tasks ?? [] })) as Row[];
+      return (data ?? []).map((r: any) => ({
+        ...r,
+        base_tasks: (r.base_tasks ?? []).filter((b: any) => b?.task_type_id),
+        platform_ids: r.platform_ids ?? [],
+      })) as Row[];
     },
   });
 
@@ -53,7 +57,17 @@ export function ProjectTypesEditor() {
     queryKey: ["task_types_lite"],
     queryFn: async () => {
       const { data, error } = await (supabase as any)
-        .from("task_types").select("id,name,color,icon").eq("active", true).order("name");
+        .from("task_types").select("id,name,color,icon,default_price,default_billing_model").eq("active", true).order("name");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  const { data: platforms = [] } = useQuery({
+    queryKey: ["platforms_lite"],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("platforms").select("id,name,color,icon").eq("active", true).order("name");
       if (error) throw error;
       return data ?? [];
     },
