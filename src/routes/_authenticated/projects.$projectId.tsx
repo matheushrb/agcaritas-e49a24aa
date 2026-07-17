@@ -233,16 +233,21 @@ function ProjectDetail() {
   const [editOpen, setEditOpen] = useState(false);
 
   const addTask = useMutation({
-    mutationFn: async (title: string) => {
+    mutationFn: async (input: string | { title: string; task_type_id?: string | null; billing_model?: string | null; billing_value?: number | null }) => {
+      const payload = typeof input === "string" ? { title: input } : input;
       const { data: profile } = await supabase.from("profiles").select("organization_id").maybeSingle();
       if (!profile?.organization_id) throw new Error("Sem organização");
-      const { data, error } = await supabase.from("tasks").insert({
-        title,
+      const insert: any = {
+        title: payload.title,
         status: "todo",
         priority: "medium",
         project_id: projectId,
         organization_id: profile.organization_id,
-      }).select("id").single();
+      };
+      if (payload.task_type_id) insert.task_type_id = payload.task_type_id;
+      if (payload.billing_model) insert.billing_model = payload.billing_model;
+      if (payload.billing_value != null) insert.billing_value = payload.billing_value;
+      const { data, error } = await supabase.from("tasks").insert(insert).select("id").single();
       if (error) throw error;
       return data.id as string;
     },
