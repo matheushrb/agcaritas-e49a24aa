@@ -73,7 +73,7 @@ function TasksPage() {
   const [view, setView] = useState<"list" | "kanban">("list");
   const [turbo, setTurbo] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [draftId, setDraftId] = useState<string | null>(null);
+  const [draftTask, setDraftTask] = useState<Task | null>(null);
   const [quickTitle, setQuickTitle] = useState<Record<string, string>>({});
 
   const { data: tasks = [], isLoading } = useQuery<Task[]>({
@@ -131,38 +131,17 @@ function TasksPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const handleNew = async () => {
-    const id = await createTask.mutateAsync({ title: "Nova tarefa", status: "todo" });
-    setDraftId(id);
-    setSelectedId(id);
-  };
-
-  const handleCloseModal = async () => {
-    const id = selectedId;
+  const handleNew = () => {
     setSelectedId(null);
-    if (!id || draftId !== id) return;
-    setDraftId(null);
-    // Descarta rascunho não editado (usuário abriu "Nova tarefa" e fechou sem mudar nada)
-    const t = tasks.find(x => x.id === id);
-    const untouched = t
-      && t.title === "Nova tarefa"
-      && !t.description
-      && !t.due_date
-      && t.billing_value == null
-      && !t.project_id
-      && !t.client_id
-      && !t.platform
-      && !t.delivery_type
-      && !t.estimated_hours
-      && !t.billing_enabled
-      && (t.progress ?? 0) === 0;
-    if (untouched) {
-      await supabase.from("tasks").delete().eq("id", id);
-      qc.invalidateQueries({ queryKey: ["tasks"] });
-    }
+    setDraftTask(createLocalTask());
   };
 
-  const selected = tasks.find(t => t.id === selectedId) ?? null;
+  const handleCloseModal = () => {
+    setSelectedId(null);
+    setDraftTask(null);
+  };
+
+  const selected = draftTask ?? tasks.find(t => t.id === selectedId) ?? null;
 
   const handleQuickCreate = (status: TaskStatus) => {
     const title = (quickTitle[status] ?? "").trim();
@@ -251,7 +230,7 @@ function TasksPage() {
                 </div>
                 <ul className="divide-y divide-border">
                   {byStatus[status].map(t => (
-                    <TaskRow key={t.id} task={t} onClick={() => setSelectedId(t.id)} />
+                    <TaskRow key={t.id} task={t} onClick={() => { setDraftTask(null); setSelectedId(t.id); }} />
                   ))}
                   <li className="px-4 py-2">
                     <input
@@ -276,7 +255,7 @@ function TasksPage() {
                 </div>
                 <div className="space-y-2">
                   {byStatus[status].map(t => (
-                    <KanbanCard key={t.id} task={t} onClick={() => setSelectedId(t.id)} />
+                    <KanbanCard key={t.id} task={t} onClick={() => { setDraftTask(null); setSelectedId(t.id); }} />
                   ))}
                 </div>
                 <input
@@ -292,9 +271,36 @@ function TasksPage() {
         )}
       </div>
 
-      <TaskModal task={selected} onClose={handleCloseModal} />
+      <TaskModal
+        task={selected}
+        onClose={handleCloseModal}
+      />
     </>
   );
+}
+
+function createLocalTask(overrides: Partial<Task> = {}): Task {
+  return {
+    id: `draft-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+    title: "",
+    description: null,
+    status: "todo",
+    priority: "medium",
+    project_id: null,
+    client_id: null,
+    assignee_id: null,
+    due_date: null,
+    billing_model: null,
+    billing_value: null,
+    billing_enabled: false,
+    progress: 0,
+    platform: null,
+    delivery_type: null,
+    estimated_hours: null,
+    stage: "creation",
+    created_at: new Date().toISOString(),
+    ...overrides,
+  };
 }
 
 function Kpi({ label, value, tone = "default" }: { label: string; value: string; tone?: "default" | "danger" }) {
@@ -348,7 +354,13 @@ function KanbanCard({ task, onClick }: { task: Task; onClick: () => void }) {
 /* ============================================================
  * TaskModal — janela grande estilo ClickUp / Monday
  * ============================================================ */
-export function TaskModal({ task, onClose }: { task: Task | null; onClose: () => void }) {
+export function TaskModal({
+  task,
+  onClose,
+}: {
+  task: Task | null;
+  onClose: () => void;
+}) {
   const qc = useQueryClient();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -365,6 +377,8 @@ export function TaskModal({ task, onClose }: { task: Task | null; onClose: () =>
   const [projectId, setProjectId] = useState<string>("");
   const [clientId, setClientId] = useState<string>("");
   const [billingEnabled, setBillingEnabled] = useState<boolean>(false);
+  const persistedDraftIdRef = useRef<string | null>(null);
+  const creatingDraftRef = useRef<Promise<string> | null>(null);
 
   const { data: projectsList = [] } = useQuery({
     queryKey: ["tasks-modal-projects"],
@@ -383,6 +397,8 @@ export function TaskModal({ task, onClose }: { task: Task | null; onClose: () =>
 
   useEffect(() => {
     if (!task) return;
+    persistedDraftIdRef.current = null;
+    creatingDraftRef.current = null;
     setTitle(task.title);
     setDescription(task.description ?? "");
     setPriority(task.priority);
@@ -400,9 +416,61 @@ export function TaskModal({ task, onClose }: { task: Task | null; onClose: () =>
     setBillingEnabled(task.billing_enabled ?? false);
   }, [task]);
 
+  const isLocalDraft = !!task?.id.startsWith("draft-");
+
+  const buildInsertPayload = async (patch: Partial<Task>) => {
+    const { data: profile } = await supabase.from("profiles").select("organization_id").maybeSingle();
+    if (!profile?.organization_id) throw new Error("Sem organização");
+    return {
+      organization_id: profile.organization_id,
+      title: (patch.title ?? (title.trim() || "Nova tarefa")) as string,
+      description: patch.description ?? (description || null),
+      status: patch.status ?? status,
+      priority: patch.priority ?? priority,
+      project_id: patch.project_id ?? (projectId || null),
+      client_id: patch.client_id ?? (clientId || null),
+      due_date: patch.due_date ?? (dueDate || null),
+      billing_model: patch.billing_model ?? ((billingModel || null) as BillingModel | null),
+      billing_value: patch.billing_value ?? (billingValue ? Number(billingValue) : null),
+      billing_enabled: patch.billing_enabled ?? billingEnabled,
+      progress: patch.progress ?? progress,
+      platform: patch.platform ?? (platform || null),
+      delivery_type: patch.delivery_type ?? (deliveryType || null),
+      estimated_hours: patch.estimated_hours ?? (estimatedHours ? Number(estimatedHours) : null),
+      stage: patch.stage ?? stage,
+    };
+  };
+
+  const createDraftRecord = async (patch: Partial<Task>) => {
+    if (persistedDraftIdRef.current) return { id: persistedDraftIdRef.current, created: false };
+    if (creatingDraftRef.current) return { id: await creatingDraftRef.current, created: false };
+
+    creatingDraftRef.current = (async () => {
+      const payload = await buildInsertPayload(patch);
+      const { data, error } = await supabase.from("tasks").insert(payload).select("id").single();
+      if (error) throw error;
+      return data.id as string;
+    })();
+
+    try {
+      const id = await creatingDraftRef.current;
+      persistedDraftIdRef.current = id;
+      return { id, created: true };
+    } finally {
+      creatingDraftRef.current = null;
+    }
+  };
+
   const save = useMutation({
     mutationFn: async (patch: Partial<Task>) => {
       if (!task) return;
+      if (isLocalDraft) {
+        const { id, created } = await createDraftRecord(patch);
+        if (created) return;
+        const { error } = await supabase.from("tasks").update(patch).eq("id", id);
+        if (error) throw error;
+        return;
+      }
       const { error } = await supabase.from("tasks").update(patch).eq("id", task.id);
       if (error) throw error;
     },
@@ -413,7 +481,8 @@ export function TaskModal({ task, onClose }: { task: Task | null; onClose: () =>
   const removeTask = useMutation({
     mutationFn: async () => {
       if (!task) return;
-      const { error } = await supabase.from("tasks").delete().eq("id", task.id);
+      if (isLocalDraft && !persistedDraftIdRef.current) return;
+      const { error } = await supabase.from("tasks").delete().eq("id", persistedDraftIdRef.current ?? task.id);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -432,20 +501,22 @@ export function TaskModal({ task, onClose }: { task: Task | null; onClose: () =>
       if (!billingEnabled) throw new Error("Ative a chave de faturamento nesta tarefa");
       const value = billingValue ? Number(billingValue) : 0;
       if (!value || value <= 0) throw new Error("Defina um valor de faturamento primeiro");
+      const persistedTaskId = isLocalDraft ? (await createDraftRecord({})).id : task.id;
       const { data: profile } = await supabase.from("profiles").select("organization_id").maybeSingle();
       if (!profile?.organization_id) throw new Error("Sem organização");
-      let resolvedClient: string | null = task.client_id ?? null;
-      if (!resolvedClient && task.project_id) {
-        const { data: proj } = await supabase.from("projects").select("client_id").eq("id", task.project_id).maybeSingle();
+      const resolvedProjectId = projectId || task.project_id || null;
+      let resolvedClient: string | null = clientId || task.client_id || null;
+      if (!resolvedClient && resolvedProjectId) {
+        const { data: proj } = await supabase.from("projects").select("client_id").eq("id", resolvedProjectId).maybeSingle();
         resolvedClient = (proj?.client_id as string) ?? null;
       }
       const today = new Date().toISOString().slice(0, 10);
       const { error } = await supabase.from("charges").insert({
         organization_id: profile.organization_id,
-        project_id: task.project_id,
-        task_id: task.id,
+        project_id: resolvedProjectId,
+        task_id: persistedTaskId,
         client_id: resolvedClient,
-        description: `Tarefa: ${task.title}`,
+        description: `Tarefa: ${title.trim() || task.title || "Nova tarefa"}`,
         amount: value,
         status: "pending",
         due_date: today,
