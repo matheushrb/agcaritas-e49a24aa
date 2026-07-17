@@ -410,7 +410,7 @@ function TypeEditorPanel({ type, stages, onDelete, onDuplicate }:{
       </div>
 
       {/* Cor + ícone + defaults */}
-      <div className="grid grid-cols-1 sm:grid-cols-[auto_1fr_auto_auto] gap-3 items-end">
+      <div className="flex flex-wrap items-end gap-x-6 gap-y-4">
         <div className="space-y-1.5">
           <Label className="text-xs">Ícone</Label>
           <IconPicker
@@ -590,9 +590,14 @@ function AgencySuggestion({ onApply }: { onApply: (price: number) => void }) {
   const { data: pricing } = useAgencyPricing();
   const [open, setOpen] = useState(false);
   const [hours, setHours] = useState<string>("1");
-  const rate = pricing ? computeAgencyRate(pricing).suggested : 0;
+  const totals = pricing ? computeAgencyRate(pricing) : null;
+  const rate = totals?.suggested ?? 0;
+  const configured =
+    !!pricing &&
+    (pricing.fixed_costs.length > 0 || pricing.variable_costs.length > 0) &&
+    (pricing.billable_hours_month || 0) > 0;
   const suggested = Math.max(0, (Number(hours) || 0) * rate);
-  const BRL = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+  const BRL = (n: number) => (Number.isFinite(n) ? n : 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
@@ -600,17 +605,32 @@ function AgencySuggestion({ onApply }: { onApply: (price: number) => void }) {
           Preço sugerido
         </Button>
       </PopoverTrigger>
-      <PopoverContent align="end" className="w-72 rounded-xl p-3 space-y-3">
+      <PopoverContent align="end" className="w-80 rounded-xl p-3 space-y-3">
         <div>
           <div className="text-xs font-semibold">Sugestão pela agência</div>
           <p className="text-[11px] text-muted-foreground">
-            Baseado na hora sugerida configurada em <b>Precificação</b>.
+            Usa os custos, horas faturáveis e margem definidos na aba <b>Precificação</b>.
           </p>
         </div>
-        <div className="flex items-center justify-between text-xs">
-          <span className="text-muted-foreground">Hora da agência</span>
-          <span className="tabular-nums font-medium">{BRL(rate)}</span>
-        </div>
+
+        {!configured ? (
+          <div className="rounded-lg border border-dashed p-3 text-[11px] text-muted-foreground space-y-1">
+            <div className="font-medium text-foreground">Precificação ainda não configurada</div>
+            <p>Cadastre custos fixos, variáveis, horas faturáveis por mês e margem de lucro para o sistema calcular a hora da agência.</p>
+            <p>Vá em <b>Configurações → Precificação</b> e volte aqui.</p>
+          </div>
+        ) : (
+          <div className="rounded-lg bg-muted/40 px-3 py-2 space-y-1 text-[11px]">
+            <Row label="Custos fixos / mês" value={BRL(totals!.fixed)} />
+            <Row label="Custos variáveis / mês" value={BRL(totals!.variable)} />
+            <Row label="Horas faturáveis / mês" value={`${totals!.hours}h`} />
+            <Row label="Custo por hora" value={BRL(totals!.costPerHour)} />
+            <Row label={`Margem (${pricing!.profit_margin_pct}%) + impostos (${pricing!.tax_pct}%)`} value="" />
+            <div className="h-px bg-border my-1" />
+            <Row label="Hora da agência" value={BRL(rate)} strong />
+          </div>
+        )}
+
         <div className="space-y-1">
           <Label className="text-xs">Horas estimadas por tarefa</Label>
           <Input
@@ -629,7 +649,7 @@ function AgencySuggestion({ onApply }: { onApply: (price: number) => void }) {
           <Button
             size="sm"
             className="rounded-full"
-            disabled={!rate || !suggested}
+            disabled={!configured || !rate || !suggested}
             onClick={() => { onApply(Number(suggested.toFixed(2))); setOpen(false); }}
           >
             Aplicar
@@ -637,5 +657,14 @@ function AgencySuggestion({ onApply }: { onApply: (price: number) => void }) {
         </div>
       </PopoverContent>
     </Popover>
+  );
+}
+
+function Row({ label, value, strong }: { label: string; value: string; strong?: boolean }) {
+  return (
+    <div className="flex items-center justify-between">
+      <span className="text-muted-foreground">{label}</span>
+      <span className={strong ? "font-semibold tabular-nums" : "tabular-nums"}>{value}</span>
+    </div>
   );
 }
