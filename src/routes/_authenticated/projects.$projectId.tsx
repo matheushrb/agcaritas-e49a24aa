@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { TaskModal } from "./tasks";
 
 export const Route = createFileRoute("/_authenticated/projects/$projectId")({
   component: ProjectDetail,
@@ -46,11 +47,19 @@ type Project = {
 type Task = {
   id: string;
   title: string;
+  description: string | null;
   status: "todo" | "in_progress" | "review" | "done";
   priority: "low" | "medium" | "high";
   due_date: string | null;
   billing_value: number | null;
+  billing_model: "hourly" | "one_time" | "package" | "monthly" | null;
   project_id: string | null;
+  assignee_id: string | null;
+  platform: string | null;
+  delivery_type: string | null;
+  estimated_hours: number | null;
+  progress: number;
+  created_at?: string;
 };
 type Charge = {
   id: string;
@@ -117,7 +126,7 @@ function ProjectDetail() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("tasks")
-        .select("id,title,status,priority,due_date,billing_value,project_id")
+        .select("id,title,description,status,priority,due_date,billing_value,billing_model,project_id,assignee_id,platform,delivery_type,estimated_hours,progress,created_at")
         .eq("project_id", projectId)
         .order("created_at", { ascending: false });
       if (error) throw error;
@@ -158,22 +167,27 @@ function ProjectDetail() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
+  const selectedTask = tasks.find(t => t.id === selectedTaskId) ?? null;
+
   const addTask = useMutation({
     mutationFn: async (title: string) => {
       const { data: profile } = await supabase.from("profiles").select("organization_id").maybeSingle();
       if (!profile?.organization_id) throw new Error("Sem organização");
-      const { error } = await supabase.from("tasks").insert({
+      const { data, error } = await supabase.from("tasks").insert({
         title,
         status: "todo",
         priority: "medium",
         project_id: projectId,
         organization_id: profile.organization_id,
-      });
+      }).select("id").single();
       if (error) throw error;
+      return data.id as string;
     },
-    onSuccess: () => {
+    onSuccess: (id: string) => {
       qc.invalidateQueries({ queryKey: ["project-tasks", projectId] });
       qc.invalidateQueries({ queryKey: ["tasks"] });
+      setSelectedTaskId(id);
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -248,7 +262,13 @@ function ProjectDetail() {
         </div>
 
         <TabsContent value="tasks" className="mt-4">
-          <TasksTab tasks={tasks} onAdd={(t) => addTask.mutate(t)} pending={addTask.isPending} />
+          <TasksTab
+            tasks={tasks}
+            onAdd={(t) => addTask.mutate(t)}
+            onOpen={(id) => setSelectedTaskId(id)}
+            onQuickCreate={() => addTask.mutate("Nova tarefa")}
+            pending={addTask.isPending}
+          />
         </TabsContent>
 
         <TabsContent value="docs" className="mt-4">
@@ -307,6 +327,8 @@ function ProjectDetail() {
           <FinanceTab charges={charges} />
         </TabsContent>
       </Tabs>
+
+      <TaskModal task={selectedTask} onClose={() => setSelectedTaskId(null)} />
     </div>
   );
 }
@@ -320,7 +342,15 @@ function Kpi({ label, value, tone = "default" }: { label: string; value: string;
   );
 }
 
-function TasksTab({ tasks, onAdd, pending }: { tasks: Task[]; onAdd: (title: string) => void; pending: boolean }) {
+function TasksTab({
+  tasks, onAdd, onOpen, onQuickCreate, pending,
+}: {
+  tasks: Task[];
+  onAdd: (title: string) => void;
+  onOpen: (id: string) => void;
+  onQuickCreate: () => void;
+  pending: boolean;
+}) {
   const [draft, setDraft] = useState("");
   const submit = () => {
     const t = draft.trim();
@@ -329,46 +359,68 @@ function TasksTab({ tasks, onAdd, pending }: { tasks: Task[]; onAdd: (title: str
     setDraft("");
   };
   return (
-    <Card className="rounded-2xl overflow-hidden">
-      <ul className="divide-y divide-border">
-        {tasks.length === 0 && (
-          <li className="px-4 py-8 text-center text-sm text-muted-foreground">
-            Nenhuma tarefa neste projeto ainda.
-          </li>
-        )}
-        {tasks.map(t => {
-          const overdue = t.due_date && new Date(t.due_date) < new Date() && t.status !== "done";
-          return (
-            <li key={t.id} className="px-4 py-3 flex items-center gap-3 hover:bg-muted/40">
-              <Flag className={cn("h-3.5 w-3.5 shrink-0", PRIORITY_COLOR[t.priority])} />
-              <div className="min-w-0 flex-1">
-                <div className="truncate text-sm font-medium">{t.title}</div>
-              </div>
-              <Badge className={cn("rounded-full", TASK_STATUS[t.status].color)}>{TASK_STATUS[t.status].label}</Badge>
-              {t.billing_value && t.billing_value > 0 && (
-                <Badge variant="outline" className="rounded-full gap-1"><Zap className="h-3 w-3" />R$ {t.billing_value.toLocaleString("pt-BR")}</Badge>
-              )}
-              {t.due_date && (
-                <span className={cn("text-xs shrink-0 w-14 text-right", overdue ? "text-red-600 dark:text-red-400 font-medium" : "text-muted-foreground")}>
-                  {new Date(t.due_date).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })}
-                </span>
-              )}
+    <div className="space-y-3">
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-sm text-muted-foreground">Clique em uma tarefa para editar, definir valor e faturar.</p>
+        <Button className="rounded-full gap-1.5" onClick={onQuickCreate} disabled={pending}>
+          <Plus className="h-4 w-4" /> Nova tarefa
+        </Button>
+      </div>
+
+      <Card className="rounded-2xl overflow-hidden">
+        <ul className="divide-y divide-border">
+          {tasks.length === 0 && (
+            <li className="px-6 py-12 text-center space-y-3">
+              <div className="text-sm font-medium">Nenhuma tarefa neste projeto ainda</div>
+              <p className="text-xs text-muted-foreground max-w-sm mx-auto">
+                Crie a primeira tarefa, defina o valor de faturamento e depois clique em <strong>Faturar</strong> para lançar no Financeiro.
+              </p>
+              <Button className="rounded-full gap-1.5" onClick={onQuickCreate} disabled={pending}>
+                <Plus className="h-4 w-4" /> Criar primeira tarefa
+              </Button>
             </li>
-          );
-        })}
-        <li className="px-4 py-2 flex items-center gap-2">
-          <Plus className="h-4 w-4 text-muted-foreground" />
-          <input
-            value={draft}
-            onChange={e => setDraft(e.target.value)}
-            onKeyDown={e => { if (e.key === "Enter") submit(); }}
-            disabled={pending}
-            placeholder="Adicionar tarefa ao projeto..."
-            className="flex-1 bg-transparent outline-none text-sm placeholder:text-muted-foreground py-1"
-          />
-        </li>
-      </ul>
-    </Card>
+          )}
+          {tasks.map(t => {
+            const overdue = t.due_date && new Date(t.due_date) < new Date() && t.status !== "done";
+            return (
+              <li key={t.id}>
+                <button
+                  onClick={() => onOpen(t.id)}
+                  className="w-full text-left px-4 py-3 flex items-center gap-3 hover:bg-muted/40"
+                >
+                  <Flag className={cn("h-3.5 w-3.5 shrink-0", PRIORITY_COLOR[t.priority])} />
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate text-sm font-medium">{t.title}</div>
+                  </div>
+                  <Badge className={cn("rounded-full", TASK_STATUS[t.status].color)}>{TASK_STATUS[t.status].label}</Badge>
+                  {t.billing_value && t.billing_value > 0 ? (
+                    <Badge variant="outline" className="rounded-full gap-1"><Zap className="h-3 w-3" />R$ {t.billing_value.toLocaleString("pt-BR")}</Badge>
+                  ) : (
+                    <Badge variant="outline" className="rounded-full text-muted-foreground">Sem valor</Badge>
+                  )}
+                  {t.due_date && (
+                    <span className={cn("text-xs shrink-0 w-14 text-right", overdue ? "text-red-600 dark:text-red-400 font-medium" : "text-muted-foreground")}>
+                      {new Date(t.due_date).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })}
+                    </span>
+                  )}
+                </button>
+              </li>
+            );
+          })}
+          <li className="px-4 py-2 flex items-center gap-2">
+            <Plus className="h-4 w-4 text-muted-foreground" />
+            <input
+              value={draft}
+              onChange={e => setDraft(e.target.value)}
+              onKeyDown={e => { if (e.key === "Enter") submit(); }}
+              disabled={pending}
+              placeholder="Digite um título e pressione Enter…"
+              className="flex-1 bg-transparent outline-none text-sm placeholder:text-muted-foreground py-1"
+            />
+          </li>
+        </ul>
+      </Card>
+    </div>
   );
 }
 
