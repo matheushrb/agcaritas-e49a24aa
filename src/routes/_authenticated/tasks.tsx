@@ -620,8 +620,31 @@ export function TaskModal({
     return () => window.removeEventListener("keydown", onKey);
   }, [task, mode, onClose]);
 
+  // Progresso automático: subtarefas concluídas + etapas passadas ÷ total
+  const computedProgress = useMemo(() => {
+    const total = subtasks.length + STAGE_ORDER.length;
+    if (total === 0) return 0;
+    const stagesDone = status === "done" ? STAGE_ORDER.length : Math.max(0, STAGE_ORDER.indexOf(stage));
+    const subDone = subtasks.filter(s => s.done).length;
+    return Math.round(((subDone + stagesDone) / total) * 100);
+  }, [subtasks, stage, status]);
+
+  const lastProgressRef = useRef<number | null>(null);
+  useEffect(() => {
+    if (!task) return;
+    if (lastProgressRef.current === computedProgress) return;
+    lastProgressRef.current = computedProgress;
+    if (progress !== computedProgress) setProgress(computedProgress);
+    if (!isLocalDraft || persistedDraftIdRef.current) {
+      save.mutate({ progress: computedProgress });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [computedProgress, task?.id]);
+
   if (!task) return null;
   const overdue = dueDate && new Date(dueDate) < new Date() && status !== "done";
+  const subtasksDone = subtasks.filter(s => s.done).length;
+  const stagesDoneCount = status === "done" ? STAGE_ORDER.length : Math.max(0, STAGE_ORDER.indexOf(stage));
 
   // Minimized pill
   if (mode === "minimized") {
