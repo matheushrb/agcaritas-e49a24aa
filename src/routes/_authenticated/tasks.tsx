@@ -27,6 +27,7 @@ export const Route = createFileRoute("/_authenticated/tasks")({
 type TaskStatus = "todo" | "in_progress" | "review" | "done";
 type TaskPriority = "low" | "medium" | "high";
 type BillingModel = "hourly" | "one_time" | "package" | "monthly";
+type TaskStage = "briefing" | "creation" | "review" | "approval" | "delivery";
 
 type Task = {
   id: string;
@@ -44,6 +45,7 @@ type Task = {
   platform: string | null;
   delivery_type: string | null;
   estimated_hours: number | null;
+  stage: TaskStage;
   created_at?: string;
 };
 
@@ -76,7 +78,7 @@ function TasksPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("tasks")
-        .select("id,title,description,status,priority,project_id,client_id,assignee_id,due_date,billing_model,billing_value,progress,platform,delivery_type,estimated_hours,created_at")
+        .select("id,title,description,status,priority,project_id,client_id,assignee_id,due_date,billing_model,billing_value,progress,platform,delivery_type,estimated_hours,stage,created_at")
         .order("created_at", { ascending: false });
       if (error) throw error;
       return (data ?? []) as Task[];
@@ -329,6 +331,7 @@ export function TaskModal({ task, onClose }: { task: Task | null; onClose: () =>
   const [estimatedHours, setEstimatedHours] = useState<string>("");
   const [platform, setPlatform] = useState<string>("");
   const [deliveryType, setDeliveryType] = useState<string>("");
+  const [stage, setStage] = useState<TaskStage>("creation");
   const [progress, setProgress] = useState<number>(0);
   const [projectId, setProjectId] = useState<string>("");
   const [clientId, setClientId] = useState<string>("");
@@ -360,6 +363,7 @@ export function TaskModal({ task, onClose }: { task: Task | null; onClose: () =>
     setEstimatedHours(task.estimated_hours?.toString() ?? "");
     setPlatform(task.platform ?? "");
     setDeliveryType(task.delivery_type ?? "");
+    setStage(task.stage ?? "creation");
     setProgress(task.progress ?? 0);
     setProjectId(task.project_id ?? "");
     setClientId(task.client_id ?? "");
@@ -515,96 +519,68 @@ export function TaskModal({ task, onClose }: { task: Task | null; onClose: () =>
                 />
 
                 {/* Propriedades — estilo ClickUp / Monday / Notion (inline, sem cards) */}
-                <div className="space-y-2">
-                  <div className="flex flex-wrap items-center gap-1">
-                    <InlineField label="Status">
-                      <StatusPicker value={status} onChange={v => { setStatus(v); save.mutate({ status: v }); }} inline />
-                    </InlineField>
-                    <InlineField label="Prioridade">
-                      <PriorityPicker value={priority} onChange={v => { setPriority(v); save.mutate({ priority: v }); }} inline />
-                    </InlineField>
-                    <InlineField label="Prazo">
-                      <DatePicker value={dueDate} overdue={!!overdue} onChange={v => { setDueDate(v); save.mutate({ due_date: v || null }); }} inline />
-                    </InlineField>
-                    <InlineField label="Progresso">
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <button className="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium hover:bg-muted transition-colors">
-                            <div className="h-1.5 w-8 rounded-full bg-muted overflow-hidden">
-                              <div className="h-full bg-primary rounded-full" style={{ width: `${progress}%` }} />
-                            </div>
-                            <span className="tabular-nums">{progress}%</span>
-                          </button>
-                        </PopoverTrigger>
-                        <PopoverContent align="start" className="p-3 w-56 rounded-xl">
-                          <div className="space-y-2">
-                            <div className="flex items-center justify-between text-xs text-muted-foreground">
-                              <span>Progresso</span>
-                              <span className="tabular-nums">{progress}%</span>
-                            </div>
-                            <input
-                              type="range" min={0} max={100} step={5}
-                              value={progress}
-                              onChange={e => setProgress(Number(e.target.value))}
-                              onMouseUp={() => save.mutate({ progress })}
-                              onTouchEnd={() => save.mutate({ progress })}
-                              className="w-full accent-primary"
-                            />
+                <div className="flex flex-wrap items-center gap-1">
+                  <InlineField label="Status">
+                    <StatusPicker value={status} onChange={v => { setStatus(v); save.mutate({ status: v }); }} inline />
+                  </InlineField>
+                  <InlineField label="Prioridade">
+                    <PriorityPicker value={priority} onChange={v => { setPriority(v); save.mutate({ priority: v }); }} inline />
+                  </InlineField>
+                  <InlineField label="Prazo">
+                    <DatePicker value={dueDate} overdue={!!overdue} onChange={v => { setDueDate(v); save.mutate({ due_date: v || null }); }} inline />
+                  </InlineField>
+                  <InlineField label="Progresso">
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <button className="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium hover:bg-muted transition-colors">
+                          <div className="h-1.5 w-8 rounded-full bg-muted overflow-hidden">
+                            <div className="h-full bg-primary rounded-full" style={{ width: `${progress}%` }} />
                           </div>
-                        </PopoverContent>
-                      </Popover>
-                    </InlineField>
-                  </div>
-
-                  <div className="flex flex-wrap items-center gap-1">
-                    <InlineField label="Plataforma">
-                      <Select value={platform || "none"} onValueChange={v => { const nv = v === "none" ? "" : v; setPlatform(nv); save.mutate({ platform: nv || null }); }}>
-                        <SelectTrigger className="h-7 border-none bg-transparent hover:bg-muted rounded-md px-2 py-1 text-xs shadow-none focus:ring-0 gap-1">
-                          <SelectValue placeholder="—" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="none">—</SelectItem>
-                          <SelectItem value="instagram">Instagram</SelectItem>
-                          <SelectItem value="tiktok">TikTok</SelectItem>
-                          <SelectItem value="youtube">YouTube</SelectItem>
-                          <SelectItem value="meta_ads">Meta Ads</SelectItem>
-                          <SelectItem value="google_ads">Google Ads</SelectItem>
-                          <SelectItem value="site">Site / Blog</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </InlineField>
-                    <InlineField label="Tipo">
-                      <Select value={deliveryType || "none"} onValueChange={v => { const nv = v === "none" ? "" : v; setDeliveryType(nv); save.mutate({ delivery_type: nv || null }); }}>
-                        <SelectTrigger className="h-7 border-none bg-transparent hover:bg-muted rounded-md px-2 py-1 text-xs shadow-none focus:ring-0 gap-1">
-                          <SelectValue placeholder="—" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="none">—</SelectItem>
-                          <SelectItem value="post">Post</SelectItem>
-                          <SelectItem value="reels">Reels</SelectItem>
-                          <SelectItem value="story">Story</SelectItem>
-                          <SelectItem value="carrossel">Carrossel</SelectItem>
-                          <SelectItem value="video">Vídeo</SelectItem>
-                          <SelectItem value="arte">Arte</SelectItem>
-                          <SelectItem value="copy">Copy</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </InlineField>
-                    <InlineField label="Estimativa">
-                      <div className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs hover:bg-muted transition-colors">
-                        <Input
-                          type="number" min={0} step={0.5}
-                          value={estimatedHours}
-                          onChange={e => setEstimatedHours(e.target.value)}
-                          onBlur={() => save.mutate({ estimated_hours: estimatedHours ? Number(estimatedHours) : null })}
-                          className="h-6 w-14 border-none bg-transparent p-0 text-xs text-right shadow-none focus-visible:ring-0"
-                          placeholder="0"
-                        />
-                        <span className="text-muted-foreground">h</span>
-                      </div>
-                    </InlineField>
-                  </div>
+                          <span className="tabular-nums">{progress}%</span>
+                        </button>
+                      </PopoverTrigger>
+                      <PopoverContent align="start" className="p-3 w-56 rounded-xl">
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between text-xs text-muted-foreground">
+                            <span>Progresso</span>
+                            <span className="tabular-nums">{progress}%</span>
+                          </div>
+                          <input
+                            type="range" min={0} max={100} step={5}
+                            value={progress}
+                            onChange={e => setProgress(Number(e.target.value))}
+                            onMouseUp={() => save.mutate({ progress })}
+                            onTouchEnd={() => save.mutate({ progress })}
+                            className="w-full accent-primary"
+                          />
+                        </div>
+                      </PopoverContent>
+                    </Popover>
+                  </InlineField>
+                  <InlineField label="Estimativa">
+                    <div className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs hover:bg-muted transition-colors">
+                      <Input
+                        type="number" min={0} step={0.5}
+                        value={estimatedHours}
+                        onChange={e => setEstimatedHours(e.target.value)}
+                        onBlur={() => save.mutate({ estimated_hours: estimatedHours ? Number(estimatedHours) : null })}
+                        className="h-6 w-14 border-none bg-transparent p-0 text-xs text-right shadow-none focus-visible:ring-0"
+                        placeholder="0"
+                      />
+                      <span className="text-muted-foreground">h</span>
+                    </div>
+                  </InlineField>
                 </div>
+
+                {/* Etapa da tarefa — inspiração no workflow de produção de conteúdo */}
+                <TaskStageSection
+                  stage={stage}
+                  onStageChange={v => { setStage(v); save.mutate({ stage: v }); }}
+                  platform={platform}
+                  onPlatformChange={v => { setPlatform(v); save.mutate({ platform: v || null }); }}
+                  deliveryType={deliveryType}
+                  onDeliveryTypeChange={v => { setDeliveryType(v); save.mutate({ delivery_type: v || null }); }}
+                />
 
                 <div>
                   <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Descrição</label>
@@ -778,6 +754,116 @@ function InlineField({ label, children }: { label: string; children: React.React
     <div className="inline-flex items-center gap-1.5 text-xs">
       <span className="text-muted-foreground whitespace-nowrap">{label}</span>
       {children}
+    </div>
+  );
+}
+
+const STAGE_ORDER: TaskStage[] = ["briefing", "creation", "review", "approval", "delivery"];
+const STAGE_META: Record<TaskStage, { label: string; tone: "slate" | "blue" | "amber" | "emerald" | "purple" }> = {
+  briefing: { label: "Briefing", tone: "slate" },
+  creation: { label: "Criação", tone: "blue" },
+  review:   { label: "Revisão", tone: "amber" },
+  approval: { label: "Aprovação", tone: "purple" },
+  delivery: { label: "Entrega", tone: "emerald" },
+};
+const TONE_STYLES: Record<string, { bg: string; text: string; border: string; dot: string }> = {
+  slate:   { bg: "bg-slate-500/10", text: "text-slate-600 dark:text-slate-400", border: "border-slate-500/20", dot: "bg-slate-500" },
+  blue:    { bg: "bg-blue-500/10",  text: "text-blue-600 dark:text-blue-400",  border: "border-blue-500/20",  dot: "bg-blue-500" },
+  amber:   { bg: "bg-amber-500/10", text: "text-amber-600 dark:text-amber-400", border: "border-amber-500/20", dot: "bg-amber-500" },
+  purple:  { bg: "bg-purple-500/10",text: "text-purple-600 dark:text-purple-400",border: "border-purple-500/20",dot: "bg-purple-500" },
+  emerald: { bg: "bg-emerald-500/10",text: "text-emerald-600 dark:text-emerald-400",border: "border-emerald-500/20",dot: "bg-emerald-500" },
+};
+
+function TaskStageSection({
+  stage, onStageChange,
+  platform, onPlatformChange,
+  deliveryType, onDeliveryTypeChange,
+}: {
+  stage: TaskStage;
+  onStageChange: (v: TaskStage) => void;
+  platform: string;
+  onPlatformChange: (v: string) => void;
+  deliveryType: string;
+  onDeliveryTypeChange: (v: string) => void;
+}) {
+  const currentIndex = STAGE_ORDER.indexOf(stage);
+  return (
+    <div className="rounded-2xl border border-border bg-card p-4 space-y-3">
+      <div className="flex items-center gap-2">
+        <ListChecks className="h-3.5 w-3.5 text-muted-foreground" />
+        <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Etapa da tarefa</span>
+      </div>
+
+      {/* Timeline */}
+      <div className="flex items-center gap-1 overflow-x-auto pb-1">
+        {STAGE_ORDER.map((s, i) => {
+          const meta = STAGE_META[s];
+          const tone = TONE_STYLES[meta.tone];
+          const isCurrent = s === stage;
+          const isPast = i < currentIndex;
+          return (
+            <button
+              key={s}
+              onClick={() => onStageChange(s)}
+              className={cn(
+                "shrink-0 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium transition-colors border",
+                isCurrent && [tone.bg, tone.text, tone.border],
+                !isCurrent && !isPast && "border-transparent text-muted-foreground hover:bg-muted",
+                isPast && !isCurrent && "border-transparent text-emerald-600 dark:text-emerald-400 bg-emerald-500/10"
+              )}
+            >
+              {isPast && !isCurrent ? (
+                <Check className="h-3 w-3" />
+              ) : (
+                <span className={cn("h-1.5 w-1.5 rounded-full", isCurrent ? tone.dot : "bg-muted-foreground/50")} />
+              )}
+              {meta.label}
+              {i < STAGE_ORDER.length - 1 && <ChevronRight className="h-3 w-3 text-muted-foreground/50" />}
+            </button>
+          );
+        })}
+      </div>
+
+      <p className="text-[11px] text-muted-foreground">
+        Avance a etapa para acompanhar onde a tarefa está no fluxo de produção. Plataforma e tipo definem o canal e formato da entrega.
+      </p>
+
+      {/* Contexto da etapa */}
+      <div className="flex flex-wrap items-center gap-2">
+        <InlineField label="Plataforma">
+          <Select value={platform || "none"} onValueChange={v => { onPlatformChange(v === "none" ? "" : v); }}>
+            <SelectTrigger className="h-7 border-none bg-transparent hover:bg-muted rounded-md px-2 py-1 text-xs shadow-none focus:ring-0 gap-1">
+              <SelectValue placeholder="—" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">—</SelectItem>
+              <SelectItem value="instagram">Instagram</SelectItem>
+              <SelectItem value="tiktok">TikTok</SelectItem>
+              <SelectItem value="youtube">YouTube</SelectItem>
+              <SelectItem value="meta_ads">Meta Ads</SelectItem>
+              <SelectItem value="google_ads">Google Ads</SelectItem>
+              <SelectItem value="site">Site / Blog</SelectItem>
+            </SelectContent>
+          </Select>
+        </InlineField>
+        <InlineField label="Tipo">
+          <Select value={deliveryType || "none"} onValueChange={v => { onDeliveryTypeChange(v === "none" ? "" : v); }}>
+            <SelectTrigger className="h-7 border-none bg-transparent hover:bg-muted rounded-md px-2 py-1 text-xs shadow-none focus:ring-0 gap-1">
+              <SelectValue placeholder="—" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">—</SelectItem>
+              <SelectItem value="post">Post</SelectItem>
+              <SelectItem value="reels">Reels</SelectItem>
+              <SelectItem value="story">Story</SelectItem>
+              <SelectItem value="carrossel">Carrossel</SelectItem>
+              <SelectItem value="video">Vídeo</SelectItem>
+              <SelectItem value="arte">Arte</SelectItem>
+              <SelectItem value="copy">Copy</SelectItem>
+            </SelectContent>
+          </Select>
+        </InlineField>
+      </div>
     </div>
   );
 }
