@@ -168,6 +168,33 @@ function ProjectDetail() {
     },
   });
 
+  // Base tasks from the project's project_type
+  const { data: projectTypeRow } = useQuery({
+    queryKey: ["project-type-row", project?.project_type],
+    enabled: !!project?.project_type,
+    queryFn: async () => {
+      const key = project!.project_type!;
+      const { data } = await (supabase as any)
+        .from("project_types")
+        .select("id,slug,name,base_tasks")
+        .or(`slug.eq.${key},id.eq.${key}`)
+        .maybeSingle();
+      return data as { id: string; slug: string | null; name: string; base_tasks: { task_type_id: string }[] } | null;
+    },
+  });
+  const baseTaskTypeIds = (projectTypeRow?.base_tasks ?? []).map(b => b.task_type_id).filter(Boolean);
+  const { data: baseTaskTypes = [] } = useQuery({
+    queryKey: ["project-base-task-types", baseTaskTypeIds.join(",")],
+    enabled: baseTaskTypeIds.length > 0,
+    queryFn: async () => {
+      const { data } = await (supabase as any)
+        .from("task_types")
+        .select("id,name,color,icon,default_price,default_billing_model")
+        .in("id", baseTaskTypeIds);
+      return (data ?? []) as { id: string; name: string; color: string | null; icon: string | null; default_price: number | null; default_billing_model: string | null }[];
+    },
+  });
+
   const stats = useMemo(() => {
     const total = tasks.length;
     const now = new Date(); now.setHours(0, 0, 0, 0);
@@ -206,16 +233,21 @@ function ProjectDetail() {
   const [editOpen, setEditOpen] = useState(false);
 
   const addTask = useMutation({
-    mutationFn: async (title: string) => {
+    mutationFn: async (input: string | { title: string; task_type_id?: string | null; billing_model?: string | null; billing_value?: number | null }) => {
+      const payload = typeof input === "string" ? { title: input } : input;
       const { data: profile } = await supabase.from("profiles").select("organization_id").maybeSingle();
       if (!profile?.organization_id) throw new Error("Sem organização");
-      const { data, error } = await supabase.from("tasks").insert({
-        title,
+      const insert: any = {
+        title: payload.title,
         status: "todo",
         priority: "medium",
         project_id: projectId,
         organization_id: profile.organization_id,
-      }).select("id").single();
+      };
+      if (payload.task_type_id) insert.task_type_id = payload.task_type_id;
+      if (payload.billing_model) insert.billing_model = payload.billing_model;
+      if (payload.billing_value != null) insert.billing_value = payload.billing_value;
+      const { data, error } = await supabase.from("tasks").insert(insert).select("id").single();
       if (error) throw error;
       return data.id as string;
     },
@@ -371,12 +403,20 @@ function ProjectDetail() {
             <TabsContent value="tasks" className="mt-4">
               <TasksTab
                 tasks={tasks}
+                baseTaskTypes={baseTaskTypes}
                 onAdd={(t) => addTask.mutate(t)}
                 onOpen={(id) => setSelectedTaskId(id)}
                 onQuickCreate={() => addTask.mutate("Nova tarefa")}
+                onCreateFromBase={(bt) => addTask.mutate({
+                  title: bt.name,
+                  task_type_id: bt.id,
+                  billing_model: bt.default_billing_model,
+                  billing_value: bt.default_price,
+                })}
                 pending={addTask.isPending}
               />
             </TabsContent>
+
 
             <TabsContent value="docs" className="mt-4">
               <ComingSoon
@@ -468,13 +508,17 @@ function Kpi({ label, value, tone = "default" }: { label: string; value: string;
   );
 }
 
+type BaseTaskType = { id: string; name: string; color: string | null; icon: string | null; default_price: number | null; default_billing_model: string | null };
+
 function TasksTab({
-  tasks, onAdd, onOpen, onQuickCreate, pending,
+  tasks, baseTaskTypes, onAdd, onOpen, onQuickCreate, onCreateFromBase, pending,
 }: {
   tasks: Task[];
+  baseTaskTypes: BaseTaskType[];
   onAdd: (title: string) => void;
   onOpen: (id: string) => void;
   onQuickCreate: () => void;
+  onCreateFromBase: (bt: BaseTaskType) => void;
   pending: boolean;
 }) {
   const [draft, setDraft] = useState("");
@@ -492,6 +536,33 @@ function TasksTab({
           <Plus className="h-4 w-4" /> Nova tarefa
         </Button>
       </div>
+
+      {baseTaskTypes.length > 0 && (
+        <Card className="rounded-2xl p-3">
+          <div className="text-xs text-muted-foreground mb-2 px-1">Modelos deste tipo de projeto — clique para criar</div>
+          <div className="flex flex-wrap gap-2">
+            {baseTaskTypes.map(bt => (
+              <button
+                key={bt.id}
+                onClick={() => onCreateFromBase(bt)}
+                disabled={pending}
+                className="inline-flex items-center gap-2 rounded-full border border-border bg-background hover:bg-muted/60 px-3 py-1.5 text-xs font-medium transition disabled:opacity-50"
+                title={`Criar tarefa: ${bt.name}`}
+              >
+                <span
+                  className="inline-block h-2.5 w-2.5 rounded-full"
+                  style={{ backgroundColor: bt.color ?? "hsl(var(--primary))" }}
+                />
+                {bt.name}
+                {bt.default_price != null && bt.default_price > 0 && (
+                  <span className="text-muted-foreground">· R$ {Number(bt.default_price).toLocaleString("pt-BR")}</span>
+                )}
+              </button>
+            ))}
+          </div>
+        </Card>
+      )}
+
 
       <Card className="rounded-2xl overflow-hidden">
         <ul className="divide-y divide-border">
