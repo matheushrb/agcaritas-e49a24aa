@@ -7,9 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
-import { EntityDialog, DialogField, DialogCancelButton } from "@/components/entity-dialog";
-import { Search, Plus, Briefcase, Calendar, Users, FolderPlus } from "lucide-react";
+import { NewProjectWizard, type ProjectWizardValue } from "@/components/new-project-wizard";
+import { Search, Plus, Briefcase, Calendar, Users } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
