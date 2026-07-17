@@ -9,10 +9,11 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
-  Building2, Wrench, Share2, Workflow, TrendingUp, UserCog, Plug,
+  Building2, Wrench, Share2, Workflow, TrendingUp, UserCog, Plug, Zap,
 } from "lucide-react";
 import { toast } from "sonner";
 import { TaskTypesEditor } from "@/components/settings/task-types-editor";
+import { AutomationsTab } from "@/components/settings/automations-tab";
 
 export const Route = createFileRoute("/_authenticated/settings")({
   head: () => ({ meta: [{ title: "Configurações · Caritas" }] }),
@@ -24,6 +25,7 @@ const TABS = [
   { value: "services",     label: "Serviços",         icon: Wrench },
   { value: "platforms",    label: "Plataformas",      icon: Share2 },
   { value: "task-flows",   label: "Tipos de Tarefa",  icon: Workflow },
+  { value: "automations",  label: "Automações",       icon: Zap },
   { value: "crm-funnel",   label: "Funil CRM",        icon: TrendingUp },
   { value: "users",        label: "Usuários",         icon: UserCog },
   { value: "integrations", label: "Integrações",      icon: Plug },
@@ -55,6 +57,7 @@ function SettingsPage() {
         <TabsContent value="services" className="mt-4"><ComingSoonCard title="Serviços" hint="Catálogo de serviços (nome, valor base, descrição). Usado nas linhas de proposta." /></TabsContent>
         <TabsContent value="platforms" className="mt-4"><ComingSoonCard title="Plataformas" hint="Instagram, TikTok, YouTube etc. — regras de prazo de entrega por tipo e cor por plataforma." /></TabsContent>
         <TabsContent value="task-flows" className="mt-4"><TaskTypesEditor /></TabsContent>
+        <TabsContent value="automations" className="mt-4"><AutomationsTab /></TabsContent>
         <TabsContent value="crm-funnel" className="mt-4"><ComingSoonCard title="Funil CRM" hint="Etapas do pipeline com probabilidade padrão, ordem e flags ganho/perdido." /></TabsContent>
         <TabsContent value="users" className="mt-4"><UsersTab /></TabsContent>
         <TabsContent value="integrations" className="mt-4"><ComingSoonCard title="Integrações" hint="Buffer (token + profile IDs), Google Calendar (OAuth) — configuração centralizada." /></TabsContent>

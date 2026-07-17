@@ -23,6 +23,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useTaskTypes, useTaskTypeStages, type TaskTypeRow, type TaskTypeStageRow, type StatusGroup } from "@/lib/task-types";
 import { TaskTypeIcon } from "@/components/settings/icon-picker";
+import { useAutomationSettings, effectivePriority, DEFAULT_AUTOMATION_SETTINGS } from "@/lib/automation-settings";
 import { Link } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/_authenticated/tasks")({
@@ -30,7 +31,7 @@ export const Route = createFileRoute("/_authenticated/tasks")({
 });
 
 type TaskStatus = "todo" | "in_progress" | "review" | "done";
-type TaskPriority = "low" | "medium" | "high";
+type TaskPriority = "low" | "medium" | "high" | "urgent" | "critical";
 type BillingModel = "hourly" | "one_time" | "package" | "monthly" | "per_task";
 type TaskStage = "briefing" | "creation" | "review" | "approval" | "delivery";
 
@@ -83,9 +84,11 @@ const STATUS_META: Record<TaskStatus, { label: string; color: string; dot: strin
 const STATUS_ORDER: TaskStatus[] = ["todo", "in_progress", "review", "done"];
 
 const PRIORITY_META: Record<TaskPriority, { label: string; color: string; badge: string }> = {
-  low:    { label: "Baixa", color: "text-muted-foreground",                     badge: "bg-muted text-muted-foreground" },
-  medium: { label: "Média", color: "text-amber-600 dark:text-amber-400",        badge: "bg-amber-500/15 text-amber-600 dark:text-amber-400" },
-  high:   { label: "Alta",  color: "text-red-600 dark:text-red-400",            badge: "bg-red-500/15 text-red-600 dark:text-red-400" },
+  low:      { label: "Baixa",    color: "text-muted-foreground",                     badge: "bg-muted text-muted-foreground" },
+  medium:   { label: "Média",    color: "text-amber-600 dark:text-amber-400",        badge: "bg-amber-500/15 text-amber-600 dark:text-amber-400" },
+  high:     { label: "Alta",     color: "text-red-600 dark:text-red-400",            badge: "bg-red-500/15 text-red-600 dark:text-red-400" },
+  urgent:   { label: "Urgente",  color: "text-orange-600 dark:text-orange-400",      badge: "bg-orange-500/20 text-orange-700 dark:text-orange-300" },
+  critical: { label: "Crítica",  color: "text-red-700 dark:text-red-300",            badge: "bg-red-600/25 text-red-700 dark:text-red-200 font-semibold" },
 };
 
 function TasksPage() {
@@ -99,7 +102,10 @@ function TasksPage() {
   const [draftTask, setDraftTask] = useState<Task | null>(null);
   const [quickTitle, setQuickTitle] = useState<Record<string, string>>({});
 
-  const { data: tasks = [], isLoading } = useQuery<Task[]>({
+  const { data: automation } = useAutomationSettings();
+  const settings = automation?.settings ?? DEFAULT_AUTOMATION_SETTINGS;
+
+  const { data: rawTasks = [], isLoading } = useQuery<Task[]>({
     queryKey: ["tasks"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -110,6 +116,11 @@ function TasksPage() {
       return (data ?? []) as Task[];
     },
   });
+
+  const tasks = useMemo(() => rawTasks.map(t => {
+    const eff = effectivePriority(t, settings);
+    return eff.escalated ? { ...t, priority: eff.priority } as Task : t;
+  }), [rawTasks, settings]);
 
   const filtered = useMemo(() => {
     let arr = tasks;
@@ -203,6 +214,8 @@ function TasksPage() {
               <SelectTrigger className="w-[140px] rounded-full"><SelectValue placeholder="Prioridade" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todas prioridades</SelectItem>
+                <SelectItem value="critical">Crítica</SelectItem>
+                <SelectItem value="urgent">Urgente</SelectItem>
                 <SelectItem value="high">Alta</SelectItem>
                 <SelectItem value="medium">Média</SelectItem>
                 <SelectItem value="low">Baixa</SelectItem>
@@ -1669,7 +1682,7 @@ function PriorityPicker({ value, onChange, inline }: { value: TaskPriority; onCh
         </button>
       </PopoverTrigger>
       <PopoverContent align="end" className="p-1 w-40 rounded-xl">
-        {(["high", "medium", "low"] as TaskPriority[]).map(p => (
+        {(["critical", "urgent", "high", "medium", "low"] as TaskPriority[]).map(p => (
           <button
             key={p}
             onClick={() => onChange(p)}
