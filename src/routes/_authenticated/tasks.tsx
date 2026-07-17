@@ -758,6 +758,116 @@ function InlineField({ label, children }: { label: string; children: React.React
   );
 }
 
+const STAGE_ORDER: TaskStage[] = ["briefing", "creation", "review", "approval", "delivery"];
+const STAGE_META: Record<TaskStage, { label: string; tone: "slate" | "blue" | "amber" | "emerald" | "purple" }> = {
+  briefing: { label: "Briefing", tone: "slate" },
+  creation: { label: "Criação", tone: "blue" },
+  review:   { label: "Revisão", tone: "amber" },
+  approval: { label: "Aprovação", tone: "purple" },
+  delivery: { label: "Entrega", tone: "emerald" },
+};
+const TONE_STYLES: Record<string, { bg: string; text: string; border: string; dot: string }> = {
+  slate:   { bg: "bg-slate-500/10", text: "text-slate-600 dark:text-slate-400", border: "border-slate-500/20", dot: "bg-slate-500" },
+  blue:    { bg: "bg-blue-500/10",  text: "text-blue-600 dark:text-blue-400",  border: "border-blue-500/20",  dot: "bg-blue-500" },
+  amber:   { bg: "bg-amber-500/10", text: "text-amber-600 dark:text-amber-400", border: "border-amber-500/20", dot: "bg-amber-500" },
+  purple:  { bg: "bg-purple-500/10",text: "text-purple-600 dark:text-purple-400",border: "border-purple-500/20",dot: "bg-purple-500" },
+  emerald: { bg: "bg-emerald-500/10",text: "text-emerald-600 dark:text-emerald-400",border: "border-emerald-500/20",dot: "bg-emerald-500" },
+};
+
+function TaskStageSection({
+  stage, onStageChange,
+  platform, onPlatformChange,
+  deliveryType, onDeliveryTypeChange,
+}: {
+  stage: TaskStage;
+  onStageChange: (v: TaskStage) => void;
+  platform: string;
+  onPlatformChange: (v: string) => void;
+  deliveryType: string;
+  onDeliveryTypeChange: (v: string) => void;
+}) {
+  const currentIndex = STAGE_ORDER.indexOf(stage);
+  return (
+    <div className="rounded-2xl border border-border bg-card p-4 space-y-3">
+      <div className="flex items-center gap-2">
+        <ListChecks className="h-3.5 w-3.5 text-muted-foreground" />
+        <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Etapa da tarefa</span>
+      </div>
+
+      {/* Timeline */}
+      <div className="flex items-center gap-1 overflow-x-auto pb-1">
+        {STAGE_ORDER.map((s, i) => {
+          const meta = STAGE_META[s];
+          const tone = TONE_STYLES[meta.tone];
+          const isCurrent = s === stage;
+          const isPast = i < currentIndex;
+          return (
+            <button
+              key={s}
+              onClick={() => onStageChange(s)}
+              className={cn(
+                "shrink-0 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium transition-colors border",
+                isCurrent && [tone.bg, tone.text, tone.border],
+                !isCurrent && !isPast && "border-transparent text-muted-foreground hover:bg-muted",
+                isPast && !isCurrent && "border-transparent text-emerald-600 dark:text-emerald-400 bg-emerald-500/10"
+              )}
+            >
+              {isPast && !isCurrent ? (
+                <Check className="h-3 w-3" />
+              ) : (
+                <span className={cn("h-1.5 w-1.5 rounded-full", isCurrent ? tone.dot : "bg-muted-foreground/50")} />
+              )}
+              {meta.label}
+              {i < STAGE_ORDER.length - 1 && <ChevronRight className="h-3 w-3 text-muted-foreground/50" />}
+            </button>
+          );
+        })}
+      </div>
+
+      <p className="text-[11px] text-muted-foreground">
+        Avance a etapa para acompanhar onde a tarefa está no fluxo de produção. Plataforma e tipo definem o canal e formato da entrega.
+      </p>
+
+      {/* Contexto da etapa */}
+      <div className="flex flex-wrap items-center gap-2">
+        <InlineField label="Plataforma">
+          <Select value={platform || "none"} onValueChange={v => { onPlatformChange(v === "none" ? "" : v); }}>
+            <SelectTrigger className="h-7 border-none bg-transparent hover:bg-muted rounded-md px-2 py-1 text-xs shadow-none focus:ring-0 gap-1">
+              <SelectValue placeholder="—" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">—</SelectItem>
+              <SelectItem value="instagram">Instagram</SelectItem>
+              <SelectItem value="tiktok">TikTok</SelectItem>
+              <SelectItem value="youtube">YouTube</SelectItem>
+              <SelectItem value="meta_ads">Meta Ads</SelectItem>
+              <SelectItem value="google_ads">Google Ads</SelectItem>
+              <SelectItem value="site">Site / Blog</SelectItem>
+            </SelectContent>
+          </Select>
+        </InlineField>
+        <InlineField label="Tipo">
+          <Select value={deliveryType || "none"} onValueChange={v => { onDeliveryTypeChange(v === "none" ? "" : v); }}>
+            <SelectTrigger className="h-7 border-none bg-transparent hover:bg-muted rounded-md px-2 py-1 text-xs shadow-none focus:ring-0 gap-1">
+              <SelectValue placeholder="—" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">—</SelectItem>
+              <SelectItem value="post">Post</SelectItem>
+              <SelectItem value="reels">Reels</SelectItem>
+              <SelectItem value="story">Story</SelectItem>
+              <SelectItem value="carrossel">Carrossel</SelectItem>
+              <SelectItem value="video">Vídeo</SelectItem>
+              <SelectItem value="arte">Arte</SelectItem>
+              <SelectItem value="copy">Copy</SelectItem>
+            </SelectContent>
+          </Select>
+        </InlineField>
+      </div>
+    </div>
+  );
+}
+
 /* ---------- Sidebar helpers ---------- */
 function SidebarSection({ title, children }: { title: string; children: React.ReactNode }) {
   return (
