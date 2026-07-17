@@ -389,6 +389,7 @@ export function TaskModal({
   const [projectId, setProjectId] = useState<string>("");
   const [clientId, setClientId] = useState<string>("");
   const [billingEnabled, setBillingEnabled] = useState<boolean>(false);
+  const [deliverables, setDeliverables] = useState<Deliverable[]>([]);
   const persistedDraftIdRef = useRef<string | null>(null);
   const creatingDraftRef = useRef<Promise<string> | null>(null);
 
