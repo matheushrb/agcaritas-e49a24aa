@@ -44,6 +44,11 @@ type Project = {
   start_date: string | null;
   end_date: string | null;
   created_at: string;
+  has_content_calendar?: boolean;
+  has_content_grid?: boolean;
+  has_timeline?: boolean;
+  traffic_budget?: { enabled?: boolean; amount?: number | null; platforms?: string[] } | null;
+  scope_flags?: Record<string, unknown> | null;
 };
 type Task = {
   id: string;
@@ -214,7 +219,7 @@ function ProjectDetail() {
 
   const saveField = useMutation({
     mutationFn: async (patch: Partial<Project>) => {
-      const { error } = await supabase.from("projects").update(patch).eq("id", projectId);
+      const { error } = await supabase.from("projects").update(patch as never).eq("id", projectId);
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["project", projectId] }),
@@ -328,87 +333,111 @@ function ProjectDetail() {
       </div>
 
       {/* Tabs */}
-      <Tabs defaultValue="tasks">
-        <div className="overflow-x-auto">
-          <TabsList className="rounded-full bg-muted/60 h-auto flex-wrap">
-            <TabsTrigger value="tasks"     className="rounded-full gap-1.5"><CheckSquare className="h-4 w-4" />Tarefas</TabsTrigger>
-            <TabsTrigger value="docs"      className="rounded-full gap-1.5"><FileText className="h-4 w-4" />Documentos</TabsTrigger>
-            <TabsTrigger value="calendar"  className="rounded-full gap-1.5"><Calendar className="h-4 w-4" />Calendário</TabsTrigger>
-            <TabsTrigger value="grid"      className="rounded-full gap-1.5"><Grid3x3 className="h-4 w-4" />Grid</TabsTrigger>
-            <TabsTrigger value="timeline"  className="rounded-full gap-1.5"><TimerIcon className="h-4 w-4" />Timeline</TabsTrigger>
-            <TabsTrigger value="traffic"   className="rounded-full gap-1.5"><Megaphone className="h-4 w-4" />Tráfego</TabsTrigger>
-            <TabsTrigger value="strategy"  className="rounded-full gap-1.5"><Compass className="h-4 w-4" />Estratégia</TabsTrigger>
-            <TabsTrigger value="campaigns" className="rounded-full gap-1.5"><Rocket className="h-4 w-4" />Campanhas</TabsTrigger>
-            <TabsTrigger value="finance"   className="rounded-full gap-1.5"><DollarSign className="h-4 w-4" />Financeiro</TabsTrigger>
-          </TabsList>
-        </div>
+      {(() => {
+        const showCalendar = !!project.has_content_calendar;
+        const showGrid = !!project.has_content_grid;
+        const showTimeline = !!project.has_timeline;
+        const showTraffic = !!project.traffic_budget?.enabled;
+        const scope = (project.scope_flags ?? {}) as Record<string, unknown>;
+        const strategyKeys = ["swot", "personas", "competitors", "roadmap", "kpis", "action_plan"];
+        const showStrategy = strategyKeys.some((k) => !!scope[k]);
+        const showCampaigns = showTraffic;
+        return (
+          <Tabs defaultValue="tasks">
+            <div className="overflow-x-auto">
+              <TabsList className="rounded-full bg-muted/60 h-auto flex-wrap">
+                <TabsTrigger value="tasks"     className="rounded-full gap-1.5"><CheckSquare className="h-4 w-4" />Tarefas</TabsTrigger>
+                <TabsTrigger value="docs"      className="rounded-full gap-1.5"><FileText className="h-4 w-4" />Documentos</TabsTrigger>
+                {showCalendar && <TabsTrigger value="calendar"  className="rounded-full gap-1.5"><Calendar className="h-4 w-4" />Calendário</TabsTrigger>}
+                {showGrid && <TabsTrigger value="grid"      className="rounded-full gap-1.5"><Grid3x3 className="h-4 w-4" />Grid</TabsTrigger>}
+                {showTimeline && <TabsTrigger value="timeline"  className="rounded-full gap-1.5"><TimerIcon className="h-4 w-4" />Timeline</TabsTrigger>}
+                {showTraffic && <TabsTrigger value="traffic"   className="rounded-full gap-1.5"><Megaphone className="h-4 w-4" />Tráfego</TabsTrigger>}
+                {showStrategy && <TabsTrigger value="strategy"  className="rounded-full gap-1.5"><Compass className="h-4 w-4" />Estratégia</TabsTrigger>}
+                {showCampaigns && <TabsTrigger value="campaigns" className="rounded-full gap-1.5"><Rocket className="h-4 w-4" />Campanhas</TabsTrigger>}
+                <TabsTrigger value="finance"   className="rounded-full gap-1.5"><DollarSign className="h-4 w-4" />Financeiro</TabsTrigger>
+              </TabsList>
+            </div>
 
-        <TabsContent value="tasks" className="mt-4">
-          <TasksTab
-            tasks={tasks}
-            onAdd={(t) => addTask.mutate(t)}
-            onOpen={(id) => setSelectedTaskId(id)}
-            onQuickCreate={() => addTask.mutate("Nova tarefa")}
-            pending={addTask.isPending}
-          />
-        </TabsContent>
+            <TabsContent value="tasks" className="mt-4">
+              <TasksTab
+                tasks={tasks}
+                onAdd={(t) => addTask.mutate(t)}
+                onOpen={(id) => setSelectedTaskId(id)}
+                onQuickCreate={() => addTask.mutate("Nova tarefa")}
+                pending={addTask.isPending}
+              />
+            </TabsContent>
 
-        <TabsContent value="docs" className="mt-4">
-          <ComingSoon
-            icon={FileText}
-            title="Documentos"
-            description="Briefings, contratos, PDFs e anexos deste projeto ficarão aqui, com histórico de versões."
-          />
-        </TabsContent>
+            <TabsContent value="docs" className="mt-4">
+              <ComingSoon
+                icon={FileText}
+                title="Documentos"
+                description="Briefings, contratos, PDFs e anexos deste projeto ficarão aqui, com histórico de versões."
+              />
+            </TabsContent>
 
-        <TabsContent value="calendar" className="mt-4">
-          <ComingSoon
-            icon={Calendar}
-            title="Calendário de Conteúdo"
-            description="Grade mensal com peças de conteúdo por plataforma. Clique em um dia vazio para criar; clique em peça para editar."
-          />
-        </TabsContent>
+            {showCalendar && (
+              <TabsContent value="calendar" className="mt-4">
+                <ComingSoon
+                  icon={Calendar}
+                  title="Calendário de Conteúdo"
+                  description="Grade mensal com peças de conteúdo por plataforma. Clique em um dia vazio para criar; clique em peça para editar."
+                />
+              </TabsContent>
+            )}
 
-        <TabsContent value="grid" className="mt-4">
-          <ComingSoon
-            icon={Grid3x3}
-            title="Grid de Conteúdo"
-            description="Prévia visual do feed (Instagram, TikTok, LinkedIn). Arraste peças para reordenar."
-          />
-        </TabsContent>
+            {showGrid && (
+              <TabsContent value="grid" className="mt-4">
+                <ComingSoon
+                  icon={Grid3x3}
+                  title="Grid de Conteúdo"
+                  description="Prévia visual do feed (Instagram, TikTok, LinkedIn). Arraste peças para reordenar."
+                />
+              </TabsContent>
+            )}
 
-        <TabsContent value="timeline" className="mt-4">
-          <ComingSoon
-            icon={TimerIcon}
-            title="Timeline"
-            description="Roadmap do projeto por fases, com marcos e entregas."
-          />
-        </TabsContent>
+            {showTimeline && (
+              <TabsContent value="timeline" className="mt-4">
+                <ComingSoon
+                  icon={TimerIcon}
+                  title="Timeline"
+                  description="Roadmap do projeto por fases, com marcos e entregas."
+                />
+              </TabsContent>
+            )}
 
-        <TabsContent value="traffic" className="mt-4">
-          <ComingSoon
-            icon={Megaphone}
-            title="Tráfego Pago"
-            description="Campanhas ativas, orçamento, CPA, ROAS e criativos vinculados ao projeto."
-          />
-        </TabsContent>
+            {showTraffic && (
+              <TabsContent value="traffic" className="mt-4">
+                <ComingSoon
+                  icon={Megaphone}
+                  title="Tráfego Pago"
+                  description="Campanhas ativas, orçamento, CPA, ROAS e criativos vinculados ao projeto."
+                />
+              </TabsContent>
+            )}
 
-        <TabsContent value="strategy" className="mt-4">
-          <StrategyTab description={project.description ?? ""} onSave={(d) => saveField.mutate({ description: d })} />
-        </TabsContent>
+            {showStrategy && (
+              <TabsContent value="strategy" className="mt-4">
+                <StrategyTab description={project.description ?? ""} onSave={(d) => saveField.mutate({ description: d })} />
+              </TabsContent>
+            )}
 
-        <TabsContent value="campaigns" className="mt-4">
-          <ComingSoon
-            icon={Rocket}
-            title="Campanhas"
-            description="Lançamentos e campanhas específicas dentro do projeto, com objetivo, período e KPI."
-          />
-        </TabsContent>
+            {showCampaigns && (
+              <TabsContent value="campaigns" className="mt-4">
+                <ComingSoon
+                  icon={Rocket}
+                  title="Campanhas"
+                  description="Lançamentos e campanhas específicas dentro do projeto, com objetivo, período e KPI."
+                />
+              </TabsContent>
+            )}
 
-        <TabsContent value="finance" className="mt-4">
-          <FinanceTab charges={charges} />
-        </TabsContent>
-      </Tabs>
+            <TabsContent value="finance" className="mt-4">
+              <FinanceTab charges={charges} />
+            </TabsContent>
+          </Tabs>
+        );
+      })()}
 
       <TaskModal task={selectedTask} onClose={() => setSelectedTaskId(null)} />
     </div>
