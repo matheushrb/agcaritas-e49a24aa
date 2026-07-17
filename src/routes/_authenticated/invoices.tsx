@@ -197,12 +197,16 @@ function NewInvoiceWizard({
       const { data } = await supabase
         .from("tasks")
         .select("id,title,billing_value,billing_enabled,client_id,project_id,status")
-        .eq("billing_enabled", true)
-        .eq("status", "done");
+        .eq("billing_enabled", true);
       const ts = (data ?? []) as BillableTask[];
-      // Tasks that already have any charge are considered billed already
-      const { data: chargedTaskIds } = await supabase.from("charges").select("task_id").not("task_id", "is", null);
-      const set = new Set((chargedTaskIds ?? []).map(r => r.task_id as string));
+      // Só ocultamos tarefas cujo valor principal (charge sem deliverable_id) já foi faturado.
+      // Cobranças de entregáveis não bloqueiam — permitem faturar o principal antes e entregáveis depois (e vice-versa).
+      const { data: mainCharges } = await supabase
+        .from("charges")
+        .select("task_id")
+        .not("task_id", "is", null)
+        .is("deliverable_id", null);
+      const set = new Set((mainCharges ?? []).map(r => r.task_id as string));
       return ts.filter(t => !set.has(t.id));
     },
   });
