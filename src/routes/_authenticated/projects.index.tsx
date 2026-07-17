@@ -255,6 +255,9 @@ function ProjectCard({ project, clientName, counts, revenue }: { project: Projec
         <div className="mt-auto flex items-center justify-between text-xs text-muted-foreground pt-2 border-t border-border">
           <span className="inline-flex items-center gap-1.5"><Calendar className="h-3.5 w-3.5" />{fmt(project.start_date)} → {fmt(project.end_date)}</span>
           <span className="inline-flex items-center gap-3">
+            <span className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-medium">
+              <DollarSign className="h-3.5 w-3.5" />{fmtMoney(revenue)}
+            </span>
             <span className="inline-flex items-center gap-1">
               <Users className="h-3.5 w-3.5" />{counts.total}
             </span>
