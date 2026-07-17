@@ -52,7 +52,8 @@ type Task = {
   priority: "low" | "medium" | "high";
   due_date: string | null;
   billing_value: number | null;
-  billing_model: "hourly" | "one_time" | "package" | "monthly" | null;
+  billing_model: "hourly" | "one_time" | "package" | "monthly" | "per_task" | null;
+  billing_enabled: boolean;
   project_id: string | null;
   client_id: string | null;
   assignee_id: string | null;
