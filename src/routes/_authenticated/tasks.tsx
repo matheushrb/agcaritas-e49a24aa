@@ -338,15 +338,22 @@ function Kpi({ label, value, tone = "default" }: { label: string; value: string;
   );
 }
 
+function isOverdue(task: Task) {
+  return task.due_date && new Date(task.due_date) < new Date() && task.status !== "done";
+}
+
 function TaskRow({ task, onClick }: { task: Task; onClick: () => void }) {
-  const overdue = task.due_date && new Date(task.due_date) < new Date() && task.status !== "done";
+  const overdue = isOverdue(task);
   return (
     <li>
       <button onClick={onClick} className="w-full text-left px-4 py-3 hover:bg-muted/40 flex items-center gap-3">
         <span className={cn("h-2 w-2 rounded-full shrink-0", STATUS_META[task.status].dot)} />
         <Flag className={cn("h-3.5 w-3.5 shrink-0", PRIORITY_META[task.priority].color)} />
         <div className="min-w-0 flex-1">
-          <div className="truncate text-sm font-medium">{task.title}</div>
+          <div className="truncate text-sm font-medium flex items-center gap-2">
+            {overdue && <Badge className="rounded-full bg-red-500/15 text-red-600 dark:text-red-400 text-[10px] px-1.5 py-0">Atrasada</Badge>}
+            {task.title}
+          </div>
           {task.description && <div className="truncate text-xs text-muted-foreground">{task.description}</div>}
         </div>
         {task.billing_value && task.billing_value > 0 && (
@@ -363,10 +370,14 @@ function TaskRow({ task, onClick }: { task: Task; onClick: () => void }) {
 }
 
 function KanbanCard({ task, onClick }: { task: Task; onClick: () => void }) {
+  const overdue = isOverdue(task);
   return (
     <button onClick={onClick} className="w-full text-left rounded-xl bg-card border border-border p-3 hover:shadow-sm transition-shadow">
       <div className="flex items-start justify-between gap-2">
-        <span className="text-sm font-medium line-clamp-2">{task.title}</span>
+        <div className="text-sm font-medium line-clamp-2">
+          {overdue && <Badge className="mr-1.5 rounded-full bg-red-500/15 text-red-600 dark:text-red-400 text-[10px] px-1.5 py-0">Atrasada</Badge>}
+          {task.title}
+        </div>
         <Badge className={cn("rounded-full shrink-0 text-[10px]", PRIORITY_META[task.priority].badge)}>{PRIORITY_META[task.priority].label}</Badge>
       </div>
       <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
