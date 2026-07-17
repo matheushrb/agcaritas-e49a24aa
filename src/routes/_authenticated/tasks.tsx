@@ -864,7 +864,19 @@ function PriorityPicker({ value, onChange, inline }: { value: TaskPriority; onCh
     </Popover>
   );
 }
-function DatePicker({ value, onChange, overdue }: { value: string; onChange: (v: string) => void; overdue?: boolean }) {
+function DatePicker({ value, onChange, overdue, inline }: { value: string; onChange: (v: string) => void; overdue?: boolean; inline?: boolean }) {
+  if (inline) {
+    return (
+      <label className={cn(
+        "inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium cursor-pointer transition-colors hover:bg-muted",
+        overdue && "text-red-600 dark:text-red-400",
+      )}>
+        <CalendarIcon className="h-3.5 w-3.5 text-muted-foreground" />
+        {value ? new Date(value).toLocaleDateString("pt-BR", { day: "2-digit", month: "short" }) : "Sem prazo"}
+        <input type="date" value={value} onChange={e => onChange(e.target.value)} className="sr-only" />
+      </label>
+    );
+  }
   return (
     <label className={cn(
       "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium cursor-pointer transition-colors bg-muted text-foreground hover:bg-muted/70",
