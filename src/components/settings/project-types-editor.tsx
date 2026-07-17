@@ -131,7 +131,9 @@ export function ProjectTypesEditor() {
   }
   function addBaseTask() {
     if (!editing) return;
-    setDraft({ ...editing, base_tasks: [...(editing.base_tasks ?? []), { name: "", estimated_hours: null, task_type_id: null }] });
+    const firstAvail = taskTypes.find((tt: any) => !(editing.base_tasks ?? []).some(b => b.task_type_id === tt.id));
+    if (!firstAvail) { toast.info("Cadastre mais tipos de tarefa primeiro."); return; }
+    setDraft({ ...editing, base_tasks: [...(editing.base_tasks ?? []), { task_type_id: firstAvail.id, quantity: 1 }] });
   }
   function removeBaseTask(idx: number) {
     if (!editing) return;
@@ -140,7 +142,13 @@ export function ProjectTypesEditor() {
     setDraft({ ...editing, base_tasks: list });
   }
 
-  const totalHours = (editing?.base_tasks ?? []).reduce((s, t) => s + (Number(t.estimated_hours) || 0), 0);
+  const totalQty = (editing?.base_tasks ?? []).reduce((s, t) => s + (Number(t.quantity) || 1), 0);
+  const totalHours = totalQty * Number(editing?.avg_task_hours ?? 0);
+  const togglePlatform = (id: string) => {
+    if (!editing) return;
+    const cur = editing.platform_ids ?? [];
+    setDraft({ ...editing, platform_ids: cur.includes(id) ? cur.filter(p => p !== id) : [...cur, id] });
+  };
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-[1fr_460px] gap-4">
