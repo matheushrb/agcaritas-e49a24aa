@@ -83,6 +83,9 @@ type Task = {
   current_stage_id: string | null;
   deliverables: { id: string; platform: string; type: string; billing_enabled: boolean; billing_model: "hourly" | "one_time" | "package" | "monthly" | "per_task" | null; billing_value: number | null; invoiced?: boolean }[];
   subtasks: { id: string; title: string; done: boolean }[];
+  broadcast_kind: "premiere" | "live" | "recorded" | null;
+  recorded_at: string | null;
+  aired_at: string | null;
   created_at?: string;
 };
 type Charge = {
