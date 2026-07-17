@@ -397,7 +397,45 @@ export function EditProjectDialog({
                   ))}
                 </div>
               </Section>
+
+              <Section icon={<Megaphone className="h-4 w-4" />} title="Plataformas do projeto" description="Redes, canais e mídias envolvidas neste projeto.">
+                {platformsCatalog.length === 0 ? (
+                  <p className="text-xs text-muted-foreground">Nenhuma plataforma cadastrada. Gerencie em Configurações → Plataformas.</p>
+                ) : (
+                  <div className="flex flex-wrap gap-2">
+                    {platformsCatalog.map(p => {
+                      const current: string[] = Array.isArray((scope as any).tools) ? (scope as any).tools : [];
+                      const on = current.includes(p.name);
+                      return (
+                        <button
+                          key={p.id}
+                          type="button"
+                          onClick={() => set("scope_flags", {
+                            ...scope,
+                            tools: on ? current.filter(x => x !== p.name) : [...current, p.name],
+                          } as any)}
+                          className={cn(
+                            "rounded-full pl-1 pr-3 py-1 text-xs font-medium border transition-colors flex items-center gap-1.5",
+                            on ? "border-primary bg-primary text-primary-foreground" : "border-border hover:bg-muted",
+                          )}
+                          style={on ? undefined : { color: p.color ?? undefined, borderColor: (p.color ?? "") + "66" }}
+                        >
+                          <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-background overflow-hidden shrink-0">
+                            {p.icon_url ? (
+                              <img src={p.icon_url} alt="" className="h-[70%] w-[70%] object-contain" />
+                            ) : (
+                              <span className="h-2 w-2 rounded-full" style={{ background: p.color ?? "currentColor" }} />
+                            )}
+                          </span>
+                          {p.name}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </Section>
             </TabsContent>
+
 
             {/* EQUIPE */}
             <TabsContent value="team" className="m-0 space-y-5">
