@@ -179,6 +179,18 @@ function ProjectDetail() {
     },
   });
 
+  const { data: costs = [] } = useQuery<{ id: string; amount: number; status: string; kind: string; description: string | null; occurred_on: string }[]>({
+    queryKey: ["project-costs-finance", projectId],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("project_costs")
+        .select("id,amount,status,kind,description,occurred_on")
+        .eq("project_id", projectId);
+      if (error) return [];
+      return (data ?? []) as any[];
+    },
+  });
+
   // Base tasks from the project's project_type
   const { data: projectTypeRow } = useQuery({
     queryKey: ["project-type-row", project?.project_type],
@@ -500,7 +512,7 @@ function ProjectDetail() {
             </TabsContent>
 
             <TabsContent value="finance" className="mt-4">
-              <FinanceTab charges={charges} />
+              <FinanceTab charges={charges} tasks={tasks} costs={costs} />
             </TabsContent>
           </Tabs>
         );
@@ -677,37 +689,100 @@ function StratCard({ title, hint }: { title: string; hint: string }) {
   );
 }
 
-function FinanceTab({ charges }: { charges: Charge[] }) {
+function FinanceTab({
+  charges,
+  tasks,
+  costs,
+}: {
+  charges: Charge[];
+  tasks: Task[];
+  costs: { id: string; amount: number; status: string; kind: string; description: string | null; occurred_on: string }[];
+}) {
+  const fmt = (n: number) => `R$ ${n.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`;
+
   const invoiced = charges.reduce((s, c) => s + Number(c.amount ?? 0), 0);
   const paid = charges.filter(c => c.status === "paid").reduce((s, c) => s + Number(c.amount ?? 0), 0);
-  const pending = invoiced - paid;
+  const pendingReceive = invoiced - paid;
+
+  // Receita prevista (potencial): soma de tudo faturável no projeto,
+  // considerando o valor da tarefa e o dos entregáveis marcados como faturáveis.
+  // Para tarefas de transmissão/estreia, multiplica pelo nº de datas ao ar.
+  const projected = tasks.reduce((sum, t) => {
+    const base = t.billing_enabled && t.billing_value != null ? Number(t.billing_value) : 0;
+    const multiplier = t.broadcast_kind && (t.aired_dates?.length ?? 0) > 0 ? t.aired_dates.length : 1;
+    const taskRev = base * multiplier;
+    const deliverRev = (t.deliverables ?? [])
+      .filter(d => d.billing_enabled && d.billing_value != null)
+      .reduce((s, d) => s + Number(d.billing_value ?? 0), 0);
+    return sum + taskRev + deliverRev;
+  }, 0);
+  const toBill = Math.max(0, projected - invoiced);
+
+  const costsTotal = costs.reduce((s, c) => s + Number(c.amount ?? 0), 0);
+  const costsPaid = costs.filter(c => c.status === "paid").reduce((s, c) => s + Number(c.amount ?? 0), 0);
+  const margin = projected - costsTotal;
+  const marginPct = projected > 0 ? Math.round((margin / projected) * 100) : 0;
 
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-        <Kpi label="Faturado" value={`R$ ${invoiced.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`} />
-        <Kpi label="Recebido" value={`R$ ${paid.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`} />
-        <Kpi label="Pendente" value={`R$ ${pending.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`} />
+      {/* Panorama do projeto */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <Kpi label="Receita prevista" value={fmt(projected)} />
+        <Kpi label="Faturado" value={fmt(invoiced)} />
+        <Kpi label="Recebido" value={fmt(paid)} />
+        <Kpi label="A receber" value={fmt(pendingReceive)} />
       </div>
-      <Card className="rounded-2xl overflow-hidden">
-        <ul className="divide-y divide-border">
-          {charges.length === 0 && (
-            <li className="px-4 py-8 text-center text-sm text-muted-foreground">Nenhum lançamento vinculado a este projeto.</li>
-          )}
-          {charges.map(c => (
-            <li key={c.id} className="px-4 py-3 flex items-center gap-3">
-              <div className="min-w-0 flex-1">
-                <div className="truncate text-sm font-medium">{c.description}</div>
-                {c.due_date && <div className="text-xs text-muted-foreground">Vence {new Date(c.due_date).toLocaleDateString("pt-BR")}</div>}
-              </div>
-              <Badge variant="outline" className="rounded-full">{c.status}</Badge>
-              <span className="text-sm font-medium w-32 text-right text-emerald-600 dark:text-emerald-400">
-                R$ {Number(c.amount).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
-              </span>
-            </li>
-          ))}
-        </ul>
-      </Card>
+
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <Kpi label="A faturar" value={fmt(toBill)} />
+        <Kpi label="Custos" value={fmt(costsTotal)} />
+        <Kpi label="Custos pagos" value={fmt(costsPaid)} />
+        <Kpi label={`Margem prevista${projected > 0 ? ` (${marginPct}%)` : ""}`} value={fmt(margin)} />
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <Card className="rounded-2xl overflow-hidden">
+          <div className="px-4 py-2.5 border-b border-border text-xs font-medium text-muted-foreground uppercase tracking-wide">Lançamentos financeiros</div>
+          <ul className="divide-y divide-border">
+            {charges.length === 0 && (
+              <li className="px-4 py-8 text-center text-sm text-muted-foreground">Nenhum lançamento vinculado a este projeto.</li>
+            )}
+            {charges.map(c => (
+              <li key={c.id} className="px-4 py-3 flex items-center gap-3">
+                <div className="min-w-0 flex-1">
+                  <div className="truncate text-sm font-medium">{c.description}</div>
+                  {c.due_date && <div className="text-xs text-muted-foreground">Vence {new Date(c.due_date).toLocaleDateString("pt-BR")}</div>}
+                </div>
+                <Badge variant="outline" className="rounded-full">{c.status}</Badge>
+                <span className="text-sm font-medium w-32 text-right text-emerald-600 dark:text-emerald-400">
+                  {fmt(Number(c.amount))}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </Card>
+
+        <Card className="rounded-2xl overflow-hidden">
+          <div className="px-4 py-2.5 border-b border-border text-xs font-medium text-muted-foreground uppercase tracking-wide">Custos do projeto</div>
+          <ul className="divide-y divide-border">
+            {costs.length === 0 && (
+              <li className="px-4 py-8 text-center text-sm text-muted-foreground">Nenhum custo registrado para este projeto.</li>
+            )}
+            {costs.map(c => (
+              <li key={c.id} className="px-4 py-3 flex items-center gap-3">
+                <div className="min-w-0 flex-1">
+                  <div className="truncate text-sm font-medium">{c.description ?? c.kind}</div>
+                  <div className="text-xs text-muted-foreground">{new Date(c.occurred_on).toLocaleDateString("pt-BR")} · {c.kind}</div>
+                </div>
+                <Badge variant="outline" className="rounded-full">{c.status}</Badge>
+                <span className="text-sm font-medium w-32 text-right text-rose-600 dark:text-rose-400">
+                  {fmt(Number(c.amount))}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </Card>
+      </div>
     </div>
   );
 }
