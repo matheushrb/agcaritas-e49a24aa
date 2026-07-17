@@ -386,13 +386,14 @@ const initialForm: FormState = {
 };
 
 export function NewClientDialog({
-  open, onOpenChange, onSubmit, pending, initial, mode = "create",
+  open, onOpenChange, onSubmit, pending, initial, mode = "create", segments = DEFAULT_SEGMENTS,
 }: {
   open: boolean; onOpenChange: (v: boolean) => void;
   onSubmit: (v: Record<string, unknown>) => void;
   pending: boolean;
   initial?: Partial<FormState>;
   mode?: "create" | "edit";
+  segments?: string[];
 }) {
   const [form, setForm] = useState<FormState>({ ...initialForm, ...(initial ?? {}) });
   const [tab, setTab] = useState("identificacao");
