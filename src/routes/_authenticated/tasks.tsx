@@ -780,13 +780,28 @@ export function TaskModal({
 
 
   const [mode, setMode] = useState<"modal" | "docked" | "minimized">("modal");
+  const [unsavedOpen, setUnsavedOpen] = useState(false);
   useEffect(() => { if (task) setMode("modal"); }, [task?.id]);
+
+  // Fechar com verificação de alterações não salvas.
+  const requestClose = () => {
+    if (dirty) { setUnsavedOpen(true); return; }
+    onClose();
+  };
+
   useEffect(() => {
     if (!task) return;
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape" && mode !== "minimized") onClose(); };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && mode !== "minimized") { requestClose(); return; }
+      // Ctrl/Cmd + S — salva
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "s") {
+        e.preventDefault();
+        if (dirty && !save.isPending) save.mutate();
+      }
+    };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [task, mode, onClose]);
+  }, [task, mode, onClose, dirty, save.isPending]);
 
   // Modo docked: empurra o conteúdo principal via CSS var lida pelo AppShell.
   const DOCK_WIDTH = 640;
