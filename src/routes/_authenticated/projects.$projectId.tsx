@@ -450,6 +450,11 @@ function ProjectDetail() {
       })()}
 
       <TaskModal task={selectedTask} onClose={() => setSelectedTaskId(null)} />
+      <EditProjectDialog
+        project={project as EditableProject}
+        open={editOpen}
+        onOpenChange={setEditOpen}
+      />
     </div>
   );
 }
