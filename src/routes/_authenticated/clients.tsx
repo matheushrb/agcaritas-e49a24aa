@@ -81,7 +81,7 @@ function ClientsPage() {
     mutationFn: async (input: Record<string, unknown>) => {
       const { data: profile } = await supabase.from("profiles").select("organization_id").maybeSingle();
       if (!profile?.organization_id) throw new Error("Sem organização");
-      const { error } = await supabase.from("clients").insert({ ...input, organization_id: profile.organization_id });
+      const { error } = await supabase.from("clients").insert({ ...(input as { name: string }), organization_id: profile.organization_id });
       if (error) throw error;
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["clients-list"] }); toast.success("Cliente criado"); setNewOpen(false); },
