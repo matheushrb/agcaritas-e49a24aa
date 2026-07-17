@@ -237,10 +237,11 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   );
 }
 
-function StepScope({ v, patch, clients }: {
+function StepScope({ v, patch, clients, typeOptions }: {
   v: ProjectWizardValue;
   patch: <K extends keyof ProjectWizardValue>(k: K, val: ProjectWizardValue[K]) => void;
   clients: { id: string; name: string }[];
+  typeOptions: { value: string; label: string }[];
 }) {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
@@ -279,12 +280,13 @@ function StepScope({ v, patch, clients }: {
         </div>
         <div className="space-y-1.5">
           <Label>Tipo de projeto</Label>
-          <Select value={v.project_type} onValueChange={val => patch("project_type", val)}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
+          <Select value={v.project_type || undefined} onValueChange={val => patch("project_type", val)}>
+            <SelectTrigger><SelectValue placeholder="Selecione…" /></SelectTrigger>
             <SelectContent>
-              {PROJECT_TYPES.map(t => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}
+              {typeOptions.map(t => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}
             </SelectContent>
           </Select>
+          <p className="text-[11px] text-muted-foreground">Gerencie os tipos em <b>Configurações → Tipos de Projeto</b>.</p>
         </div>
         <div className="space-y-2">
           <Label>Urgência</Label>
