@@ -364,11 +364,7 @@ export function EditProjectDialog({
               </Section>
             </TabsContent>
 
-                ) : (
-                  <p className="text-xs text-muted-foreground">Ative o interruptor acima para definir a verba mensal.</p>
-                )}
-              </Section>
-            </TabsContent>
+
 
             {/* ESCOPO */}
             <TabsContent value="scope" className="m-0 space-y-5">
