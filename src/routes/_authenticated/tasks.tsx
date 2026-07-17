@@ -15,6 +15,7 @@ import {
   Search, Plus, LayoutGrid, List as ListIcon, Play, Pause, Square, Clock, Zap,
   ChevronLeft, ChevronRight, X, Calendar as CalendarIcon, Flag, Circle,
   MessageSquare, Paperclip, ListChecks, Activity, Trash2, MoreHorizontal, Timer,
+  DollarSign, Check,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -315,7 +316,7 @@ function KanbanCard({ task, onClick }: { task: Task; onClick: () => void }) {
 /* ============================================================
  * TaskModal — janela grande estilo ClickUp / Monday
  * ============================================================ */
-function TaskModal({ task, onClose }: { task: Task | null; onClose: () => void }) {
+export function TaskModal({ task, onClose }: { task: Task | null; onClose: () => void }) {
   const qc = useQueryClient();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
