@@ -1738,7 +1738,7 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "manager" | "member"
-      billing_model: "monthly" | "one_time" | "hourly" | "package"
+      billing_model: "monthly" | "one_time" | "hourly" | "package" | "per_task"
       charge_status: "pending" | "paid" | "overdue" | "cancelled"
       contract_status: "active" | "closed" | "suspended" | "renewing"
       lead_stage: "lead" | "contact" | "proposal" | "negotiation" | "closed"
@@ -1878,7 +1878,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "manager", "member"],
-      billing_model: ["monthly", "one_time", "hourly", "package"],
+      billing_model: ["monthly", "one_time", "hourly", "package", "per_task"],
       charge_status: ["pending", "paid", "overdue", "cancelled"],
       contract_status: ["active", "closed", "suspended", "renewing"],
       lead_stage: ["lead", "contact", "proposal", "negotiation", "closed"],
