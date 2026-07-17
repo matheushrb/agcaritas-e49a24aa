@@ -1429,7 +1429,7 @@ function DatePicker({ value, onChange, overdue, inline }: { value: string; onCha
         <CalendarPicker
           mode="single"
           selected={value ? new Date(value + "T00:00:00") : undefined}
-          onSelect={(d) => {
+          onSelect={(d: Date | undefined) => {
             if (!d) { onChange(""); return; }
             const iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
             onChange(iso);
