@@ -2146,6 +2146,52 @@ function DueDatePicker(props: { value: string; onChange: (v: string) => void; ov
   return <DatePicker {...props} inline />;
 }
 
+function DateListEditor({ label, dates, onChange, emptyHint, helper }: {
+  label: string;
+  dates: string[];
+  onChange: (next: string[]) => void;
+  emptyHint?: string;
+  helper?: string;
+}) {
+  const [draft, setDraft] = useState("");
+  const add = (v: string) => {
+    if (!v) return;
+    const d = v.slice(0, 10);
+    if (dates.includes(d)) return;
+    onChange([...dates, d].sort());
+    setDraft("");
+  };
+  const remove = (d: string) => onChange(dates.filter(x => x !== d));
+  return (
+    <div>
+      <label className="text-[10px] uppercase tracking-wide text-muted-foreground">{label}</label>
+      <div className="mt-1 space-y-2">
+        {dates.length === 0 && emptyHint && (
+          <div className="text-xs text-muted-foreground">{emptyHint}</div>
+        )}
+        {dates.length > 0 && (
+          <div className="flex flex-wrap gap-1.5">
+            {dates.map(d => (
+              <span key={d} className="inline-flex items-center gap-1 h-7 rounded-full border bg-background px-2 text-xs">
+                {new Date(d + "T00:00:00").toLocaleDateString("pt-BR")}
+                <button type="button" onClick={() => remove(d)} className="text-muted-foreground hover:text-foreground">
+                  <X className="h-3 w-3" />
+                </button>
+              </span>
+            ))}
+          </div>
+        )}
+        <div className="flex items-center gap-2">
+          <div className="flex-1">
+            <DueDatePicker value={draft} onChange={v => add(v)} />
+          </div>
+        </div>
+        {helper && <div className="text-[10px] text-muted-foreground">{helper}</div>}
+      </div>
+    </div>
+  );
+}
+
 function AssigneePicker({ value, members, onChange }: { value: string; members: { id: string; name: string; avatar_url: string | null }[]; onChange: (v: string) => void }) {
   const selected = members.find(m => m.id === value);
   return (
