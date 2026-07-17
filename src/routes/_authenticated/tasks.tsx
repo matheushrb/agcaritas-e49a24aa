@@ -440,10 +440,19 @@ export function TaskModal({
   const { data: typeStages = [] } = useTaskTypeStages(taskTypeId || null);
 
   const { data: teamMembers = [] } = useQuery({
-    queryKey: ["tasks-modal-team"],
+    queryKey: ["tasks-modal-assignees"],
     queryFn: async () => {
-      const { data } = await supabase.from("team_members").select("id,name,avatar_url").order("name");
-      return (data ?? []) as { id: string; name: string; avatar_url: string | null }[];
+      // assignee_id referencia auth.users → listamos profiles da organização
+      const { data } = await supabase
+        .from("profiles")
+        .select("id,full_name,avatar_url")
+        .order("full_name");
+      return (data ?? [])
+        .map((p: any) => ({
+          id: p.id as string,
+          name: (p.full_name || "Sem nome") as string,
+          avatar_url: (p.avatar_url ?? null) as string | null,
+        }));
     },
   });
 
