@@ -1204,26 +1204,19 @@ export function TaskModal({
                         )}
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        <div>
-                          <label className="text-[10px] uppercase tracking-wide text-muted-foreground">Data de gravação</label>
-                          <div className="mt-1">
-                            <DueDatePicker
-                              value={recordedAt}
-                              onChange={v => { setRecordedAt(v); markDirty(); }}
-                            />
-                          </div>
-                        </div>
-                        <div>
-                          <label className="text-[10px] uppercase tracking-wide text-muted-foreground">
-                            {broadcastKind === "live" ? "Data de transmissão" : "Data de estreia"}
-                          </label>
-                          <div className="mt-1">
-                            <DueDatePicker
-                              value={airedAt}
-                              onChange={v => { setAiredAt(v); markDirty(); }}
-                            />
-                          </div>
-                        </div>
+                        <DateListEditor
+                          label="Datas de gravação"
+                          emptyHint="Nenhuma data de gravação"
+                          dates={recordedDates}
+                          onChange={next => { setRecordedDates(next); markDirty(); }}
+                        />
+                        <DateListEditor
+                          label={broadcastKind === "live" ? "Datas de transmissão" : "Datas de estreia"}
+                          emptyHint={broadcastKind === "live" ? "Nenhuma data de transmissão" : "Nenhuma data de estreia"}
+                          helper="Cada data gera uma cobrança separada ao faturar."
+                          dates={airedDates}
+                          onChange={next => { setAiredDates(next); markDirty(); }}
+                        />
                       </div>
                     </div>
                   );
