@@ -12,10 +12,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { EntityDialog, DialogField, DialogCancelButton } from "@/components/entity-dialog";
 import {
   ChevronLeft, Mail, Phone, Building2, Globe, MapPin, Users, Briefcase, FileText,
-  Plus, Save, Trash2, User as UserIcon,
+  Plus, Save, Trash2, User as UserIcon, Pencil,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { NewClientDialog } from "./clients";
+
 
 export const Route = createFileRoute("/_authenticated/clients/$clientId")({
   head: () => ({ meta: [{ title: "Cliente · Caritas" }] }),
@@ -66,6 +68,8 @@ function ClientDetailPage() {
   const { clientId } = Route.useParams();
   const navigate = useNavigate();
   const qc = useQueryClient();
+  const [editOpen, setEditOpen] = useState(false);
+
 
   const { data: client, isLoading } = useQuery<Client | null>({
     queryKey: ["client", clientId],
@@ -122,6 +126,22 @@ function ClientDetailPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const updateClient = useMutation({
+    mutationFn: async (payload: Record<string, unknown>) => {
+      const { error } = await supabase.from("clients").update(payload as never).eq("id", clientId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["client", clientId] });
+      qc.invalidateQueries({ queryKey: ["clients-list"] });
+      toast.success("Cliente atualizado");
+      setEditOpen(false);
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+
   if (isLoading) return <div className="text-sm text-muted-foreground">Carregando…</div>;
   if (!client) return (
     <Card className="rounded-3xl p-12 text-center border-dashed">
@@ -158,12 +178,16 @@ function ClientDetailPage() {
           </div>
         </div>
         <div className="flex items-center gap-2">
+          <Button className="rounded-full gap-1.5" onClick={() => setEditOpen(true)}>
+            <Pencil className="h-4 w-4" /> Editar cadastro
+          </Button>
           <Button variant="outline" className="rounded-full gap-1.5"
             onClick={() => { if (confirm("Excluir este cliente?")) removeClient.mutate(); }}>
             <Trash2 className="h-4 w-4" /> Excluir
           </Button>
         </div>
       </div>
+
 
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -189,9 +213,19 @@ function ClientDetailPage() {
         <TabsContent value="projects"><ProjectsTab projects={projects as any[]} /></TabsContent>
         <TabsContent value="proposals"><ProposalsTab proposals={proposals as any[]} /></TabsContent>
       </Tabs>
+
+      <NewClientDialog
+        open={editOpen}
+        onOpenChange={setEditOpen}
+        mode="edit"
+        initial={client as never}
+        onSubmit={v => updateClient.mutate(v)}
+        pending={updateClient.isPending}
+      />
     </div>
   );
 }
+
 
 function Kpi({ label, value, icon: Icon }: { label: string; value: string; icon?: any }) {
   return (
