@@ -17,8 +17,12 @@ import {
   Search, Plus, LayoutGrid, List as ListIcon, Play, Pause, Square, Clock, Zap,
   ChevronLeft, ChevronRight, X, Calendar as CalendarIcon, Flag, Circle,
   MessageSquare, Paperclip, ListChecks, Activity, Trash2, MoreHorizontal, Timer,
-  DollarSign, Check, Minus, PanelRightOpen, Maximize2, PanelLeftOpen, Radio,
+  DollarSign, Check, Minus, PanelRightOpen, Maximize2, PanelLeftOpen, Radio, Save as SaveIcon,
 } from "lucide-react";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useTaskTypes, useTaskTypeStages, type TaskTypeRow, type TaskTypeStageRow, type StatusGroup } from "@/lib/task-types";
@@ -558,44 +562,54 @@ export function TaskModal({
     setBroadcastKind((task.broadcast_kind ?? "") as any);
     setRecordedAt(task.recorded_at ?? "");
     setAiredAt(task.aired_at ?? "");
+    setDirty(false);
   }, [task]);
+
+  // Rastreia se há alterações pendentes desde o último carregamento/salvamento.
+  const [dirty, setDirty] = useState(false);
+  const markDirty = () => setDirty(true);
 
   const isLocalDraft = !!task?.id.startsWith("draft-");
 
-  const buildInsertPayload = async (patch: Partial<Task>) => {
+  // Monta payload completo (usado no Salvar explícito e ao criar rascunho).
+  const buildFullPayload = async () => {
     const { data: profile } = await supabase.from("profiles").select("organization_id").maybeSingle();
     if (!profile?.organization_id) throw new Error("Sem organização");
     return {
       organization_id: profile.organization_id,
-      title: (patch.title ?? (title.trim() || "Nova tarefa")) as string,
-      description: patch.description ?? (description || null),
-      status: patch.status ?? status,
-      priority: patch.priority ?? priority,
-      project_id: patch.project_id ?? (projectId || null),
-      client_id: patch.client_id ?? (clientId || null),
-      due_date: patch.due_date ?? (dueDate || null),
-      billing_model: patch.billing_model ?? ((billingModel || null) as BillingModel | null),
-      billing_value: patch.billing_value ?? (billingValue ? Number(billingValue) : null),
-      billing_enabled: patch.billing_enabled ?? billingEnabled,
-      progress: patch.progress ?? progress,
-      platform: patch.platform ?? (platform || null),
-      delivery_type: patch.delivery_type ?? (deliveryType || null),
-      estimated_hours: patch.estimated_hours ?? (estimatedHours ? Number(estimatedHours) : null),
-      stage: patch.stage ?? stage,
-      deliverables: patch.deliverables ?? deliverables,
-      subtasks: patch.subtasks ?? subtasks,
-      assignee_id: patch.assignee_id ?? (assigneeId || null),
-      task_type_id: patch.task_type_id ?? (taskTypeId || null),
-      current_stage_id: patch.current_stage_id ?? (currentStageId || null),
+      title: (title.trim() || "Nova tarefa"),
+      description: description || null,
+      status,
+      priority,
+      project_id: projectId || null,
+      client_id: clientId || null,
+      due_date: dueDate || null,
+      billing_model: (billingModel || null) as BillingModel | null,
+      billing_value: billingValue ? Number(billingValue) : null,
+      billing_enabled: billingEnabled,
+      progress,
+      platform: platform || null,
+      delivery_type: deliveryType || null,
+      estimated_hours: estimatedHours ? Number(estimatedHours) : null,
+      stage,
+      deliverables,
+      subtasks,
+      assignee_id: assigneeId || null,
+      task_type_id: taskTypeId || null,
+      current_stage_id: currentStageId || null,
+      broadcast_kind: broadcastKind || null,
+      recorded_at: recordedAt || null,
+      aired_at: airedAt || null,
     };
   };
 
-  const createDraftRecord = async (patch: Partial<Task>) => {
+  // Cria o registro no banco caso a tarefa ainda esteja como rascunho local.
+  const createDraftRecord = async () => {
     if (persistedDraftIdRef.current) return { id: persistedDraftIdRef.current, created: false };
     if (creatingDraftRef.current) return { id: await creatingDraftRef.current, created: false };
 
     creatingDraftRef.current = (async () => {
-      const payload = await buildInsertPayload(patch);
+      const payload = await buildFullPayload();
       const { data, error } = await supabase.from("tasks").insert(payload).select("id").single();
       if (error) throw error;
       return data.id as string;
@@ -610,22 +624,27 @@ export function TaskModal({
     }
   };
 
+  // Salvamento explícito — envia todo o estado atual em uma única gravação.
   const save = useMutation({
-    mutationFn: async (patch: Partial<Task>) => {
+    mutationFn: async () => {
       if (!task) return;
       if (isLocalDraft) {
-        const { id, created } = await createDraftRecord(patch);
+        const { created } = await createDraftRecord();
         if (created) return;
-        const { error } = await supabase.from("tasks").update(patch).eq("id", id);
+        const payload = await buildFullPayload();
+        const { error } = await supabase.from("tasks").update(payload).eq("id", persistedDraftIdRef.current!);
         if (error) throw error;
         return;
       }
-      const { error } = await supabase.from("tasks").update(patch).eq("id", task.id);
+      const payload = await buildFullPayload();
+      const { error } = await supabase.from("tasks").update(payload).eq("id", task.id);
       if (error) throw error;
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["tasks"] });
       qc.invalidateQueries({ queryKey: ["project-tasks"] });
+      setDirty(false);
+      toast.success("Alterações salvas");
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -665,10 +684,11 @@ export function TaskModal({
   const bill = useMutation({
     mutationFn: async () => {
       if (!task) return;
+      if (dirty) throw new Error("Salve as alterações da tarefa antes de faturar");
       if (!billingEnabled) throw new Error("Ative a chave de faturamento nesta tarefa");
       const value = billingValue ? Number(billingValue) : 0;
       if (!value || value <= 0) throw new Error("Defina um valor de faturamento primeiro");
-      const persistedTaskId = isLocalDraft ? (await createDraftRecord({})).id : task.id;
+      const persistedTaskId = isLocalDraft ? (await createDraftRecord()).id : task.id;
       const { data: profile } = await supabase.from("profiles").select("organization_id").maybeSingle();
       if (!profile?.organization_id) throw new Error("Sem organização");
       const resolvedProjectId = projectId || task.project_id || null;
@@ -703,10 +723,11 @@ export function TaskModal({
   const billDeliverable = useMutation({
     mutationFn: async (d: Deliverable) => {
       if (!task) return;
+      if (dirty) throw new Error("Salve as alterações da tarefa antes de faturar o entregável");
       if (!d.billing_enabled) throw new Error("Ative o faturamento deste entregável");
       const value = d.billing_value ?? 0;
       if (!value || value <= 0) throw new Error("Defina um valor para este entregável");
-      const persistedTaskId = isLocalDraft ? (await createDraftRecord({})).id : task.id;
+      const persistedTaskId = isLocalDraft ? (await createDraftRecord()).id : task.id;
       const { data: profile } = await supabase.from("profiles").select("organization_id").maybeSingle();
       if (!profile?.organization_id) throw new Error("Sem organização");
       const resolvedProjectId = projectId || task.project_id || null;
@@ -761,13 +782,28 @@ export function TaskModal({
 
 
   const [mode, setMode] = useState<"modal" | "docked" | "minimized">("modal");
+  const [unsavedOpen, setUnsavedOpen] = useState(false);
   useEffect(() => { if (task) setMode("modal"); }, [task?.id]);
+
+  // Fechar com verificação de alterações não salvas.
+  const requestClose = () => {
+    if (dirty) { setUnsavedOpen(true); return; }
+    onClose();
+  };
+
   useEffect(() => {
     if (!task) return;
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape" && mode !== "minimized") onClose(); };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && mode !== "minimized") { requestClose(); return; }
+      // Ctrl/Cmd + S — salva
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "s") {
+        e.preventDefault();
+        if (dirty && !save.isPending) save.mutate();
+      }
+    };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [task, mode, onClose]);
+  }, [task, mode, onClose, dirty, save.isPending]);
 
   // Modo docked: empurra o conteúdo principal via CSS var lida pelo AppShell.
   const DOCK_WIDTH = 640;
@@ -812,9 +848,8 @@ export function TaskModal({
     if (lastProgressRef.current === computedProgress) return;
     lastProgressRef.current = computedProgress;
     if (progress !== computedProgress) setProgress(computedProgress);
-    if (!isLocalDraft || persistedDraftIdRef.current) {
-      save.mutate({ progress: computedProgress });
-    }
+    // Não marcamos dirty aqui: progresso é derivado das subtarefas/etapa,
+    // que já chamam markDirty quando alteradas pelo usuário.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [computedProgress, task?.id]);
 
@@ -836,7 +871,7 @@ export function TaskModal({
         <Button size="icon" variant="ghost" className="h-7 w-7 rounded-full" onClick={() => setMode("modal")} title="Restaurar">
           <Maximize2 className="h-3.5 w-3.5" />
         </Button>
-        <Button size="icon" variant="ghost" className="h-7 w-7 rounded-full text-muted-foreground hover:text-destructive" onClick={onClose} title="Fechar">
+        <Button size="icon" variant="ghost" className="h-7 w-7 rounded-full text-muted-foreground hover:text-destructive" onClick={requestClose} title="Fechar">
           <X className="h-3.5 w-3.5" />
         </Button>
       </div>
@@ -864,29 +899,43 @@ export function TaskModal({
                   onChange={(id, t) => {
                     setTaskTypeId(id);
                     setCurrentStageId("");
-                    const patch: Partial<Task> = { task_type_id: id || null, current_stage_id: null };
                     if (t) {
                       if (!billingModel && t.default_billing_model) {
                         setBillingModel(t.default_billing_model as BillingModel);
-                        patch.billing_model = t.default_billing_model as BillingModel;
                       }
                       if (!billingValue && t.default_price != null) {
                         setBillingValue(String(t.default_price));
-                        patch.billing_value = t.default_price;
                       }
                     }
-                    save.mutate(patch);
+                    markDirty();
                   }}
                 />
+                {dirty && (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-400 px-2 py-0.5 text-[10px] font-medium">
+                    <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+                    Alterações não salvas
+                  </span>
+                )}
               </div>
 
               <div className="ml-auto flex items-center gap-1">
-                <StatusPicker value={status} onChange={v => { setStatus(v); save.mutate({ status: v }); }} />
-                <PriorityPicker value={priority} onChange={v => { setPriority(v); save.mutate({ priority: v }); }} />
+                <Button
+                  size="sm"
+                  className="rounded-full gap-1.5 h-8 px-3"
+                  onClick={() => save.mutate()}
+                  disabled={!dirty || save.isPending}
+                  title="Salvar (Ctrl/Cmd + S)"
+                >
+                  <SaveIcon className="h-4 w-4" />
+                  {save.isPending ? "Salvando…" : "Salvar"}
+                </Button>
+                <div className="mx-1 h-5 w-px bg-border" />
+                <StatusPicker value={status} onChange={v => { setStatus(v); markDirty(); }} />
+                <PriorityPicker value={priority} onChange={v => { setPriority(v); markDirty(); }} />
                 <DatePicker
                   value={dueDate}
                   overdue={!!overdue}
-                  onChange={v => { setDueDate(v); save.mutate({ due_date: v || null }); }}
+                  onChange={v => { setDueDate(v); markDirty(); }}
                 />
                 <Button size="icon" variant="ghost" className="h-8 w-8 rounded-full text-muted-foreground hover:text-destructive" onClick={() => removeTask.mutate()} title="Excluir">
                   <Trash2 className="h-4 w-4" />
@@ -904,7 +953,7 @@ export function TaskModal({
                 >
                   {mode === "docked" ? <PanelLeftOpen className="h-4 w-4" /> : <PanelRightOpen className="h-4 w-4" />}
                 </Button>
-                <Button size="icon" variant="ghost" className="h-8 w-8 rounded-full" onClick={onClose} title="Fechar">
+                <Button size="icon" variant="ghost" className="h-8 w-8 rounded-full" onClick={requestClose} title="Fechar">
                   <X className="h-4 w-4" />
                 </Button>
               </div>
@@ -922,8 +971,8 @@ export function TaskModal({
               )}>
                 <input
                   value={title}
-                  onChange={e => setTitle(e.target.value)}
-                  onBlur={() => title.trim() && title !== task.title && save.mutate({ title: title.trim() })}
+                  onChange={e => { setTitle(e.target.value); markDirty(); }}
+                  onBlur={() => title.trim() && title !== task.title && markDirty()}
                   placeholder="Título da tarefa"
                   className="w-full bg-transparent outline-none text-2xl font-semibold tracking-tight placeholder:text-muted-foreground/50"
                 />
@@ -931,16 +980,16 @@ export function TaskModal({
                 {/* Propriedades — estilo ClickUp / Monday / Notion (inline, sem cards) */}
                 <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
                   <InlineField label="Status">
-                    <StatusPicker value={status} onChange={v => { setStatus(v); save.mutate({ status: v }); }} inline />
+                    <StatusPicker value={status} onChange={v => { setStatus(v); markDirty(); }} inline />
                   </InlineField>
                   <InlineField label="Prioridade">
-                    <PriorityPicker value={priority} onChange={v => { setPriority(v); save.mutate({ priority: v }); }} inline />
+                    <PriorityPicker value={priority} onChange={v => { setPriority(v); markDirty(); }} inline />
                   </InlineField>
                   <InlineField label="Prazo">
                     <DueDatePicker
                       value={dueDate}
                       overdue={!!overdue}
-                      onChange={v => { setDueDate(v); save.mutate({ due_date: v || null }); }}
+                      onChange={v => { setDueDate(v); markDirty(); }}
                     />
                   </InlineField>
                   <InlineField label="Responsável">
@@ -949,7 +998,7 @@ export function TaskModal({
                       members={teamMembers}
                       onChange={v => {
                         setAssigneeId(v);
-                        save.mutate({ assignee_id: v || null });
+                        markDirty();
                         if (!v) return;
                         const m = costMembers.find(cm => cm.user_id === v);
                         if (!m) return;
@@ -1015,8 +1064,8 @@ export function TaskModal({
                       <Input
                         type="number" min={0} step={0.5}
                         value={estimatedHours}
-                        onChange={e => setEstimatedHours(e.target.value)}
-                        onBlur={() => save.mutate({ estimated_hours: estimatedHours ? Number(estimatedHours) : null })}
+                        onChange={e => { setEstimatedHours(e.target.value); markDirty(); }}
+                        onBlur={() => markDirty()}
                         className="h-6 w-14 border-none bg-transparent p-0 text-xs text-right shadow-none focus-visible:ring-0"
                         placeholder="0"
                       />
@@ -1054,9 +1103,9 @@ export function TaskModal({
                         toast.success(`${toAdd.length} subtarefa(s) criadas por “${s.name}”`);
                       }
                     }
-                    save.mutate({ current_stage_id: s.id, status: nextStatus, subtasks: nextSubtasks });
+                    markDirty();
                   }}
-                  onStageChange={v => { setStage(v); save.mutate({ stage: v }); }}
+                  onStageChange={v => { setStage(v); markDirty(); }}
                 />
 
 
@@ -1066,8 +1115,8 @@ export function TaskModal({
                   <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Descrição</label>
                   <Textarea
                     value={description}
-                    onChange={e => setDescription(e.target.value)}
-                    onBlur={() => save.mutate({ description })}
+                    onChange={e => { setDescription(e.target.value); markDirty(); }}
+                    onBlur={() => markDirty()}
                     rows={5}
                     placeholder="Adicione contexto, briefing, links de referência..."
                     className="mt-2 rounded-xl resize-none"
@@ -1080,7 +1129,7 @@ export function TaskModal({
                     setDeliverables(next);
                     const legacyPlatform = next.map(d => d.platform).filter(Boolean).join(",");
                     setPlatform(legacyPlatform);
-                    save.mutate({ deliverables: next, platform: legacyPlatform || null });
+                    markDirty();
                   }}
                   onBill={(d) => billDeliverable.mutate(d)}
                   billingPending={billDeliverable.isPending}
@@ -1117,7 +1166,7 @@ export function TaskModal({
                           <button
                             key={k.value}
                             type="button"
-                            onClick={() => { setBroadcastKind(k.value); save.mutate({ broadcast_kind: k.value } as any); }}
+                            onClick={() => { setBroadcastKind(k.value); markDirty(); }}
                             className={cn(
                               "h-8 rounded-full px-3 text-xs border transition-colors",
                               broadcastKind === k.value
@@ -1131,7 +1180,7 @@ export function TaskModal({
                         {broadcastKind && (
                           <button
                             type="button"
-                            onClick={() => { setBroadcastKind(""); save.mutate({ broadcast_kind: null } as any); }}
+                            onClick={() => { setBroadcastKind(""); markDirty(); }}
                             className="h-8 rounded-full px-3 text-xs text-muted-foreground hover:text-foreground"
                           >
                             Limpar
@@ -1144,7 +1193,7 @@ export function TaskModal({
                           <div className="mt-1">
                             <DueDatePicker
                               value={recordedAt}
-                              onChange={v => { setRecordedAt(v); save.mutate({ recorded_at: v || null } as any); }}
+                              onChange={v => { setRecordedAt(v); markDirty(); }}
                             />
                           </div>
                         </div>
@@ -1155,7 +1204,7 @@ export function TaskModal({
                           <div className="mt-1">
                             <DueDatePicker
                               value={airedAt}
-                              onChange={v => { setAiredAt(v); save.mutate({ aired_at: v || null } as any); }}
+                              onChange={v => { setAiredAt(v); markDirty(); }}
                             />
                           </div>
                         </div>
@@ -1176,7 +1225,7 @@ export function TaskModal({
                   <TabsContent value="subtasks" className="mt-4">
                     <Subtasks
                       items={subtasks}
-                      onChange={next => { setSubtasks(next); save.mutate({ subtasks: next }); }}
+                      onChange={next => { setSubtasks(next); markDirty(); }}
                     />
                   </TabsContent>
 
@@ -1259,7 +1308,7 @@ export function TaskModal({
                         const proj = projectsList.find(p => p.id === nv);
                         const nextClient = proj?.client_id ?? clientId ?? "";
                         if (proj?.client_id) setClientId(proj.client_id);
-                        save.mutate({ project_id: nv || null, client_id: (nextClient || null) as string | null });
+                        markDirty();
                       }}
                     >
                       <SelectTrigger className="h-8 rounded-lg border-none bg-transparent hover:bg-muted/60 text-sm px-2 shadow-none">
@@ -1277,7 +1326,7 @@ export function TaskModal({
                       onValueChange={v => {
                         const nv = v === "none" ? "" : v;
                         setClientId(nv);
-                        save.mutate({ client_id: nv || null });
+                        markDirty();
                       }}
                     >
                       <SelectTrigger className="h-8 rounded-lg border-none bg-transparent hover:bg-muted/60 text-sm px-2 shadow-none">
@@ -1304,13 +1353,13 @@ export function TaskModal({
                       <span className="text-[11px] text-muted-foreground">{billingEnabled ? "Ativado" : "Desligado"}</span>
                       <Switch
                         checked={billingEnabled}
-                        onCheckedChange={v => { setBillingEnabled(v); save.mutate({ billing_enabled: v }); }}
+                        onCheckedChange={v => { setBillingEnabled(v); markDirty(); }}
                       />
                     </div>
                   </div>
                   <div className={cn("rounded-xl bg-card border border-border divide-y divide-border transition-opacity", !billingEnabled && "opacity-50 pointer-events-none")}>
                     <SidebarRow label="Modelo">
-                      <Select value={billingModel || "none"} onValueChange={v => { const nv = v === "none" ? "" : v; setBillingModel(nv as BillingModel | ""); save.mutate({ billing_model: (nv || null) as BillingModel | null }); }}>
+                      <Select value={billingModel || "none"} onValueChange={v => { const nv = v === "none" ? "" : v; setBillingModel(nv as BillingModel | ""); markDirty(); }}>
                         <SelectTrigger className="h-8 rounded-lg border-none bg-transparent hover:bg-muted/60 text-sm px-2 shadow-none">
                           <SelectValue placeholder="—" />
                         </SelectTrigger>
@@ -1330,8 +1379,8 @@ export function TaskModal({
                         <Input
                           type="number" min={0} step={0.01}
                           value={billingValue}
-                          onChange={e => setBillingValue(e.target.value)}
-                          onBlur={() => save.mutate({ billing_value: billingValue ? Number(billingValue) : null })}
+                          onChange={e => { setBillingValue(e.target.value); markDirty(); }}
+                          onBlur={() => markDirty()}
                           className="h-8 rounded-lg border-none bg-transparent hover:bg-muted/60 text-sm px-2 shadow-none focus-visible:ring-0"
                           placeholder="0,00"
                         />
@@ -1364,8 +1413,36 @@ export function TaskModal({
   return (
     <>
       {mode === "modal" && (
-        <div className="fixed inset-0 z-40 bg-black/50 animate-in fade-in-0" onClick={onClose} />
+        <div className="fixed inset-0 z-40 bg-black/50 animate-in fade-in-0" onClick={requestClose} />
       )}
+      {shell}
+      <AlertDialog open={unsavedOpen} onOpenChange={setUnsavedOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Alterações não salvas</AlertDialogTitle>
+            <AlertDialogDescription>
+              Você tem alterações nesta tarefa que ainda não foram salvas. O que deseja fazer?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="gap-2">
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => { setUnsavedOpen(false); setDirty(false); onClose(); }}
+            >
+              Sair sem salvar
+            </AlertDialogAction>
+            <AlertDialogAction
+              onClick={async () => {
+                setUnsavedOpen(false);
+                try { await save.mutateAsync(); onClose(); } catch { /* toast já mostrado */ }
+              }}
+            >
+              Salvar e sair
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
       {shell}
       {costPrompt && (
         <CostConfirmDialog
