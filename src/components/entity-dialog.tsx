@@ -41,14 +41,14 @@ export function EntityDialog({
     slate:   "bg-slate-500/10 text-slate-600 dark:text-slate-400 border-b border-slate-500/20",
     pink:    "bg-pink-500/10 text-pink-600 dark:text-pink-400 border-b border-pink-500/20",
   };
-  const width = size === "lg" ? "max-w-[960px]" : "max-w-[760px]";
+  const width = size === "lg" ? "sm:max-w-[960px]" : "sm:max-w-[720px]";
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         className={cn(
           "p-0 gap-0 rounded-3xl overflow-hidden flex flex-col",
-          "w-[calc(100vw-2rem)] sm:max-w-[760px] max-h-[85vh]",
+          "w-[calc(100vw-2rem)] max-h-[85vh]",
           width,
         )}
       >
