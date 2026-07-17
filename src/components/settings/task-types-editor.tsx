@@ -301,6 +301,7 @@ function TypeEditorPanel({ type, stages, onDelete, onDuplicate }:{
   const [name, setName] = useState(type.name);
   const [description, setDescription] = useState(type.description ?? "");
   const [color, setColor] = useState(type.color);
+  const [icon, setIcon] = useState<string | null>(type.icon ?? null);
   const [billingModel, setBillingModel] = useState(type.default_billing_model ?? "");
   const [defaultPrice, setDefaultPrice] = useState(type.default_price?.toString() ?? "");
 
@@ -309,6 +310,7 @@ function TypeEditorPanel({ type, stages, onDelete, onDuplicate }:{
     setName(type.name);
     setDescription(type.description ?? "");
     setColor(type.color);
+    setIcon(type.icon ?? null);
     setBillingModel(type.default_billing_model ?? "");
     setDefaultPrice(type.default_price?.toString() ?? "");
   }, [type.id]);
