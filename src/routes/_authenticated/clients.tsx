@@ -216,21 +216,30 @@ const initialForm: FormState = {
   notes: "",
 };
 
-function NewClientDialog({
-  open, onOpenChange, onCreate, pending,
+export function NewClientDialog({
+  open, onOpenChange, onSubmit, pending, initial, mode = "create",
 }: {
   open: boolean; onOpenChange: (v: boolean) => void;
-  onCreate: (v: Record<string, unknown>) => void;
+  onSubmit: (v: Record<string, unknown>) => void;
   pending: boolean;
+  initial?: Partial<FormState>;
+  mode?: "create" | "edit";
 }) {
-  const [form, setForm] = useState<FormState>(initialForm);
+  const [form, setForm] = useState<FormState>({ ...initialForm, ...(initial ?? {}) });
   const [tab, setTab] = useState("identificacao");
   const [lookingUpCnpj, setLookingUpCnpj] = useState(false);
   const [lookingUpCep, setLookingUpCep] = useState(false);
 
+  // Recarrega form quando abre em modo edit com dados diferentes
+  useEffect(() => {
+    if (open) setForm({ ...initialForm, ...(initial ?? {}) });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, initial]);
+
   const set = <K extends keyof FormState>(k: K, v: FormState[K]) => setForm(f => ({ ...f, [k]: v }));
-  const reset = () => { setForm(initialForm); setTab("identificacao"); };
+  const reset = () => { setForm({ ...initialForm, ...(initial ?? {}) }); setTab("identificacao"); };
   const handleOpen = (v: boolean) => { onOpenChange(v); if (!v) reset(); };
+
 
   // Auto CNPJ lookup quando completa 14 dígitos
   useEffect(() => {
