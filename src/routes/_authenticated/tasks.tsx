@@ -330,6 +330,23 @@ export function TaskModal({ task, onClose }: { task: Task | null; onClose: () =>
   const [platform, setPlatform] = useState<string>("");
   const [deliveryType, setDeliveryType] = useState<string>("");
   const [progress, setProgress] = useState<number>(0);
+  const [projectId, setProjectId] = useState<string>("");
+  const [clientId, setClientId] = useState<string>("");
+
+  const { data: projectsList = [] } = useQuery({
+    queryKey: ["tasks-modal-projects"],
+    queryFn: async () => {
+      const { data } = await supabase.from("projects").select("id,name,client_id").order("name");
+      return (data ?? []) as { id: string; name: string; client_id: string | null }[];
+    },
+  });
+  const { data: clientsList = [] } = useQuery({
+    queryKey: ["tasks-modal-clients"],
+    queryFn: async () => {
+      const { data } = await supabase.from("clients").select("id,name").order("name");
+      return (data ?? []) as { id: string; name: string }[];
+    },
+  });
 
   useEffect(() => {
     if (!task) return;
@@ -344,6 +361,8 @@ export function TaskModal({ task, onClose }: { task: Task | null; onClose: () =>
     setPlatform(task.platform ?? "");
     setDeliveryType(task.delivery_type ?? "");
     setProgress(task.progress ?? 0);
+    setProjectId(task.project_id ?? "");
+    setClientId(task.client_id ?? "");
   }, [task]);
 
   const save = useMutation({
