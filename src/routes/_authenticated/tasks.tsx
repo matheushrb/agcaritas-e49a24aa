@@ -568,8 +568,14 @@ export function TaskModal({
     setTaskTypeId(task.task_type_id ?? "");
     setCurrentStageId(task.current_stage_id ?? "");
     setBroadcastKind((task.broadcast_kind ?? "") as any);
-    setRecordedAt(task.recorded_at ?? "");
-    setAiredAt(task.aired_at ?? "");
+    {
+      const legacyRec = task.recorded_at ? [task.recorded_at.slice(0, 10)] : [];
+      const legacyAir = task.aired_at ? [task.aired_at.slice(0, 10)] : [];
+      const rec = Array.isArray(task.recorded_dates) && task.recorded_dates.length > 0 ? task.recorded_dates : legacyRec;
+      const air = Array.isArray(task.aired_dates) && task.aired_dates.length > 0 ? task.aired_dates : legacyAir;
+      setRecordedDates(rec);
+      setAiredDates(air);
+    }
     setDirty(false);
   }, [task]);
 
