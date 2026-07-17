@@ -190,6 +190,8 @@ function NewInvoiceWizard({
   const [notes, setNotes] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
+  const [selectedDeliverables, setSelectedDeliverables] = useState<Set<string>>(new Set());
+
   // Pending charges + billable tasks
   const { data: charges = [] } = useQuery<PendingCharge[]>({
     queryKey: ["invoices-pending-charges"],
@@ -204,25 +206,33 @@ function NewInvoiceWizard({
     },
   });
 
-  const { data: tasks = [] } = useQuery<BillableTask[]>({
+  const { data: tasksData = { tasks: [], invoicedMainTaskIds: new Set<string>(), invoicedDeliverableIds: new Set<string>() } } = useQuery({
     queryKey: ["invoices-billable-tasks"],
     queryFn: async () => {
       const { data } = await supabase
         .from("tasks")
-        .select("id,title,billing_value,billing_enabled,client_id,project_id,status")
+        .select("id,title,billing_value,billing_enabled,client_id,project_id,status,deliverables")
         .eq("billing_enabled", true);
       const ts = (data ?? []) as BillableTask[];
-      // Só ocultamos tarefas cujo valor principal (charge sem deliverable_id) já foi faturado.
-      // Cobranças de entregáveis não bloqueiam — permitem faturar o principal antes e entregáveis depois (e vice-versa).
-      const { data: mainCharges } = await supabase
+      // Cobranças já existentes (main sem deliverable_id, e por entregável)
+      const { data: existingCharges } = await supabase
         .from("charges")
-        .select("task_id")
-        .not("task_id", "is", null)
-        .is("deliverable_id", null);
-      const set = new Set((mainCharges ?? []).map(r => r.task_id as string));
-      return ts.filter(t => !set.has(t.id));
+        .select("task_id,deliverable_id")
+        .not("task_id", "is", null);
+      const invoicedMainTaskIds = new Set<string>();
+      const invoicedDeliverableIds = new Set<string>();
+      for (const r of (existingCharges ?? []) as Array<{ task_id: string | null; deliverable_id: string | null }>) {
+        if (!r.task_id) continue;
+        if (r.deliverable_id) invoicedDeliverableIds.add(r.deliverable_id);
+        else invoicedMainTaskIds.add(r.task_id);
+      }
+      return { tasks: ts, invoicedMainTaskIds, invoicedDeliverableIds };
     },
   });
+
+  const tasks = tasksData.tasks;
+  const invoicedMainTaskIds = tasksData.invoicedMainTaskIds;
+  const invoicedDeliverableIds = tasksData.invoicedDeliverableIds;
 
   const filteredCharges = useMemo(() => charges.filter(c =>
     (!filterClient || c.client_id === filterClient) &&
@@ -230,21 +240,53 @@ function NewInvoiceWizard({
   ), [charges, filterClient, filterProject]);
 
   const filteredTasks = useMemo(() => tasks.filter(t =>
+    !invoicedMainTaskIds.has(t.id) &&
     (!filterClient || t.client_id === filterClient) &&
     (!filterProject || t.project_id === filterProject) &&
     (t.billing_value ?? 0) > 0,
-  ), [tasks, filterClient, filterProject]);
+  ), [tasks, invoicedMainTaskIds, filterClient, filterProject]);
+
+  const billableDeliverables = useMemo<BillableDeliverable[]>(() => {
+    const out: BillableDeliverable[] = [];
+    for (const t of tasks) {
+      if (filterClient && t.client_id !== filterClient) continue;
+      if (filterProject && t.project_id !== filterProject) continue;
+      const list = Array.isArray(t.deliverables) ? t.deliverables : [];
+      for (const d of list) {
+        if (!d?.id) continue;
+        if (!d.delivered) continue;
+        if (!d.billing_enabled) continue;
+        const amount = Number(d.billing_value ?? 0);
+        if (amount <= 0) continue;
+        if (d.invoiced) continue;
+        if (invoicedDeliverableIds.has(d.id)) continue;
+        const parts = [d.platform, d.channel, d.type].filter(Boolean).join(" • ");
+        out.push({
+          key: `${t.id}::${d.id}`,
+          taskId: t.id,
+          deliverableId: d.id,
+          taskTitle: t.title,
+          label: `Entregável: ${t.title}${parts ? ` — ${parts}` : ""}`,
+          amount,
+          client_id: t.client_id,
+          project_id: t.project_id,
+        });
+      }
+    }
+    return out;
+  }, [tasks, invoicedDeliverableIds, filterClient, filterProject]);
 
   const total = useMemo(() => {
     let t = 0;
     for (const c of filteredCharges) if (selectedCharges.has(c.id)) t += Number(c.amount ?? 0);
     for (const tk of filteredTasks) if (selectedTasks.has(tk.id)) t += Number(tk.billing_value ?? 0);
+    for (const d of billableDeliverables) if (selectedDeliverables.has(d.key)) t += d.amount;
     return t;
-  }, [filteredCharges, filteredTasks, selectedCharges, selectedTasks]);
+  }, [filteredCharges, filteredTasks, billableDeliverables, selectedCharges, selectedTasks, selectedDeliverables]);
 
   const canGoNext = step === 1
     ? true
-    : step === 2 ? (selectedCharges.size + selectedTasks.size) > 0
+    : step === 2 ? (selectedCharges.size + selectedTasks.size + selectedDeliverables.size) > 0
     : !!payerClient && !!issueDate;
 
   async function submit() {
