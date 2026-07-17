@@ -56,6 +56,8 @@ function ClientsPage() {
   const [status, setStatus] = useState("all");
   const [segment, setSegment] = useState("all");
   const [newOpen, setNewOpen] = useState(false);
+  const [revealedId, setRevealedId] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   const { data: clients = [], isLoading } = useQuery<Client[]>({
     queryKey: ["clients-list"],
@@ -66,6 +68,16 @@ function ClientsPage() {
         .order("name");
       if (error) throw error;
       return (data ?? []) as Client[];
+    },
+  });
+
+  const { data: editingClient } = useQuery({
+    queryKey: ["client-edit", editingId],
+    enabled: !!editingId,
+    queryFn: async () => {
+      const { data, error } = await supabase.from("clients").select("*").eq("id", editingId!).maybeSingle();
+      if (error) throw error;
+      return data;
     },
   });
 
@@ -88,6 +100,39 @@ function ClientsPage() {
       if (error) throw error;
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["clients-list"] }); toast.success("Cliente criado"); setNewOpen(false); },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const update = useMutation({
+    mutationFn: async (input: Record<string, unknown>) => {
+      if (!editingId) throw new Error("Sem cliente");
+      const { error } = await supabase.from("clients").update(input).eq("id", editingId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["clients-list"] });
+      qc.invalidateQueries({ queryKey: ["client-edit", editingId] });
+      toast.success("Cliente atualizado");
+      setEditingId(null);
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const archive = useMutation({
+    mutationFn: async ({ id, archived }: { id: string; archived: boolean }) => {
+      const { error } = await supabase.from("clients").update({ status: archived ? "inactive" : "active" }).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: (_d, v) => { qc.invalidateQueries({ queryKey: ["clients-list"] }); toast.success(v.archived ? "Cliente arquivado" : "Cliente reativado"); setRevealedId(null); },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const remove = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("clients").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["clients-list"] }); toast.success("Cliente excluído"); setRevealedId(null); },
     onError: (e: Error) => toast.error(e.message),
   });
 
