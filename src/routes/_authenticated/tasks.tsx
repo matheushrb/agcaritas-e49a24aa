@@ -676,7 +676,10 @@ export function TaskModal({
   if (!task) return null;
   const overdue = dueDate && new Date(dueDate) < new Date() && status !== "done";
   const subtasksDone = subtasks.filter(s => s.done).length;
-  const stagesDoneCount = status === "done" ? STAGE_ORDER.length : Math.max(0, STAGE_ORDER.indexOf(stage));
+  const stagesTotal = useDynamicStages ? typeStages.length : STAGE_ORDER.length;
+  const stagesDoneCount = useDynamicStages
+    ? (status === "done" ? stagesTotal : dynamicStageIndex)
+    : (status === "done" ? STAGE_ORDER.length : Math.max(0, STAGE_ORDER.indexOf(stage)));
 
   // Minimized pill
   if (mode === "minimized") {
