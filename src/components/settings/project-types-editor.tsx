@@ -132,7 +132,7 @@ export function ProjectTypesEditor() {
     if (!editing) return;
     const firstAvail = taskTypes.find((tt: any) => !(editing.base_tasks ?? []).some(b => b.task_type_id === tt.id));
     if (!firstAvail) { toast.info("Cadastre mais tipos de tarefa primeiro."); return; }
-    setDraft({ ...editing, base_tasks: [...(editing.base_tasks ?? []), { task_type_id: firstAvail.id, quantity: 1 }] });
+    setDraft({ ...editing, base_tasks: [...(editing.base_tasks ?? []), { task_type_id: firstAvail.id }] });
   }
   function removeBaseTask(idx: number) {
     if (!editing) return;
@@ -141,8 +141,7 @@ export function ProjectTypesEditor() {
     setDraft({ ...editing, base_tasks: list });
   }
 
-  const totalQty = (editing?.base_tasks ?? []).reduce((s, t) => s + (Number(t.quantity) || 1), 0);
-  const totalHours = totalQty * Number(editing?.avg_task_hours ?? 0);
+  const baseCount = (editing?.base_tasks ?? []).length;
   const togglePlatform = (id: string) => {
     if (!editing) return;
     const cur = editing.platform_ids ?? [];
