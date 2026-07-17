@@ -42,6 +42,9 @@ type Deliverable = {
   billing_enabled: boolean;
   billing_model: BillingModel | null;
   billing_value: number | null;
+  delivered_date?: string | null;
+  link?: string | null;
+  channel?: string | null;
   invoiced?: boolean;
 };
 
@@ -597,18 +600,33 @@ export function TaskModal({
         const { data: proj } = await supabase.from("projects").select("client_id").eq("id", resolvedProjectId).maybeSingle();
         resolvedClient = (proj?.client_id as string) ?? null;
       }
-      const today = new Date().toISOString().slice(0, 10);
+      const deliveredDate = d.delivered_date || new Date().toISOString().slice(0, 10);
       const platLabel = d.platform ? platformLabel(d.platform) : "Entregável";
       const typeLabel = d.type ? (DELIVERY_TYPE_OPTIONS.find(o => o.value === d.type)?.label ?? d.type) : "";
+      const channelLabel = d.channel ? ` (${d.channel})` : "";
+      const dateLabel = new Date(deliveredDate + "T00:00:00").toLocaleDateString("pt-BR");
+      const description = `${typeLabel ? `${typeLabel} no ${platLabel}` : platLabel}${channelLabel}: R$ ${value.toLocaleString("pt-BR", { minimumFractionDigits: 2 })} - ${dateLabel}`;
+
+      // Localiza cobrança-pai da tarefa (se já existir) para linkar como sub-item.
+      const { data: parentCharge } = await supabase
+        .from("charges")
+        .select("id")
+        .eq("task_id", persistedTaskId)
+        .is("parent_charge_id", null)
+        .is("deliverable_id", null)
+        .maybeSingle();
+
       const { error } = await supabase.from("charges").insert({
         organization_id: profile.organization_id,
         project_id: resolvedProjectId,
         task_id: persistedTaskId,
         client_id: resolvedClient,
-        description: `${title.trim() || task.title || "Tarefa"} — ${platLabel}${typeLabel ? ` (${typeLabel})` : ""}`,
+        parent_charge_id: parentCharge?.id ?? null,
+        deliverable_id: d.id,
+        description,
         amount: value,
         status: "pending",
-        due_date: today,
+        due_date: deliveredDate,
         type: "income",
       });
       if (error) throw error;
@@ -722,10 +740,29 @@ export function TaskModal({
     >
             {/* Top bar */}
             <div className="flex items-center gap-2 px-6 py-3 border-b border-border bg-white">
-              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
                 <span className="rounded-md bg-muted px-2 py-0.5 font-mono">#{task.id.slice(0, 6).toUpperCase()}</span>
-                <span>·</span>
-                <span>Tarefa</span>
+                <TaskTypePicker
+                  value={taskTypeId}
+                  types={taskTypes}
+                  variant="badge"
+                  onChange={(id, t) => {
+                    setTaskTypeId(id);
+                    setCurrentStageId("");
+                    const patch: Partial<Task> = { task_type_id: id || null, current_stage_id: null };
+                    if (t) {
+                      if (!billingModel && t.default_billing_model) {
+                        setBillingModel(t.default_billing_model as BillingModel);
+                        patch.billing_model = t.default_billing_model as BillingModel;
+                      }
+                      if (!billingValue && t.default_price != null) {
+                        setBillingValue(String(t.default_price));
+                        patch.billing_value = t.default_price;
+                      }
+                    }
+                    save.mutate(patch);
+                  }}
+                />
               </div>
 
               <div className="ml-auto flex items-center gap-1">
@@ -778,29 +815,6 @@ export function TaskModal({
 
                 {/* Propriedades — estilo ClickUp / Monday / Notion (inline, sem cards) */}
                 <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
-                  <InlineField label="Tipo">
-                    <TaskTypePicker
-                      value={taskTypeId}
-                      types={taskTypes}
-                      onChange={(id, t) => {
-                        setTaskTypeId(id);
-                        setCurrentStageId(""); // reset — usuário escolhe a etapa
-                        const patch: Partial<Task> = { task_type_id: id || null, current_stage_id: null };
-                        // aplica defaults do tipo se ainda não configurado nesta task
-                        if (t) {
-                          if (!billingModel && t.default_billing_model) {
-                            setBillingModel(t.default_billing_model as BillingModel);
-                            patch.billing_model = t.default_billing_model as BillingModel;
-                          }
-                          if (!billingValue && t.default_price != null) {
-                            setBillingValue(String(t.default_price));
-                            patch.billing_value = t.default_price;
-                          }
-                        }
-                        save.mutate(patch);
-                      }}
-                    />
-                  </InlineField>
                   <InlineField label="Status">
                     <StatusPicker value={status} onChange={v => { setStatus(v); save.mutate({ status: v }); }} inline />
                   </InlineField>
@@ -900,6 +914,20 @@ export function TaskModal({
                     className="mt-2 rounded-xl resize-none"
                   />
                 </div>
+
+                <DeliverablesSection
+                  deliverables={deliverables}
+                  onChange={(next) => {
+                    setDeliverables(next);
+                    const legacyPlatform = next.map(d => d.platform).filter(Boolean).join(",");
+                    setPlatform(legacyPlatform);
+                    save.mutate({ deliverables: next, platform: legacyPlatform || null });
+                  }}
+                  onBill={(d) => billDeliverable.mutate(d)}
+                  billingPending={billDeliverable.isPending}
+                />
+
+
 
 
                 <Tabs defaultValue="subtasks" className="w-full">
@@ -1028,18 +1056,7 @@ export function TaskModal({
                   </SidebarRow>
                 </SidebarSection>
 
-                <DeliverablesSection
-                  deliverables={deliverables}
-                  onChange={(next) => {
-                    setDeliverables(next);
-                    // manter platform legado sincronizado (comma-joined)
-                    const legacyPlatform = next.map(d => d.platform).filter(Boolean).join(",");
-                    setPlatform(legacyPlatform);
-                    save.mutate({ deliverables: next, platform: legacyPlatform || null });
-                  }}
-                  onBill={(d) => billDeliverable.mutate(d)}
-                  billingPending={billDeliverable.isPending}
-                />
+
 
 
 
@@ -1264,28 +1281,50 @@ function TaskStageSection({
   );
 }
 
-/* ---------- Task type picker (inline field) ---------- */
+/* ---------- Task type picker ---------- */
 function TaskTypePicker({
-  value, types, onChange,
+  value, types, onChange, variant = "inline",
 }: {
   value: string;
   types: TaskTypeRow[];
+  variant?: "inline" | "badge";
   onChange: (id: string, type: TaskTypeRow | null) => void;
 }) {
   const selected = types.find(t => t.id === value) ?? null;
+  const color = selected?.color ?? "";
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <button className="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium hover:bg-muted transition-colors">
-          {selected ? (
-            <>
-              <span className="h-2 w-2 rounded-full" style={{ backgroundColor: selected.color }} />
-              {selected.name}
-            </>
-          ) : (
-            <span className="text-muted-foreground">Sem tipo</span>
-          )}
-        </button>
+        {variant === "badge" ? (
+          <button
+            className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium border transition-colors"
+            style={selected ? {
+              backgroundColor: `${color}22`,
+              color: color,
+              borderColor: `${color}55`,
+            } : undefined}
+          >
+            {selected ? (
+              <>
+                <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: color }} />
+                {selected.name}
+              </>
+            ) : (
+              <span className="text-muted-foreground">Definir tipo</span>
+            )}
+          </button>
+        ) : (
+          <button className="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium hover:bg-muted transition-colors">
+            {selected ? (
+              <>
+                <span className="h-2 w-2 rounded-full" style={{ backgroundColor: color }} />
+                {selected.name}
+              </>
+            ) : (
+              <span className="text-muted-foreground">Sem tipo</span>
+            )}
+          </button>
+        )}
       </PopoverTrigger>
       <PopoverContent align="start" className="p-1 w-64 rounded-xl">
         <button
@@ -1398,21 +1437,21 @@ function DeliverablesSection({
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-2 px-1">
-        <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Entregáveis</span>
-        <Button size="sm" variant="ghost" className="h-6 px-2 rounded-full text-xs gap-1" onClick={add}>
-          <Plus className="h-3 w-3" /> Adicionar
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Entregáveis</span>
+        <Button size="sm" variant="outline" className="h-7 rounded-full text-xs gap-1" onClick={add}>
+          <Plus className="h-3.5 w-3.5" /> Adicionar entregável
         </Button>
       </div>
 
       {deliverables.length === 0 ? (
-        <div className="rounded-xl bg-card border border-dashed border-border px-3 py-4 text-center text-xs text-muted-foreground">
-          Nenhum entregável ainda. Adicione uma plataforma para começar.
+        <div className="rounded-xl bg-card border border-dashed border-border px-4 py-6 text-center text-xs text-muted-foreground">
+          Nenhum entregável nesta tarefa. Adicione um para separar plataforma, canal, data de entrega, link e valor.
         </div>
       ) : (
         <div className="space-y-2">
           {deliverables.map((d, i) => (
-            <div key={d.id} className="rounded-xl bg-card border border-border p-3 space-y-2">
+            <div key={d.id} className="rounded-xl bg-card border border-border p-3 space-y-2.5">
               <div className="flex items-center justify-between">
                 <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
                   Entregável {i + 1}
@@ -1423,28 +1462,58 @@ function DeliverablesSection({
                 </Button>
               </div>
 
-              <div className="grid grid-cols-2 gap-1.5">
-                <Select value={d.platform || "none"} onValueChange={v => update(d.id, { platform: v === "none" ? "" : v })}>
-                  <SelectTrigger className="h-8 rounded-lg text-xs">
-                    <SelectValue placeholder="Plataforma" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">—</SelectItem>
-                    {PLATFORM_OPTIONS.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-                <Select value={d.type || "none"} onValueChange={v => update(d.id, { type: v === "none" ? "" : v })}>
-                  <SelectTrigger className="h-8 rounded-lg text-xs">
-                    <SelectValue placeholder="Tipo" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">—</SelectItem>
-                    {DELIVERY_TYPE_OPTIONS.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
-                  </SelectContent>
-                </Select>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-1.5">
+                <div>
+                  <label className="text-[10px] text-muted-foreground uppercase">Plataforma</label>
+                  <Select value={d.platform || "none"} onValueChange={v => update(d.id, { platform: v === "none" ? "" : v })}>
+                    <SelectTrigger className="h-8 rounded-lg text-xs mt-1"><SelectValue placeholder="—" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">—</SelectItem>
+                      {PLATFORM_OPTIONS.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <label className="text-[10px] text-muted-foreground uppercase">Tipo</label>
+                  <Select value={d.type || "none"} onValueChange={v => update(d.id, { type: v === "none" ? "" : v })}>
+                    <SelectTrigger className="h-8 rounded-lg text-xs mt-1"><SelectValue placeholder="—" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">—</SelectItem>
+                      {DELIVERY_TYPE_OPTIONS.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <label className="text-[10px] text-muted-foreground uppercase">Canal</label>
+                  <Input
+                    value={d.channel ?? ""}
+                    onChange={e => update(d.id, { channel: e.target.value || null })}
+                    placeholder="Ex: @caritas"
+                    className="h-8 rounded-lg text-xs mt-1"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] text-muted-foreground uppercase">Entregue em</label>
+                  <Input
+                    type="date"
+                    value={d.delivered_date ?? ""}
+                    onChange={e => update(d.id, { delivered_date: e.target.value || null })}
+                    className="h-8 rounded-lg text-xs mt-1"
+                  />
+                </div>
               </div>
 
-              <div className="flex items-center justify-between pt-1 border-t border-border">
+              <div>
+                <label className="text-[10px] text-muted-foreground uppercase">Link da entrega</label>
+                <Input
+                  value={d.link ?? ""}
+                  onChange={e => update(d.id, { link: e.target.value || null })}
+                  placeholder="https://…"
+                  className="h-8 rounded-lg text-xs mt-1"
+                />
+              </div>
+
+              <div className="flex items-center justify-between pt-1.5 border-t border-border">
                 <span className="text-[11px] text-muted-foreground">Faturar este entregável</span>
                 <Switch
                   checked={d.billing_enabled}
