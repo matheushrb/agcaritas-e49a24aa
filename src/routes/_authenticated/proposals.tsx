@@ -20,9 +20,10 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Search, Plus, FileText, DollarSign, TrendingUp, CheckCircle2, Send,
-  Eye, XCircle, Trash2, Building2, Calendar, Sparkles,
+  Eye, XCircle, Trash2, Building2, Calendar, Sparkles, Download, Link2,
 } from "lucide-react";
 import { toast } from "sonner";
+import { generateProposalPDF } from "@/lib/pdf/proposal-pdf";
 
 const searchSchema = z.object({
   leadId: z.string().optional(),
