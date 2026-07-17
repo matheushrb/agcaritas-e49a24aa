@@ -29,6 +29,7 @@ type Project = {
   created_at: string;
 };
 type Client = { id: string; name: string };
+type Charge = { id: string; project_id: string | null; amount: number };
 
 const STATUS_META: Record<ProjectStatus, { label: string; color: string }> = {
   planning: { label: "Planejamento", color: "bg-muted text-muted-foreground" },
