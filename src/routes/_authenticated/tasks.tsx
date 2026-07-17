@@ -870,7 +870,7 @@ export function TaskModal({
         <Button size="icon" variant="ghost" className="h-7 w-7 rounded-full" onClick={() => setMode("modal")} title="Restaurar">
           <Maximize2 className="h-3.5 w-3.5" />
         </Button>
-        <Button size="icon" variant="ghost" className="h-7 w-7 rounded-full text-muted-foreground hover:text-destructive" onClick={onClose} title="Fechar">
+        <Button size="icon" variant="ghost" className="h-7 w-7 rounded-full text-muted-foreground hover:text-destructive" onClick={requestClose} title="Fechar">
           <X className="h-3.5 w-3.5" />
         </Button>
       </div>
