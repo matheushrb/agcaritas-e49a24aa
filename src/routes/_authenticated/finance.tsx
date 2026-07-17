@@ -11,9 +11,10 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { EntityDialog, DialogField, DialogCancelButton } from "@/components/entity-dialog";
 import { Button as UIButton } from "@/components/ui/button";
-import { DollarSign, Plus, TrendingUp, TrendingDown, Wallet, AlertCircle, CheckCircle2, Clock, Receipt } from "lucide-react";
+import { DollarSign, Plus, TrendingUp, TrendingDown, Wallet, AlertCircle, CheckCircle2, Clock, Receipt, Download } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { generateInvoicePDF } from "@/lib/pdf/invoice-pdf";
 
 export const Route = createFileRoute("/_authenticated/finance")({
   component: FinancePage,
