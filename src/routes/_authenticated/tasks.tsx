@@ -828,34 +828,19 @@ export function TaskModal({
                   </SidebarRow>
                 </SidebarSection>
 
-                <SidebarSection title="Entrega">
-                  <SidebarRow label="Plataforma">
-                    <PlatformMultiSelect
-                      value={platform}
-                      onChange={v => { setPlatform(v); save.mutate({ platform: v || null }); }}
-                    />
-                  </SidebarRow>
-                  <SidebarRow label="Tipo">
-                    <Select
-                      value={deliveryType || "none"}
-                      onValueChange={v => {
-                        const nv = v === "none" ? "" : v;
-                        setDeliveryType(nv);
-                        save.mutate({ delivery_type: nv || null });
-                      }}
-                    >
-                      <SelectTrigger className="h-8 rounded-lg border-none bg-transparent hover:bg-muted/60 text-sm px-2 shadow-none">
-                        <SelectValue placeholder="—" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="none">—</SelectItem>
-                        {DELIVERY_TYPE_OPTIONS.map(o => (
-                          <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </SidebarRow>
-                </SidebarSection>
+                <DeliverablesSection
+                  deliverables={deliverables}
+                  onChange={(next) => {
+                    setDeliverables(next);
+                    // manter platform legado sincronizado (comma-joined)
+                    const legacyPlatform = next.map(d => d.platform).filter(Boolean).join(",");
+                    setPlatform(legacyPlatform);
+                    save.mutate({ deliverables: next, platform: legacyPlatform || null });
+                  }}
+                  onBill={(d) => billDeliverable.mutate(d)}
+                  billingPending={billDeliverable.isPending}
+                />
+
 
 
 
