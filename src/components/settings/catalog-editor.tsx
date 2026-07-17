@@ -129,7 +129,7 @@ export function CatalogEditor({
                 )}
               >
                 <GripVertical className="h-4 w-4 text-muted-foreground" />
-                <IconPreview name={r.icon} color={r.color} />
+                <IconPreview name={r.icon} color={r.color} iconUrl={r.icon_url} />
                 <div className="flex-1 min-w-0">
                   <div className="text-sm font-medium truncate">{r.name}</div>
                   {r.category && <div className="text-[11px] text-muted-foreground">{r.category}</div>}
