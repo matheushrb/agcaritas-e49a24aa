@@ -190,7 +190,12 @@ export function TaskTypesEditor() {
                     active && "bg-muted",
                   )}
                 >
-                  <span className="h-3 w-3 rounded-md shrink-0" style={{ backgroundColor: t.color }} />
+                  <span
+                    className="h-6 w-6 rounded-md shrink-0 flex items-center justify-center"
+                    style={{ backgroundColor: `${t.color}22`, color: t.color }}
+                  >
+                    {t.icon ? <TaskTypeIcon name={t.icon} className="h-3.5 w-3.5" /> : <span className="h-2 w-2 rounded-sm" style={{ backgroundColor: t.color }} />}
+                  </span>
                   <div className="min-w-0 flex-1">
                     <div className="text-sm font-medium truncate">{t.name}</div>
                     <div className="text-[11px] text-muted-foreground">{stageCount} etapa{stageCount === 1 ? "" : "s"}</div>
