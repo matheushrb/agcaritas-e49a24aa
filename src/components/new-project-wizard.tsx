@@ -488,58 +488,77 @@ function StepBudgets({ v, patch, togglePlatform }: {
   );
 }
 
-function StepStrategy({ v, patch }: {
+function StepStrategy({ v, patch, typeOptions }: {
   v: ProjectWizardValue;
   patch: <K extends keyof ProjectWizardValue>(k: K, val: ProjectWizardValue[K]) => void;
+  typeOptions: { value: string; label: string }[];
 }) {
   const toggle = (key: keyof ProjectWizardValue["scope_flags"]) =>
     patch("scope_flags", { ...v.scope_flags, [key]: !v.scope_flags[key] });
 
   return (
-    <Section title="Artefatos de planejamento estratégico">
-      <p className="text-xs text-muted-foreground -mt-1">Ative o que este projeto vai produzir. Cada item vira uma aba na página do projeto.</p>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-        {STRATEGY_ITEMS.map(item => {
-          const on = v.scope_flags[item.key];
-          return (
-            <button
-              key={item.key}
-              type="button"
-              onClick={() => toggle(item.key)}
-              className={cn(
-                "flex items-start gap-3 rounded-2xl border p-4 text-left transition-all",
-                on ? "border-primary bg-primary/5" : "border-border hover:bg-muted/50",
-              )}
-            >
-              <div className={cn(
-                "mt-0.5 h-5 w-5 rounded-md border grid place-items-center shrink-0",
-                on ? "bg-primary border-primary text-primary-foreground" : "border-border",
-              )}>{on && <Check className="h-3 w-3" />}</div>
-              <div className="min-w-0">
-                <div className="font-medium text-sm">{item.label}</div>
-                <div className="text-xs text-muted-foreground mt-0.5">{item.desc}</div>
-              </div>
-            </button>
-          );
-        })}
+    <div className="space-y-4">
+      <div className="rounded-2xl border border-border p-4 flex items-center justify-between gap-4">
+        <div>
+          <div className="font-medium text-sm">Este projeto terá planejamento estratégico?</div>
+          <p className="text-xs text-muted-foreground">Ative para escolher os artefatos (SWOT, Personas, KPIs…) que virarão abas do projeto.</p>
+        </div>
+        <Switch
+          checked={v.strategy_enabled}
+          onCheckedChange={c => {
+            patch("strategy_enabled", c);
+            if (!c) patch("scope_flags", { swot: false, personas: false, competitors: false, roadmap: false, kpis: false, action_plan: false });
+          }}
+        />
       </div>
 
-      <div className="rounded-2xl border border-border p-4 bg-muted/30 mt-3">
+      {v.strategy_enabled && (
+        <Section title="Artefatos de planejamento estratégico">
+          <p className="text-xs text-muted-foreground -mt-1">Cada item ativado vira uma aba na página do projeto.</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {STRATEGY_ITEMS.map(item => {
+              const on = v.scope_flags[item.key];
+              return (
+                <button
+                  key={item.key}
+                  type="button"
+                  onClick={() => toggle(item.key)}
+                  className={cn(
+                    "flex items-start gap-3 rounded-2xl border p-4 text-left transition-all",
+                    on ? "border-primary bg-primary/5" : "border-border hover:bg-muted/50",
+                  )}
+                >
+                  <div className={cn(
+                    "mt-0.5 h-5 w-5 rounded-md border grid place-items-center shrink-0",
+                    on ? "bg-primary border-primary text-primary-foreground" : "border-border",
+                  )}>{on && <Check className="h-3 w-3" />}</div>
+                  <div className="min-w-0">
+                    <div className="font-medium text-sm">{item.label}</div>
+                    <div className="text-xs text-muted-foreground mt-0.5">{item.desc}</div>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </Section>
+      )}
+
+      <div className="rounded-2xl border border-border p-4 bg-muted/30">
         <div className="text-[11px] uppercase tracking-wider text-muted-foreground mb-2">Resumo do projeto</div>
         <div className="text-sm font-semibold">{v.name || "Sem título"}</div>
         <div className="text-xs text-muted-foreground mt-1 flex flex-wrap gap-1">
-          <Badge variant="outline" className="rounded-full">{PROJECT_TYPES.find(t => t.value === v.project_type)?.label}</Badge>
+          {v.project_type && <Badge variant="outline" className="rounded-full">{typeOptions.find(t => t.value === v.project_type)?.label ?? v.project_type}</Badge>}
           <Badge variant="outline" className="rounded-full">{BILLING_OPTIONS.find(b => b.value === v.billing_model)?.label}</Badge>
           <Badge variant="outline" className="rounded-full">{URGENCY.find(u => u.value === v.urgency)?.label}</Badge>
-          {v.tools.length > 0 && <Badge variant="outline" className="rounded-full">{v.tools.length} ferramentas</Badge>}
+          {v.tools.length > 0 && <Badge variant="outline" className="rounded-full">{v.tools.length} plataformas</Badge>}
           {v.traffic_budget?.enabled && <Badge variant="outline" className="rounded-full">Tráfego pago</Badge>}
-          {Object.values(v.scope_flags).some(Boolean) && (
+          {v.strategy_enabled && Object.values(v.scope_flags).some(Boolean) && (
             <Badge variant="outline" className="rounded-full">
               {Object.values(v.scope_flags).filter(Boolean).length} artefatos estratégicos
             </Badge>
           )}
         </div>
       </div>
-    </Section>
+    </div>
   );
 }
