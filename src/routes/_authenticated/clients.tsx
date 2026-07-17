@@ -160,7 +160,8 @@ function ClientsPage() {
       </div>
 
       <NewClientDialog open={newOpen} onOpenChange={setNewOpen}
-        onCreate={v => create.mutate(v)} pending={create.isPending} />
+        onSubmit={v => create.mutate(v)} pending={create.isPending} />
+
     </>
   );
 }
