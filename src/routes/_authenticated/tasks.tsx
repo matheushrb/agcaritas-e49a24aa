@@ -274,10 +274,6 @@ function TasksPage() {
       <TaskModal
         task={selected}
         onClose={handleCloseModal}
-        onCreated={(id) => {
-          setDraftTask(null);
-          setSelectedId(id);
-        }}
       />
     </>
   );
@@ -361,11 +357,9 @@ function KanbanCard({ task, onClick }: { task: Task; onClick: () => void }) {
 export function TaskModal({
   task,
   onClose,
-  onCreated,
 }: {
   task: Task | null;
   onClose: () => void;
-  onCreated?: (id: string) => void;
 }) {
   const qc = useQueryClient();
   const [title, setTitle] = useState("");
@@ -461,7 +455,6 @@ export function TaskModal({
     try {
       const id = await creatingDraftRef.current;
       persistedDraftIdRef.current = id;
-      onCreated?.(id);
       return { id, created: true };
     } finally {
       creatingDraftRef.current = null;
@@ -488,7 +481,8 @@ export function TaskModal({
   const removeTask = useMutation({
     mutationFn: async () => {
       if (!task) return;
-      const { error } = await supabase.from("tasks").delete().eq("id", task.id);
+      if (isLocalDraft && !persistedDraftIdRef.current) return;
+      const { error } = await supabase.from("tasks").delete().eq("id", persistedDraftIdRef.current ?? task.id);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -507,20 +501,22 @@ export function TaskModal({
       if (!billingEnabled) throw new Error("Ative a chave de faturamento nesta tarefa");
       const value = billingValue ? Number(billingValue) : 0;
       if (!value || value <= 0) throw new Error("Defina um valor de faturamento primeiro");
+      const persistedTaskId = isLocalDraft ? (await createDraftRecord({})).id : task.id;
       const { data: profile } = await supabase.from("profiles").select("organization_id").maybeSingle();
       if (!profile?.organization_id) throw new Error("Sem organização");
-      let resolvedClient: string | null = task.client_id ?? null;
-      if (!resolvedClient && task.project_id) {
-        const { data: proj } = await supabase.from("projects").select("client_id").eq("id", task.project_id).maybeSingle();
+      const resolvedProjectId = projectId || task.project_id || null;
+      let resolvedClient: string | null = clientId || task.client_id || null;
+      if (!resolvedClient && resolvedProjectId) {
+        const { data: proj } = await supabase.from("projects").select("client_id").eq("id", resolvedProjectId).maybeSingle();
         resolvedClient = (proj?.client_id as string) ?? null;
       }
       const today = new Date().toISOString().slice(0, 10);
       const { error } = await supabase.from("charges").insert({
         organization_id: profile.organization_id,
-        project_id: task.project_id,
-        task_id: task.id,
+        project_id: resolvedProjectId,
+        task_id: persistedTaskId,
         client_id: resolvedClient,
-        description: `Tarefa: ${task.title}`,
+        description: `Tarefa: ${title.trim() || task.title || "Nova tarefa"}`,
         amount: value,
         status: "pending",
         due_date: today,
