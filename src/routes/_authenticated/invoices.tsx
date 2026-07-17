@@ -188,7 +188,9 @@ function NewInvoiceWizard({
   const [payerClient, setPayerClient] = useState<string>(initialClient);
   const [issueDate, setIssueDate] = useState(new Date().toISOString().slice(0, 10));
   const [dueDate, setDueDate] = useState<string>("");
-  const [notes, setNotes] = useState("");
+  const [notes, setNotes] = useState(DEFAULT_LEGAL_NOTES);
+  const [paymentTerms, setPaymentTerms] = useState(DEFAULT_PAYMENT_TERMS);
+  const [paymentLink, setPaymentLink] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   const [selectedDeliverables, setSelectedDeliverables] = useState<Set<string>>(new Set());
