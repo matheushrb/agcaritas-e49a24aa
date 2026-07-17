@@ -398,6 +398,7 @@ function ProjectDetail() {
                 {showTraffic && <TabsTrigger value="traffic"   className="rounded-full gap-1.5"><Megaphone className="h-4 w-4" />Tráfego</TabsTrigger>}
                 {showStrategy && <TabsTrigger value="strategy"  className="rounded-full gap-1.5"><Compass className="h-4 w-4" />Estratégia</TabsTrigger>}
                 {showCampaigns && <TabsTrigger value="campaigns" className="rounded-full gap-1.5"><Rocket className="h-4 w-4" />Campanhas</TabsTrigger>}
+                <TabsTrigger value="costs"     className="rounded-full gap-1.5"><Wallet className="h-4 w-4" />Custos</TabsTrigger>
                 <TabsTrigger value="finance"   className="rounded-full gap-1.5"><DollarSign className="h-4 w-4" />Financeiro</TabsTrigger>
               </TabsList>
             </div>
