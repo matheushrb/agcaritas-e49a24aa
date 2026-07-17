@@ -17,6 +17,7 @@ import {
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { TaskModal } from "./tasks";
+import { EditProjectDialog, type EditableProject } from "@/components/edit-project-dialog";
 
 export const Route = createFileRoute("/_authenticated/projects/$projectId")({
   component: ProjectDetail,
@@ -44,6 +45,14 @@ type Project = {
   start_date: string | null;
   end_date: string | null;
   created_at: string;
+  project_type: string | null;
+  billing_model: string | null;
+  urgency: string | null;
+  fixed_value: number | null;
+  monthly_value: number | null;
+  hourly_rate: number | null;
+  printing_budget: number | null;
+  notes: string | null;
   has_content_calendar?: boolean;
   has_content_grid?: boolean;
   has_timeline?: boolean;
@@ -115,7 +124,7 @@ function ProjectDetail() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("projects")
-        .select("id,name,description,status,client_id,start_date,end_date,created_at")
+        .select("id,name,description,status,client_id,start_date,end_date,created_at,project_type,billing_model,urgency,fixed_value,monthly_value,hourly_rate,printing_budget,notes,has_content_calendar,has_content_grid,has_timeline,traffic_budget,scope_flags")
         .eq("id", projectId)
         .maybeSingle();
       if (error) throw error;
@@ -194,6 +203,7 @@ function ProjectDetail() {
 
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const selectedTask = tasks.find(t => t.id === selectedTaskId) ?? null;
+  const [editOpen, setEditOpen] = useState(false);
 
   const addTask = useMutation({
     mutationFn: async (title: string) => {
@@ -300,7 +310,7 @@ function ProjectDetail() {
                 <CheckCircle2 className="h-4 w-4" /> Concluir Projeto
               </Button>
             )}
-            <Button variant="outline" className="rounded-full gap-1.5" disabled title="Em breve">
+            <Button variant="outline" className="rounded-full gap-1.5" onClick={() => setEditOpen(true)}>
               <Pencil className="h-4 w-4" /> Editar
             </Button>
           </div>
@@ -440,6 +450,11 @@ function ProjectDetail() {
       })()}
 
       <TaskModal task={selectedTask} onClose={() => setSelectedTaskId(null)} />
+      <EditProjectDialog
+        project={project as EditableProject}
+        open={editOpen}
+        onOpenChange={setEditOpen}
+      />
     </div>
   );
 }
