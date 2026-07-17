@@ -759,6 +759,29 @@ export function TaskModal({
 
                 {/* Propriedades — estilo ClickUp / Monday / Notion (inline, sem cards) */}
                 <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
+                  <InlineField label="Tipo">
+                    <TaskTypePicker
+                      value={taskTypeId}
+                      types={taskTypes}
+                      onChange={(id, t) => {
+                        setTaskTypeId(id);
+                        setCurrentStageId(""); // reset — usuário escolhe a etapa
+                        const patch: Partial<Task> = { task_type_id: id || null, current_stage_id: null };
+                        // aplica defaults do tipo se ainda não configurado nesta task
+                        if (t) {
+                          if (!billingModel && t.default_billing_model) {
+                            setBillingModel(t.default_billing_model as BillingModel);
+                            patch.billing_model = t.default_billing_model as BillingModel;
+                          }
+                          if (!billingValue && t.default_price != null) {
+                            setBillingValue(String(t.default_price));
+                            patch.billing_value = t.default_price;
+                          }
+                        }
+                        save.mutate(patch);
+                      }}
+                    />
+                  </InlineField>
                   <InlineField label="Status">
                     <StatusPicker value={status} onChange={v => { setStatus(v); save.mutate({ status: v }); }} inline />
                   </InlineField>
@@ -798,7 +821,7 @@ export function TaskModal({
                         <ul className="space-y-1 text-xs text-muted-foreground">
                           <li className="flex items-center justify-between">
                             <span>Etapas concluídas</span>
-                            <span className="tabular-nums text-foreground">{stagesDoneCount} / {STAGE_ORDER.length}</span>
+                            <span className="tabular-nums text-foreground">{stagesDoneCount} / {stagesTotal}</span>
                           </li>
                           <li className="flex items-center justify-between">
                             <span>Subtarefas feitas</span>
