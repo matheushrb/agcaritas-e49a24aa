@@ -22,6 +22,7 @@ import { Route as AuthenticatedProposalsRouteImport } from './routes/_authentica
 import { Route as AuthenticatedNotificationsRouteImport } from './routes/_authenticated/notifications'
 import { Route as AuthenticatedMessagesRouteImport } from './routes/_authenticated/messages'
 import { Route as AuthenticatedMarketingPlansRouteImport } from './routes/_authenticated/marketing-plans'
+import { Route as AuthenticatedInvoicesRouteImport } from './routes/_authenticated/invoices'
 import { Route as AuthenticatedInboxRouteImport } from './routes/_authenticated/inbox'
 import { Route as AuthenticatedIdeasRouteImport } from './routes/_authenticated/ideas'
 import { Route as AuthenticatedGoalsRouteImport } from './routes/_authenticated/goals'
@@ -102,6 +103,11 @@ const AuthenticatedMarketingPlansRoute =
     path: '/marketing-plans',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedInvoicesRoute = AuthenticatedInvoicesRouteImport.update({
+  id: '/invoices',
+  path: '/invoices',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedInboxRoute = AuthenticatedInboxRouteImport.update({
   id: '/inbox',
   path: '/inbox',
@@ -185,6 +191,7 @@ export interface FileRoutesByFullPath {
   '/goals': typeof AuthenticatedGoalsRoute
   '/ideas': typeof AuthenticatedIdeasRoute
   '/inbox': typeof AuthenticatedInboxRoute
+  '/invoices': typeof AuthenticatedInvoicesRoute
   '/marketing-plans': typeof AuthenticatedMarketingPlansRoute
   '/messages': typeof AuthenticatedMessagesRoute
   '/notifications': typeof AuthenticatedNotificationsRoute
@@ -212,6 +219,7 @@ export interface FileRoutesByTo {
   '/goals': typeof AuthenticatedGoalsRoute
   '/ideas': typeof AuthenticatedIdeasRoute
   '/inbox': typeof AuthenticatedInboxRoute
+  '/invoices': typeof AuthenticatedInvoicesRoute
   '/marketing-plans': typeof AuthenticatedMarketingPlansRoute
   '/messages': typeof AuthenticatedMessagesRoute
   '/notifications': typeof AuthenticatedNotificationsRoute
@@ -241,6 +249,7 @@ export interface FileRoutesById {
   '/_authenticated/goals': typeof AuthenticatedGoalsRoute
   '/_authenticated/ideas': typeof AuthenticatedIdeasRoute
   '/_authenticated/inbox': typeof AuthenticatedInboxRoute
+  '/_authenticated/invoices': typeof AuthenticatedInvoicesRoute
   '/_authenticated/marketing-plans': typeof AuthenticatedMarketingPlansRoute
   '/_authenticated/messages': typeof AuthenticatedMessagesRoute
   '/_authenticated/notifications': typeof AuthenticatedNotificationsRoute
@@ -270,6 +279,7 @@ export interface FileRouteTypes {
     | '/goals'
     | '/ideas'
     | '/inbox'
+    | '/invoices'
     | '/marketing-plans'
     | '/messages'
     | '/notifications'
@@ -297,6 +307,7 @@ export interface FileRouteTypes {
     | '/goals'
     | '/ideas'
     | '/inbox'
+    | '/invoices'
     | '/marketing-plans'
     | '/messages'
     | '/notifications'
@@ -325,6 +336,7 @@ export interface FileRouteTypes {
     | '/_authenticated/goals'
     | '/_authenticated/ideas'
     | '/_authenticated/inbox'
+    | '/_authenticated/invoices'
     | '/_authenticated/marketing-plans'
     | '/_authenticated/messages'
     | '/_authenticated/notifications'
@@ -438,6 +450,13 @@ declare module '@tanstack/react-router' {
       path: '/marketing-plans'
       fullPath: '/marketing-plans'
       preLoaderRoute: typeof AuthenticatedMarketingPlansRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/invoices': {
+      id: '/_authenticated/invoices'
+      path: '/invoices'
+      fullPath: '/invoices'
+      preLoaderRoute: typeof AuthenticatedInvoicesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/inbox': {
@@ -556,6 +575,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedGoalsRoute: typeof AuthenticatedGoalsRoute
   AuthenticatedIdeasRoute: typeof AuthenticatedIdeasRoute
   AuthenticatedInboxRoute: typeof AuthenticatedInboxRoute
+  AuthenticatedInvoicesRoute: typeof AuthenticatedInvoicesRoute
   AuthenticatedMarketingPlansRoute: typeof AuthenticatedMarketingPlansRoute
   AuthenticatedMessagesRoute: typeof AuthenticatedMessagesRoute
   AuthenticatedNotificationsRoute: typeof AuthenticatedNotificationsRoute
@@ -579,6 +599,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedGoalsRoute: AuthenticatedGoalsRoute,
   AuthenticatedIdeasRoute: AuthenticatedIdeasRoute,
   AuthenticatedInboxRoute: AuthenticatedInboxRoute,
+  AuthenticatedInvoicesRoute: AuthenticatedInvoicesRoute,
   AuthenticatedMarketingPlansRoute: AuthenticatedMarketingPlansRoute,
   AuthenticatedMessagesRoute: AuthenticatedMessagesRoute,
   AuthenticatedNotificationsRoute: AuthenticatedNotificationsRoute,

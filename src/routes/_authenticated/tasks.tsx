@@ -731,7 +731,7 @@ export function TaskModal({
             client_id: resolvedClient,
             description: `Tarefa: ${baseTitle}${kindLabel ? ` — ${kindLabel}` : ""} em ${new Date(d + "T00:00:00").toLocaleDateString("pt-BR")}`,
             amount: value,
-            status: "pending" as const,
+            status: "pending_invoice" as const,
             due_date: d,
             type: "income" as const,
           }))
@@ -742,7 +742,7 @@ export function TaskModal({
             client_id: resolvedClient,
             description: `Tarefa: ${baseTitle}`,
             amount: value,
-            status: "pending" as const,
+            status: "pending_invoice" as const,
             due_date: today,
             type: "income" as const,
           }];
@@ -801,7 +801,7 @@ export function TaskModal({
         deliverable_id: d.id,
         description,
         amount: value,
-        status: "pending",
+        status: "pending_invoice",
         due_date: deliveredDate,
         type: "income",
       });

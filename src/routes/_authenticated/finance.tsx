@@ -20,7 +20,7 @@ export const Route = createFileRoute("/_authenticated/finance")({
   component: FinancePage,
 });
 
-type ChargeStatus = "pending" | "paid" | "overdue" | "cancelled";
+type ChargeStatus = "pending" | "paid" | "overdue" | "cancelled" | "pending_invoice";
 type Charge = {
   id: string;
   description: string | null;
@@ -37,10 +37,11 @@ type Client = { id: string; name: string };
 type Project = { id: string; name: string };
 
 const STATUS_META: Record<ChargeStatus, { label: string; color: string; icon: typeof Clock }> = {
-  pending:   { label: "Pendente",  color: "bg-amber-500/15 text-amber-600 dark:text-amber-400", icon: Clock },
-  paid:      { label: "Pago",      color: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400", icon: CheckCircle2 },
-  overdue:   { label: "Atrasado",  color: "bg-red-500/15 text-red-600 dark:text-red-400", icon: AlertCircle },
-  cancelled: { label: "Cancelado", color: "bg-muted text-muted-foreground", icon: AlertCircle },
+  pending:         { label: "Pendente",           color: "bg-amber-500/15 text-amber-600 dark:text-amber-400", icon: Clock },
+  pending_invoice: { label: "A faturar",          color: "bg-blue-500/15 text-blue-600 dark:text-blue-400",    icon: Receipt },
+  paid:            { label: "Pago",               color: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400", icon: CheckCircle2 },
+  overdue:         { label: "Atrasado",           color: "bg-red-500/15 text-red-600 dark:text-red-400",       icon: AlertCircle },
+  cancelled:       { label: "Cancelado",          color: "bg-muted text-muted-foreground",                     icon: AlertCircle },
 };
 
 function money(n: number) {

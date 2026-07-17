@@ -2,7 +2,7 @@ import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
 import {
   LayoutGrid, Users, FileText, Briefcase, DollarSign, Calendar, UsersRound,
   Search, Settings, Moon, Sun, Sparkles, LogOut, Bell, CheckSquare,
-  Target, Truck, Lightbulb, Megaphone, Grid3x3, Building2,
+  Target, Truck, Lightbulb, Megaphone, Grid3x3, Building2, Receipt,
 } from "lucide-react";
 import type { ReactNode } from "react";
 import { Input } from "@/components/ui/input";
@@ -28,6 +28,7 @@ const sideIcons = [
   { to: "/crm",        icon: Users,       label: "CRM" },
   { to: "/proposals",  icon: FileText,    label: "Propostas" },
   { to: "/finance",    icon: DollarSign,  label: "Financeiro" },
+  { to: "/invoices",   icon: Receipt,     label: "Faturas" },
   { to: "/calendar",   icon: Calendar,    label: "Agenda" },
   { to: "/team",       icon: UsersRound,  label: "RH" },
 ] as const;
