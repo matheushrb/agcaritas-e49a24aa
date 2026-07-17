@@ -816,6 +816,9 @@ export function TaskModal({
                       </SelectContent>
                     </Select>
                   </SidebarRow>
+                </SidebarSection>
+
+
 
 
                 <div>
