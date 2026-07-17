@@ -28,6 +28,7 @@ const sideIcons = [
   { to: "/crm",        icon: Users,       label: "CRM" },
   { to: "/proposals",  icon: FileText,    label: "Propostas" },
   { to: "/finance",    icon: DollarSign,  label: "Financeiro" },
+  { to: "/invoices",   icon: Receipt,     label: "Faturas" },
   { to: "/calendar",   icon: Calendar,    label: "Agenda" },
   { to: "/team",       icon: UsersRound,  label: "RH" },
 ] as const;
