@@ -106,8 +106,18 @@ export function ColorPicker({
 }
 
 export function IconPreview({
-  name, color, size = 32,
-}: { name: string | null | undefined; color: string | null | undefined; size?: number }) {
+  name, color, size = 32, iconUrl,
+}: { name?: string | null; color?: string | null; size?: number; iconUrl?: string | null }) {
+  if (iconUrl) {
+    return (
+      <span
+        className="grid place-items-center rounded-full shrink-0 overflow-hidden border border-border/40 bg-white"
+        style={{ width: size, height: size }}
+      >
+        <img src={iconUrl} alt="" className="h-full w-full object-cover" />
+      </span>
+    );
+  }
   const Comp = (name && (Icons as any)[name]) || Icons.Circle;
   return (
     <span
