@@ -786,6 +786,16 @@ export function TaskModal({ task, onClose }: { task: Task | null; onClose: () =>
   );
 }
 
+/* ---------- Property box (abaixo do título) ---------- */
+function PropertyBox({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="rounded-xl bg-card border border-border p-3 space-y-1.5">
+      <div className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">{label}</div>
+      <div className="min-w-0">{children}</div>
+    </div>
+  );
+}
+
 /* ---------- Sidebar helpers ---------- */
 function SidebarSection({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -805,6 +815,7 @@ function SidebarRow({ label, children }: { label: string; children: React.ReactN
     </div>
   );
 }
+
 
 /* ---------- Pickers ---------- */
 function StatusPicker({ value, onChange, inline }: { value: TaskStatus; onChange: (v: TaskStatus) => void; inline?: boolean }) {
