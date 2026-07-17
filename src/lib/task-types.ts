@@ -20,6 +20,7 @@ export type TaskTypeStageRow = {
   color: string;
   status_group: StatusGroup;
   weight: number;
+  auto_checklist: string[];
 };
 
 /** Lista simples de tipos para uso em seletores. */
@@ -44,13 +45,16 @@ export function useTaskTypeStages(taskTypeId: string | null | undefined) {
     queryKey: ["task-type-stages", taskTypeId],
     enabled: !!taskTypeId,
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from("task_type_stages")
-        .select("id,task_type_id,name,\"order\",color,status_group,weight")
+        .select("id,task_type_id,name,\"order\",color,status_group,weight,auto_checklist")
         .eq("task_type_id", taskTypeId!)
         .order("order");
       if (error) throw error;
-      return (data ?? []) as TaskTypeStageRow[];
+      return ((data ?? []) as any[]).map(s => ({
+        ...s,
+        auto_checklist: Array.isArray(s.auto_checklist) ? s.auto_checklist : [],
+      })) as TaskTypeStageRow[];
     },
   });
 }
