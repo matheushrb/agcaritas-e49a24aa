@@ -979,8 +979,13 @@ export function TaskModal({
                 </Tabs>
               </div>
 
-              {/* ---------- SIDEBAR ---------- */}
-              <aside className="min-h-0 overflow-y-auto bg-muted/20 px-5 py-6 space-y-5">
+              {/* ---------- SIDEBAR (vira seção inline em docked) ---------- */}
+              <aside className={cn(
+                "min-h-0 space-y-5",
+                mode === "modal"
+                  ? "overflow-y-auto bg-muted/20 px-5 py-6"
+                  : "border-t border-border px-6 py-5",
+              )}>
                 <SidebarSection title="Vínculo">
                   <SidebarRow label="Projeto">
                     <Select
