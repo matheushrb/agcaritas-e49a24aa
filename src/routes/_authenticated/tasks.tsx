@@ -63,6 +63,8 @@ type Task = {
   delivery_type: string | null;
   estimated_hours: number | null;
   stage: TaskStage;
+  task_type_id: string | null;
+  current_stage_id: string | null;
   deliverables: Deliverable[];
   subtasks: Subtask[];
   created_at?: string;
@@ -98,7 +100,7 @@ function TasksPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("tasks")
-        .select("id,title,description,status,priority,project_id,client_id,assignee_id,due_date,billing_model,billing_value,billing_enabled,progress,platform,delivery_type,estimated_hours,stage,deliverables,subtasks,created_at")
+        .select("id,title,description,status,priority,project_id,client_id,assignee_id,due_date,billing_model,billing_value,billing_enabled,progress,platform,delivery_type,estimated_hours,stage,task_type_id,current_stage_id,deliverables,subtasks,created_at")
         .order("created_at", { ascending: false });
       if (error) throw error;
       return (data ?? []) as Task[];
@@ -315,6 +317,8 @@ function createLocalTask(overrides: Partial<Task> = {}): Task {
     delivery_type: null,
     estimated_hours: null,
     stage: "creation",
+    task_type_id: null,
+    current_stage_id: null,
     deliverables: [],
     subtasks: [],
     created_at: new Date().toISOString(),
