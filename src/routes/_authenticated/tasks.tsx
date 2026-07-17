@@ -941,7 +941,7 @@ export function TaskModal({
               )}>
                 <input
                   value={title}
-                  onChange={e => setTitle(e.target.value)}
+                  onChange={e => { setTitle(e.target.value); markDirty(); }}
                   onBlur={() => title.trim() && title !== task.title && markDirty()}
                   placeholder="Título da tarefa"
                   className="w-full bg-transparent outline-none text-2xl font-semibold tracking-tight placeholder:text-muted-foreground/50"
@@ -1034,7 +1034,7 @@ export function TaskModal({
                       <Input
                         type="number" min={0} step={0.5}
                         value={estimatedHours}
-                        onChange={e => setEstimatedHours(e.target.value)}
+                        onChange={e => { setEstimatedHours(e.target.value); markDirty(); }}
                         onBlur={() => markDirty()}
                         className="h-6 w-14 border-none bg-transparent p-0 text-xs text-right shadow-none focus-visible:ring-0"
                         placeholder="0"
@@ -1085,7 +1085,7 @@ export function TaskModal({
                   <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Descrição</label>
                   <Textarea
                     value={description}
-                    onChange={e => setDescription(e.target.value)}
+                    onChange={e => { setDescription(e.target.value); markDirty(); }}
                     onBlur={() => markDirty()}
                     rows={5}
                     placeholder="Adicione contexto, briefing, links de referência..."
@@ -1349,7 +1349,7 @@ export function TaskModal({
                         <Input
                           type="number" min={0} step={0.01}
                           value={billingValue}
-                          onChange={e => setBillingValue(e.target.value)}
+                          onChange={e => { setBillingValue(e.target.value); markDirty(); }}
                           onBlur={() => markDirty()}
                           className="h-8 rounded-lg border-none bg-transparent hover:bg-muted/60 text-sm px-2 shadow-none focus-visible:ring-0"
                           placeholder="0,00"
