@@ -426,17 +426,43 @@ export function TaskModal({ task, onClose }: { task: Task | null; onClose: () =>
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const overdue = dueDate && new Date(dueDate) < new Date() && status !== "done";
+  const [mode, setMode] = useState<"modal" | "docked" | "minimized">("modal");
+  useEffect(() => { if (task) setMode("modal"); }, [task?.id]);
+  useEffect(() => {
+    if (!task) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape" && mode !== "minimized") onClose(); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [task, mode, onClose]);
 
-  return (
-    <Dialog open={!!task} onOpenChange={o => { if (!o) onClose(); }}>
-      <DialogContent
-        className="p-0 gap-0 w-[calc(100vw-2rem)] max-w-[1100px] h-[calc(100vh-3rem)] max-h-[860px] rounded-3xl overflow-hidden flex flex-col sm:max-w-[1100px]"
-      >
-        <DialogTitle className="sr-only">{title || "Tarefa"}</DialogTitle>
+  if (!task) return null;
 
-        {task && (
-          <>
+  // Minimized pill
+  if (mode === "minimized") {
+    return (
+      <div className="fixed bottom-4 right-4 z-50 flex items-center gap-2 rounded-full bg-card border border-border shadow-lg pl-4 pr-2 py-2">
+        <button onClick={() => setMode("modal")} className="text-sm font-medium max-w-[240px] truncate text-left">
+          {title || "Tarefa"}
+        </button>
+        <Button size="icon" variant="ghost" className="h-7 w-7 rounded-full" onClick={() => setMode("modal")} title="Restaurar">
+          <Maximize2 className="h-3.5 w-3.5" />
+        </Button>
+        <Button size="icon" variant="ghost" className="h-7 w-7 rounded-full text-muted-foreground hover:text-destructive" onClick={onClose} title="Fechar">
+          <X className="h-3.5 w-3.5" />
+        </Button>
+      </div>
+    );
+  }
+
+  const shell = (
+    <div
+      className={cn(
+        "fixed z-50 bg-background border border-border shadow-2xl flex flex-col overflow-hidden",
+        mode === "modal"
+          ? "left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[calc(100vw-2rem)] max-w-[1360px] h-[calc(100vh-3rem)] max-h-[900px] rounded-3xl"
+          : "top-3 right-3 bottom-3 w-[calc(100vw-2rem)] sm:w-[560px] rounded-2xl"
+      )}
+    >
             {/* Top bar */}
             <div className="flex items-center gap-2 px-6 py-3 border-b border-border bg-card/60 backdrop-blur">
               <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
@@ -455,6 +481,19 @@ export function TaskModal({ task, onClose }: { task: Task | null; onClose: () =>
                 />
                 <Button size="icon" variant="ghost" className="h-8 w-8 rounded-full text-muted-foreground hover:text-destructive" onClick={() => removeTask.mutate()} title="Excluir">
                   <Trash2 className="h-4 w-4" />
+                </Button>
+                <div className="mx-1 h-5 w-px bg-border" />
+                <Button size="icon" variant="ghost" className="h-8 w-8 rounded-full" onClick={() => setMode("minimized")} title="Minimizar">
+                  <Minus className="h-4 w-4" />
+                </Button>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-8 w-8 rounded-full"
+                  onClick={() => setMode(mode === "docked" ? "modal" : "docked")}
+                  title={mode === "docked" ? "Expandir" : "Encaixar na lateral"}
+                >
+                  {mode === "docked" ? <PanelLeftOpen className="h-4 w-4" /> : <PanelRightOpen className="h-4 w-4" />}
                 </Button>
                 <Button size="icon" variant="ghost" className="h-8 w-8 rounded-full" onClick={onClose} title="Fechar">
                   <X className="h-4 w-4" />
