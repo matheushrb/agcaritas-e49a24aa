@@ -30,6 +30,16 @@ type TaskPriority = "low" | "medium" | "high";
 type BillingModel = "hourly" | "one_time" | "package" | "monthly" | "per_task";
 type TaskStage = "briefing" | "creation" | "review" | "approval" | "delivery";
 
+type Deliverable = {
+  id: string;
+  platform: string;
+  type: string;
+  billing_enabled: boolean;
+  billing_model: BillingModel | null;
+  billing_value: number | null;
+  invoiced?: boolean;
+};
+
 type Task = {
   id: string;
   title: string;
@@ -48,6 +58,7 @@ type Task = {
   delivery_type: string | null;
   estimated_hours: number | null;
   stage: TaskStage;
+  deliverables: Deliverable[];
   created_at?: string;
 };
 
@@ -81,7 +92,7 @@ function TasksPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("tasks")
-        .select("id,title,description,status,priority,project_id,client_id,assignee_id,due_date,billing_model,billing_value,billing_enabled,progress,platform,delivery_type,estimated_hours,stage,created_at")
+        .select("id,title,description,status,priority,project_id,client_id,assignee_id,due_date,billing_model,billing_value,billing_enabled,progress,platform,delivery_type,estimated_hours,stage,deliverables,created_at")
         .order("created_at", { ascending: false });
       if (error) throw error;
       return (data ?? []) as Task[];
@@ -298,6 +309,7 @@ function createLocalTask(overrides: Partial<Task> = {}): Task {
     delivery_type: null,
     estimated_hours: null,
     stage: "creation",
+    deliverables: [],
     created_at: new Date().toISOString(),
     ...overrides,
   };
@@ -377,6 +389,7 @@ export function TaskModal({
   const [projectId, setProjectId] = useState<string>("");
   const [clientId, setClientId] = useState<string>("");
   const [billingEnabled, setBillingEnabled] = useState<boolean>(false);
+  const [deliverables, setDeliverables] = useState<Deliverable[]>([]);
   const persistedDraftIdRef = useRef<string | null>(null);
   const creatingDraftRef = useRef<Promise<string> | null>(null);
 
@@ -414,6 +427,7 @@ export function TaskModal({
     setProjectId(task.project_id ?? "");
     setClientId(task.client_id ?? "");
     setBillingEnabled(task.billing_enabled ?? false);
+    setDeliverables(Array.isArray(task.deliverables) ? task.deliverables : []);
   }, [task]);
 
   const isLocalDraft = !!task?.id.startsWith("draft-");
@@ -438,6 +452,7 @@ export function TaskModal({
       delivery_type: patch.delivery_type ?? (deliveryType || null),
       estimated_hours: patch.estimated_hours ?? (estimatedHours ? Number(estimatedHours) : null),
       stage: patch.stage ?? stage,
+      deliverables: patch.deliverables ?? deliverables,
     };
   };
 
@@ -532,6 +547,51 @@ export function TaskModal({
     },
     onError: (e: Error) => toast.error(e.message),
   });
+
+  const billDeliverable = useMutation({
+    mutationFn: async (d: Deliverable) => {
+      if (!task) return;
+      if (!d.billing_enabled) throw new Error("Ative o faturamento deste entregável");
+      const value = d.billing_value ?? 0;
+      if (!value || value <= 0) throw new Error("Defina um valor para este entregável");
+      const persistedTaskId = isLocalDraft ? (await createDraftRecord({})).id : task.id;
+      const { data: profile } = await supabase.from("profiles").select("organization_id").maybeSingle();
+      if (!profile?.organization_id) throw new Error("Sem organização");
+      const resolvedProjectId = projectId || task.project_id || null;
+      let resolvedClient: string | null = clientId || task.client_id || null;
+      if (!resolvedClient && resolvedProjectId) {
+        const { data: proj } = await supabase.from("projects").select("client_id").eq("id", resolvedProjectId).maybeSingle();
+        resolvedClient = (proj?.client_id as string) ?? null;
+      }
+      const today = new Date().toISOString().slice(0, 10);
+      const platLabel = d.platform ? platformLabel(d.platform) : "Entregável";
+      const typeLabel = d.type ? (DELIVERY_TYPE_OPTIONS.find(o => o.value === d.type)?.label ?? d.type) : "";
+      const { error } = await supabase.from("charges").insert({
+        organization_id: profile.organization_id,
+        project_id: resolvedProjectId,
+        task_id: persistedTaskId,
+        client_id: resolvedClient,
+        description: `${title.trim() || task.title || "Tarefa"} — ${platLabel}${typeLabel ? ` (${typeLabel})` : ""}`,
+        amount: value,
+        status: "pending",
+        due_date: today,
+        type: "income",
+      });
+      if (error) throw error;
+      const next = deliverables.map(x => x.id === d.id ? { ...x, invoiced: true } : x);
+      setDeliverables(next);
+      const { error: upErr } = await supabase.from("tasks").update({ deliverables: next }).eq("id", persistedTaskId);
+      if (upErr) throw upErr;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["charges"] });
+      qc.invalidateQueries({ queryKey: ["project-charges"] });
+      qc.invalidateQueries({ queryKey: ["tasks"] });
+      toast.success("Entregável lançado no Financeiro");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
 
   const [mode, setMode] = useState<"modal" | "docked" | "minimized">("modal");
   useEffect(() => { if (task) setMode("modal"); }, [task?.id]);
@@ -708,41 +768,38 @@ export function TaskModal({
                   </TabsContent>
 
                   <TabsContent value="uploads" className="mt-4 space-y-3">
-                    {(() => {
-                      const plats = parsePlatforms(platform);
-                      if (plats.length === 0) {
-                        return (
-                          <>
-                            <Card className="rounded-2xl p-6 border-dashed border-2 text-center space-y-2">
-                              <Paperclip className="h-6 w-6 mx-auto text-muted-foreground" />
-                              <div className="text-sm font-medium">Arraste arquivos ou clique para enviar</div>
-                              <div className="text-xs text-muted-foreground">PDF, PNG, JPG, MP4, PSD, AI — até 50 MB</div>
-                              <Button variant="outline" size="sm" className="rounded-full mt-2">Selecionar arquivo</Button>
-                            </Card>
-                            <div className="text-xs text-muted-foreground">
-                              Selecione uma ou mais plataformas em <strong>Entrega</strong> para separar os uploads por canal.
-                            </div>
-                          </>
-                        );
-                      }
-                      return (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                          {plats.map(p => (
-                            <Card key={p} className="rounded-2xl p-4 border-dashed border-2 space-y-2">
-                              <div className="flex items-center justify-between">
-                                <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{platformLabel(p)}</span>
-                                <Paperclip className="h-3.5 w-3.5 text-muted-foreground" />
-                              </div>
-                              <div className="text-center py-3 space-y-1">
-                                <div className="text-sm font-medium">Arraste arquivos aqui</div>
-                                <div className="text-[11px] text-muted-foreground">Entregáveis para {platformLabel(p)}</div>
-                                <Button variant="outline" size="sm" className="rounded-full mt-2">Selecionar arquivo</Button>
-                              </div>
-                            </Card>
-                          ))}
+                    {deliverables.length === 0 ? (
+                      <>
+                        <Card className="rounded-2xl p-6 border-dashed border-2 text-center space-y-2">
+                          <Paperclip className="h-6 w-6 mx-auto text-muted-foreground" />
+                          <div className="text-sm font-medium">Arraste arquivos ou clique para enviar</div>
+                          <div className="text-xs text-muted-foreground">PDF, PNG, JPG, MP4, PSD, AI — até 50 MB</div>
+                          <Button variant="outline" size="sm" className="rounded-full mt-2">Selecionar arquivo</Button>
+                        </Card>
+                        <div className="text-xs text-muted-foreground">
+                          Adicione entregáveis em <strong>Entregáveis</strong> (barra lateral) para separar os uploads por plataforma.
                         </div>
-                      );
-                    })()}
+                      </>
+                    ) : (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        {deliverables.map(d => (
+                          <Card key={d.id} className="rounded-2xl p-4 border-dashed border-2 space-y-2">
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                                {d.platform ? platformLabel(d.platform) : "Sem plataforma"}
+                                {d.type ? ` · ${DELIVERY_TYPE_OPTIONS.find(o => o.value === d.type)?.label ?? d.type}` : ""}
+                              </span>
+                              <Paperclip className="h-3.5 w-3.5 text-muted-foreground" />
+                            </div>
+                            <div className="text-center py-3 space-y-1">
+                              <div className="text-sm font-medium">Arraste arquivos aqui</div>
+                              <div className="text-[11px] text-muted-foreground">Entregáveis para {d.platform ? platformLabel(d.platform) : "este item"}</div>
+                              <Button variant="outline" size="sm" className="rounded-full mt-2">Selecionar arquivo</Button>
+                            </div>
+                          </Card>
+                        ))}
+                      </div>
+                    )}
                   </TabsContent>
 
 
@@ -816,34 +873,19 @@ export function TaskModal({
                   </SidebarRow>
                 </SidebarSection>
 
-                <SidebarSection title="Entrega">
-                  <SidebarRow label="Plataforma">
-                    <PlatformMultiSelect
-                      value={platform}
-                      onChange={v => { setPlatform(v); save.mutate({ platform: v || null }); }}
-                    />
-                  </SidebarRow>
-                  <SidebarRow label="Tipo">
-                    <Select
-                      value={deliveryType || "none"}
-                      onValueChange={v => {
-                        const nv = v === "none" ? "" : v;
-                        setDeliveryType(nv);
-                        save.mutate({ delivery_type: nv || null });
-                      }}
-                    >
-                      <SelectTrigger className="h-8 rounded-lg border-none bg-transparent hover:bg-muted/60 text-sm px-2 shadow-none">
-                        <SelectValue placeholder="—" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="none">—</SelectItem>
-                        {DELIVERY_TYPE_OPTIONS.map(o => (
-                          <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </SidebarRow>
-                </SidebarSection>
+                <DeliverablesSection
+                  deliverables={deliverables}
+                  onChange={(next) => {
+                    setDeliverables(next);
+                    // manter platform legado sincronizado (comma-joined)
+                    const legacyPlatform = next.map(d => d.platform).filter(Boolean).join(",");
+                    setPlatform(legacyPlatform);
+                    save.mutate({ deliverables: next, platform: legacyPlatform || null });
+                  }}
+                  onBill={(d) => billDeliverable.mutate(d)}
+                  billingPending={billDeliverable.isPending}
+                />
+
 
 
 
@@ -1068,6 +1110,153 @@ function PlatformMultiSelect({ value, onChange }: { value: string; onChange: (v:
         })}
       </PopoverContent>
     </Popover>
+  );
+}
+
+
+/* ---------- Deliverables (entregáveis por plataforma, cada um faturável) ---------- */
+function DeliverablesSection({
+  deliverables,
+  onChange,
+  onBill,
+  billingPending,
+}: {
+  deliverables: Deliverable[];
+  onChange: (next: Deliverable[]) => void;
+  onBill: (d: Deliverable) => void;
+  billingPending: boolean;
+}) {
+  const add = () => {
+    onChange([
+      ...deliverables,
+      {
+        id: `d-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+        platform: "",
+        type: "",
+        billing_enabled: false,
+        billing_model: null,
+        billing_value: null,
+      },
+    ]);
+  };
+  const update = (id: string, patch: Partial<Deliverable>) => {
+    onChange(deliverables.map(d => (d.id === id ? { ...d, ...patch } : d)));
+  };
+  const remove = (id: string) => onChange(deliverables.filter(d => d.id !== id));
+
+  const totalBillable = deliverables
+    .filter(d => d.billing_enabled && d.billing_value)
+    .reduce((sum, d) => sum + (d.billing_value ?? 0), 0);
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-2 px-1">
+        <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Entregáveis</span>
+        <Button size="sm" variant="ghost" className="h-6 px-2 rounded-full text-xs gap-1" onClick={add}>
+          <Plus className="h-3 w-3" /> Adicionar
+        </Button>
+      </div>
+
+      {deliverables.length === 0 ? (
+        <div className="rounded-xl bg-card border border-dashed border-border px-3 py-4 text-center text-xs text-muted-foreground">
+          Nenhum entregável ainda. Adicione uma plataforma para começar.
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {deliverables.map((d, i) => (
+            <div key={d.id} className="rounded-xl bg-card border border-border p-3 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+                  Entregável {i + 1}
+                  {d.invoiced && <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 px-1.5 py-0.5 text-[10px] font-medium normal-case tracking-normal"><Check className="h-2.5 w-2.5" />Faturado</span>}
+                </span>
+                <Button size="icon" variant="ghost" className="h-6 w-6 rounded-full text-muted-foreground hover:text-destructive" onClick={() => remove(d.id)}>
+                  <X className="h-3 w-3" />
+                </Button>
+              </div>
+
+              <div className="grid grid-cols-2 gap-1.5">
+                <Select value={d.platform || "none"} onValueChange={v => update(d.id, { platform: v === "none" ? "" : v })}>
+                  <SelectTrigger className="h-8 rounded-lg text-xs">
+                    <SelectValue placeholder="Plataforma" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">—</SelectItem>
+                    {PLATFORM_OPTIONS.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+                <Select value={d.type || "none"} onValueChange={v => update(d.id, { type: v === "none" ? "" : v })}>
+                  <SelectTrigger className="h-8 rounded-lg text-xs">
+                    <SelectValue placeholder="Tipo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">—</SelectItem>
+                    {DELIVERY_TYPE_OPTIONS.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="flex items-center justify-between pt-1 border-t border-border">
+                <span className="text-[11px] text-muted-foreground">Faturar este entregável</span>
+                <Switch
+                  checked={d.billing_enabled}
+                  onCheckedChange={v => update(d.id, { billing_enabled: v })}
+                />
+              </div>
+
+              {d.billing_enabled && (
+                <div className="space-y-1.5">
+                  <div className="grid grid-cols-2 gap-1.5">
+                    <Select
+                      value={d.billing_model ?? "none"}
+                      onValueChange={v => update(d.id, { billing_model: v === "none" ? null : (v as BillingModel) })}
+                    >
+                      <SelectTrigger className="h-8 rounded-lg text-xs">
+                        <SelectValue placeholder="Modelo" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">—</SelectItem>
+                        <SelectItem value="per_task">Por tarefa</SelectItem>
+                        <SelectItem value="hourly">Por hora</SelectItem>
+                        <SelectItem value="one_time">Fixo</SelectItem>
+                        <SelectItem value="package">Pacote</SelectItem>
+                        <SelectItem value="monthly">Recorrente</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <div className="flex items-center gap-1 rounded-lg border border-border px-2 h-8">
+                      <span className="text-[11px] text-muted-foreground">R$</span>
+                      <Input
+                        type="number"
+                        min={0}
+                        step={0.01}
+                        value={d.billing_value ?? ""}
+                        onChange={e => update(d.id, { billing_value: e.target.value ? Number(e.target.value) : null })}
+                        className="h-7 border-none bg-transparent p-0 text-xs shadow-none focus-visible:ring-0"
+                        placeholder="0,00"
+                      />
+                    </div>
+                  </div>
+                  <Button
+                    size="sm"
+                    className="w-full rounded-full gap-1.5 h-8 text-xs"
+                    disabled={!d.billing_value || d.billing_value <= 0 || billingPending || d.invoiced}
+                    onClick={() => onBill(d)}
+                  >
+                    {d.invoiced ? <><Check className="h-3.5 w-3.5" />Lançado</> : <><DollarSign className="h-3.5 w-3.5" />Faturar entregável</>}
+                  </Button>
+                </div>
+              )}
+            </div>
+          ))}
+          {totalBillable > 0 && (
+            <div className="rounded-xl bg-muted/40 px-3 py-2 text-xs flex items-center justify-between">
+              <span className="text-muted-foreground">Total faturável</span>
+              <span className="font-semibold">R$ {totalBillable.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</span>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
   );
 }
 
