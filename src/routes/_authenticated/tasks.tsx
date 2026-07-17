@@ -514,76 +514,96 @@ export function TaskModal({ task, onClose }: { task: Task | null; onClose: () =>
                   className="w-full bg-transparent outline-none text-2xl font-semibold tracking-tight placeholder:text-muted-foreground/50"
                 />
 
-                {/* Propriedades + Execução agrupadas logo abaixo do nome */}
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-                  <PropertyBox label="Status">
-                    <StatusPicker value={status} onChange={v => { setStatus(v); save.mutate({ status: v }); }} inline />
-                  </PropertyBox>
-                  <PropertyBox label="Prioridade">
-                    <PriorityPicker value={priority} onChange={v => { setPriority(v); save.mutate({ priority: v }); }} inline />
-                  </PropertyBox>
-                  <PropertyBox label="Prazo">
-                    <DatePicker value={dueDate} overdue={!!overdue} onChange={v => { setDueDate(v); save.mutate({ due_date: v || null }); }} />
-                  </PropertyBox>
-                  <PropertyBox label="Progresso">
-                    <div className="flex items-center gap-2 w-full">
-                      <input
-                        type="range" min={0} max={100} step={5}
-                        value={progress}
-                        onChange={e => setProgress(Number(e.target.value))}
-                        onMouseUp={() => save.mutate({ progress })}
-                        onTouchEnd={() => save.mutate({ progress })}
-                        className="flex-1 accent-primary"
-                      />
-                      <span className="text-xs tabular-nums w-9 text-right">{progress}%</span>
-                    </div>
-                  </PropertyBox>
-                  <PropertyBox label="Plataforma">
-                    <Select value={platform || "none"} onValueChange={v => { const nv = v === "none" ? "" : v; setPlatform(nv); save.mutate({ platform: nv || null }); }}>
-                      <SelectTrigger className="h-8 rounded-lg border-none bg-transparent hover:bg-muted/60 text-sm px-2 shadow-none">
-                        <SelectValue placeholder="—" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="none">—</SelectItem>
-                        <SelectItem value="instagram">Instagram</SelectItem>
-                        <SelectItem value="tiktok">TikTok</SelectItem>
-                        <SelectItem value="youtube">YouTube</SelectItem>
-                        <SelectItem value="meta_ads">Meta Ads</SelectItem>
-                        <SelectItem value="google_ads">Google Ads</SelectItem>
-                        <SelectItem value="site">Site / Blog</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </PropertyBox>
-                  <PropertyBox label="Tipo">
-                    <Select value={deliveryType || "none"} onValueChange={v => { const nv = v === "none" ? "" : v; setDeliveryType(nv); save.mutate({ delivery_type: nv || null }); }}>
-                      <SelectTrigger className="h-8 rounded-lg border-none bg-transparent hover:bg-muted/60 text-sm px-2 shadow-none">
-                        <SelectValue placeholder="—" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="none">—</SelectItem>
-                        <SelectItem value="post">Post</SelectItem>
-                        <SelectItem value="reels">Reels</SelectItem>
-                        <SelectItem value="story">Story</SelectItem>
-                        <SelectItem value="carrossel">Carrossel</SelectItem>
-                        <SelectItem value="video">Vídeo</SelectItem>
-                        <SelectItem value="arte">Arte</SelectItem>
-                        <SelectItem value="copy">Copy</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </PropertyBox>
-                  <PropertyBox label="Estimativa">
-                    <div className="flex items-center gap-1.5 w-full">
-                      <Input
-                        type="number" min={0} step={0.5}
-                        value={estimatedHours}
-                        onChange={e => setEstimatedHours(e.target.value)}
-                        onBlur={() => save.mutate({ estimated_hours: estimatedHours ? Number(estimatedHours) : null })}
-                        className="h-8 rounded-lg border-none bg-transparent hover:bg-muted/60 text-sm px-2 shadow-none focus-visible:ring-0"
-                        placeholder="0"
-                      />
-                      <span className="text-xs text-muted-foreground">h</span>
-                    </div>
-                  </PropertyBox>
+                {/* Propriedades — estilo ClickUp / Monday / Notion (inline, sem cards) */}
+                <div className="space-y-2">
+                  <div className="flex flex-wrap items-center gap-1">
+                    <InlineField label="Status">
+                      <StatusPicker value={status} onChange={v => { setStatus(v); save.mutate({ status: v }); }} inline />
+                    </InlineField>
+                    <InlineField label="Prioridade">
+                      <PriorityPicker value={priority} onChange={v => { setPriority(v); save.mutate({ priority: v }); }} inline />
+                    </InlineField>
+                    <InlineField label="Prazo">
+                      <DatePicker value={dueDate} overdue={!!overdue} onChange={v => { setDueDate(v); save.mutate({ due_date: v || null }); }} inline />
+                    </InlineField>
+                    <InlineField label="Progresso">
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <button className="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium hover:bg-muted transition-colors">
+                            <div className="h-1.5 w-8 rounded-full bg-muted overflow-hidden">
+                              <div className="h-full bg-primary rounded-full" style={{ width: `${progress}%` }} />
+                            </div>
+                            <span className="tabular-nums">{progress}%</span>
+                          </button>
+                        </PopoverTrigger>
+                        <PopoverContent align="start" className="p-3 w-56 rounded-xl">
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between text-xs text-muted-foreground">
+                              <span>Progresso</span>
+                              <span className="tabular-nums">{progress}%</span>
+                            </div>
+                            <input
+                              type="range" min={0} max={100} step={5}
+                              value={progress}
+                              onChange={e => setProgress(Number(e.target.value))}
+                              onMouseUp={() => save.mutate({ progress })}
+                              onTouchEnd={() => save.mutate({ progress })}
+                              className="w-full accent-primary"
+                            />
+                          </div>
+                        </PopoverContent>
+                      </Popover>
+                    </InlineField>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-1">
+                    <InlineField label="Plataforma">
+                      <Select value={platform || "none"} onValueChange={v => { const nv = v === "none" ? "" : v; setPlatform(nv); save.mutate({ platform: nv || null }); }}>
+                        <SelectTrigger className="h-7 border-none bg-transparent hover:bg-muted rounded-md px-2 py-1 text-xs shadow-none focus:ring-0 gap-1">
+                          <SelectValue placeholder="—" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">—</SelectItem>
+                          <SelectItem value="instagram">Instagram</SelectItem>
+                          <SelectItem value="tiktok">TikTok</SelectItem>
+                          <SelectItem value="youtube">YouTube</SelectItem>
+                          <SelectItem value="meta_ads">Meta Ads</SelectItem>
+                          <SelectItem value="google_ads">Google Ads</SelectItem>
+                          <SelectItem value="site">Site / Blog</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </InlineField>
+                    <InlineField label="Tipo">
+                      <Select value={deliveryType || "none"} onValueChange={v => { const nv = v === "none" ? "" : v; setDeliveryType(nv); save.mutate({ delivery_type: nv || null }); }}>
+                        <SelectTrigger className="h-7 border-none bg-transparent hover:bg-muted rounded-md px-2 py-1 text-xs shadow-none focus:ring-0 gap-1">
+                          <SelectValue placeholder="—" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">—</SelectItem>
+                          <SelectItem value="post">Post</SelectItem>
+                          <SelectItem value="reels">Reels</SelectItem>
+                          <SelectItem value="story">Story</SelectItem>
+                          <SelectItem value="carrossel">Carrossel</SelectItem>
+                          <SelectItem value="video">Vídeo</SelectItem>
+                          <SelectItem value="arte">Arte</SelectItem>
+                          <SelectItem value="copy">Copy</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </InlineField>
+                    <InlineField label="Estimativa">
+                      <div className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs hover:bg-muted transition-colors">
+                        <Input
+                          type="number" min={0} step={0.5}
+                          value={estimatedHours}
+                          onChange={e => setEstimatedHours(e.target.value)}
+                          onBlur={() => save.mutate({ estimated_hours: estimatedHours ? Number(estimatedHours) : null })}
+                          className="h-6 w-14 border-none bg-transparent p-0 text-xs text-right shadow-none focus-visible:ring-0"
+                          placeholder="0"
+                        />
+                        <span className="text-muted-foreground">h</span>
+                      </div>
+                    </InlineField>
+                  </div>
                 </div>
 
                 <div>
@@ -752,12 +772,12 @@ export function TaskModal({ task, onClose }: { task: Task | null; onClose: () =>
   );
 }
 
-/* ---------- Property box (abaixo do título) ---------- */
-function PropertyBox({ label, children }: { label: string; children: React.ReactNode }) {
+/* ---------- Inline field (estilo Notion / Monday / ClickUp) ---------- */
+function InlineField({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="rounded-xl bg-card border border-border p-3 space-y-1.5">
-      <div className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">{label}</div>
-      <div className="min-w-0">{children}</div>
+    <div className="inline-flex items-center gap-1.5 text-xs">
+      <span className="text-muted-foreground whitespace-nowrap">{label}</span>
+      {children}
     </div>
   );
 }
@@ -844,7 +864,19 @@ function PriorityPicker({ value, onChange, inline }: { value: TaskPriority; onCh
     </Popover>
   );
 }
-function DatePicker({ value, onChange, overdue }: { value: string; onChange: (v: string) => void; overdue?: boolean }) {
+function DatePicker({ value, onChange, overdue, inline }: { value: string; onChange: (v: string) => void; overdue?: boolean; inline?: boolean }) {
+  if (inline) {
+    return (
+      <label className={cn(
+        "inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium cursor-pointer transition-colors hover:bg-muted",
+        overdue && "text-red-600 dark:text-red-400",
+      )}>
+        <CalendarIcon className="h-3.5 w-3.5 text-muted-foreground" />
+        {value ? new Date(value).toLocaleDateString("pt-BR", { day: "2-digit", month: "short" }) : "Sem prazo"}
+        <input type="date" value={value} onChange={e => onChange(e.target.value)} className="sr-only" />
+      </label>
+    );
+  }
   return (
     <label className={cn(
       "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium cursor-pointer transition-colors bg-muted text-foreground hover:bg-muted/70",
