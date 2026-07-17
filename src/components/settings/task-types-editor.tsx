@@ -78,14 +78,15 @@ export function TaskTypesEditor() {
   const { data: stagesByType = {} } = useQuery<Record<string, TaskTypeStage[]>>({
     queryKey: ["task-type-stages"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from("task_type_stages")
-        .select("id,task_type_id,name,\"order\",color,status_group,weight")
+        .select("id,task_type_id,name,\"order\",color,status_group,weight,auto_checklist")
         .order("order");
       if (error) throw error;
       const map: Record<string, TaskTypeStage[]> = {};
-      for (const s of (data ?? []) as TaskTypeStage[]) {
-        (map[s.task_type_id] ||= []).push(s);
+      for (const s of (data ?? []) as any[]) {
+        const norm: TaskTypeStage = { ...s, auto_checklist: Array.isArray(s.auto_checklist) ? s.auto_checklist : [] };
+        (map[s.task_type_id] ||= []).push(norm);
       }
       return map;
     },
