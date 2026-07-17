@@ -1507,6 +1507,7 @@ export type Database = {
           stage: Database["public"]["Enums"]["task_stage"]
           start_date: string | null
           status: Database["public"]["Enums"]["task_status"]
+          subtasks: Json
           title: string
           updated_at: string
         }
@@ -1533,6 +1534,7 @@ export type Database = {
           stage?: Database["public"]["Enums"]["task_stage"]
           start_date?: string | null
           status?: Database["public"]["Enums"]["task_status"]
+          subtasks?: Json
           title: string
           updated_at?: string
         }
@@ -1559,6 +1561,7 @@ export type Database = {
           stage?: Database["public"]["Enums"]["task_stage"]
           start_date?: string | null
           status?: Database["public"]["Enums"]["task_status"]
+          subtasks?: Json
           title?: string
           updated_at?: string
         }
