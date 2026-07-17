@@ -786,35 +786,7 @@ function PlatformMultiPicker({ value, onChange }: { value: string[]; onChange: (
   );
 }
 
-/* ---------- Property box (abaixo do título) ---------- */
-function PropertyBox({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div className="rounded-xl bg-card border border-border p-3 space-y-1.5">
-      <div className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">{label}</div>
-      <div className="min-w-0">{children}</div>
-    </div>
-  );
-}
 
-/* ---------- Sidebar helpers ---------- */
-function SidebarSection({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <div>
-      <div className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2 px-1">{title}</div>
-      <div className="rounded-xl bg-card border border-border divide-y divide-border">
-        {children}
-      </div>
-    </div>
-  );
-}
-function SidebarRow({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div className="flex items-center gap-3 px-3 py-2 min-h-[40px]">
-      <span className="text-xs text-muted-foreground w-20 shrink-0">{label}</span>
-      <div className="flex-1 min-w-0">{children}</div>
-    </div>
-  );
-}
 
 
 /* ---------- Pickers ---------- */
