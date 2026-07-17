@@ -1493,6 +1493,7 @@ export type Database = {
           client_id: string | null
           comments_count: number
           created_at: string
+          deliverables: Json
           delivery_type: string | null
           description: string | null
           due_date: string | null
@@ -1518,6 +1519,7 @@ export type Database = {
           client_id?: string | null
           comments_count?: number
           created_at?: string
+          deliverables?: Json
           delivery_type?: string | null
           description?: string | null
           due_date?: string | null
@@ -1543,6 +1545,7 @@ export type Database = {
           client_id?: string | null
           comments_count?: number
           created_at?: string
+          deliverables?: Json
           delivery_type?: string | null
           description?: string | null
           due_date?: string | null
