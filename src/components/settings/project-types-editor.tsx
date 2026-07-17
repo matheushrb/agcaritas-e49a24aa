@@ -17,7 +17,6 @@ import { Badge } from "@/components/ui/badge";
 
 type BaseTask = {
   task_type_id: string;
-  quantity?: number | null;
 };
 
 type Row = {
