@@ -1987,6 +1987,21 @@ function DeliverablesSection({
                 </div>
 
                 <div className="flex items-center justify-between pt-1.5 border-t border-border">
+                  <span className="text-[11px] text-muted-foreground">Entregue</span>
+                  <Button
+                    size="sm"
+                    variant={d.delivered ? "default" : "outline"}
+                    className="h-7 rounded-full text-xs gap-1"
+                    onClick={() => update(d.id, {
+                      delivered: !d.delivered,
+                      delivered_date: !d.delivered ? (d.delivered_date ?? new Date().toISOString().slice(0, 10)) : d.delivered_date,
+                    })}
+                  >
+                    {d.delivered ? <><Check className="h-3.5 w-3.5" />Entregue</> : "Marcar como entregue"}
+                  </Button>
+                </div>
+
+                <div className="flex items-center justify-between">
                   <span className="text-[11px] text-muted-foreground">Faturar este entregável</span>
                   <Switch
                     checked={d.billing_enabled}
