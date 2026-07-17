@@ -41,8 +41,8 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="min-h-screen w-full bg-background text-foreground">
-      {/* Floating sidebar — azul com selector branco no item ativo */}
-      <aside className="fixed left-3 top-24 bottom-6 z-30 hidden md:flex flex-col items-center gap-1 py-3 w-16 rounded-4xl bg-primary shadow-[var(--shadow-elevated)] border border-primary/30">
+      {/* Floating sidebar — branca com selector primário no item ativo */}
+      <aside className="fixed left-3 top-24 bottom-6 z-30 hidden md:flex flex-col items-center gap-1 py-3 w-16 rounded-4xl bg-card shadow-[var(--shadow-elevated)] border border-border">
         {sideIcons.map(item => {
           const active = pathname.startsWith(item.to);
           const Icon = item.icon;
@@ -53,8 +53,8 @@ export function AppShell({ children }: { children: ReactNode }) {
               title={item.label}
               className={`group relative grid h-11 w-11 place-items-center rounded-2xl transition-colors ${
                 active
-                  ? "bg-white text-primary shadow-sm"
-                  : "text-primary-foreground/80 hover:text-primary-foreground hover:bg-white/10"
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted"
               }`}
             >
               <Icon className="h-5 w-5" />
@@ -67,15 +67,15 @@ export function AppShell({ children }: { children: ReactNode }) {
             title="Configurações"
             className={`grid h-11 w-11 place-items-center rounded-2xl transition-colors ${
               pathname.startsWith("/settings")
-                ? "bg-white text-primary shadow-sm"
-                : "text-primary-foreground/80 hover:text-primary-foreground hover:bg-white/10"
+                ? "bg-primary text-primary-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground hover:bg-muted"
             }`}
           >
             <Settings className="h-5 w-5" />
           </Link>
           <button
             onClick={handleSignOut}
-            className="grid h-11 w-11 place-items-center rounded-2xl text-primary-foreground/80 hover:text-white hover:bg-white/10"
+            className="grid h-11 w-11 place-items-center rounded-2xl text-muted-foreground hover:text-foreground hover:bg-muted"
             title="Sair"
           >
             <LogOut className="h-5 w-5" />
