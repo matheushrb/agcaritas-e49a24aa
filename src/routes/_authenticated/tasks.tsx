@@ -61,6 +61,7 @@ type Task = {
   estimated_hours: number | null;
   stage: TaskStage;
   deliverables: Deliverable[];
+  subtasks: Subtask[];
   created_at?: string;
 };
 
