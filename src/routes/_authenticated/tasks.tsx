@@ -789,6 +789,35 @@ export function TaskModal({
                   </SidebarRow>
                 </SidebarSection>
 
+                <SidebarSection title="Entrega">
+                  <SidebarRow label="Plataforma">
+                    <PlatformMultiSelect
+                      value={platform}
+                      onChange={v => { setPlatform(v); save.mutate({ platform: v || null }); }}
+                    />
+                  </SidebarRow>
+                  <SidebarRow label="Tipo">
+                    <Select
+                      value={deliveryType || "none"}
+                      onValueChange={v => {
+                        const nv = v === "none" ? "" : v;
+                        setDeliveryType(nv);
+                        save.mutate({ delivery_type: nv || null });
+                      }}
+                    >
+                      <SelectTrigger className="h-8 rounded-lg border-none bg-transparent hover:bg-muted/60 text-sm px-2 shadow-none">
+                        <SelectValue placeholder="—" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">—</SelectItem>
+                        {DELIVERY_TYPE_OPTIONS.map(o => (
+                          <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </SidebarRow>
+
+
                 <div>
                   <div className="flex items-center justify-between mb-2 px-1">
                     <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Faturamento</span>
