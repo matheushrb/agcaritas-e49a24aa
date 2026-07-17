@@ -191,18 +191,10 @@ export function EditProjectDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        showCloseButton={false}
-        className="max-w-[960px] p-0 gap-0 overflow-hidden max-h-[92vh] flex flex-col rounded-2xl border-0 shadow-2xl"
+        className="max-w-[960px] p-0 gap-0 overflow-hidden max-h-[92vh] flex flex-col rounded-2xl border-0 shadow-2xl [&>button.absolute]:text-primary-foreground [&>button.absolute]:hover:bg-primary-foreground/20 [&>button.absolute]:opacity-100"
       >
         {/* Header colorido */}
         <div className="relative bg-primary text-primary-foreground px-7 py-6">
-          <button
-            onClick={() => onOpenChange(false)}
-            className="absolute top-4 right-4 h-8 w-8 rounded-full inline-flex items-center justify-center bg-primary-foreground/15 hover:bg-primary-foreground/25 transition"
-            aria-label="Fechar"
-          >
-            <X className="h-4 w-4" />
-          </button>
           <div className="flex items-start gap-4">
             <div className="h-12 w-12 rounded-2xl bg-primary-foreground/15 inline-flex items-center justify-center shrink-0">
               <Pencil className="h-6 w-6" />
