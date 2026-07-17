@@ -594,7 +594,10 @@ export function TaskModal({
       const { error } = await supabase.from("tasks").update(patch).eq("id", task.id);
       if (error) throw error;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["tasks"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["tasks"] });
+      qc.invalidateQueries({ queryKey: ["project-tasks"] });
+    },
     onError: (e: Error) => toast.error(e.message),
   });
 
