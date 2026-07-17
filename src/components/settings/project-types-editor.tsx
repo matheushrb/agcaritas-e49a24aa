@@ -260,6 +260,65 @@ export function ProjectTypesEditor() {
               </div>
             </div>
 
+            {/* Plataformas */}
+            <div className="rounded-xl border border-border p-3 space-y-2">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-sm font-medium flex items-center gap-1.5">
+                    <Layers className="h-4 w-4" /> Plataformas
+                  </div>
+                  <p className="text-[11px] text-muted-foreground">
+                    Onde este tipo de projeto costuma atuar (pré-seleciona no wizard).
+                  </p>
+                </div>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button size="sm" variant="outline" className="rounded-full gap-1">
+                      <Plus className="h-3.5 w-3.5" /> Selecionar
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent align="end" className="w-64 p-1 max-h-72 overflow-auto">
+                    {platforms.length === 0 ? (
+                      <div className="text-xs text-muted-foreground p-3 text-center">
+                        Nenhuma plataforma cadastrada.
+                      </div>
+                    ) : platforms.map((p: any) => {
+                      const on = (editing.platform_ids ?? []).includes(p.id);
+                      return (
+                        <button key={p.id} onClick={() => togglePlatform(p.id)}
+                          className="w-full flex items-center gap-2 px-2 py-1.5 rounded hover:bg-muted text-left text-sm">
+                          <IconPreview name={p.icon} color={p.color} size={22} />
+                          <span className="flex-1 truncate">{p.name}</span>
+                          {on && <Check className="h-4 w-4 text-primary" />}
+                        </button>
+                      );
+                    })}
+                  </PopoverContent>
+                </Popover>
+              </div>
+              {(editing.platform_ids ?? []).length === 0 ? (
+                <div className="text-xs text-muted-foreground py-2 text-center">
+                  Nenhuma plataforma selecionada.
+                </div>
+              ) : (
+                <div className="flex flex-wrap gap-1.5">
+                  {(editing.platform_ids ?? []).map(pid => {
+                    const p = platforms.find((x: any) => x.id === pid);
+                    if (!p) return null;
+                    return (
+                      <Badge key={pid} variant="secondary" className="gap-1 pl-1 pr-1.5 py-0.5">
+                        <IconPreview name={p.icon} color={p.color} size={16} />
+                        <span className="text-[11px]">{p.name}</span>
+                        <button onClick={() => togglePlatform(pid)} className="ml-0.5 text-muted-foreground hover:text-destructive">
+                          <Trash2 className="h-3 w-3" />
+                        </button>
+                      </Badge>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
             {/* Tarefas base */}
             <div className="rounded-xl border border-border p-3 space-y-2">
               <div className="flex items-center justify-between">
@@ -268,7 +327,8 @@ export function ProjectTypesEditor() {
                     <ListPlus className="h-4 w-4" /> Tarefas base
                   </div>
                   <p className="text-[11px] text-muted-foreground">
-                    Ao criar um projeto deste tipo, estas tarefas são geradas automaticamente.
+                    Cada linha é um <b>tipo de tarefa</b> — ao criar o projeto, as tarefas são geradas
+                    herdando as etapas, checklist e preço sugerido do tipo escolhido.
                   </p>
                 </div>
                 <Button size="sm" variant="outline" className="rounded-full gap-1" onClick={addBaseTask}>
@@ -282,50 +342,46 @@ export function ProjectTypesEditor() {
                 </div>
               ) : (
                 <div className="space-y-2">
-                  {(editing.base_tasks ?? []).map((t, idx) => (
-                    <div key={idx} className="grid grid-cols-[1fr_140px_90px_auto] gap-2 items-center">
-                      <Input
-                        placeholder="Nome da tarefa"
-                        value={t.name}
-                        onChange={e => updateBaseTask(idx, { name: e.target.value })}
-                        className="h-8"
-                      />
-                      <Select
-                        value={t.task_type_id ?? "__none"}
-                        onValueChange={v => updateBaseTask(idx, { task_type_id: v === "__none" ? null : v })}
-                      >
-                        <SelectTrigger className="h-8"><SelectValue placeholder="Tipo de tarefa" /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="__none">Sem tipo</SelectItem>
-                          {taskTypes.map((tt: any) => (
-                            <SelectItem key={tt.id} value={tt.id}>{tt.name}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <div className="flex items-center gap-1">
-                        <Input
-                          type="number" min={0} step={0.5}
-                          placeholder="h"
-                          value={t.estimated_hours ?? ""}
-                          onChange={e => updateBaseTask(idx, { estimated_hours: e.target.value === "" ? null : Number(e.target.value) })}
-                          className="h-8"
-                        />
-                        <span className="text-[10px] text-muted-foreground">h</span>
+                  {(editing.base_tasks ?? []).map((t, idx) => {
+                    const tt = taskTypes.find((x: any) => x.id === t.task_type_id);
+                    return (
+                      <div key={idx} className="grid grid-cols-[24px_1fr_90px_auto] gap-2 items-center">
+                        <IconPreview name={tt?.icon ?? null} color={tt?.color ?? null} size={22} />
+                        <Select
+                          value={t.task_type_id}
+                          onValueChange={v => updateBaseTask(idx, { task_type_id: v })}
+                        >
+                          <SelectTrigger className="h-8"><SelectValue placeholder="Tipo de tarefa" /></SelectTrigger>
+                          <SelectContent>
+                            {taskTypes.map((x: any) => (
+                              <SelectItem key={x.id} value={x.id}>{x.name}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <div className="flex items-center gap-1">
+                          <Input
+                            type="number" min={1} step={1}
+                            value={t.quantity ?? 1}
+                            onChange={e => updateBaseTask(idx, { quantity: e.target.value === "" ? 1 : Number(e.target.value) })}
+                            className="h-8"
+                          />
+                          <span className="text-[10px] text-muted-foreground">un</span>
+                        </div>
+                        <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive"
+                          onClick={() => removeBaseTask(idx)}>
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
                       </div>
-                      <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive"
-                        onClick={() => removeBaseTask(idx)}>
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  ))}
-                  {totalHours > 0 && (
-                    <div className="text-[11px] text-muted-foreground text-right pt-1">
-                      Total estimado: <b>{totalHours}h</b>
-                    </div>
-                  )}
+                    );
+                  })}
+                  <div className="text-[11px] text-muted-foreground text-right pt-1">
+                    Total: <b>{totalQty} tarefa{totalQty === 1 ? "" : "s"}</b>
+                    {editing.avg_task_hours ? <> · <b>{totalHours}h</b> estimadas</> : null}
+                  </div>
                 </div>
               )}
             </div>
+
 
             <div className="flex items-center justify-between rounded-lg border border-border px-3 py-2">
               <div className="text-xs">Ativo</div>
