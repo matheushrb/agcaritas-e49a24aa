@@ -441,6 +441,9 @@ export function TaskModal({
   const [assigneeId, setAssigneeId] = useState<string>("");
   const [taskTypeId, setTaskTypeId] = useState<string>("");
   const [currentStageId, setCurrentStageId] = useState<string>("");
+  const [broadcastKind, setBroadcastKind] = useState<"premiere" | "live" | "recorded" | "">("");
+  const [recordedAt, setRecordedAt] = useState<string>("");
+  const [airedAt, setAiredAt] = useState<string>("");
   const [costPrompt, setCostPrompt] = useState<{
     member: { id: string; name: string; cost_mode: CostMode };
     suggestion: CostSuggestion;
