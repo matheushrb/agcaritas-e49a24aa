@@ -20,9 +20,10 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Search, Plus, FileText, DollarSign, TrendingUp, CheckCircle2, Send,
-  Eye, XCircle, Trash2, Building2, Calendar, Sparkles,
+  Eye, XCircle, Trash2, Building2, Calendar, Sparkles, Download, Link2,
 } from "lucide-react";
 import { toast } from "sonner";
+import { generateProposalPDF } from "@/lib/pdf/proposal-pdf";
 
 const searchSchema = z.object({
   leadId: z.string().optional(),
@@ -472,6 +473,48 @@ function ProposalDrawer({
               </Button>
             </div>
           )}
+
+          {/* PDF & Public link */}
+          <div className="grid grid-cols-2 gap-2">
+            <Button
+              variant="outline"
+              className="rounded-full gap-2"
+              onClick={() => {
+                const items = Array.isArray(proposal.items) ? proposal.items as Item[] : [];
+                const pdf = generateProposalPDF({
+                  number: proposal.number,
+                  issue_date: proposal.created_at,
+                  valid_until: proposal.valid_until,
+                  client: {
+                    name: client?.name ?? lead?.name ?? "Cliente",
+                    company: client?.company ?? lead?.company ?? null,
+                  },
+                  billing_model_label: BILLING_LABEL[proposal.billing_model],
+                  scope: items.map(it => ({
+                    title: it.title,
+                    qty: it.qty,
+                    unit_price: it.unit_price,
+                    amount: it.qty * it.unit_price,
+                  })),
+                  public_url: `${window.location.origin}/p/${proposal.id}`,
+                });
+                pdf.save(`${proposal.number}.pdf`);
+              }}
+            >
+              <Download className="h-4 w-4" /> Baixar PDF
+            </Button>
+            <Button
+              variant="outline"
+              className="rounded-full gap-2"
+              onClick={() => {
+                const url = `${window.location.origin}/p/${proposal.id}`;
+                navigator.clipboard.writeText(url);
+                toast.success("Link público copiado");
+              }}
+            >
+              <Link2 className="h-4 w-4" /> Copiar link
+            </Button>
+          </div>
 
           {/* Danger */}
           <div className="pt-4 border-t border-border/60">

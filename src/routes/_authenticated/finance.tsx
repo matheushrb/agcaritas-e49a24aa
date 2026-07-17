@@ -11,9 +11,10 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { EntityDialog, DialogField, DialogCancelButton } from "@/components/entity-dialog";
 import { Button as UIButton } from "@/components/ui/button";
-import { DollarSign, Plus, TrendingUp, TrendingDown, Wallet, AlertCircle, CheckCircle2, Clock, Receipt } from "lucide-react";
+import { DollarSign, Plus, TrendingUp, TrendingDown, Wallet, AlertCircle, CheckCircle2, Clock, Receipt, Download } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { generateInvoicePDF } from "@/lib/pdf/invoice-pdf";
 
 export const Route = createFileRoute("/_authenticated/finance")({
   component: FinancePage,
@@ -262,16 +263,17 @@ function ChargeTable({ rows, clients, projects, onStatus }: {
       <thead className="text-left text-muted-foreground border-b">
         <tr>
           <th className="py-2">Descrição</th><th>Cliente</th><th>Projeto</th>
-          <th>Vencimento</th><th>Valor</th><th>Status</th>
+          <th>Vencimento</th><th>Valor</th><th>Status</th><th></th>
         </tr>
       </thead>
       <tbody>
         {rows.map(c => {
           const M = STATUS_META[c.status];
+          const client = clients.find(x => x.id === c.client_id);
           return (
             <tr key={c.id} className="border-b hover:bg-muted/40">
               <td className="py-2">{c.description ?? "—"}</td>
-              <td>{clients.find(x => x.id === c.client_id)?.name ?? "—"}</td>
+              <td>{client?.name ?? "—"}</td>
               <td>{projects.find(x => x.id === c.project_id)?.name ?? "—"}</td>
               <td>{c.due_date ?? "—"}</td>
               <td className="font-medium">{money(Number(c.amount ?? 0))}</td>
@@ -286,6 +288,24 @@ function ChargeTable({ rows, clients, projects, onStatus }: {
                     ))}
                   </SelectContent>
                 </Select>
+              </td>
+              <td className="text-right pr-2">
+                <UIButton
+                  variant="ghost" size="sm" className="h-7 gap-1"
+                  onClick={() => {
+                    const num = c.id.slice(0, 8).toUpperCase();
+                    const pdf = generateInvoicePDF({
+                      number: num,
+                      issue_date: c.created_at,
+                      due_date: c.due_date,
+                      client: { name: client?.name ?? "Cliente" },
+                      lines: [{ title: c.description ?? "Cobrança", amount: Number(c.amount ?? 0) }],
+                    });
+                    pdf.save(`fatura-${num}.pdf`);
+                  }}
+                >
+                  <Download className="size-3.5" /> PDF
+                </UIButton>
               </td>
             </tr>
           );
