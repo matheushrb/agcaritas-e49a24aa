@@ -66,7 +66,7 @@ export function ProjectTypesEditor() {
     queryKey: ["platforms_lite"],
     queryFn: async () => {
       const { data, error } = await (supabase as any)
-        .from("platforms").select("id,name,color,icon").eq("active", true).order("name");
+        .from("platforms").select("id,name,color,icon,icon_url").eq("active", true).order("name");
       if (error) throw error;
       return data ?? [];
     },
