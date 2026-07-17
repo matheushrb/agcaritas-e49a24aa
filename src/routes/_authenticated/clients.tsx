@@ -183,26 +183,79 @@ function ClientsPage() {
           </Card>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-            {filtered.map(c => (
-              <Link key={c.id} to="/clients/$clientId" params={{ clientId: c.id }} className="block">
-                <Card className="rounded-2xl p-5 hover:shadow-md transition-shadow h-full flex flex-col gap-3">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="min-w-0">
-                      <div className="text-base font-semibold truncate">{c.name}</div>
-                      {c.segment && <div className="text-xs text-muted-foreground truncate">{c.segment}</div>}
-                    </div>
-                    <Badge className={cn("rounded-full shrink-0", STATUS[c.status ?? "prospect"]?.color ?? "bg-muted")}>
-                      {STATUS[c.status ?? "prospect"]?.label ?? "—"}
-                    </Badge>
+            {filtered.map(c => {
+              const revealed = revealedId === c.id;
+              const isArchived = (c.status ?? "") === "inactive";
+              return (
+                <div key={c.id} className="relative">
+                  {/* Actions revealed behind the card */}
+                  <div
+                    className={cn(
+                      "absolute inset-y-0 right-0 flex items-center gap-1.5 pr-2 transition-opacity",
+                      revealed ? "opacity-100" : "opacity-0 pointer-events-none",
+                    )}
+                    aria-hidden={!revealed}
+                  >
+                    <Button
+                      size="icon"
+                      variant="outline"
+                      className="h-10 w-10 rounded-full shadow-sm"
+                      title={isArchived ? "Reativar" : "Arquivar"}
+                      onClick={(e) => { e.stopPropagation(); archive.mutate({ id: c.id, archived: !isArchived }); }}
+                    >
+                      {isArchived ? <ArchiveRestore className="h-4 w-4" /> : <Archive className="h-4 w-4" />}
+                    </Button>
+                    <Button
+                      size="icon"
+                      variant="outline"
+                      className="h-10 w-10 rounded-full shadow-sm"
+                      title="Editar"
+                      onClick={(e) => { e.stopPropagation(); setEditingId(c.id); setRevealedId(null); }}
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      size="icon"
+                      variant="outline"
+                      className="h-10 w-10 rounded-full shadow-sm text-destructive hover:text-destructive"
+                      title="Excluir"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (confirm(`Excluir cliente "${c.name}"? Esta ação não pode ser desfeita.`)) remove.mutate(c.id);
+                      }}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
                   </div>
-                  <div className="mt-auto space-y-1 text-xs text-muted-foreground pt-2 border-t border-border">
-                    {c.email && <div className="inline-flex items-center gap-1.5 truncate"><Mail className="h-3.5 w-3.5" />{c.email}</div>}
-                    {c.phone && <div className="inline-flex items-center gap-1.5"><Phone className="h-3.5 w-3.5" />{c.phone}</div>}
-                    {c.tax_id && <div className="inline-flex items-center gap-1.5"><Building2 className="h-3.5 w-3.5" />{c.tax_id}</div>}
-                  </div>
-                </Card>
-              </Link>
-            ))}
+
+                  <button
+                    type="button"
+                    onClick={() => setRevealedId(revealed ? null : c.id)}
+                    className={cn(
+                      "block w-full text-left transition-transform duration-300 ease-out will-change-transform",
+                      revealed ? "-translate-x-[152px] scale-[0.96]" : "translate-x-0",
+                    )}
+                  >
+                    <Card className="rounded-2xl p-5 hover:shadow-md transition-shadow h-full flex flex-col gap-3">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <div className="text-base font-semibold truncate">{c.name}</div>
+                          {c.segment && <div className="text-xs text-muted-foreground truncate">{c.segment}</div>}
+                        </div>
+                        <Badge className={cn("rounded-full shrink-0", STATUS[c.status ?? "prospect"]?.color ?? "bg-muted")}>
+                          {STATUS[c.status ?? "prospect"]?.label ?? "—"}
+                        </Badge>
+                      </div>
+                      <div className="mt-auto space-y-1 text-xs text-muted-foreground pt-2 border-t border-border">
+                        {c.email && <div className="inline-flex items-center gap-1.5 truncate"><Mail className="h-3.5 w-3.5" />{c.email}</div>}
+                        {c.phone && <div className="inline-flex items-center gap-1.5"><Phone className="h-3.5 w-3.5" />{c.phone}</div>}
+                        {c.tax_id && <div className="inline-flex items-center gap-1.5"><Building2 className="h-3.5 w-3.5" />{c.tax_id}</div>}
+                      </div>
+                    </Card>
+                  </button>
+                </div>
+              );
+            })}
           </div>
         )}
       </div>
