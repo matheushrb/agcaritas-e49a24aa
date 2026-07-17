@@ -363,6 +363,7 @@ export function TaskModal({ task, onClose }: { task: Task | null; onClose: () =>
     setEstimatedHours(task.estimated_hours?.toString() ?? "");
     setPlatform(task.platform ?? "");
     setDeliveryType(task.delivery_type ?? "");
+    setStage(task.stage ?? "creation");
     setProgress(task.progress ?? 0);
     setProjectId(task.project_id ?? "");
     setClientId(task.client_id ?? "");
