@@ -427,6 +427,7 @@ export function TaskModal({
     setProjectId(task.project_id ?? "");
     setClientId(task.client_id ?? "");
     setBillingEnabled(task.billing_enabled ?? false);
+    setDeliverables(Array.isArray(task.deliverables) ? task.deliverables : []);
   }, [task]);
 
   const isLocalDraft = !!task?.id.startsWith("draft-");
@@ -451,6 +452,7 @@ export function TaskModal({
       delivery_type: patch.delivery_type ?? (deliveryType || null),
       estimated_hours: patch.estimated_hours ?? (estimatedHours ? Number(estimatedHours) : null),
       stage: patch.stage ?? stage,
+      deliverables: patch.deliverables ?? deliverables,
     };
   };
 
