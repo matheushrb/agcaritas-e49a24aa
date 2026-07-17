@@ -643,6 +643,18 @@ export function TaskModal({ task, onClose }: { task: Task | null; onClose: () =>
                       />
                     </div>
                   </SidebarRow>
+                  <div className="p-3 space-y-2">
+                    <Button
+                      className="w-full rounded-full gap-1.5"
+                      disabled={!billingValue || Number(billingValue) <= 0 || bill.isPending || invoiced}
+                      onClick={() => bill.mutate()}
+                    >
+                      {invoiced ? <><Check className="h-4 w-4" />Lançado no Financeiro</> : <><DollarSign className="h-4 w-4" />Faturar tarefa</>}
+                    </Button>
+                    <p className="text-[11px] text-muted-foreground leading-snug">
+                      Cria uma cobrança pendente vinculada ao projeto e cliente, com o valor definido acima.
+                    </p>
+                  </div>
                   <div className="pt-1">
                     <TaskTimer />
                   </div>
