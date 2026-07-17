@@ -1,7 +1,7 @@
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
 import {
   LayoutGrid, Users, FileText, Briefcase, DollarSign, Calendar, UsersRound,
-  Search, Settings, Moon, Sun, Sparkles, LogOut, Bell,
+  Search, Settings, Moon, Sun, Sparkles, LogOut, Bell, CheckSquare,
   Target, Truck, Lightbulb, Megaphone, Grid3x3,
 } from "lucide-react";
 import type { ReactNode } from "react";
@@ -20,13 +20,14 @@ const extraModules = [
 // Sidebar principal — 7 ícones conforme documento Pixie v2 (Dashboard, CRM,
 // Propostas, Projetos, Financeiro, Agenda, RH). Configurações no rodapé.
 const sideIcons = [
-  { to: "/dashboard",  icon: LayoutGrid, label: "Dashboard" },
-  { to: "/crm",        icon: Users,      label: "CRM" },
-  { to: "/proposals",  icon: FileText,   label: "Propostas" },
-  { to: "/projects",   icon: Briefcase,  label: "Projetos" },
-  { to: "/finance",    icon: DollarSign, label: "Financeiro" },
-  { to: "/calendar",   icon: Calendar,   label: "Agenda" },
-  { to: "/team",       icon: UsersRound, label: "RH" },
+  { to: "/dashboard",  icon: LayoutGrid,  label: "Dashboard" },
+  { to: "/projects",   icon: Briefcase,   label: "Projetos" },
+  { to: "/tasks",      icon: CheckSquare, label: "Tarefas" },
+  { to: "/crm",        icon: Users,       label: "CRM" },
+  { to: "/proposals",  icon: FileText,    label: "Propostas" },
+  { to: "/finance",    icon: DollarSign,  label: "Financeiro" },
+  { to: "/calendar",   icon: Calendar,    label: "Agenda" },
+  { to: "/team",       icon: UsersRound,  label: "RH" },
 ] as const;
 
 export function AppShell({ children }: { children: ReactNode }) {
