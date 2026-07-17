@@ -114,7 +114,7 @@ export function IconPreview({
         className="grid place-items-center rounded-full shrink-0 overflow-hidden border border-border/40 bg-white"
         style={{ width: size, height: size }}
       >
-        <img src={iconUrl} alt="" className="h-full w-full object-cover" />
+        <img src={iconUrl} alt="" className="h-[70%] w-[70%] object-contain" />
       </span>
     );
   }
