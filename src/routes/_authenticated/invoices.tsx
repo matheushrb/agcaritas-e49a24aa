@@ -665,6 +665,7 @@ function NewInvoiceWizard({
           {step > 1 && <Button variant="ghost" onClick={() => setStep(step - 1)}><ArrowLeft className="h-4 w-4 mr-1" />Voltar</Button>}
           <div className="flex-1" />
           <Button variant="ghost" onClick={onClose}>Cancelar</Button>
+          {step === 3 && <Button variant="outline" disabled={!canGoNext} onClick={openPreviewPDF}><FileText className="h-4 w-4 mr-1" />Ver prévia do PDF</Button>}
           {step < 3 && <Button disabled={!canGoNext} onClick={() => setStep(step + 1)}>Avançar<ArrowRight className="h-4 w-4 ml-1" /></Button>}
           {step === 3 && <Button disabled={!canGoNext || submitting} onClick={submit}>{submitting ? "Emitindo..." : "Emitir fatura"}</Button>}
         </DialogFooter>
