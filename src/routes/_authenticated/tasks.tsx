@@ -336,6 +336,7 @@ export function TaskModal({ task, onClose }: { task: Task | null; onClose: () =>
   const [progress, setProgress] = useState<number>(0);
   const [projectId, setProjectId] = useState<string>("");
   const [clientId, setClientId] = useState<string>("");
+  const [billingEnabled, setBillingEnabled] = useState<boolean>(false);
 
   const { data: projectsList = [] } = useQuery({
     queryKey: ["tasks-modal-projects"],
