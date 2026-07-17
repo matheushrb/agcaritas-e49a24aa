@@ -80,7 +80,7 @@ function InvoicesPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("invoices")
-        .select("id,number,client_id,project_id,status,issue_date,due_date,total,amount,paid_at,notes")
+        .select("id,number,client_id,project_id,status,issue_date,due_date,total,amount,paid_at,notes,payment_terms,payment_link")
         .order("issue_date", { ascending: false });
       if (error) throw error;
       return (data ?? []) as Invoice[];
