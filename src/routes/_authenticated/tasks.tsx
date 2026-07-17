@@ -636,14 +636,30 @@ export function TaskModal({
     return () => window.removeEventListener("keydown", onKey);
   }, [task, mode, onClose]);
 
-  // Progresso automático: subtarefas concluídas + etapas passadas ÷ total
+  // Índice da etapa atual — dinâmico se houver tipo, senão usa o enum antigo.
+  const useDynamicStages = taskTypeId && typeStages.length > 0;
+  const dynamicStageIndex = useDynamicStages
+    ? Math.max(0, typeStages.findIndex(s => s.id === currentStageId))
+    : -1;
+
+  // Progresso automático: usa pesos das etapas quando há tipo, senão fallback.
   const computedProgress = useMemo(() => {
-    const total = subtasks.length + STAGE_ORDER.length;
+    const subDone = subtasks.filter(s => s.done).length;
+    const subTotal = subtasks.length;
+    if (useDynamicStages) {
+      const totalWeight = typeStages.reduce((a, s) => a + s.weight, 0);
+      const doneWeight = status === "done"
+        ? totalWeight
+        : typeStages.slice(0, dynamicStageIndex).reduce((a, s) => a + s.weight, 0);
+      const denom = totalWeight + subTotal;
+      if (denom === 0) return 0;
+      return Math.round(((doneWeight + subDone) / denom) * 100);
+    }
+    const total = subTotal + STAGE_ORDER.length;
     if (total === 0) return 0;
     const stagesDone = status === "done" ? STAGE_ORDER.length : Math.max(0, STAGE_ORDER.indexOf(stage));
-    const subDone = subtasks.filter(s => s.done).length;
     return Math.round(((subDone + stagesDone) / total) * 100);
-  }, [subtasks, stage, status]);
+  }, [subtasks, stage, status, useDynamicStages, typeStages, dynamicStageIndex]);
 
   const lastProgressRef = useRef<number | null>(null);
   useEffect(() => {
