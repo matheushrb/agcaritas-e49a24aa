@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { Plus, Trash2, GripVertical } from "lucide-react";
+import { Plus, Trash2, GripVertical, Upload, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { IconPicker, ColorPicker, IconPreview } from "./icon-color-pickers";
 
@@ -18,6 +18,7 @@ type Row = {
   slug: string | null;
   color: string | null;
   icon: string | null;
+  icon_url?: string | null;
   category?: string | null;
   description?: string | null;
   sort_order: number;
