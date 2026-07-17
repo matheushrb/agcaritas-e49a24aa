@@ -725,10 +725,29 @@ export function TaskModal({
     >
             {/* Top bar */}
             <div className="flex items-center gap-2 px-6 py-3 border-b border-border bg-white">
-              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
                 <span className="rounded-md bg-muted px-2 py-0.5 font-mono">#{task.id.slice(0, 6).toUpperCase()}</span>
-                <span>·</span>
-                <span>Tarefa</span>
+                <TaskTypePicker
+                  value={taskTypeId}
+                  types={taskTypes}
+                  variant="badge"
+                  onChange={(id, t) => {
+                    setTaskTypeId(id);
+                    setCurrentStageId("");
+                    const patch: Partial<Task> = { task_type_id: id || null, current_stage_id: null };
+                    if (t) {
+                      if (!billingModel && t.default_billing_model) {
+                        setBillingModel(t.default_billing_model as BillingModel);
+                        patch.billing_model = t.default_billing_model as BillingModel;
+                      }
+                      if (!billingValue && t.default_price != null) {
+                        setBillingValue(String(t.default_price));
+                        patch.billing_value = t.default_price;
+                      }
+                    }
+                    save.mutate(patch);
+                  }}
+                />
               </div>
 
               <div className="ml-auto flex items-center gap-1">
