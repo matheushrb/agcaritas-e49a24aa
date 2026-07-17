@@ -1487,6 +1487,7 @@ export type Database = {
         Row: {
           assignee_id: string | null
           attachments_count: number
+          billing_enabled: boolean
           billing_model: Database["public"]["Enums"]["billing_model"] | null
           billing_value: number | null
           client_id: string | null
@@ -1511,6 +1512,7 @@ export type Database = {
         Insert: {
           assignee_id?: string | null
           attachments_count?: number
+          billing_enabled?: boolean
           billing_model?: Database["public"]["Enums"]["billing_model"] | null
           billing_value?: number | null
           client_id?: string | null
@@ -1535,6 +1537,7 @@ export type Database = {
         Update: {
           assignee_id?: string | null
           attachments_count?: number
+          billing_enabled?: boolean
           billing_model?: Database["public"]["Enums"]["billing_model"] | null
           billing_value?: number | null
           client_id?: string | null
