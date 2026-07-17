@@ -23,7 +23,7 @@ const TABS = [
   { value: "agency",       label: "Dados da Agência", icon: Building2 },
   { value: "services",     label: "Serviços",         icon: Wrench },
   { value: "platforms",    label: "Plataformas",      icon: Share2 },
-  { value: "task-flows",   label: "Fluxos de Tarefa", icon: Workflow },
+  { value: "task-flows",   label: "Tipos de Tarefa",  icon: Workflow },
   { value: "crm-funnel",   label: "Funil CRM",        icon: TrendingUp },
   { value: "users",        label: "Usuários",         icon: UserCog },
   { value: "integrations", label: "Integrações",      icon: Plug },
