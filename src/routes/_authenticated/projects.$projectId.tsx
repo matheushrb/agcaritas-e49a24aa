@@ -247,6 +247,7 @@ function ProjectDetail() {
         status: "todo",
         priority: "medium",
         project_id: projectId,
+        client_id: project?.client_id ?? null,
         organization_id: profile.organization_id,
       };
       if (payload.task_type_id) insert.task_type_id = payload.task_type_id;
