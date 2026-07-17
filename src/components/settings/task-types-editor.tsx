@@ -152,8 +152,9 @@ export function TaskTypesEditor() {
           color: s.color,
           status_group: s.status_group,
           weight: s.weight,
+          auto_checklist: s.auto_checklist ?? [],
         }));
-        await supabase.from("task_type_stages").insert(payload);
+        await (supabase as any).from("task_type_stages").insert(payload);
       }
       return newT.id as string;
     },
