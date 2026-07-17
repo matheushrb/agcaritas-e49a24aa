@@ -1219,6 +1219,48 @@ export type Database = {
           },
         ]
       }
+      platforms: {
+        Row: {
+          active: boolean
+          category: string | null
+          color: string | null
+          created_at: string
+          icon: string | null
+          id: string
+          name: string
+          organization_id: string
+          slug: string | null
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          category?: string | null
+          color?: string | null
+          created_at?: string
+          icon?: string | null
+          id?: string
+          name: string
+          organization_id: string
+          slug?: string | null
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          category?: string | null
+          color?: string | null
+          created_at?: string
+          icon?: string | null
+          id?: string
+          name?: string
+          organization_id?: string
+          slug?: string | null
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -1461,6 +1503,48 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      project_types: {
+        Row: {
+          active: boolean
+          color: string | null
+          created_at: string
+          description: string | null
+          icon: string | null
+          id: string
+          name: string
+          organization_id: string
+          slug: string | null
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          color?: string | null
+          created_at?: string
+          description?: string | null
+          icon?: string | null
+          id?: string
+          name: string
+          organization_id: string
+          slug?: string | null
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          color?: string | null
+          created_at?: string
+          description?: string | null
+          icon?: string | null
+          id?: string
+          name?: string
+          organization_id?: string
+          slug?: string | null
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
       }
       projects: {
         Row: {
