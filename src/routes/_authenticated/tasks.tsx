@@ -436,6 +436,7 @@ export function TaskModal({ task, onClose }: { task: Task | null; onClose: () =>
   }, [task, mode, onClose]);
 
   if (!task) return null;
+  const overdue = dueDate && new Date(dueDate) < new Date() && status !== "done";
 
   // Minimized pill
   if (mode === "minimized") {
