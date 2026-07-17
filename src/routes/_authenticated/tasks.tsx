@@ -55,6 +55,7 @@ type Deliverable = {
   link?: string | null;
   channel?: string | null;
   invoiced?: boolean;
+  delivered?: boolean;
 };
 
 type Task = {
@@ -765,6 +766,7 @@ export function TaskModal({
       if (!task) return;
       if (dirty) throw new Error("Salve as alterações da tarefa antes de faturar o entregável");
       if (!d.billing_enabled) throw new Error("Ative o faturamento deste entregável");
+      if (!d.delivered) throw new Error("Marque o entregável como entregue antes de faturar");
       const value = d.billing_value ?? 0;
       if (!value || value <= 0) throw new Error("Defina um valor para este entregável");
       const persistedTaskId = isLocalDraft ? (await createDraftRecord()).id : task.id;
@@ -1883,10 +1885,15 @@ function DeliverablesSection({
                   <div className="flex items-start justify-between gap-2">
                     <IconPreview name={platOpt?.icon ?? null} color={platOpt?.color ?? null} iconUrl={platOpt?.icon_url ?? null} size={36} />
                     <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-1.5 mb-1">
+                      <div className="flex items-center gap-1.5 mb-1 flex-wrap">
                         <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">#{i + 1}</span>
+                        {d.delivered ? (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 px-1.5 py-0.5 text-[10px] font-medium"><Check className="h-2.5 w-2.5" />Entregue</span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-400 px-1.5 py-0.5 text-[10px] font-medium">Pendente</span>
+                        )}
                         {d.invoiced && (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 px-1.5 py-0.5 text-[10px] font-medium"><Check className="h-2.5 w-2.5" />Lançado</span>
+                          <span className="inline-flex items-center gap-1 rounded-full bg-primary/15 text-primary px-1.5 py-0.5 text-[10px] font-medium"><Check className="h-2.5 w-2.5" />Faturado</span>
                         )}
                         {d.billing_enabled && !d.invoiced && (
                           <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 text-primary px-1.5 py-0.5 text-[10px] font-medium">Faturável</span>
@@ -1981,6 +1988,21 @@ function DeliverablesSection({
                 </div>
 
                 <div className="flex items-center justify-between pt-1.5 border-t border-border">
+                  <span className="text-[11px] text-muted-foreground">Entregue</span>
+                  <Button
+                    size="sm"
+                    variant={d.delivered ? "default" : "outline"}
+                    className="h-7 rounded-full text-xs gap-1"
+                    onClick={() => update(d.id, {
+                      delivered: !d.delivered,
+                      delivered_date: !d.delivered ? (d.delivered_date ?? new Date().toISOString().slice(0, 10)) : d.delivered_date,
+                    })}
+                  >
+                    {d.delivered ? <><Check className="h-3.5 w-3.5" />Entregue</> : "Marcar como entregue"}
+                  </Button>
+                </div>
+
+                <div className="flex items-center justify-between">
                   <span className="text-[11px] text-muted-foreground">Faturar este entregável</span>
                   <Switch
                     checked={d.billing_enabled}
@@ -2023,13 +2045,16 @@ function DeliverablesSection({
                     <Button
                       size="sm"
                       className="w-full rounded-full gap-1.5 h-8 text-xs"
-                      disabled={!d.billing_value || d.billing_value <= 0 || billingPending || d.invoiced || !canBill}
+                      disabled={!d.billing_value || d.billing_value <= 0 || billingPending || d.invoiced || !canBill || !d.delivered}
                       onClick={() => onBill(d)}
-                      title={billHelper ?? undefined}
+                      title={!d.delivered ? "Marque o entregável como entregue antes de faturar." : (billHelper ?? undefined)}
                     >
                       {d.invoiced ? <><Check className="h-3.5 w-3.5" />Lançado</> : <><DollarSign className="h-3.5 w-3.5" />Faturar entregável</>}
                     </Button>
-                    {billHelper && !d.invoiced && (
+                    {!d.delivered && !d.invoiced && (
+                      <p className="text-[10px] text-amber-600 dark:text-amber-400 leading-relaxed">Marque como entregue para liberar o faturamento.</p>
+                    )}
+                    {d.delivered && billHelper && !d.invoiced && (
                       <p className="text-[10px] text-muted-foreground leading-relaxed">{billHelper}</p>
                     )}
                   </div>
