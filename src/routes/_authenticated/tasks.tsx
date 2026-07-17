@@ -714,24 +714,44 @@ export function TaskModal({
         resolvedClient = (proj?.client_id as string) ?? null;
       }
       const today = new Date().toISOString().slice(0, 10);
-      const { error } = await supabase.from("charges").insert({
-        organization_id: profile.organization_id,
-        project_id: resolvedProjectId,
-        task_id: persistedTaskId,
-        client_id: resolvedClient,
-        description: `Tarefa: ${title.trim() || task.title || "Nova tarefa"}`,
-        amount: value,
-        status: "pending",
-        due_date: today,
-        type: "income",
-      });
+      const baseTitle = title.trim() || task.title || "Nova tarefa";
+      // Se a tarefa é de transmissão/estreia com datas ao ar, gera uma cobrança por data.
+      const airDates = Array.isArray(airedDates) ? airedDates.filter(Boolean) : [];
+      const useAirDates = !!broadcastKind && airDates.length > 0;
+      const kindLabel = broadcastKind === "live" ? "Ao vivo" : broadcastKind === "premiere" ? "Estreia" : broadcastKind === "recorded" ? "Gravado" : "";
+      const rows = useAirDates
+        ? airDates.map(d => ({
+            organization_id: profile.organization_id,
+            project_id: resolvedProjectId,
+            task_id: persistedTaskId,
+            client_id: resolvedClient,
+            description: `Tarefa: ${baseTitle}${kindLabel ? ` — ${kindLabel}` : ""} em ${new Date(d + "T00:00:00").toLocaleDateString("pt-BR")}`,
+            amount: value,
+            status: "pending" as const,
+            due_date: d,
+            type: "income" as const,
+          }))
+        : [{
+            organization_id: profile.organization_id,
+            project_id: resolvedProjectId,
+            task_id: persistedTaskId,
+            client_id: resolvedClient,
+            description: `Tarefa: ${baseTitle}`,
+            amount: value,
+            status: "pending" as const,
+            due_date: today,
+            type: "income" as const,
+          }];
+      const { error } = await supabase.from("charges").insert(rows);
       if (error) throw error;
+      return { count: rows.length };
     },
-    onSuccess: () => {
+    onSuccess: (res) => {
       qc.invalidateQueries({ queryKey: ["charges"] });
       qc.invalidateQueries({ queryKey: ["project-charges"] });
       setInvoiced(true);
-      toast.success("Tarefa lançada no Financeiro");
+      const n = res?.count ?? 1;
+      toast.success(n > 1 ? `${n} cobranças lançadas no Financeiro` : "Tarefa lançada no Financeiro");
     },
     onError: (e: Error) => toast.error(e.message),
   });
