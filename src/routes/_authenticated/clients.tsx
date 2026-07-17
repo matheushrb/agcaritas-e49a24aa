@@ -182,7 +182,7 @@ function ClientsPage() {
             <Button className="rounded-full mt-4" onClick={() => setNewOpen(true)}><Plus className="h-4 w-4 mr-1" />Novo cliente</Button>
           </Card>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 gap-3">
             {filtered.map(c => {
               const revealed = revealedId === c.id;
               const isArchived = (c.status ?? "") === "inactive";
@@ -194,44 +194,43 @@ function ClientsPage() {
                     revealed ? "shadow-md" : "hover:shadow-md",
                   )}
                 >
-                  <div className="flex items-stretch">
+                  <div className="flex items-stretch min-h-[72px]">
                     <button
                       type="button"
                       onClick={() => setRevealedId(revealed ? null : c.id)}
                       className={cn(
-                        "text-left transition-[flex-basis] duration-300 ease-out min-w-0",
-                        revealed ? "basis-[calc(100%-160px)]" : "basis-full",
+                        "text-left transition-all duration-300 ease-out min-w-0 flex-1",
                       )}
                     >
-                      <div className="p-5 h-full flex flex-col gap-3">
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="min-w-0">
+                      <div className="px-5 py-4 h-full flex items-center gap-6">
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-3">
                             <div className="text-base font-semibold truncate">{c.name}</div>
-                            {c.segment && <div className="text-xs text-muted-foreground truncate">{c.segment}</div>}
+                            {c.segment && <div className="hidden sm:block text-xs text-muted-foreground truncate">{c.segment}</div>}
                           </div>
-                          <Badge className={cn("rounded-full shrink-0", STATUS[c.status ?? "prospect"]?.color ?? "bg-muted")}>
-                            {STATUS[c.status ?? "prospect"]?.label ?? "—"}
-                          </Badge>
+                          <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                            {c.tax_id && <div className="inline-flex items-center gap-1.5"><Building2 className="h-3.5 w-3.5" />{c.tax_id}</div>}
+                            {c.email && <div className="inline-flex items-center gap-1.5 truncate"><Mail className="h-3.5 w-3.5" />{c.email}</div>}
+                            {c.phone && <div className="inline-flex items-center gap-1.5"><Phone className="h-3.5 w-3.5" />{c.phone}</div>}
+                          </div>
                         </div>
-                        <div className="mt-auto space-y-1 text-xs text-muted-foreground pt-2 border-t border-border">
-                          {c.email && <div className="inline-flex items-center gap-1.5 truncate"><Mail className="h-3.5 w-3.5" />{c.email}</div>}
-                          {c.phone && <div className="inline-flex items-center gap-1.5"><Phone className="h-3.5 w-3.5" />{c.phone}</div>}
-                          {c.tax_id && <div className="inline-flex items-center gap-1.5"><Building2 className="h-3.5 w-3.5" />{c.tax_id}</div>}
-                        </div>
+                        <Badge className={cn("rounded-full shrink-0 self-center", STATUS[c.status ?? "prospect"]?.color ?? "bg-muted")}>
+                          {STATUS[c.status ?? "prospect"]?.label ?? "—"}
+                        </Badge>
                       </div>
                     </button>
 
                     <div
                       className={cn(
-                        "flex flex-col items-center justify-center gap-2 border-l border-border bg-muted/30 transition-all duration-300 ease-out overflow-hidden",
-                        revealed ? "w-[160px] opacity-100 px-3" : "w-0 opacity-0 px-0 pointer-events-none",
+                        "flex items-center justify-center gap-2 border-l border-border bg-muted/30 transition-all duration-300 ease-out overflow-hidden",
+                        revealed ? "w-auto opacity-100 px-4" : "w-0 opacity-0 px-0 pointer-events-none",
                       )}
                       aria-hidden={!revealed}
                     >
                       <Button
                         size="icon"
                         variant="outline"
-                        className="h-9 w-9 rounded-full shadow-sm"
+                        className="h-10 w-10 rounded-full shadow-sm"
                         title={isArchived ? "Reativar" : "Arquivar"}
                         onClick={(e) => { e.stopPropagation(); archive.mutate({ id: c.id, archived: !isArchived }); }}
                       >
@@ -240,7 +239,7 @@ function ClientsPage() {
                       <Button
                         size="icon"
                         variant="outline"
-                        className="h-9 w-9 rounded-full shadow-sm"
+                        className="h-10 w-10 rounded-full shadow-sm"
                         title="Editar"
                         onClick={(e) => { e.stopPropagation(); setEditingId(c.id); setRevealedId(null); }}
                       >
@@ -249,7 +248,7 @@ function ClientsPage() {
                       <Button
                         size="icon"
                         variant="outline"
-                        className="h-9 w-9 rounded-full shadow-sm text-destructive hover:text-destructive"
+                        className="h-10 w-10 rounded-full shadow-sm text-destructive hover:text-destructive"
                         title="Excluir"
                         onClick={(e) => {
                           e.stopPropagation();
