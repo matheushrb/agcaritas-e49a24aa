@@ -27,6 +27,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useTaskTypes, useTaskTypeStages, type TaskTypeRow, type TaskTypeStageRow, type StatusGroup } from "@/lib/task-types";
 import { TaskTypeIcon } from "@/components/settings/icon-picker";
+import { IconPreview } from "@/components/settings/icon-color-pickers";
 import { useAutomationSettings, effectivePriority, DEFAULT_AUTOMATION_SETTINGS } from "@/lib/automation-settings";
 import { Link } from "@tanstack/react-router";
 import { CostConfirmDialog, type CostSuggestion } from "@/components/cost-confirm-dialog";
