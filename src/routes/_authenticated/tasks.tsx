@@ -801,7 +801,7 @@ export function TaskModal({
         deliverable_id: d.id,
         description,
         amount: value,
-        status: "pending",
+        status: "pending_invoice",
         due_date: deliveredDate,
         type: "income",
       });
