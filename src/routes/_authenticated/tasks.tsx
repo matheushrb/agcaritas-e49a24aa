@@ -22,6 +22,7 @@ import {
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useTaskTypes, useTaskTypeStages, type TaskTypeRow, type TaskTypeStageRow, type StatusGroup } from "@/lib/task-types";
+import { TaskTypeIcon } from "@/components/settings/icon-picker";
 import { Link } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/_authenticated/tasks")({
