@@ -9,11 +9,12 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
-  Building2, Wrench, Share2, Workflow, TrendingUp, UserCog, Plug, Zap,
+  Building2, Wrench, Share2, Workflow, TrendingUp, UserCog, Plug, Zap, DollarSign,
 } from "lucide-react";
 import { toast } from "sonner";
 import { TaskTypesEditor } from "@/components/settings/task-types-editor";
 import { AutomationsTab } from "@/components/settings/automations-tab";
+import { AgencyPricingTab } from "@/components/settings/agency-pricing";
 
 export const Route = createFileRoute("/_authenticated/settings")({
   head: () => ({ meta: [{ title: "Configurações · Caritas" }] }),
@@ -22,6 +23,7 @@ export const Route = createFileRoute("/_authenticated/settings")({
 
 const TABS = [
   { value: "agency",       label: "Dados da Agência", icon: Building2 },
+  { value: "pricing",      label: "Precificação",     icon: DollarSign },
   { value: "services",     label: "Serviços",         icon: Wrench },
   { value: "platforms",    label: "Plataformas",      icon: Share2 },
   { value: "task-flows",   label: "Tipos de Tarefa",  icon: Workflow },
@@ -54,6 +56,7 @@ function SettingsPage() {
         </div>
 
         <TabsContent value="agency" className="mt-4"><AgencyTab /></TabsContent>
+        <TabsContent value="pricing" className="mt-4"><AgencyPricingTab /></TabsContent>
         <TabsContent value="services" className="mt-4"><ComingSoonCard title="Serviços" hint="Catálogo de serviços (nome, valor base, descrição). Usado nas linhas de proposta." /></TabsContent>
         <TabsContent value="platforms" className="mt-4"><ComingSoonCard title="Plataformas" hint="Instagram, TikTok, YouTube etc. — regras de prazo de entrega por tipo e cor por plataforma." /></TabsContent>
         <TabsContent value="task-flows" className="mt-4"><TaskTypesEditor /></TabsContent>

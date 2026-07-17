@@ -1,0 +1,1 @@
+ALTER TABLE public.organizations ADD COLUMN IF NOT EXISTS pricing_settings jsonb NOT NULL DEFAULT '{}'::jsonb;
