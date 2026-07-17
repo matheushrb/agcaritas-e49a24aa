@@ -331,6 +331,7 @@ export function TaskModal({ task, onClose }: { task: Task | null; onClose: () =>
   const [estimatedHours, setEstimatedHours] = useState<string>("");
   const [platform, setPlatform] = useState<string>("");
   const [deliveryType, setDeliveryType] = useState<string>("");
+  const [stage, setStage] = useState<TaskStage>("creation");
   const [progress, setProgress] = useState<number>(0);
   const [projectId, setProjectId] = useState<string>("");
   const [clientId, setClientId] = useState<string>("");
