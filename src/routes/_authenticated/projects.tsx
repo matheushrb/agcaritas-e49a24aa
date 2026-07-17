@@ -7,9 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
-import { EntityDialog, DialogField, DialogCancelButton } from "@/components/entity-dialog";
-import { Search, Plus, Briefcase, Calendar, Users, FolderPlus } from "lucide-react";
+import { NewProjectWizard, type ProjectWizardValue } from "@/components/new-project-wizard";
+import { Search, Plus, Briefcase, Calendar, Users } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
@@ -105,20 +104,24 @@ function ProjectsPage() {
   }, [projects]);
 
   const createProject = useMutation({
-    mutationFn: async (input: {
-      name: string; client_id: string | null; description: string; status: ProjectStatus;
-      start_date: string | null; end_date: string | null;
-    }) => {
+    mutationFn: async (input: ProjectWizardValue) => {
       const { data: profile } = await supabase.from("profiles").select("organization_id").maybeSingle();
       if (!profile?.organization_id) throw new Error("Sem organização");
       const { error } = await supabase.from("projects").insert({
+        organization_id: profile.organization_id,
         name: input.name,
         client_id: input.client_id,
         description: input.description || null,
-        status: input.status,
+        status: "planning",
         start_date: input.start_date,
         end_date: input.end_date,
-        organization_id: profile.organization_id,
+        project_type: input.project_type,
+        billing_model: input.billing_model,
+        fixed_value: input.fixed_value,
+        urgency: input.urgency,
+        scope_flags: { ...input.scope_flags, tools: input.tools } as any,
+        traffic_budget: input.traffic_budget as any,
+        other_budgets: input.other_budgets as any,
       });
       if (error) throw error;
     },
@@ -191,7 +194,7 @@ function ProjectsPage() {
         )}
       </div>
 
-      <NewProjectDialog
+      <NewProjectWizard
         open={newOpen}
         onOpenChange={setNewOpen}
         clients={clients}
@@ -246,95 +249,3 @@ function ProjectCard({ project, clientName, counts }: { project: Project; client
   );
 }
 
-function NewProjectDialog({
-  open, onOpenChange, clients, onCreate, pending,
-}: {
-  open: boolean;
-  onOpenChange: (v: boolean) => void;
-  clients: Client[];
-  onCreate: (v: { name: string; client_id: string | null; description: string; status: ProjectStatus; start_date: string | null; end_date: string | null }) => void;
-  pending: boolean;
-}) {
-  const [name, setName] = useState("");
-  const [clientId, setClientId] = useState<string>("none");
-  const [description, setDescription] = useState("");
-  const [status, setStatus] = useState<ProjectStatus>("planning");
-  const [start, setStart] = useState("");
-  const [end, setEnd] = useState("");
-
-  const reset = () => {
-    setName(""); setClientId("none"); setDescription("");
-    setStatus("planning"); setStart(""); setEnd("");
-  };
-  const handleOpenChange = (v: boolean) => { onOpenChange(v); if (!v) reset(); };
-  const clientName = clientId === "none" ? "Sem cliente" : clients.find(c => c.id === clientId)?.name;
-
-  return (
-    <EntityDialog
-      open={open} onOpenChange={handleOpenChange}
-      icon={FolderPlus} tone="blue"
-      eyebrow="Projetos"
-      title="Novo projeto"
-      subtitle="Escopo, cliente e cronograma inicial."
-      size="lg"
-      main={
-        <>
-          <DialogField label="Nome do projeto">
-            <Input value={name} onChange={e => setName(e.target.value)} placeholder="Ex.: Rebrand Bella Estética" autoFocus />
-          </DialogField>
-          <DialogField label="Descrição" hint="Escopo, objetivo e entregáveis principais.">
-            <Textarea value={description} onChange={e => setDescription(e.target.value)} rows={5}
-              placeholder="Ex.: Reposicionamento visual, novo site institucional, kit de mídias sociais…" />
-          </DialogField>
-          <div className="grid grid-cols-2 gap-3">
-            <DialogField label="Início"><Input type="date" value={start} onChange={e => setStart(e.target.value)} /></DialogField>
-            <DialogField label="Prazo final"><Input type="date" value={end} onChange={e => setEnd(e.target.value)} /></DialogField>
-          </div>
-        </>
-      }
-      sidebar={
-        <>
-          <DialogField label="Cliente">
-            <Select value={clientId} onValueChange={setClientId}>
-              <SelectTrigger><SelectValue placeholder="Selecionar" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">Sem cliente</SelectItem>
-                {clients.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
-              </SelectContent>
-            </Select>
-          </DialogField>
-          <DialogField label="Status inicial">
-            <Select value={status} onValueChange={v => setStatus(v as ProjectStatus)}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {(Object.keys(STATUS_META) as ProjectStatus[]).map(s => (
-                  <SelectItem key={s} value={s}>{STATUS_META[s].label}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </DialogField>
-          <div className="rounded-lg border p-3 bg-blue-500/5">
-            <div className="text-[11px] uppercase tracking-wider text-muted-foreground mb-1">Prévia</div>
-            <div className="text-sm font-medium truncate">{name || "Sem título"}</div>
-            <div className="text-xs text-muted-foreground truncate">{clientName}</div>
-            {(start || end) && <div className="text-xs text-muted-foreground mt-1">{start || "—"} → {end || "—"}</div>}
-          </div>
-        </>
-      }
-      footer={
-        <>
-          <DialogCancelButton onClick={() => handleOpenChange(false)} />
-          <Button className="rounded-full" disabled={!name.trim() || pending}
-            onClick={() => onCreate({
-              name: name.trim(),
-              client_id: clientId === "none" ? null : clientId,
-              description,
-              status,
-              start_date: start || null,
-              end_date: end || null,
-            })}>Criar projeto</Button>
-        </>
-      }
-    />
-  );
-}

@@ -13,8 +13,10 @@ import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as PTokenRouteImport } from './routes/p.$token'
 import { Route as AuthenticatedTeamRouteImport } from './routes/_authenticated/team'
 import { Route as AuthenticatedTasksRouteImport } from './routes/_authenticated/tasks'
+import { Route as AuthenticatedSuppliersRouteImport } from './routes/_authenticated/suppliers'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedProposalsRouteImport } from './routes/_authenticated/proposals'
 import { Route as AuthenticatedProjectsRouteImport } from './routes/_authenticated/projects'
@@ -22,11 +24,14 @@ import { Route as AuthenticatedNotificationsRouteImport } from './routes/_authen
 import { Route as AuthenticatedMessagesRouteImport } from './routes/_authenticated/messages'
 import { Route as AuthenticatedMarketingPlansRouteImport } from './routes/_authenticated/marketing-plans'
 import { Route as AuthenticatedInboxRouteImport } from './routes/_authenticated/inbox'
+import { Route as AuthenticatedIdeasRouteImport } from './routes/_authenticated/ideas'
+import { Route as AuthenticatedGoalsRouteImport } from './routes/_authenticated/goals'
 import { Route as AuthenticatedFinanceRouteImport } from './routes/_authenticated/finance'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedCrmRouteImport } from './routes/_authenticated/crm'
 import { Route as AuthenticatedContractsRouteImport } from './routes/_authenticated/contracts'
 import { Route as AuthenticatedClientsRouteImport } from './routes/_authenticated/clients'
+import { Route as AuthenticatedCampaignsRouteImport } from './routes/_authenticated/campaigns'
 import { Route as AuthenticatedCalendarRouteImport } from './routes/_authenticated/calendar'
 import { Route as AuthenticatedProjectsProjectIdRouteImport } from './routes/_authenticated/projects.$projectId'
 import { Route as AuthenticatedClientsClientIdRouteImport } from './routes/_authenticated/clients.$clientId'
@@ -50,6 +55,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PTokenRoute = PTokenRouteImport.update({
+  id: '/p/$token',
+  path: '/p/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedTeamRoute = AuthenticatedTeamRouteImport.update({
   id: '/team',
   path: '/team',
@@ -58,6 +68,11 @@ const AuthenticatedTeamRoute = AuthenticatedTeamRouteImport.update({
 const AuthenticatedTasksRoute = AuthenticatedTasksRouteImport.update({
   id: '/tasks',
   path: '/tasks',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedSuppliersRoute = AuthenticatedSuppliersRouteImport.update({
+  id: '/suppliers',
+  path: '/suppliers',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
@@ -97,6 +112,16 @@ const AuthenticatedInboxRoute = AuthenticatedInboxRouteImport.update({
   path: '/inbox',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedIdeasRoute = AuthenticatedIdeasRouteImport.update({
+  id: '/ideas',
+  path: '/ideas',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedGoalsRoute = AuthenticatedGoalsRouteImport.update({
+  id: '/goals',
+  path: '/goals',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedFinanceRoute = AuthenticatedFinanceRouteImport.update({
   id: '/finance',
   path: '/finance',
@@ -122,6 +147,11 @@ const AuthenticatedClientsRoute = AuthenticatedClientsRouteImport.update({
   path: '/clients',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedCampaignsRoute = AuthenticatedCampaignsRouteImport.update({
+  id: '/campaigns',
+  path: '/campaigns',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedCalendarRoute = AuthenticatedCalendarRouteImport.update({
   id: '/calendar',
   path: '/calendar',
@@ -145,11 +175,14 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/onboarding': typeof OnboardingRoute
   '/calendar': typeof AuthenticatedCalendarRoute
+  '/campaigns': typeof AuthenticatedCampaignsRoute
   '/clients': typeof AuthenticatedClientsRouteWithChildren
   '/contracts': typeof AuthenticatedContractsRoute
   '/crm': typeof AuthenticatedCrmRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/finance': typeof AuthenticatedFinanceRoute
+  '/goals': typeof AuthenticatedGoalsRoute
+  '/ideas': typeof AuthenticatedIdeasRoute
   '/inbox': typeof AuthenticatedInboxRoute
   '/marketing-plans': typeof AuthenticatedMarketingPlansRoute
   '/messages': typeof AuthenticatedMessagesRoute
@@ -157,8 +190,10 @@ export interface FileRoutesByFullPath {
   '/projects': typeof AuthenticatedProjectsRouteWithChildren
   '/proposals': typeof AuthenticatedProposalsRoute
   '/settings': typeof AuthenticatedSettingsRoute
+  '/suppliers': typeof AuthenticatedSuppliersRoute
   '/tasks': typeof AuthenticatedTasksRoute
   '/team': typeof AuthenticatedTeamRoute
+  '/p/$token': typeof PTokenRoute
   '/clients/$clientId': typeof AuthenticatedClientsClientIdRoute
   '/projects/$projectId': typeof AuthenticatedProjectsProjectIdRoute
 }
@@ -167,11 +202,14 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/onboarding': typeof OnboardingRoute
   '/calendar': typeof AuthenticatedCalendarRoute
+  '/campaigns': typeof AuthenticatedCampaignsRoute
   '/clients': typeof AuthenticatedClientsRouteWithChildren
   '/contracts': typeof AuthenticatedContractsRoute
   '/crm': typeof AuthenticatedCrmRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/finance': typeof AuthenticatedFinanceRoute
+  '/goals': typeof AuthenticatedGoalsRoute
+  '/ideas': typeof AuthenticatedIdeasRoute
   '/inbox': typeof AuthenticatedInboxRoute
   '/marketing-plans': typeof AuthenticatedMarketingPlansRoute
   '/messages': typeof AuthenticatedMessagesRoute
@@ -179,8 +217,10 @@ export interface FileRoutesByTo {
   '/projects': typeof AuthenticatedProjectsRouteWithChildren
   '/proposals': typeof AuthenticatedProposalsRoute
   '/settings': typeof AuthenticatedSettingsRoute
+  '/suppliers': typeof AuthenticatedSuppliersRoute
   '/tasks': typeof AuthenticatedTasksRoute
   '/team': typeof AuthenticatedTeamRoute
+  '/p/$token': typeof PTokenRoute
   '/clients/$clientId': typeof AuthenticatedClientsClientIdRoute
   '/projects/$projectId': typeof AuthenticatedProjectsProjectIdRoute
 }
@@ -191,11 +231,14 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/onboarding': typeof OnboardingRoute
   '/_authenticated/calendar': typeof AuthenticatedCalendarRoute
+  '/_authenticated/campaigns': typeof AuthenticatedCampaignsRoute
   '/_authenticated/clients': typeof AuthenticatedClientsRouteWithChildren
   '/_authenticated/contracts': typeof AuthenticatedContractsRoute
   '/_authenticated/crm': typeof AuthenticatedCrmRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/finance': typeof AuthenticatedFinanceRoute
+  '/_authenticated/goals': typeof AuthenticatedGoalsRoute
+  '/_authenticated/ideas': typeof AuthenticatedIdeasRoute
   '/_authenticated/inbox': typeof AuthenticatedInboxRoute
   '/_authenticated/marketing-plans': typeof AuthenticatedMarketingPlansRoute
   '/_authenticated/messages': typeof AuthenticatedMessagesRoute
@@ -203,8 +246,10 @@ export interface FileRoutesById {
   '/_authenticated/projects': typeof AuthenticatedProjectsRouteWithChildren
   '/_authenticated/proposals': typeof AuthenticatedProposalsRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
+  '/_authenticated/suppliers': typeof AuthenticatedSuppliersRoute
   '/_authenticated/tasks': typeof AuthenticatedTasksRoute
   '/_authenticated/team': typeof AuthenticatedTeamRoute
+  '/p/$token': typeof PTokenRoute
   '/_authenticated/clients/$clientId': typeof AuthenticatedClientsClientIdRoute
   '/_authenticated/projects/$projectId': typeof AuthenticatedProjectsProjectIdRoute
 }
@@ -215,11 +260,14 @@ export interface FileRouteTypes {
     | '/auth'
     | '/onboarding'
     | '/calendar'
+    | '/campaigns'
     | '/clients'
     | '/contracts'
     | '/crm'
     | '/dashboard'
     | '/finance'
+    | '/goals'
+    | '/ideas'
     | '/inbox'
     | '/marketing-plans'
     | '/messages'
@@ -227,8 +275,10 @@ export interface FileRouteTypes {
     | '/projects'
     | '/proposals'
     | '/settings'
+    | '/suppliers'
     | '/tasks'
     | '/team'
+    | '/p/$token'
     | '/clients/$clientId'
     | '/projects/$projectId'
   fileRoutesByTo: FileRoutesByTo
@@ -237,11 +287,14 @@ export interface FileRouteTypes {
     | '/auth'
     | '/onboarding'
     | '/calendar'
+    | '/campaigns'
     | '/clients'
     | '/contracts'
     | '/crm'
     | '/dashboard'
     | '/finance'
+    | '/goals'
+    | '/ideas'
     | '/inbox'
     | '/marketing-plans'
     | '/messages'
@@ -249,8 +302,10 @@ export interface FileRouteTypes {
     | '/projects'
     | '/proposals'
     | '/settings'
+    | '/suppliers'
     | '/tasks'
     | '/team'
+    | '/p/$token'
     | '/clients/$clientId'
     | '/projects/$projectId'
   id:
@@ -260,11 +315,14 @@ export interface FileRouteTypes {
     | '/auth'
     | '/onboarding'
     | '/_authenticated/calendar'
+    | '/_authenticated/campaigns'
     | '/_authenticated/clients'
     | '/_authenticated/contracts'
     | '/_authenticated/crm'
     | '/_authenticated/dashboard'
     | '/_authenticated/finance'
+    | '/_authenticated/goals'
+    | '/_authenticated/ideas'
     | '/_authenticated/inbox'
     | '/_authenticated/marketing-plans'
     | '/_authenticated/messages'
@@ -272,8 +330,10 @@ export interface FileRouteTypes {
     | '/_authenticated/projects'
     | '/_authenticated/proposals'
     | '/_authenticated/settings'
+    | '/_authenticated/suppliers'
     | '/_authenticated/tasks'
     | '/_authenticated/team'
+    | '/p/$token'
     | '/_authenticated/clients/$clientId'
     | '/_authenticated/projects/$projectId'
   fileRoutesById: FileRoutesById
@@ -283,6 +343,7 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
   OnboardingRoute: typeof OnboardingRoute
+  PTokenRoute: typeof PTokenRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -315,6 +376,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/p/$token': {
+      id: '/p/$token'
+      path: '/p/$token'
+      fullPath: '/p/$token'
+      preLoaderRoute: typeof PTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/team': {
       id: '/_authenticated/team'
       path: '/team'
@@ -327,6 +395,13 @@ declare module '@tanstack/react-router' {
       path: '/tasks'
       fullPath: '/tasks'
       preLoaderRoute: typeof AuthenticatedTasksRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/suppliers': {
+      id: '/_authenticated/suppliers'
+      path: '/suppliers'
+      fullPath: '/suppliers'
+      preLoaderRoute: typeof AuthenticatedSuppliersRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/settings': {
@@ -378,6 +453,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedInboxRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/ideas': {
+      id: '/_authenticated/ideas'
+      path: '/ideas'
+      fullPath: '/ideas'
+      preLoaderRoute: typeof AuthenticatedIdeasRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/goals': {
+      id: '/_authenticated/goals'
+      path: '/goals'
+      fullPath: '/goals'
+      preLoaderRoute: typeof AuthenticatedGoalsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/finance': {
       id: '/_authenticated/finance'
       path: '/finance'
@@ -411,6 +500,13 @@ declare module '@tanstack/react-router' {
       path: '/clients'
       fullPath: '/clients'
       preLoaderRoute: typeof AuthenticatedClientsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/campaigns': {
+      id: '/_authenticated/campaigns'
+      path: '/campaigns'
+      fullPath: '/campaigns'
+      preLoaderRoute: typeof AuthenticatedCampaignsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/calendar': {
@@ -463,11 +559,14 @@ const AuthenticatedProjectsRouteWithChildren =
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedCalendarRoute: typeof AuthenticatedCalendarRoute
+  AuthenticatedCampaignsRoute: typeof AuthenticatedCampaignsRoute
   AuthenticatedClientsRoute: typeof AuthenticatedClientsRouteWithChildren
   AuthenticatedContractsRoute: typeof AuthenticatedContractsRoute
   AuthenticatedCrmRoute: typeof AuthenticatedCrmRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedFinanceRoute: typeof AuthenticatedFinanceRoute
+  AuthenticatedGoalsRoute: typeof AuthenticatedGoalsRoute
+  AuthenticatedIdeasRoute: typeof AuthenticatedIdeasRoute
   AuthenticatedInboxRoute: typeof AuthenticatedInboxRoute
   AuthenticatedMarketingPlansRoute: typeof AuthenticatedMarketingPlansRoute
   AuthenticatedMessagesRoute: typeof AuthenticatedMessagesRoute
@@ -475,17 +574,21 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedProjectsRoute: typeof AuthenticatedProjectsRouteWithChildren
   AuthenticatedProposalsRoute: typeof AuthenticatedProposalsRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
+  AuthenticatedSuppliersRoute: typeof AuthenticatedSuppliersRoute
   AuthenticatedTasksRoute: typeof AuthenticatedTasksRoute
   AuthenticatedTeamRoute: typeof AuthenticatedTeamRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedCalendarRoute: AuthenticatedCalendarRoute,
+  AuthenticatedCampaignsRoute: AuthenticatedCampaignsRoute,
   AuthenticatedClientsRoute: AuthenticatedClientsRouteWithChildren,
   AuthenticatedContractsRoute: AuthenticatedContractsRoute,
   AuthenticatedCrmRoute: AuthenticatedCrmRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedFinanceRoute: AuthenticatedFinanceRoute,
+  AuthenticatedGoalsRoute: AuthenticatedGoalsRoute,
+  AuthenticatedIdeasRoute: AuthenticatedIdeasRoute,
   AuthenticatedInboxRoute: AuthenticatedInboxRoute,
   AuthenticatedMarketingPlansRoute: AuthenticatedMarketingPlansRoute,
   AuthenticatedMessagesRoute: AuthenticatedMessagesRoute,
@@ -493,6 +596,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedProjectsRoute: AuthenticatedProjectsRouteWithChildren,
   AuthenticatedProposalsRoute: AuthenticatedProposalsRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
+  AuthenticatedSuppliersRoute: AuthenticatedSuppliersRoute,
   AuthenticatedTasksRoute: AuthenticatedTasksRoute,
   AuthenticatedTeamRoute: AuthenticatedTeamRoute,
 }
@@ -505,6 +609,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
   OnboardingRoute: OnboardingRoute,
+  PTokenRoute: PTokenRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
