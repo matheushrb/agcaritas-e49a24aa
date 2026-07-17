@@ -33,8 +33,8 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="min-h-screen w-full bg-background text-foreground">
-      {/* Floating sidebar (not full height, indented island) */}
-      <aside className="fixed left-3 top-24 bottom-6 z-30 hidden md:flex flex-col items-center gap-1 py-3 w-16 rounded-4xl bg-sidebar shadow-[var(--shadow-elevated)] border border-border">
+      {/* Floating sidebar — azul com selector branco no item ativo */}
+      <aside className="fixed left-3 top-24 bottom-6 z-30 hidden md:flex flex-col items-center gap-1 py-3 w-16 rounded-4xl bg-primary shadow-[var(--shadow-elevated)] border border-primary/30">
         {sideIcons.map(item => {
           const active = pathname.startsWith(item.to);
           const Icon = item.icon;
@@ -43,10 +43,13 @@ export function AppShell({ children }: { children: ReactNode }) {
               key={item.to}
               to={item.to}
               title={item.label}
-              className="group relative grid h-11 w-11 place-items-center rounded-2xl transition-colors"
-              style={active ? { backgroundColor: "var(--sidebar-active)", color: "var(--primary-foreground)" } : undefined}
+              className={`group relative grid h-11 w-11 place-items-center rounded-2xl transition-colors ${
+                active
+                  ? "bg-white text-primary shadow-sm"
+                  : "text-primary-foreground/80 hover:text-primary-foreground hover:bg-white/10"
+              }`}
             >
-              <Icon className={`h-5 w-5 ${active ? "" : "text-sidebar-foreground group-hover:text-foreground"}`} />
+              <Icon className="h-5 w-5" />
             </Link>
           );
         })}
@@ -54,14 +57,17 @@ export function AppShell({ children }: { children: ReactNode }) {
           <Link
             to="/settings"
             title="Configurações"
-            className="grid h-11 w-11 place-items-center rounded-2xl transition-colors"
-            style={pathname.startsWith("/settings") ? { backgroundColor: "var(--sidebar-active)", color: "var(--primary-foreground)" } : undefined}
+            className={`grid h-11 w-11 place-items-center rounded-2xl transition-colors ${
+              pathname.startsWith("/settings")
+                ? "bg-white text-primary shadow-sm"
+                : "text-primary-foreground/80 hover:text-primary-foreground hover:bg-white/10"
+            }`}
           >
-            <Settings className={`h-5 w-5 ${pathname.startsWith("/settings") ? "" : "text-sidebar-foreground hover:text-foreground"}`} />
+            <Settings className="h-5 w-5" />
           </Link>
           <button
             onClick={handleSignOut}
-            className="grid h-11 w-11 place-items-center rounded-2xl text-sidebar-foreground hover:text-destructive"
+            className="grid h-11 w-11 place-items-center rounded-2xl text-primary-foreground/80 hover:text-white hover:bg-white/10"
             title="Sair"
           >
             <LogOut className="h-5 w-5" />
