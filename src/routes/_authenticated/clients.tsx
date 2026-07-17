@@ -12,8 +12,9 @@ import { EntityDialog, DialogField, DialogCancelButton } from "@/components/enti
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
   Search, Plus, Users as UsersIcon, Building2, Mail, Phone, Loader2, Sparkles,
-  Pencil, Archive, Trash2, ArchiveRestore,
+  Pencil, Archive, Trash2, ArchiveRestore, Tag, X,
 } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { lookupCNPJ, lookupCEP, maskCNPJ, maskCPF, maskCEP, maskPhone, onlyDigits } from "@/lib/br-lookup";
