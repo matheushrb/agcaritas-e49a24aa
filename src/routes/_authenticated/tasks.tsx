@@ -465,7 +465,7 @@ export function TaskModal({ task, onClose }: { task: Task | null; onClose: () =>
             {/* Body */}
             <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-[1fr_320px]">
               {/* ---------- MAIN ---------- */}
-              <div className="min-h-0 overflow-y-auto px-6 py-6 space-y-6 border-r border-border">
+              <div className="min-h-0 overflow-y-auto px-6 py-6 space-y-5 border-r border-border">
                 <input
                   value={title}
                   onChange={e => setTitle(e.target.value)}
@@ -474,21 +474,76 @@ export function TaskModal({ task, onClose }: { task: Task | null; onClose: () =>
                   className="w-full bg-transparent outline-none text-2xl font-semibold tracking-tight placeholder:text-muted-foreground/50"
                 />
 
-                <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                  <div className="flex items-center gap-1.5">
-                    <Circle className={cn("h-2.5 w-2.5 fill-current", STATUS_META[status].dot.replace("bg-", "text-"))} />
-                    <span>{STATUS_META[status].label}</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <Flag className={cn("h-3.5 w-3.5", PRIORITY_META[priority].color)} />
-                    <span>{PRIORITY_META[priority].label}</span>
-                  </div>
-                  {dueDate && (
-                    <div className={cn("flex items-center gap-1.5", overdue && "text-red-600 dark:text-red-400 font-medium")}>
-                      <CalendarIcon className="h-3.5 w-3.5" />
-                      <span>{new Date(dueDate).toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric" })}</span>
+                {/* Propriedades + Execução agrupadas logo abaixo do nome */}
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                  <PropertyBox label="Status">
+                    <StatusPicker value={status} onChange={v => { setStatus(v); save.mutate({ status: v }); }} inline />
+                  </PropertyBox>
+                  <PropertyBox label="Prioridade">
+                    <PriorityPicker value={priority} onChange={v => { setPriority(v); save.mutate({ priority: v }); }} inline />
+                  </PropertyBox>
+                  <PropertyBox label="Prazo">
+                    <DatePicker value={dueDate} overdue={!!overdue} onChange={v => { setDueDate(v); save.mutate({ due_date: v || null }); }} />
+                  </PropertyBox>
+                  <PropertyBox label="Progresso">
+                    <div className="flex items-center gap-2 w-full">
+                      <input
+                        type="range" min={0} max={100} step={5}
+                        value={progress}
+                        onChange={e => setProgress(Number(e.target.value))}
+                        onMouseUp={() => save.mutate({ progress })}
+                        onTouchEnd={() => save.mutate({ progress })}
+                        className="flex-1 accent-primary"
+                      />
+                      <span className="text-xs tabular-nums w-9 text-right">{progress}%</span>
                     </div>
-                  )}
+                  </PropertyBox>
+                  <PropertyBox label="Plataforma">
+                    <Select value={platform || "none"} onValueChange={v => { const nv = v === "none" ? "" : v; setPlatform(nv); save.mutate({ platform: nv || null }); }}>
+                      <SelectTrigger className="h-8 rounded-lg border-none bg-transparent hover:bg-muted/60 text-sm px-2 shadow-none">
+                        <SelectValue placeholder="—" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">—</SelectItem>
+                        <SelectItem value="instagram">Instagram</SelectItem>
+                        <SelectItem value="tiktok">TikTok</SelectItem>
+                        <SelectItem value="youtube">YouTube</SelectItem>
+                        <SelectItem value="meta_ads">Meta Ads</SelectItem>
+                        <SelectItem value="google_ads">Google Ads</SelectItem>
+                        <SelectItem value="site">Site / Blog</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </PropertyBox>
+                  <PropertyBox label="Tipo">
+                    <Select value={deliveryType || "none"} onValueChange={v => { const nv = v === "none" ? "" : v; setDeliveryType(nv); save.mutate({ delivery_type: nv || null }); }}>
+                      <SelectTrigger className="h-8 rounded-lg border-none bg-transparent hover:bg-muted/60 text-sm px-2 shadow-none">
+                        <SelectValue placeholder="—" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">—</SelectItem>
+                        <SelectItem value="post">Post</SelectItem>
+                        <SelectItem value="reels">Reels</SelectItem>
+                        <SelectItem value="story">Story</SelectItem>
+                        <SelectItem value="carrossel">Carrossel</SelectItem>
+                        <SelectItem value="video">Vídeo</SelectItem>
+                        <SelectItem value="arte">Arte</SelectItem>
+                        <SelectItem value="copy">Copy</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </PropertyBox>
+                  <PropertyBox label="Estimativa">
+                    <div className="flex items-center gap-1.5 w-full">
+                      <Input
+                        type="number" min={0} step={0.5}
+                        value={estimatedHours}
+                        onChange={e => setEstimatedHours(e.target.value)}
+                        onBlur={() => save.mutate({ estimated_hours: estimatedHours ? Number(estimatedHours) : null })}
+                        className="h-8 rounded-lg border-none bg-transparent hover:bg-muted/60 text-sm px-2 shadow-none focus-visible:ring-0"
+                        placeholder="0"
+                      />
+                      <span className="text-xs text-muted-foreground">h</span>
+                    </div>
+                  </PropertyBox>
                 </div>
 
                 <div>
@@ -502,6 +557,7 @@ export function TaskModal({ task, onClose }: { task: Task | null; onClose: () =>
                     className="mt-2 rounded-xl resize-none"
                   />
                 </div>
+
 
                 <Tabs defaultValue="subtasks" className="w-full">
                   <TabsList className="rounded-full bg-muted/60">
@@ -555,37 +611,6 @@ export function TaskModal({ task, onClose }: { task: Task | null; onClose: () =>
 
               {/* ---------- SIDEBAR ---------- */}
               <aside className="min-h-0 overflow-y-auto bg-muted/20 px-5 py-6 space-y-5">
-                <SidebarSection title="Propriedades">
-                  <SidebarRow label="Status">
-                    <StatusPicker value={status} onChange={v => { setStatus(v); save.mutate({ status: v }); }} inline />
-                  </SidebarRow>
-                  <SidebarRow label="Prioridade">
-                    <PriorityPicker value={priority} onChange={v => { setPriority(v); save.mutate({ priority: v }); }} inline />
-                  </SidebarRow>
-                  <SidebarRow label="Prazo">
-                    <input
-                      type="date"
-                      value={dueDate}
-                      onChange={e => setDueDate(e.target.value)}
-                      onBlur={() => save.mutate({ due_date: dueDate || null })}
-                      className="bg-transparent text-sm outline-none w-full"
-                    />
-                  </SidebarRow>
-                  <SidebarRow label="Progresso">
-                    <div className="flex items-center gap-2 w-full">
-                      <input
-                        type="range" min={0} max={100} step={5}
-                        value={progress}
-                        onChange={e => setProgress(Number(e.target.value))}
-                        onMouseUp={() => save.mutate({ progress })}
-                        onTouchEnd={() => save.mutate({ progress })}
-                        className="flex-1 accent-primary"
-                      />
-                      <span className="text-xs tabular-nums w-9 text-right">{progress}%</span>
-                    </div>
-                  </SidebarRow>
-                </SidebarSection>
-
                 <SidebarSection title="Vínculo">
                   <SidebarRow label="Projeto">
                     <Select
@@ -625,55 +650,6 @@ export function TaskModal({ task, onClose }: { task: Task | null; onClose: () =>
                         {clientsList.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
                       </SelectContent>
                     </Select>
-                  </SidebarRow>
-                </SidebarSection>
-
-                <SidebarSection title="Execução">
-                  <SidebarRow label="Plataforma">
-                    <Select value={platform || "none"} onValueChange={v => { const nv = v === "none" ? "" : v; setPlatform(nv); save.mutate({ platform: nv || null }); }}>
-                      <SelectTrigger className="h-8 rounded-lg border-none bg-transparent hover:bg-muted/60 text-sm px-2 shadow-none">
-                        <SelectValue placeholder="—" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="none">—</SelectItem>
-                        <SelectItem value="instagram">Instagram</SelectItem>
-                        <SelectItem value="tiktok">TikTok</SelectItem>
-                        <SelectItem value="youtube">YouTube</SelectItem>
-                        <SelectItem value="meta_ads">Meta Ads</SelectItem>
-                        <SelectItem value="google_ads">Google Ads</SelectItem>
-                        <SelectItem value="site">Site / Blog</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </SidebarRow>
-                  <SidebarRow label="Tipo">
-                    <Select value={deliveryType || "none"} onValueChange={v => { const nv = v === "none" ? "" : v; setDeliveryType(nv); save.mutate({ delivery_type: nv || null }); }}>
-                      <SelectTrigger className="h-8 rounded-lg border-none bg-transparent hover:bg-muted/60 text-sm px-2 shadow-none">
-                        <SelectValue placeholder="—" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="none">—</SelectItem>
-                        <SelectItem value="post">Post</SelectItem>
-                        <SelectItem value="reels">Reels</SelectItem>
-                        <SelectItem value="story">Story</SelectItem>
-                        <SelectItem value="carrossel">Carrossel</SelectItem>
-                        <SelectItem value="video">Vídeo</SelectItem>
-                        <SelectItem value="arte">Arte</SelectItem>
-                        <SelectItem value="copy">Copy</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </SidebarRow>
-                  <SidebarRow label="Estimativa">
-                    <div className="flex items-center gap-1.5 w-full">
-                      <Input
-                        type="number" min={0} step={0.5}
-                        value={estimatedHours}
-                        onChange={e => setEstimatedHours(e.target.value)}
-                        onBlur={() => save.mutate({ estimated_hours: estimatedHours ? Number(estimatedHours) : null })}
-                        className="h-8 rounded-lg border-none bg-transparent hover:bg-muted/60 text-sm px-2 shadow-none focus-visible:ring-0"
-                        placeholder="0"
-                      />
-                      <span className="text-xs text-muted-foreground">h</span>
-                    </div>
                   </SidebarRow>
                 </SidebarSection>
 
@@ -730,6 +706,16 @@ export function TaskModal({ task, onClose }: { task: Task | null; onClose: () =>
   );
 }
 
+/* ---------- Property box (abaixo do título) ---------- */
+function PropertyBox({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="rounded-xl bg-card border border-border p-3 space-y-1.5">
+      <div className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">{label}</div>
+      <div className="min-w-0">{children}</div>
+    </div>
+  );
+}
+
 /* ---------- Sidebar helpers ---------- */
 function SidebarSection({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -749,6 +735,7 @@ function SidebarRow({ label, children }: { label: string; children: React.ReactN
     </div>
   );
 }
+
 
 /* ---------- Pickers ---------- */
 function StatusPicker({ value, onChange, inline }: { value: TaskStatus; onChange: (v: TaskStatus) => void; inline?: boolean }) {
