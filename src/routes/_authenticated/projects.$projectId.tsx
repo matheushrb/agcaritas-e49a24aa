@@ -262,7 +262,13 @@ function ProjectDetail() {
         </div>
 
         <TabsContent value="tasks" className="mt-4">
-          <TasksTab tasks={tasks} onAdd={(t) => addTask.mutate(t)} pending={addTask.isPending} />
+          <TasksTab
+            tasks={tasks}
+            onAdd={(t) => addTask.mutate(t)}
+            onOpen={(id) => setSelectedTaskId(id)}
+            onQuickCreate={() => addTask.mutate("Nova tarefa")}
+            pending={addTask.isPending}
+          />
         </TabsContent>
 
         <TabsContent value="docs" className="mt-4">
