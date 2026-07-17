@@ -27,6 +27,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useTaskTypes, useTaskTypeStages, type TaskTypeRow, type TaskTypeStageRow, type StatusGroup } from "@/lib/task-types";
 import { TaskTypeIcon } from "@/components/settings/icon-picker";
+import { IconPreview } from "@/components/settings/icon-color-pickers";
 import { useAutomationSettings, effectivePriority, DEFAULT_AUTOMATION_SETTINGS } from "@/lib/automation-settings";
 import { Link } from "@tanstack/react-router";
 import { CostConfirmDialog, type CostSuggestion } from "@/components/cost-confirm-dialog";
@@ -521,14 +522,17 @@ export function TaskModal({
       const tools: string[] = Array.isArray((proj?.scope_flags as any)?.tools)
         ? (proj!.scope_flags as any).tools
         : [];
-      if (tools.length === 0) return [] as { value: string; label: string }[];
+      if (tools.length === 0) return [] as { value: string; label: string; icon_url?: string | null; icon?: string | null; color?: string | null }[];
       const { data: plats } = await (supabase as any)
         .from("platforms")
-        .select("id,name")
+        .select("id,name,icon,icon_url,color")
         .in("name", tools);
-      return ((plats ?? []) as { id: string; name: string }[]).map(p => ({
+      return ((plats ?? []) as { id: string; name: string; icon?: string | null; icon_url?: string | null; color?: string | null }[]).map(p => ({
         value: p.name,
         label: p.name,
+        icon: p.icon,
+        icon_url: p.icon_url,
+        color: p.color,
       }));
     },
   });
@@ -1809,7 +1813,7 @@ function DeliverablesSection({
   canBill: boolean;
   taskFinalized: boolean;
   taskInvoiced: boolean;
-  platformOptions: { value: string; label: string }[];
+  platformOptions: { value: string; label: string; icon?: string | null; icon_url?: string | null; color?: string | null }[];
 }) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
@@ -1863,9 +1867,10 @@ function DeliverablesSection({
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           {deliverables.map((d, i) => {
             const isOpen = expandedId === d.id;
-            const platLabel = d.platform ? platformLabel(d.platform) : "—";
+            const platOpt = d.platform ? platformOptions.find(o => o.value === d.platform) : undefined;
+            const platLabel = platOpt?.label ?? (d.platform ? platformLabel(d.platform) : "");
             const typeLabel = d.type ? (DELIVERY_TYPE_OPTIONS.find(o => o.value === d.type)?.label ?? d.type) : "";
-            const title = [typeLabel, platLabel !== "—" ? `no ${platLabel}` : ""].filter(Boolean).join(" ") || `Entregável ${i + 1}`;
+            const title = platLabel || `Entregável ${i + 1}`;
 
             if (!isOpen) {
               return (
@@ -1876,6 +1881,7 @@ function DeliverablesSection({
                   className="text-left rounded-xl bg-card border border-border p-3 hover:border-primary/40 hover:shadow-sm transition-all group sm:col-span-1 col-span-1"
                 >
                   <div className="flex items-start justify-between gap-2">
+                    <IconPreview name={platOpt?.icon ?? null} color={platOpt?.color ?? null} iconUrl={platOpt?.icon_url ?? null} size={36} />
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-1.5 mb-1">
                         <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">#{i + 1}</span>
@@ -1888,7 +1894,8 @@ function DeliverablesSection({
                       </div>
                       <div className="text-sm font-medium truncate">{title}</div>
                       <div className="mt-1 flex items-center gap-2 text-[11px] text-muted-foreground">
-                        {d.channel && <span className="truncate">{d.channel}</span>}
+                        {typeLabel && <span className="truncate">{typeLabel}</span>}
+                        {d.channel && <span className="truncate">· {d.channel}</span>}
                         {d.delivered_date && <span>· {new Date(d.delivered_date + "T00:00:00").toLocaleDateString("pt-BR")}</span>}
                       </div>
                     </div>
@@ -1905,10 +1912,13 @@ function DeliverablesSection({
             return (
               <div key={d.id} className="rounded-xl bg-card border border-primary/40 p-3 space-y-2.5 sm:col-span-2 col-span-1">
                 <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
-                    Entregável {i + 1}
-                    {d.invoiced && <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 px-1.5 py-0.5 text-[10px] font-medium normal-case tracking-normal"><Check className="h-2.5 w-2.5" />Faturado</span>}
-                  </span>
+                  <div className="flex items-center gap-2 min-w-0">
+                    <IconPreview name={platOpt?.icon ?? null} color={platOpt?.color ?? null} iconUrl={platOpt?.icon_url ?? null} size={28} />
+                    <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider truncate">
+                      {platLabel || `Entregável ${i + 1}`}
+                      {d.invoiced && <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 px-1.5 py-0.5 text-[10px] font-medium normal-case tracking-normal"><Check className="h-2.5 w-2.5" />Faturado</span>}
+                    </span>
+                  </div>
                   <div className="flex items-center gap-1">
                     <Button size="sm" variant="ghost" className="h-7 rounded-full text-xs" onClick={() => setExpandedId(null)}>
                       Recolher
