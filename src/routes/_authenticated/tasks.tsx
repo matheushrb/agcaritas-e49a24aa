@@ -1673,7 +1673,7 @@ function PriorityPicker({ value, onChange, inline }: { value: TaskPriority; onCh
         </button>
       </PopoverTrigger>
       <PopoverContent align="end" className="p-1 w-40 rounded-xl">
-        {(["high", "medium", "low"] as TaskPriority[]).map(p => (
+        {(["critical", "urgent", "high", "medium", "low"] as TaskPriority[]).map(p => (
           <button
             key={p}
             onClick={() => onChange(p)}
