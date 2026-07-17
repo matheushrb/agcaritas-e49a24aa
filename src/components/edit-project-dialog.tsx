@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,7 +11,10 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { X, Plus, Users as UsersIcon } from "lucide-react";
+import {
+  X, Plus, Users as UsersIcon, Briefcase, DollarSign, Layers, FileText,
+  Calendar, Flag, Building2, Settings2, Target, Megaphone, StickyNote, Pencil,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type ProjectStatus = "planning" | "active" | "review" | "done" | "paused";
@@ -51,6 +54,14 @@ const STRATEGY_KEYS: { key: string; label: string }[] = [
   { key: "kpis", label: "KPIs" },
   { key: "action_plan", label: "Plano de ação" },
 ];
+
+const STATUS_LABEL: Record<ProjectStatus, string> = {
+  planning: "Planejamento",
+  active: "Ativo",
+  review: "Revisão",
+  done: "Concluído",
+  paused: "Pausado",
+};
 
 export function EditProjectDialog({
   project,
@@ -147,6 +158,9 @@ export function EditProjectDialog({
 
   const scope = form.scope_flags ?? {};
   const traffic = form.traffic_budget ?? { enabled: false, amount: null, platforms: [] };
+  const clientName = clients.find(c => c.id === form.client_id)?.trade_name
+    || clients.find(c => c.id === form.client_id)?.name
+    || "Sem cliente";
 
   const onSubmit = () => {
     save.mutate({
@@ -176,170 +190,213 @@ export function EditProjectDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[880px] max-h-[90vh] overflow-hidden flex flex-col">
-        <DialogHeader>
-          <DialogTitle>Editar projeto</DialogTitle>
-        </DialogHeader>
-
-        <Tabs defaultValue="general" className="flex-1 overflow-hidden flex flex-col">
-          <TabsList className="rounded-full bg-muted/60 w-fit">
-            <TabsTrigger value="general" className="rounded-full">Geral</TabsTrigger>
-            <TabsTrigger value="billing" className="rounded-full">Faturamento</TabsTrigger>
-            <TabsTrigger value="scope" className="rounded-full">Escopo</TabsTrigger>
-            <TabsTrigger value="team" className="rounded-full">Equipe</TabsTrigger>
-          </TabsList>
-
-          <div className="flex-1 overflow-y-auto pt-4 pr-1 space-y-4">
-            <TabsContent value="general" className="space-y-4 m-0">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <div className="md:col-span-2">
-                  <Label>Nome</Label>
-                  <Input value={form.name} onChange={e => set("name", e.target.value)} />
-                </div>
-                <div>
-                  <Label>Cliente</Label>
-                  <Select value={form.client_id ?? "none"} onValueChange={v => set("client_id", v === "none" ? null : v)}>
-                    <SelectTrigger><SelectValue placeholder="Selecionar" /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">Sem cliente</SelectItem>
-                      {clients.map(c => (
-                        <SelectItem key={c.id} value={c.id}>{c.trade_name || c.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label>Status</Label>
-                  <Select value={form.status} onValueChange={v => set("status", v as ProjectStatus)}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="planning">Planejamento</SelectItem>
-                      <SelectItem value="active">Ativo</SelectItem>
-                      <SelectItem value="review">Revisão</SelectItem>
-                      <SelectItem value="done">Concluído</SelectItem>
-                      <SelectItem value="paused">Pausado</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label>Início</Label>
-                  <Input type="date" value={form.start_date ?? ""} onChange={e => set("start_date", e.target.value || null)} />
-                </div>
-                <div>
-                  <Label>Prazo final</Label>
-                  <Input type="date" value={form.end_date ?? ""} onChange={e => set("end_date", e.target.value || null)} />
-                </div>
-                <div>
-                  <Label>Urgência</Label>
-                  <Select value={form.urgency ?? "normal"} onValueChange={v => set("urgency", v)}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="low">Baixa</SelectItem>
-                      <SelectItem value="normal">Normal</SelectItem>
-                      <SelectItem value="high">Alta</SelectItem>
-                      <SelectItem value="critical">Crítica</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label>Tipo de projeto</Label>
-                  <Input value={form.project_type ?? ""} onChange={e => set("project_type", e.target.value || null)} placeholder="Ex.: Social media" />
-                </div>
-                <div className="md:col-span-2">
-                  <Label>Descrição / Briefing</Label>
-                  <Textarea rows={4} value={form.description ?? ""} onChange={e => set("description", e.target.value || null)} />
-                </div>
-                <div className="md:col-span-2">
-                  <Label>Notas internas</Label>
-                  <Textarea rows={3} value={form.notes ?? ""} onChange={e => set("notes", e.target.value || null)} />
-                </div>
+      <DialogContent
+        showCloseButton={false}
+        className="max-w-[960px] p-0 gap-0 overflow-hidden max-h-[92vh] flex flex-col rounded-2xl border-0 shadow-2xl"
+      >
+        {/* Header colorido */}
+        <div className="relative bg-primary text-primary-foreground px-7 py-6">
+          <button
+            onClick={() => onOpenChange(false)}
+            className="absolute top-4 right-4 h-8 w-8 rounded-full inline-flex items-center justify-center bg-primary-foreground/15 hover:bg-primary-foreground/25 transition"
+            aria-label="Fechar"
+          >
+            <X className="h-4 w-4" />
+          </button>
+          <div className="flex items-start gap-4">
+            <div className="h-12 w-12 rounded-2xl bg-primary-foreground/15 inline-flex items-center justify-center shrink-0">
+              <Pencil className="h-6 w-6" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="text-[11px] uppercase tracking-[0.18em] opacity-75 font-medium">Editar projeto</div>
+              <h2 className="text-2xl font-semibold leading-tight truncate mt-0.5">{form.name || "Sem título"}</h2>
+              <div className="flex flex-wrap items-center gap-2 mt-2 text-xs">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-primary-foreground/15 px-2.5 py-1">
+                  <Building2 className="h-3.5 w-3.5" /> {clientName}
+                </span>
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-primary-foreground/15 px-2.5 py-1">
+                  <Flag className="h-3.5 w-3.5" /> {STATUS_LABEL[form.status]}
+                </span>
+                {form.project_type && (
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-primary-foreground/15 px-2.5 py-1">
+                    <Briefcase className="h-3.5 w-3.5" /> {form.project_type}
+                  </span>
+                )}
               </div>
+            </div>
+          </div>
+        </div>
+
+        <Tabs defaultValue="general" className="flex-1 overflow-hidden flex flex-col bg-muted/30">
+          <div className="px-7 pt-4 pb-2 bg-background border-b">
+            <TabsList className="rounded-full bg-muted/70 p-1 gap-1">
+              <TabsTrigger value="general" className="rounded-full gap-1.5 data-[state=active]:bg-background data-[state=active]:shadow-sm">
+                <FileText className="h-3.5 w-3.5" /> Geral
+              </TabsTrigger>
+              <TabsTrigger value="billing" className="rounded-full gap-1.5 data-[state=active]:bg-background data-[state=active]:shadow-sm">
+                <DollarSign className="h-3.5 w-3.5" /> Faturamento
+              </TabsTrigger>
+              <TabsTrigger value="scope" className="rounded-full gap-1.5 data-[state=active]:bg-background data-[state=active]:shadow-sm">
+                <Layers className="h-3.5 w-3.5" /> Escopo
+              </TabsTrigger>
+              <TabsTrigger value="team" className="rounded-full gap-1.5 data-[state=active]:bg-background data-[state=active]:shadow-sm">
+                <UsersIcon className="h-3.5 w-3.5" /> Equipe
+              </TabsTrigger>
+            </TabsList>
+          </div>
+
+          <div className="flex-1 overflow-y-auto px-7 py-6 space-y-5">
+            {/* GERAL */}
+            <TabsContent value="general" className="m-0 space-y-5">
+              <Section icon={<FileText className="h-4 w-4" />} title="Identificação" description="Dados principais do projeto.">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Field label="Nome do projeto" required className="md:col-span-2">
+                    <Input value={form.name} onChange={e => set("name", e.target.value)} placeholder="Ex.: Campanha de lançamento" />
+                  </Field>
+                  <Field label="Cliente" icon={<Building2 className="h-3.5 w-3.5" />}>
+                    <Select value={form.client_id ?? "none"} onValueChange={v => set("client_id", v === "none" ? null : v)}>
+                      <SelectTrigger><SelectValue placeholder="Selecionar" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">Sem cliente</SelectItem>
+                        {clients.map(c => (
+                          <SelectItem key={c.id} value={c.id}>{c.trade_name || c.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </Field>
+                  <Field label="Tipo de projeto" icon={<Briefcase className="h-3.5 w-3.5" />}>
+                    <Input value={form.project_type ?? ""} onChange={e => set("project_type", e.target.value || null)} placeholder="Ex.: Social media" />
+                  </Field>
+                </div>
+              </Section>
+
+              <Section icon={<Calendar className="h-4 w-4" />} title="Status e prazos" description="Etapa atual e janela de execução.">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                  <Field label="Status">
+                    <Select value={form.status} onValueChange={v => set("status", v as ProjectStatus)}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {(Object.keys(STATUS_LABEL) as ProjectStatus[]).map(s => (
+                          <SelectItem key={s} value={s}>{STATUS_LABEL[s]}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </Field>
+                  <Field label="Urgência" icon={<Flag className="h-3.5 w-3.5" />}>
+                    <Select value={form.urgency ?? "normal"} onValueChange={v => set("urgency", v)}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="low">Baixa</SelectItem>
+                        <SelectItem value="normal">Normal</SelectItem>
+                        <SelectItem value="high">Alta</SelectItem>
+                        <SelectItem value="critical">Crítica</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </Field>
+                  <Field label="Início">
+                    <Input type="date" value={form.start_date ?? ""} onChange={e => set("start_date", e.target.value || null)} />
+                  </Field>
+                  <Field label="Prazo final">
+                    <Input type="date" value={form.end_date ?? ""} onChange={e => set("end_date", e.target.value || null)} />
+                  </Field>
+                </div>
+              </Section>
+
+              <Section icon={<StickyNote className="h-4 w-4" />} title="Descrição & notas" description="Briefing público e anotações internas.">
+                <div className="grid grid-cols-1 gap-4">
+                  <Field label="Descrição / Briefing" hint="Visível para toda a equipe do projeto.">
+                    <Textarea rows={4} value={form.description ?? ""} onChange={e => set("description", e.target.value || null)} placeholder="Objetivos, escopo, entregáveis…" />
+                  </Field>
+                  <Field label="Notas internas" hint="Só quem tem acesso a este projeto vê.">
+                    <Textarea rows={3} value={form.notes ?? ""} onChange={e => set("notes", e.target.value || null)} placeholder="Observações, combinados, links…" />
+                  </Field>
+                </div>
+              </Section>
             </TabsContent>
 
-            <TabsContent value="billing" className="space-y-4 m-0">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <div>
-                  <Label>Modelo de faturamento</Label>
-                  <Select value={form.billing_model ?? "monthly"} onValueChange={v => set("billing_model", v)}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="monthly">Mensal (fee)</SelectItem>
-                      <SelectItem value="fixed">Valor fechado</SelectItem>
-                      <SelectItem value="hourly">Por hora</SelectItem>
-                      <SelectItem value="per_task">Por tarefa</SelectItem>
-                    </SelectContent>
-                  </Select>
+            {/* FATURAMENTO */}
+            <TabsContent value="billing" className="m-0 space-y-5">
+              <Section icon={<DollarSign className="h-4 w-4" />} title="Modelo comercial" description="Como esse projeto é cobrado.">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Field label="Modelo de faturamento" className="md:col-span-2">
+                    <Select value={form.billing_model ?? "monthly"} onValueChange={v => set("billing_model", v)}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="monthly">Mensal (fee)</SelectItem>
+                        <SelectItem value="fixed">Valor fechado</SelectItem>
+                        <SelectItem value="hourly">Por hora</SelectItem>
+                        <SelectItem value="per_task">Por tarefa</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </Field>
+                  <Field label="Valor fechado" hint="Projeto pontual (one-shot).">
+                    <MoneyInput value={form.fixed_value} onChange={v => set("fixed_value", v)} />
+                  </Field>
+                  <Field label="Fee mensal" hint="Contrato recorrente por mês.">
+                    <MoneyInput value={form.monthly_value} onChange={v => set("monthly_value", v)} />
+                  </Field>
+                  <Field label="Valor por hora">
+                    <MoneyInput value={form.hourly_rate} onChange={v => set("hourly_rate", v)} />
+                  </Field>
+                  <Field label="Verba de impressão" hint="Reembolsável ao cliente.">
+                    <MoneyInput value={form.printing_budget} onChange={v => set("printing_budget", v)} />
+                  </Field>
                 </div>
-                <div>
-                  <Label>Valor fechado (R$)</Label>
-                  <Input type="number" step="0.01" value={form.fixed_value ?? ""} onChange={e => set("fixed_value", e.target.value ? Number(e.target.value) : null)} />
-                </div>
-                <div>
-                  <Label>Fee mensal (R$)</Label>
-                  <Input type="number" step="0.01" value={form.monthly_value ?? ""} onChange={e => set("monthly_value", e.target.value ? Number(e.target.value) : null)} />
-                </div>
-                <div>
-                  <Label>Valor/hora (R$)</Label>
-                  <Input type="number" step="0.01" value={form.hourly_rate ?? ""} onChange={e => set("hourly_rate", e.target.value ? Number(e.target.value) : null)} />
-                </div>
-                <div>
-                  <Label>Verba de impressão (R$)</Label>
-                  <Input type="number" step="0.01" value={form.printing_budget ?? ""} onChange={e => set("printing_budget", e.target.value ? Number(e.target.value) : null)} />
-                </div>
-              </div>
+              </Section>
 
-              <div className="rounded-2xl border p-4 space-y-3">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="text-sm font-medium">Verba de tráfego</div>
-                    <p className="text-xs text-muted-foreground">Ativa a aba de Tráfego e Campanhas.</p>
-                  </div>
+              <Section
+                icon={<Megaphone className="h-4 w-4" />}
+                title="Verba de tráfego"
+                description="Quando ativa, libera as abas de Tráfego e Campanhas no projeto."
+                right={
                   <Switch
                     checked={!!traffic.enabled}
                     onCheckedChange={v => set("traffic_budget", { ...traffic, enabled: v })}
                   />
-                </div>
-                {traffic.enabled && (
-                  <div>
-                    <Label>Valor mensal (R$)</Label>
-                    <Input
-                      type="number" step="0.01"
-                      value={traffic.amount ?? ""}
-                      onChange={e => set("traffic_budget", { ...traffic, amount: e.target.value ? Number(e.target.value) : null })}
-                    />
+                }
+              >
+                {traffic.enabled ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <Field label="Valor mensal">
+                      <MoneyInput
+                        value={traffic.amount ?? null}
+                        onChange={v => set("traffic_budget", { ...traffic, amount: v })}
+                      />
+                    </Field>
                   </div>
+                ) : (
+                  <p className="text-xs text-muted-foreground">Ative o interruptor acima para definir a verba mensal.</p>
                 )}
-              </div>
+              </Section>
             </TabsContent>
 
-            <TabsContent value="scope" className="space-y-4 m-0">
-              <div className="rounded-2xl border p-4 space-y-3">
-                <div className="text-sm font-medium">Módulos ativos no projeto</div>
-                <ToggleRow label="Calendário de conteúdo" checked={form.has_content_calendar} onChange={v => set("has_content_calendar", v)} />
-                <ToggleRow label="Grid de conteúdo" checked={form.has_content_grid} onChange={v => set("has_content_grid", v)} />
-                <ToggleRow label="Timeline" checked={form.has_timeline} onChange={v => set("has_timeline", v)} />
-              </div>
-
-              <div className="rounded-2xl border p-4 space-y-3">
-                <div className="text-sm font-medium">Estratégia</div>
-                {STRATEGY_KEYS.map(({ key, label }) => (
-                  <ToggleRow
-                    key={key}
-                    label={label}
-                    checked={!!scope[key]}
-                    onChange={v => set("scope_flags", { ...scope, [key]: v })}
-                  />
-                ))}
-              </div>
-            </TabsContent>
-
-            <TabsContent value="team" className="space-y-4 m-0">
-              <div className="rounded-2xl border p-4 space-y-3">
-                <div className="flex items-center gap-2">
-                  <UsersIcon className="h-4 w-4 text-primary" />
-                  <div className="text-sm font-medium">Equipe do projeto</div>
+            {/* ESCOPO */}
+            <TabsContent value="scope" className="m-0 space-y-5">
+              <Section icon={<Settings2 className="h-4 w-4" />} title="Módulos ativos" description="Ligue apenas o que esse projeto realmente usa. Cada módulo vira uma aba dentro do projeto.">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <ToggleCard label="Calendário de conteúdo" checked={form.has_content_calendar} onChange={v => set("has_content_calendar", v)} />
+                  <ToggleCard label="Grid de conteúdo" checked={form.has_content_grid} onChange={v => set("has_content_grid", v)} />
+                  <ToggleCard label="Timeline" checked={form.has_timeline} onChange={v => set("has_timeline", v)} />
                 </div>
+              </Section>
 
+              <Section icon={<Target className="h-4 w-4" />} title="Estratégia" description="Artefatos estratégicos disponíveis dentro do projeto.">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {STRATEGY_KEYS.map(({ key, label }) => (
+                    <ToggleCard
+                      key={key}
+                      label={label}
+                      checked={!!scope[key]}
+                      onChange={v => set("scope_flags", { ...scope, [key]: v })}
+                    />
+                  ))}
+                </div>
+              </Section>
+            </TabsContent>
+
+            {/* EQUIPE */}
+            <TabsContent value="team" className="m-0 space-y-5">
+              <Section icon={<UsersIcon className="h-4 w-4" />} title="Equipe do projeto" description="Vincule as pessoas responsáveis por este projeto.">
                 <div className="grid grid-cols-1 md:grid-cols-[1fr_1fr_auto] gap-2">
                   <Select value={newMemberId} onValueChange={setNewMemberId}>
                     <SelectTrigger><SelectValue placeholder="Selecionar pessoa" /></SelectTrigger>
@@ -350,7 +407,7 @@ export function EditProjectDialog({
                       ))}
                     </SelectContent>
                   </Select>
-                  <Input placeholder="Função (opcional)" value={newMemberRole} onChange={e => setNewMemberRole(e.target.value)} />
+                  <Input placeholder="Função (ex.: Designer, PM)" value={newMemberRole} onChange={e => setNewMemberRole(e.target.value)} />
                   <Button
                     className="rounded-full gap-1.5"
                     disabled={!newMemberId || addMember.isPending}
@@ -364,7 +421,7 @@ export function EditProjectDialog({
                   </Button>
                 </div>
 
-                <ul className="divide-y divide-border rounded-xl border overflow-hidden">
+                <ul className="mt-3 divide-y divide-border rounded-xl border bg-background overflow-hidden">
                   {members.length === 0 && (
                     <li className="px-3 py-6 text-center text-xs text-muted-foreground">Nenhum membro vinculado ainda.</li>
                   )}
@@ -372,8 +429,8 @@ export function EditProjectDialog({
                     const p = profileById[m.user_id];
                     const name = p?.full_name || "Sem nome";
                     return (
-                      <li key={m.id} className="px-3 py-2 flex items-center gap-3">
-                        <span className="h-7 w-7 rounded-full bg-primary/15 text-primary text-xs font-semibold inline-flex items-center justify-center">
+                      <li key={m.id} className="px-3 py-2.5 flex items-center gap-3">
+                        <span className="h-8 w-8 rounded-full bg-primary/15 text-primary text-xs font-semibold inline-flex items-center justify-center">
                           {name.split(" ").map(s => s[0]).slice(0, 2).join("").toUpperCase()}
                         </span>
                         <div className="min-w-0 flex-1">
@@ -388,27 +445,104 @@ export function EditProjectDialog({
                     );
                   })}
                 </ul>
-              </div>
+              </Section>
             </TabsContent>
           </div>
         </Tabs>
 
-        <DialogFooter className="pt-2">
-          <Button variant="outline" className="rounded-full" onClick={() => onOpenChange(false)}>Cancelar</Button>
-          <Button className="rounded-full" onClick={onSubmit} disabled={save.isPending}>
-            {save.isPending ? "Salvando…" : "Salvar alterações"}
-          </Button>
-        </DialogFooter>
+        {/* Footer */}
+        <div className="px-7 py-4 border-t bg-background flex items-center justify-between">
+          <p className="text-xs text-muted-foreground">Alterações são aplicadas imediatamente após salvar.</p>
+          <div className="flex gap-2">
+            <Button variant="outline" className="rounded-full" onClick={() => onOpenChange(false)}>Cancelar</Button>
+            <Button className="rounded-full min-w-[160px]" onClick={onSubmit} disabled={save.isPending}>
+              {save.isPending ? "Salvando…" : "Salvar alterações"}
+            </Button>
+          </div>
+        </div>
       </DialogContent>
     </Dialog>
   );
 }
 
-function ToggleRow({ label, checked, onChange }: { label: string; checked: boolean; onChange: (v: boolean) => void }) {
+/* ---------- helpers ---------- */
+
+function Section({
+  icon, title, description, right, children,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  description?: string;
+  right?: React.ReactNode;
+  children: React.ReactNode;
+}) {
   return (
-    <div className={cn("flex items-center justify-between py-1")}>
-      <span className="text-sm">{label}</span>
-      <Switch checked={checked} onCheckedChange={onChange} />
+    <section className="rounded-2xl border bg-background shadow-sm overflow-hidden">
+      <header className="px-5 py-3.5 border-b bg-muted/40 flex items-start justify-between gap-3">
+        <div className="flex items-start gap-3 min-w-0">
+          <span className="h-8 w-8 rounded-lg bg-primary/10 text-primary inline-flex items-center justify-center shrink-0">
+            {icon}
+          </span>
+          <div className="min-w-0">
+            <h3 className="text-sm font-semibold leading-tight">{title}</h3>
+            {description && <p className="text-xs text-muted-foreground mt-0.5">{description}</p>}
+          </div>
+        </div>
+        {right && <div className="shrink-0">{right}</div>}
+      </header>
+      <div className="p-5">{children}</div>
+    </section>
+  );
+}
+
+function Field({
+  label, hint, icon, required, className, children,
+}: {
+  label: string;
+  hint?: string;
+  icon?: React.ReactNode;
+  required?: boolean;
+  className?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className={cn("space-y-1.5", className)}>
+      <Label className="text-xs font-medium text-foreground/80 flex items-center gap-1.5">
+        {icon}
+        <span>{label}{required && <span className="text-primary ml-0.5">*</span>}</span>
+      </Label>
+      {children}
+      {hint && <p className="text-[11px] text-muted-foreground">{hint}</p>}
     </div>
+  );
+}
+
+function MoneyInput({ value, onChange }: { value: number | null; onChange: (v: number | null) => void }) {
+  return (
+    <div className="relative">
+      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-medium text-muted-foreground pointer-events-none">R$</span>
+      <Input
+        type="number"
+        step="0.01"
+        className="pl-9"
+        value={value ?? ""}
+        onChange={e => onChange(e.target.value ? Number(e.target.value) : null)}
+        placeholder="0,00"
+      />
+    </div>
+  );
+}
+
+function ToggleCard({ label, checked, onChange }: { label: string; checked: boolean; onChange: (v: boolean) => void }) {
+  return (
+    <label
+      className={cn(
+        "flex items-center justify-between gap-3 rounded-xl border px-3.5 py-3 cursor-pointer transition",
+        checked ? "border-primary/60 bg-primary/5" : "hover:bg-muted/40",
+      )}
+    >
+      <span className="text-sm font-medium">{label}</span>
+      <Switch checked={checked} onCheckedChange={onChange} />
+    </label>
   );
 }
