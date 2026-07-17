@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { Plus, Trash2, GripVertical } from "lucide-react";
+import { Plus, Trash2, GripVertical, Upload, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { IconPicker, ColorPicker, IconPreview } from "./icon-color-pickers";
 
@@ -18,6 +18,7 @@ type Row = {
   slug: string | null;
   color: string | null;
   icon: string | null;
+  icon_url?: string | null;
   category?: string | null;
   description?: string | null;
   sort_order: number;
@@ -56,6 +57,7 @@ export function CatalogEditor({
       if (row.id) {
         const { error } = await (supabase as any).from(table).update({
           name: row.name, color: row.color, icon: row.icon,
+          icon_url: row.icon_url ?? null,
           category: row.category, active: row.active,
           sort_order: row.sort_order,
         }).eq("id", row.id);
@@ -68,6 +70,7 @@ export function CatalogEditor({
           name: row.name,
           color: row.color ?? "#3B82F6",
           icon: row.icon ?? (table === "platforms" ? "Globe" : "Folder"),
+          icon_url: row.icon_url ?? null,
           category: row.category ?? null,
           sort_order: rows.length,
         });
@@ -126,7 +129,7 @@ export function CatalogEditor({
                 )}
               >
                 <GripVertical className="h-4 w-4 text-muted-foreground" />
-                <IconPreview name={r.icon} color={r.color} />
+                <IconPreview name={r.icon} color={r.color} iconUrl={r.icon_url} />
                 <div className="flex-1 min-w-0">
                   <div className="text-sm font-medium truncate">{r.name}</div>
                   {r.category && <div className="text-[11px] text-muted-foreground">{r.category}</div>}
@@ -157,13 +160,53 @@ export function CatalogEditor({
                   onChange={e => setDraft({ ...editing, category: e.target.value })} />
               </div>
             )}
+            {table === "platforms" && (
+              <div className="space-y-1.5">
+                <Label className="text-xs">Logo (PNG)</Label>
+                <div className="flex items-center gap-3">
+                  <IconPreview name={editing.icon} color={editing.color} iconUrl={editing.icon_url} size={48} />
+                  <div className="flex-1 flex flex-wrap gap-2">
+                    <label className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full border border-border hover:bg-muted/60 cursor-pointer transition">
+                      <Upload className="h-3.5 w-3.5" />
+                      {editing.icon_url ? "Trocar logo" : "Enviar PNG"}
+                      <input
+                        type="file"
+                        accept="image/png,image/jpeg,image/webp,image/svg+xml"
+                        className="hidden"
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          if (file.size > 512 * 1024) {
+                            toast.error("Imagem muito grande (máx. 512 KB)");
+                            return;
+                          }
+                          const reader = new FileReader();
+                          reader.onload = () => setDraft({ ...editing, icon_url: String(reader.result) });
+                          reader.readAsDataURL(file);
+                        }}
+                      />
+                    </label>
+                    {editing.icon_url && (
+                      <button
+                        type="button"
+                        onClick={() => setDraft({ ...editing, icon_url: null })}
+                        className="inline-flex items-center gap-1 text-xs px-3 py-1.5 rounded-full border border-border hover:bg-muted/60 transition text-destructive"
+                      >
+                        <X className="h-3.5 w-3.5" /> Remover
+                      </button>
+                    )}
+                  </div>
+                </div>
+                <p className="text-[10px] text-muted-foreground">Use a logo real da plataforma para facilitar a identificação. Se não enviar, um ícone será usado.</p>
+              </div>
+            )}
             <div className="flex flex-wrap items-center gap-3">
               <div className="space-y-1.5">
                 <Label className="text-xs">Cor</Label>
                 <ColorPicker value={editing.color ?? "#3B82F6"} onChange={c => setDraft({ ...editing, color: c })} />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs">Ícone</Label>
+                <Label className="text-xs">Ícone {table === "platforms" && <span className="text-muted-foreground">(fallback)</span>}</Label>
                 <IconPicker value={editing.icon ?? null} color={editing.color ?? "#3B82F6"}
                   onChange={n => setDraft({ ...editing, icon: n })} />
               </div>

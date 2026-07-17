@@ -1,0 +1,1 @@
+ALTER TABLE public.platforms ADD COLUMN IF NOT EXISTS icon_url text;

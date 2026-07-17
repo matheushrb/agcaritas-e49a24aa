@@ -285,7 +285,7 @@ export function ProjectTypesEditor() {
                       return (
                         <button key={p.id} onClick={() => togglePlatform(p.id)}
                           className="w-full flex items-center gap-2 px-2 py-1.5 rounded hover:bg-muted text-left text-sm">
-                          <IconPreview name={p.icon} color={p.color} size={22} />
+                          <IconPreview name={p.icon} color={p.color} iconUrl={p.icon_url} size={22} />
                           <span className="flex-1 truncate">{p.name}</span>
                           {on && <Check className="h-4 w-4 text-primary" />}
                         </button>
@@ -305,7 +305,7 @@ export function ProjectTypesEditor() {
                     if (!p) return null;
                     return (
                       <Badge key={pid} variant="secondary" className="gap-1 pl-1 pr-1.5 py-0.5">
-                        <IconPreview name={p.icon} color={p.color} size={16} />
+                        <IconPreview name={p.icon} color={p.color} iconUrl={p.icon_url} size={16} />
                         <span className="text-[11px]">{p.name}</span>
                         <button onClick={() => togglePlatform(pid)} className="ml-0.5 text-muted-foreground hover:text-destructive">
                           <Trash2 className="h-3 w-3" />
