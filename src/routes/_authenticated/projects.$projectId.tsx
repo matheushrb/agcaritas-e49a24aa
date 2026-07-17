@@ -86,6 +86,8 @@ type Task = {
   broadcast_kind: "premiere" | "live" | "recorded" | null;
   recorded_at: string | null;
   aired_at: string | null;
+  recorded_dates: string[];
+  aired_dates: string[];
   created_at?: string;
 };
 type Charge = {
