@@ -969,18 +969,21 @@ export type Database = {
           created_at: string
           id: string
           name: string
+          pricing_settings: Json
         }
         Insert: {
           automation_settings?: Json
           created_at?: string
           id?: string
           name: string
+          pricing_settings?: Json
         }
         Update: {
           automation_settings?: Json
           created_at?: string
           id?: string
           name?: string
+          pricing_settings?: Json
         }
         Relationships: []
       }
