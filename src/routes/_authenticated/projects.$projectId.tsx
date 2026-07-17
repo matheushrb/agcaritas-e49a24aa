@@ -485,6 +485,10 @@ function ProjectDetail() {
               </TabsContent>
             )}
 
+            <TabsContent value="costs" className="mt-4">
+              <ProjectCostsTab projectId={projectId} organizationId={project.organization_id} />
+            </TabsContent>
+
             <TabsContent value="finance" className="mt-4">
               <FinanceTab charges={charges} />
             </TabsContent>
