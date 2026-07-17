@@ -410,7 +410,7 @@ function TypeEditorPanel({ type, stages, onDelete, onDuplicate }:{
       </div>
 
       {/* Cor + ícone + defaults */}
-      <div className="grid grid-cols-1 sm:grid-cols-[auto_1fr_auto_auto] gap-3 items-end">
+      <div className="flex flex-wrap items-end gap-x-6 gap-y-4">
         <div className="space-y-1.5">
           <Label className="text-xs">Ícone</Label>
           <IconPicker
