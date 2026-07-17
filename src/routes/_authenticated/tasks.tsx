@@ -739,7 +739,7 @@ export function TaskModal({
       style={mode === "docked" ? { width: `min(calc(100vw - 1.5rem), ${DOCK_WIDTH}px)` } : undefined}
     >
             {/* Top bar */}
-            <div className="flex items-center gap-2 px-6 py-3 border-b border-border bg-white">
+            <div className="flex items-center gap-2 px-6 py-3 border-b border-border bg-card">
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
                 <span className="rounded-md bg-muted px-2 py-0.5 font-mono">#{task.id.slice(0, 6).toUpperCase()}</span>
                 <TaskTypePicker
