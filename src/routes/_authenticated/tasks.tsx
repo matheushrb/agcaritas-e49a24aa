@@ -766,6 +766,7 @@ export function TaskModal({
       if (!task) return;
       if (dirty) throw new Error("Salve as alterações da tarefa antes de faturar o entregável");
       if (!d.billing_enabled) throw new Error("Ative o faturamento deste entregável");
+      if (!d.delivered) throw new Error("Marque o entregável como entregue antes de faturar");
       const value = d.billing_value ?? 0;
       if (!value || value <= 0) throw new Error("Defina um valor para este entregável");
       const persistedTaskId = isLocalDraft ? (await createDraftRecord()).id : task.id;
