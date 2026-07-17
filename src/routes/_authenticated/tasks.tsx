@@ -824,7 +824,10 @@ export function TaskModal({
                   </TabsList>
 
                   <TabsContent value="subtasks" className="mt-4">
-                    <Subtasks />
+                    <Subtasks
+                      items={subtasks}
+                      onChange={next => { setSubtasks(next); save.mutate({ subtasks: next }); }}
+                    />
                   </TabsContent>
 
                   <TabsContent value="uploads" className="mt-4 space-y-3">
