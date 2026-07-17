@@ -675,15 +675,12 @@ export function TaskModal({
                   </InlineField>
                 </div>
 
-                {/* Etapa da tarefa — inspiração no workflow de produção de conteúdo */}
+                {/* Etapa da tarefa — workflow de produção */}
                 <TaskStageSection
                   stage={stage}
                   onStageChange={v => { setStage(v); save.mutate({ stage: v }); }}
-                  platform={platform}
-                  onPlatformChange={v => { setPlatform(v); save.mutate({ platform: v || null }); }}
-                  deliveryType={deliveryType}
-                  onDeliveryTypeChange={v => { setDeliveryType(v); save.mutate({ delivery_type: v || null }); }}
                 />
+
 
                 <div>
                   <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Descrição</label>
