@@ -1361,7 +1361,14 @@ function TaskTypePicker({
             onClick={() => onChange(t.id, t)}
             className={cn("w-full flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm hover:bg-muted", value === t.id && "bg-muted/60")}
           >
-            <span className="h-2 w-2 rounded-full" style={{ backgroundColor: t.color }} />
+            <span
+              className="h-5 w-5 rounded-md flex items-center justify-center shrink-0"
+              style={{ backgroundColor: `${t.color}22`, color: t.color }}
+            >
+              {t.icon
+                ? <TaskTypeIcon name={t.icon} className="h-3 w-3" />
+                : <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: t.color }} />}
+            </span>
             {t.name}
           </button>
         ))}
