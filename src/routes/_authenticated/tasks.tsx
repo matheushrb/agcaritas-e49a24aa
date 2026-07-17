@@ -394,8 +394,18 @@ export function TaskModal({
   const [clientId, setClientId] = useState<string>("");
   const [billingEnabled, setBillingEnabled] = useState<boolean>(false);
   const [deliverables, setDeliverables] = useState<Deliverable[]>([]);
+  const [subtasks, setSubtasks] = useState<Subtask[]>([]);
+  const [assigneeId, setAssigneeId] = useState<string>("");
   const persistedDraftIdRef = useRef<string | null>(null);
   const creatingDraftRef = useRef<Promise<string> | null>(null);
+
+  const { data: teamMembers = [] } = useQuery({
+    queryKey: ["tasks-modal-team"],
+    queryFn: async () => {
+      const { data } = await supabase.from("team_members").select("id,name,avatar_url").order("name");
+      return (data ?? []) as { id: string; name: string; avatar_url: string | null }[];
+    },
+  });
 
   const { data: projectsList = [] } = useQuery({
     queryKey: ["tasks-modal-projects"],
