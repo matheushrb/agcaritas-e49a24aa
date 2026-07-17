@@ -12,8 +12,9 @@ import { EntityDialog, DialogField, DialogCancelButton } from "@/components/enti
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
   Search, Plus, Users as UsersIcon, Building2, Mail, Phone, Loader2, Sparkles,
-  Pencil, Archive, Trash2, ArchiveRestore,
+  Pencil, Archive, Trash2, ArchiveRestore, Tag, X,
 } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { lookupCNPJ, lookupCEP, maskCNPJ, maskCPF, maskCEP, maskPhone, onlyDigits } from "@/lib/br-lookup";
@@ -30,7 +31,7 @@ const STATUS: Record<string, { label: string; color: string }> = {
   churned:  { label: "Churned",  color: "bg-red-500/15 text-red-600 dark:text-red-400" },
 };
 
-const SEGMENTS = [
+const DEFAULT_SEGMENTS = [
   "Tecnologia","Saúde","Educação","Varejo","Alimentação","Construção",
   "Financeiro","Jurídico","Marketing","Moda","Beleza","Automotivo",
   "Imobiliário","Entretenimento","Indústria","Serviços","Outro",
@@ -56,8 +57,18 @@ function ClientsPage() {
   const [status, setStatus] = useState("all");
   const [segment, setSegment] = useState("all");
   const [newOpen, setNewOpen] = useState(false);
+  const [segmentsOpen, setSegmentsOpen] = useState(false);
   const [revealedId, setRevealedId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
+
+  const { data: segments = [] } = useQuery<string[]>({
+    queryKey: ["client-segments"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("client_segments").select("name").order("name");
+      if (error) throw error;
+      return (data ?? []).map(r => r.name as string);
+    },
+  });
 
   const { data: clients = [], isLoading } = useQuery<Client[]>({
     queryKey: ["clients-list"],
@@ -166,9 +177,12 @@ function ClientsPage() {
               <SelectTrigger className="w-[170px] rounded-full"><SelectValue placeholder="Segmento" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todos segmentos</SelectItem>
-                {SEGMENTS.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                {(segments.length ? segments : DEFAULT_SEGMENTS).map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
               </SelectContent>
             </Select>
+            <Button variant="outline" className="rounded-full gap-1.5" onClick={() => setSegmentsOpen(true)}>
+              <Tag className="h-4 w-4" /> Segmentos
+            </Button>
           </div>
         </Card>
 
@@ -267,11 +281,13 @@ function ClientsPage() {
       </div>
 
       <NewClientDialog open={newOpen} onOpenChange={setNewOpen}
+        segments={segments.length ? segments : DEFAULT_SEGMENTS}
         onSubmit={v => create.mutate(v)} pending={create.isPending} />
 
       <NewClientDialog
         open={!!editingId && !!editingClient}
         onOpenChange={(v) => { if (!v) setEditingId(null); }}
+        segments={segments.length ? segments : DEFAULT_SEGMENTS}
         onSubmit={v => update.mutate(v)}
         pending={update.isPending}
         mode="edit"
@@ -311,6 +327,9 @@ function ClientsPage() {
           notes: editingClient.notes ?? "",
         } : undefined}
       />
+
+      <SegmentsDialog open={segmentsOpen} onOpenChange={setSegmentsOpen} />
+
 
     </>
   );
@@ -367,13 +386,14 @@ const initialForm: FormState = {
 };
 
 export function NewClientDialog({
-  open, onOpenChange, onSubmit, pending, initial, mode = "create",
+  open, onOpenChange, onSubmit, pending, initial, mode = "create", segments = DEFAULT_SEGMENTS,
 }: {
   open: boolean; onOpenChange: (v: boolean) => void;
   onSubmit: (v: Record<string, unknown>) => void;
   pending: boolean;
   initial?: Partial<FormState>;
   mode?: "create" | "edit";
+  segments?: string[];
 }) {
   const [form, setForm] = useState<FormState>({ ...initialForm, ...(initial ?? {}) });
   const [tab, setTab] = useState("identificacao");
@@ -498,7 +518,7 @@ export function NewClientDialog({
       title={mode === "edit" ? "Editar cliente" : "Novo cliente"}
       subtitle="Cadastro fiscal, comercial e operacional — CNPJ preenche o restante automaticamente."
 
-      size="lg"
+      size="md"
       main={
         <Tabs value={tab} onValueChange={setTab} className="w-full">
           <TabsList className="rounded-full bg-muted p-1">
@@ -594,7 +614,7 @@ export function NewClientDialog({
                     <Select value={form.segment} onValueChange={v => set("segment", v)}>
                       <SelectTrigger><SelectValue placeholder="Selecionar" /></SelectTrigger>
                       <SelectContent>
-                        {SEGMENTS.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                        {segments.map((s: string) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
                       </SelectContent>
                     </Select>
                   </DialogField>
@@ -609,7 +629,7 @@ export function NewClientDialog({
                   <Select value={form.segment} onValueChange={v => set("segment", v)}>
                     <SelectTrigger><SelectValue placeholder="Selecionar" /></SelectTrigger>
                     <SelectContent>
-                      {SEGMENTS.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                      {segments.map((s: string) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
                     </SelectContent>
                   </Select>
                 </DialogField>
@@ -713,5 +733,86 @@ export function NewClientDialog({
         </>
       }
     />
+  );
+}
+
+function SegmentsDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (v: boolean) => void }) {
+  const qc = useQueryClient();
+  const [name, setName] = useState("");
+
+  const { data: rows = [], isLoading } = useQuery<{ id: string; name: string }[]>({
+    queryKey: ["client-segments-manage"],
+    enabled: open,
+    queryFn: async () => {
+      const { data, error } = await supabase.from("client_segments").select("id,name").order("name");
+      if (error) throw error;
+      return (data ?? []) as { id: string; name: string }[];
+    },
+  });
+
+  const invalidate = () => {
+    qc.invalidateQueries({ queryKey: ["client-segments"] });
+    qc.invalidateQueries({ queryKey: ["client-segments-manage"] });
+  };
+
+  const add = useMutation({
+    mutationFn: async (n: string) => {
+      const { data: profile } = await supabase.from("profiles").select("organization_id").maybeSingle();
+      if (!profile?.organization_id) throw new Error("Sem organização");
+      const { error } = await supabase.from("client_segments").insert({ name: n, organization_id: profile.organization_id });
+      if (error) throw error;
+    },
+    onSuccess: () => { invalidate(); setName(""); toast.success("Segmento adicionado"); },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const remove = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("client_segments").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => { invalidate(); toast.success("Segmento removido"); },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-md rounded-2xl">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2"><Tag className="h-4 w-4" /> Segmentos de cliente</DialogTitle>
+          <DialogDescription>Organize os segmentos usados no cadastro e filtros de clientes.</DialogDescription>
+        </DialogHeader>
+        <div className="flex gap-2">
+          <Input
+            placeholder="Novo segmento..."
+            value={name}
+            onChange={e => setName(e.target.value)}
+            onKeyDown={e => { if (e.key === "Enter" && name.trim()) add.mutate(name.trim()); }}
+          />
+          <Button onClick={() => name.trim() && add.mutate(name.trim())} disabled={!name.trim() || add.isPending} className="rounded-full">
+            <Plus className="h-4 w-4" />
+          </Button>
+        </div>
+        <div className="max-h-[320px] overflow-y-auto space-y-1 mt-2">
+          {isLoading ? (
+            <div className="text-sm text-muted-foreground">Carregando…</div>
+          ) : rows.length === 0 ? (
+            <div className="text-sm text-muted-foreground text-center py-6">Nenhum segmento cadastrado</div>
+          ) : rows.map(r => (
+            <div key={r.id} className="flex items-center justify-between px-3 py-2 rounded-lg border border-border">
+              <span className="text-sm">{r.name}</span>
+              <Button
+                size="icon"
+                variant="ghost"
+                className="h-7 w-7"
+                onClick={() => { if (confirm(`Remover "${r.name}"?`)) remove.mutate(r.id); }}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          ))}
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
