@@ -62,6 +62,8 @@ type Task = {
   estimated_hours: number | null;
   progress: number;
   stage: "briefing" | "creation" | "review" | "approval" | "delivery";
+  task_type_id: string | null;
+  current_stage_id: string | null;
   deliverables: { id: string; platform: string; type: string; billing_enabled: boolean; billing_model: "hourly" | "one_time" | "package" | "monthly" | "per_task" | null; billing_value: number | null; invoiced?: boolean }[];
   subtasks: { id: string; title: string; done: boolean }[];
   created_at?: string;
