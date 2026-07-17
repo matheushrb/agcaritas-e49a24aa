@@ -359,7 +359,7 @@ export function TaskModal({ task, onClose }: { task: Task | null; onClose: () =>
     setBillingModel(task.billing_model ?? "");
     setBillingValue(task.billing_value?.toString() ?? "");
     setEstimatedHours(task.estimated_hours?.toString() ?? "");
-    setPlatform(task.platform ?? "");
+    setPlatforms(task.platform ? task.platform.split(",").map(s => s.trim()).filter(Boolean) : []);
     setDeliveryType(task.delivery_type ?? "");
     setProgress(task.progress ?? 0);
     setProjectId(task.project_id ?? "");
