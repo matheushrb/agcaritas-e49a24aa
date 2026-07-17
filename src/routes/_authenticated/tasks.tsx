@@ -723,41 +723,38 @@ export function TaskModal({
                   </TabsContent>
 
                   <TabsContent value="uploads" className="mt-4 space-y-3">
-                    {(() => {
-                      const plats = parsePlatforms(platform);
-                      if (plats.length === 0) {
-                        return (
-                          <>
-                            <Card className="rounded-2xl p-6 border-dashed border-2 text-center space-y-2">
-                              <Paperclip className="h-6 w-6 mx-auto text-muted-foreground" />
-                              <div className="text-sm font-medium">Arraste arquivos ou clique para enviar</div>
-                              <div className="text-xs text-muted-foreground">PDF, PNG, JPG, MP4, PSD, AI — até 50 MB</div>
-                              <Button variant="outline" size="sm" className="rounded-full mt-2">Selecionar arquivo</Button>
-                            </Card>
-                            <div className="text-xs text-muted-foreground">
-                              Selecione uma ou mais plataformas em <strong>Entrega</strong> para separar os uploads por canal.
-                            </div>
-                          </>
-                        );
-                      }
-                      return (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                          {plats.map(p => (
-                            <Card key={p} className="rounded-2xl p-4 border-dashed border-2 space-y-2">
-                              <div className="flex items-center justify-between">
-                                <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{platformLabel(p)}</span>
-                                <Paperclip className="h-3.5 w-3.5 text-muted-foreground" />
-                              </div>
-                              <div className="text-center py-3 space-y-1">
-                                <div className="text-sm font-medium">Arraste arquivos aqui</div>
-                                <div className="text-[11px] text-muted-foreground">Entregáveis para {platformLabel(p)}</div>
-                                <Button variant="outline" size="sm" className="rounded-full mt-2">Selecionar arquivo</Button>
-                              </div>
-                            </Card>
-                          ))}
+                    {deliverables.length === 0 ? (
+                      <>
+                        <Card className="rounded-2xl p-6 border-dashed border-2 text-center space-y-2">
+                          <Paperclip className="h-6 w-6 mx-auto text-muted-foreground" />
+                          <div className="text-sm font-medium">Arraste arquivos ou clique para enviar</div>
+                          <div className="text-xs text-muted-foreground">PDF, PNG, JPG, MP4, PSD, AI — até 50 MB</div>
+                          <Button variant="outline" size="sm" className="rounded-full mt-2">Selecionar arquivo</Button>
+                        </Card>
+                        <div className="text-xs text-muted-foreground">
+                          Adicione entregáveis em <strong>Entregáveis</strong> (barra lateral) para separar os uploads por plataforma.
                         </div>
-                      );
-                    })()}
+                      </>
+                    ) : (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        {deliverables.map(d => (
+                          <Card key={d.id} className="rounded-2xl p-4 border-dashed border-2 space-y-2">
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                                {d.platform ? platformLabel(d.platform) : "Sem plataforma"}
+                                {d.type ? ` · ${DELIVERY_TYPE_OPTIONS.find(o => o.value === d.type)?.label ?? d.type}` : ""}
+                              </span>
+                              <Paperclip className="h-3.5 w-3.5 text-muted-foreground" />
+                            </div>
+                            <div className="text-center py-3 space-y-1">
+                              <div className="text-sm font-medium">Arraste arquivos aqui</div>
+                              <div className="text-[11px] text-muted-foreground">Entregáveis para {d.platform ? platformLabel(d.platform) : "este item"}</div>
+                              <Button variant="outline" size="sm" className="rounded-full mt-2">Selecionar arquivo</Button>
+                            </div>
+                          </Card>
+                        ))}
+                      </div>
+                    )}
                   </TabsContent>
 
 
