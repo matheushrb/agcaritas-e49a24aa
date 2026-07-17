@@ -1251,6 +1251,44 @@ export function TaskModal({
         <div className="fixed inset-0 z-40 bg-black/50 animate-in fade-in-0" onClick={onClose} />
       )}
       {shell}
+      {costPrompt && (
+        <CostConfirmDialog
+          open={!!costPrompt}
+          onOpenChange={(v) => { if (!v) setCostPrompt(null); }}
+          memberName={costPrompt.member.name}
+          costMode={costPrompt.member.cost_mode}
+          suggestion={costPrompt.suggestion}
+          onSkip={() => setCostPrompt(null)}
+          onConfirm={async ({ amount, hours, description }) => {
+            try {
+              const { data: proj } = await supabase.from("projects").select("organization_id").eq("id", projectId || "").maybeSingle();
+              if (!projectId || !proj?.organization_id) {
+                toast.error("Vincule a tarefa a um projeto antes de gerar custo.");
+                setCostPrompt(null);
+                return;
+              }
+              const { error } = await supabase.from("project_costs").insert({
+                organization_id: proj.organization_id,
+                project_id: projectId,
+                task_id: task?.id.startsWith("draft-") ? null : task?.id ?? null,
+                team_member_id: costPrompt.member.id,
+                kind: costPrompt.suggestion.kind,
+                amount,
+                hours,
+                description: description || null,
+                status: costPrompt.member.cost_mode === "internal_fixed" ? "confirmed" : "pending",
+              });
+              if (error) throw error;
+              toast.success("Custo registrado");
+              qc.invalidateQueries({ queryKey: ["project-costs", projectId] });
+            } catch (e: any) {
+              toast.error(e.message ?? "Falha ao registrar custo");
+            } finally {
+              setCostPrompt(null);
+            }
+          }}
+        />
+      )}
     </>
   );
 }
