@@ -106,7 +106,7 @@ function ClientsPage() {
   const update = useMutation({
     mutationFn: async (input: Record<string, unknown>) => {
       if (!editingId) throw new Error("Sem cliente");
-      const { error } = await supabase.from("clients").update(input).eq("id", editingId);
+      const { error } = await supabase.from("clients").update(input as never).eq("id", editingId);
       if (error) throw error;
     },
     onSuccess: () => {
