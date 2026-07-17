@@ -12,10 +12,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
-  Search, Plus, LayoutGrid, List as ListIcon, Play, Pause, Square, Clock, Zap,
-  ChevronLeft, ChevronRight, X, Calendar as CalendarIcon, Flag, Circle,
-  MessageSquare, Paperclip, ListChecks, Activity, Trash2, MoreHorizontal, Timer,
+  Search, Plus, LayoutGrid, List as ListIcon, Play, Pause, Square, Zap,
+  X, Calendar as CalendarIcon, Flag, Circle,
+  MessageSquare, Paperclip, ListChecks, Activity, Trash2, Timer,
   DollarSign, Check, Minus, PanelRightOpen, Maximize2, PanelLeftOpen,
+  User as UserIcon, Hourglass, Folder, Layers, FileType, Percent, ChevronDown,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -327,7 +328,7 @@ export function TaskModal({ task, onClose }: { task: Task | null; onClose: () =>
   const [billingModel, setBillingModel] = useState<BillingModel | "">("");
   const [billingValue, setBillingValue] = useState<string>("");
   const [estimatedHours, setEstimatedHours] = useState<string>("");
-  const [platform, setPlatform] = useState<string>("");
+  const [platforms, setPlatforms] = useState<string[]>([]);
   const [deliveryType, setDeliveryType] = useState<string>("");
   const [progress, setProgress] = useState<number>(0);
   const [projectId, setProjectId] = useState<string>("");
@@ -358,7 +359,7 @@ export function TaskModal({ task, onClose }: { task: Task | null; onClose: () =>
     setBillingModel(task.billing_model ?? "");
     setBillingValue(task.billing_value?.toString() ?? "");
     setEstimatedHours(task.estimated_hours?.toString() ?? "");
-    setPlatform(task.platform ?? "");
+    setPlatforms(task.platform ? task.platform.split(",").map(s => s.trim()).filter(Boolean) : []);
     setDeliveryType(task.delivery_type ?? "");
     setProgress(task.progress ?? 0);
     setProjectId(task.project_id ?? "");
@@ -460,285 +461,250 @@ export function TaskModal({ task, onClose }: { task: Task | null; onClose: () =>
       className={cn(
         "fixed z-50 bg-background border border-border shadow-2xl flex flex-col overflow-hidden",
         mode === "modal"
-          ? "left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[calc(100vw-2rem)] max-w-[1360px] h-[calc(100vh-3rem)] max-h-[900px] rounded-3xl"
-          : "top-3 right-3 bottom-3 w-[calc(100vw-2rem)] sm:w-[560px] rounded-2xl"
+          ? "left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[calc(100vw-2rem)] max-w-[900px] h-[calc(100vh-3rem)] max-h-[880px] rounded-3xl"
+          : "top-3 right-3 bottom-3 w-[calc(100vw-2rem)] sm:w-[600px] rounded-2xl"
       )}
     >
-            {/* Top bar */}
-            <div className="flex items-center gap-2 px-6 py-3 border-b border-border bg-card/60 backdrop-blur">
-              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                <span className="rounded-md bg-muted px-2 py-0.5 font-mono">#{task.id.slice(0, 6).toUpperCase()}</span>
-                <span>·</span>
-                <span>Tarefa</span>
-              </div>
+      {/* Top bar minimal — só breadcrumb + controles de janela */}
+      <div className="flex items-center gap-2 px-5 py-2.5 border-b border-border">
+        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+          <span className="rounded-md bg-muted px-2 py-0.5 font-mono">#{task.id.slice(0, 6).toUpperCase()}</span>
+          <span>·</span>
+          <span>Tarefa</span>
+        </div>
+        <div className="ml-auto flex items-center gap-1">
+          <Button size="icon" variant="ghost" className="h-8 w-8 rounded-full text-muted-foreground hover:text-destructive" onClick={() => removeTask.mutate()} title="Excluir">
+            <Trash2 className="h-4 w-4" />
+          </Button>
+          <div className="mx-1 h-5 w-px bg-border" />
+          <Button size="icon" variant="ghost" className="h-8 w-8 rounded-full" onClick={() => setMode("minimized")} title="Minimizar">
+            <Minus className="h-4 w-4" />
+          </Button>
+          <Button
+            size="icon" variant="ghost" className="h-8 w-8 rounded-full"
+            onClick={() => setMode(mode === "docked" ? "modal" : "docked")}
+            title={mode === "docked" ? "Expandir" : "Encaixar na lateral"}
+          >
+            {mode === "docked" ? <PanelLeftOpen className="h-4 w-4" /> : <PanelRightOpen className="h-4 w-4" />}
+          </Button>
+          <Button size="icon" variant="ghost" className="h-8 w-8 rounded-full" onClick={onClose} title="Fechar">
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
 
-              <div className="ml-auto flex items-center gap-1">
-                <StatusPicker value={status} onChange={v => { setStatus(v); save.mutate({ status: v }); }} />
-                <PriorityPicker value={priority} onChange={v => { setPriority(v); save.mutate({ priority: v }); }} />
-                <DatePicker
-                  value={dueDate}
-                  overdue={!!overdue}
-                  onChange={v => { setDueDate(v); save.mutate({ due_date: v || null }); }}
-                />
-                <Button size="icon" variant="ghost" className="h-8 w-8 rounded-full text-muted-foreground hover:text-destructive" onClick={() => removeTask.mutate()} title="Excluir">
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-                <div className="mx-1 h-5 w-px bg-border" />
-                <Button size="icon" variant="ghost" className="h-8 w-8 rounded-full" onClick={() => setMode("minimized")} title="Minimizar">
-                  <Minus className="h-4 w-4" />
-                </Button>
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  className="h-8 w-8 rounded-full"
-                  onClick={() => setMode(mode === "docked" ? "modal" : "docked")}
-                  title={mode === "docked" ? "Expandir" : "Encaixar na lateral"}
-                >
-                  {mode === "docked" ? <PanelLeftOpen className="h-4 w-4" /> : <PanelRightOpen className="h-4 w-4" />}
-                </Button>
-                <Button size="icon" variant="ghost" className="h-8 w-8 rounded-full" onClick={onClose} title="Fechar">
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
+      {/* Body — coluna única, campos em linhas estilo ClickUp */}
+      <div className="flex-1 min-h-0 overflow-y-auto">
+        <div className="px-8 py-6 space-y-5 max-w-3xl">
+          {/* Título */}
+          <input
+            value={title}
+            onChange={e => setTitle(e.target.value)}
+            onBlur={() => title.trim() && title !== task.title && save.mutate({ title: title.trim() })}
+            placeholder="Título da tarefa"
+            className="w-full bg-transparent outline-none text-3xl font-semibold tracking-tight placeholder:text-muted-foreground/40"
+          />
 
-            {/* Body */}
-            <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-[1fr_320px]">
-              {/* ---------- MAIN ---------- */}
-              <div className="min-h-0 overflow-y-auto px-6 py-6 space-y-5 border-r border-border">
+          {/* Linhas de propriedades — estilo ClickUp */}
+          <div className="divide-y divide-border/60 border-y border-border/60">
+            <FieldRow icon={Circle} label="Status">
+              <StatusPicker value={status} onChange={v => { setStatus(v); save.mutate({ status: v }); }} inline />
+            </FieldRow>
+            <FieldRow icon={Flag} label="Prioridade">
+              <PriorityPicker value={priority} onChange={v => { setPriority(v); save.mutate({ priority: v }); }} inline />
+            </FieldRow>
+            <FieldRow icon={CalendarIcon} label="Prazo">
+              <DatePicker value={dueDate} overdue={!!overdue} onChange={v => { setDueDate(v); save.mutate({ due_date: v || null }); }} />
+            </FieldRow>
+            <FieldRow icon={Percent} label="Progresso">
+              <div className="flex items-center gap-3 w-full max-w-sm">
                 <input
-                  value={title}
-                  onChange={e => setTitle(e.target.value)}
-                  onBlur={() => title.trim() && title !== task.title && save.mutate({ title: title.trim() })}
-                  placeholder="Título da tarefa"
-                  className="w-full bg-transparent outline-none text-2xl font-semibold tracking-tight placeholder:text-muted-foreground/50"
+                  type="range" min={0} max={100} step={5}
+                  value={progress}
+                  onChange={e => setProgress(Number(e.target.value))}
+                  onMouseUp={() => save.mutate({ progress })}
+                  onTouchEnd={() => save.mutate({ progress })}
+                  className="flex-1 accent-primary"
                 />
-
-                {/* Propriedades + Execução agrupadas logo abaixo do nome */}
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-                  <PropertyBox label="Status">
-                    <StatusPicker value={status} onChange={v => { setStatus(v); save.mutate({ status: v }); }} inline />
-                  </PropertyBox>
-                  <PropertyBox label="Prioridade">
-                    <PriorityPicker value={priority} onChange={v => { setPriority(v); save.mutate({ priority: v }); }} inline />
-                  </PropertyBox>
-                  <PropertyBox label="Prazo">
-                    <DatePicker value={dueDate} overdue={!!overdue} onChange={v => { setDueDate(v); save.mutate({ due_date: v || null }); }} />
-                  </PropertyBox>
-                  <PropertyBox label="Progresso">
-                    <div className="flex items-center gap-2 w-full">
-                      <input
-                        type="range" min={0} max={100} step={5}
-                        value={progress}
-                        onChange={e => setProgress(Number(e.target.value))}
-                        onMouseUp={() => save.mutate({ progress })}
-                        onTouchEnd={() => save.mutate({ progress })}
-                        className="flex-1 accent-primary"
-                      />
-                      <span className="text-xs tabular-nums w-9 text-right">{progress}%</span>
-                    </div>
-                  </PropertyBox>
-                  <PropertyBox label="Plataforma">
-                    <Select value={platform || "none"} onValueChange={v => { const nv = v === "none" ? "" : v; setPlatform(nv); save.mutate({ platform: nv || null }); }}>
-                      <SelectTrigger className="h-8 rounded-lg border-none bg-transparent hover:bg-muted/60 text-sm px-2 shadow-none">
-                        <SelectValue placeholder="—" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="none">—</SelectItem>
-                        <SelectItem value="instagram">Instagram</SelectItem>
-                        <SelectItem value="tiktok">TikTok</SelectItem>
-                        <SelectItem value="youtube">YouTube</SelectItem>
-                        <SelectItem value="meta_ads">Meta Ads</SelectItem>
-                        <SelectItem value="google_ads">Google Ads</SelectItem>
-                        <SelectItem value="site">Site / Blog</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </PropertyBox>
-                  <PropertyBox label="Tipo">
-                    <Select value={deliveryType || "none"} onValueChange={v => { const nv = v === "none" ? "" : v; setDeliveryType(nv); save.mutate({ delivery_type: nv || null }); }}>
-                      <SelectTrigger className="h-8 rounded-lg border-none bg-transparent hover:bg-muted/60 text-sm px-2 shadow-none">
-                        <SelectValue placeholder="—" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="none">—</SelectItem>
-                        <SelectItem value="post">Post</SelectItem>
-                        <SelectItem value="reels">Reels</SelectItem>
-                        <SelectItem value="story">Story</SelectItem>
-                        <SelectItem value="carrossel">Carrossel</SelectItem>
-                        <SelectItem value="video">Vídeo</SelectItem>
-                        <SelectItem value="arte">Arte</SelectItem>
-                        <SelectItem value="copy">Copy</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </PropertyBox>
-                  <PropertyBox label="Estimativa">
-                    <div className="flex items-center gap-1.5 w-full">
-                      <Input
-                        type="number" min={0} step={0.5}
-                        value={estimatedHours}
-                        onChange={e => setEstimatedHours(e.target.value)}
-                        onBlur={() => save.mutate({ estimated_hours: estimatedHours ? Number(estimatedHours) : null })}
-                        className="h-8 rounded-lg border-none bg-transparent hover:bg-muted/60 text-sm px-2 shadow-none focus-visible:ring-0"
-                        placeholder="0"
-                      />
-                      <span className="text-xs text-muted-foreground">h</span>
-                    </div>
-                  </PropertyBox>
-                </div>
-
-                <div>
-                  <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Descrição</label>
-                  <Textarea
-                    value={description}
-                    onChange={e => setDescription(e.target.value)}
-                    onBlur={() => save.mutate({ description })}
-                    rows={5}
-                    placeholder="Adicione contexto, briefing, links de referência..."
-                    className="mt-2 rounded-xl resize-none"
+                <span className="text-xs tabular-nums w-10 text-right text-muted-foreground">{progress}%</span>
+              </div>
+            </FieldRow>
+            <FieldRow icon={Hourglass} label="Estimativa de tempo">
+              <div className="flex items-center gap-1.5">
+                <Input
+                  type="number" min={0} step={0.5}
+                  value={estimatedHours}
+                  onChange={e => setEstimatedHours(e.target.value)}
+                  onBlur={() => save.mutate({ estimated_hours: estimatedHours ? Number(estimatedHours) : null })}
+                  className="h-8 w-20 rounded-lg border-none bg-transparent hover:bg-muted/60 text-sm px-2 shadow-none focus-visible:ring-0"
+                  placeholder="Vazio"
+                />
+                <span className="text-xs text-muted-foreground">horas</span>
+              </div>
+            </FieldRow>
+            <FieldRow icon={Folder} label="Projeto">
+              <Select
+                value={projectId || "none"}
+                onValueChange={v => {
+                  const nv = v === "none" ? "" : v;
+                  setProjectId(nv);
+                  const proj = projectsList.find(p => p.id === nv);
+                  const nextClient = proj?.client_id ?? clientId ?? "";
+                  if (proj?.client_id) setClientId(proj.client_id);
+                  save.mutate({ project_id: nv || null, client_id: (nextClient || null) as string | null });
+                }}
+              >
+                <SelectTrigger className="h-8 rounded-lg border-none bg-transparent hover:bg-muted/60 text-sm px-2 shadow-none w-auto min-w-[160px] gap-2">
+                  <SelectValue placeholder="Sem projeto (avulsa)" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Sem projeto (avulsa)</SelectItem>
+                  {projectsList.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </FieldRow>
+            <FieldRow icon={UserIcon} label="Cliente">
+              <Select
+                value={clientId || "none"}
+                onValueChange={v => {
+                  const nv = v === "none" ? "" : v;
+                  setClientId(nv);
+                  save.mutate({ client_id: nv || null });
+                }}
+              >
+                <SelectTrigger className="h-8 rounded-lg border-none bg-transparent hover:bg-muted/60 text-sm px-2 shadow-none w-auto min-w-[160px] gap-2">
+                  <SelectValue placeholder="Vazio" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">—</SelectItem>
+                  {clientsList.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </FieldRow>
+            <FieldRow icon={Layers} label="Plataforma">
+              <PlatformMultiPicker
+                value={platforms}
+                onChange={next => {
+                  setPlatforms(next);
+                  save.mutate({ platform: next.length ? next.join(",") : null });
+                }}
+              />
+            </FieldRow>
+            <FieldRow icon={FileType} label="Tipo de entrega">
+              <Select value={deliveryType || "none"} onValueChange={v => { const nv = v === "none" ? "" : v; setDeliveryType(nv); save.mutate({ delivery_type: nv || null }); }}>
+                <SelectTrigger className="h-8 rounded-lg border-none bg-transparent hover:bg-muted/60 text-sm px-2 shadow-none w-auto min-w-[140px] gap-2">
+                  <SelectValue placeholder="Vazio" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">—</SelectItem>
+                  <SelectItem value="post">Post</SelectItem>
+                  <SelectItem value="reels">Reels</SelectItem>
+                  <SelectItem value="story">Story</SelectItem>
+                  <SelectItem value="carrossel">Carrossel</SelectItem>
+                  <SelectItem value="video">Vídeo</SelectItem>
+                  <SelectItem value="arte">Arte</SelectItem>
+                  <SelectItem value="copy">Copy</SelectItem>
+                </SelectContent>
+              </Select>
+            </FieldRow>
+            <FieldRow icon={DollarSign} label="Faturamento">
+              <div className="flex items-center gap-2 flex-wrap">
+                <Select value={billingModel || "none"} onValueChange={v => { const nv = v === "none" ? "" : v; setBillingModel(nv as BillingModel | ""); save.mutate({ billing_model: (nv || null) as BillingModel | null }); }}>
+                  <SelectTrigger className="h-8 rounded-lg border-none bg-transparent hover:bg-muted/60 text-sm px-2 shadow-none w-auto min-w-[110px] gap-2">
+                    <SelectValue placeholder="Modelo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">—</SelectItem>
+                    <SelectItem value="hourly">Por hora</SelectItem>
+                    <SelectItem value="one_time">Fixo</SelectItem>
+                    <SelectItem value="package">Pacote</SelectItem>
+                    <SelectItem value="monthly">Recorrente</SelectItem>
+                  </SelectContent>
+                </Select>
+                <div className="flex items-center gap-1 rounded-lg hover:bg-muted/60 px-2">
+                  <span className="text-xs text-muted-foreground">R$</span>
+                  <Input
+                    type="number" min={0} step={0.01}
+                    value={billingValue}
+                    onChange={e => setBillingValue(e.target.value)}
+                    onBlur={() => save.mutate({ billing_value: billingValue ? Number(billingValue) : null })}
+                    className="h-8 w-24 rounded-lg border-none bg-transparent text-sm px-1 shadow-none focus-visible:ring-0"
+                    placeholder="0,00"
                   />
                 </div>
-
-
-                <Tabs defaultValue="subtasks" className="w-full">
-                  <TabsList className="rounded-full bg-muted/60">
-                    <TabsTrigger value="subtasks" className="rounded-full gap-1.5"><ListChecks className="h-4 w-4" />Subtarefas</TabsTrigger>
-                    <TabsTrigger value="uploads" className="rounded-full gap-1.5"><Paperclip className="h-4 w-4" />Anexos</TabsTrigger>
-                    <TabsTrigger value="comments" className="rounded-full gap-1.5"><MessageSquare className="h-4 w-4" />Comentários</TabsTrigger>
-                    <TabsTrigger value="activity" className="rounded-full gap-1.5"><Activity className="h-4 w-4" />Atividade</TabsTrigger>
-                  </TabsList>
-
-                  <TabsContent value="subtasks" className="mt-4">
-                    <Subtasks />
-                  </TabsContent>
-
-                  <TabsContent value="uploads" className="mt-4">
-                    <Card className="rounded-2xl p-6 border-dashed border-2 text-center space-y-2">
-                      <Paperclip className="h-6 w-6 mx-auto text-muted-foreground" />
-                      <div className="text-sm font-medium">Arraste arquivos ou clique para enviar</div>
-                      <div className="text-xs text-muted-foreground">PDF, PNG, JPG, MP4, PSD, AI — até 50 MB</div>
-                      <Button variant="outline" size="sm" className="rounded-full mt-2">Selecionar arquivo</Button>
-                    </Card>
-                    <div className="mt-3 text-xs text-muted-foreground">
-                      Uploads por plataforma (Instagram, TikTok, Meta Ads) serão vinculados quando o módulo de Plataformas estiver ativo em Configurações.
-                    </div>
-                  </TabsContent>
-
-                  <TabsContent value="comments" className="mt-4 space-y-3">
-                    <Card className="rounded-2xl p-3">
-                      <Textarea placeholder="Escreva um comentário… @mencione um membro" rows={2} className="rounded-xl border-none focus-visible:ring-0 resize-none" />
-                      <div className="flex justify-end mt-2">
-                        <Button size="sm" className="rounded-full">Comentar</Button>
-                      </div>
-                    </Card>
-                    <div className="text-xs text-muted-foreground text-center py-6">Nenhum comentário ainda.</div>
-                  </TabsContent>
-
-                  <TabsContent value="activity" className="mt-4">
-                    <ul className="space-y-3">
-                      <li className="flex items-start gap-3">
-                        <span className="mt-1.5 h-2 w-2 rounded-full bg-primary shrink-0" />
-                        <div className="text-sm">
-                          <div><strong>Você</strong> <span className="text-muted-foreground">criou a tarefa</span></div>
-                          <div className="text-xs text-muted-foreground">
-                            {task.created_at ? new Date(task.created_at).toLocaleString("pt-BR") : "agora"}
-                          </div>
-                        </div>
-                      </li>
-                    </ul>
-                  </TabsContent>
-                </Tabs>
+                <Button
+                  size="sm"
+                  className="rounded-full h-8 gap-1.5"
+                  disabled={!billingValue || Number(billingValue) <= 0 || bill.isPending || invoiced}
+                  onClick={() => bill.mutate()}
+                >
+                  {invoiced ? <><Check className="h-3.5 w-3.5" />Lançado</> : <><DollarSign className="h-3.5 w-3.5" />Faturar</>}
+                </Button>
               </div>
+            </FieldRow>
+            <FieldRow icon={Timer} label="Rastrear tempo">
+              <TaskTimer />
+            </FieldRow>
+          </div>
 
-              {/* ---------- SIDEBAR ---------- */}
-              <aside className="min-h-0 overflow-y-auto bg-muted/20 px-5 py-6 space-y-5">
-                <SidebarSection title="Vínculo">
-                  <SidebarRow label="Projeto">
-                    <Select
-                      value={projectId || "none"}
-                      onValueChange={v => {
-                        const nv = v === "none" ? "" : v;
-                        setProjectId(nv);
-                        const proj = projectsList.find(p => p.id === nv);
-                        const nextClient = proj?.client_id ?? clientId ?? "";
-                        if (proj?.client_id) setClientId(proj.client_id);
-                        save.mutate({ project_id: nv || null, client_id: (nextClient || null) as string | null });
-                      }}
-                    >
-                      <SelectTrigger className="h-8 rounded-lg border-none bg-transparent hover:bg-muted/60 text-sm px-2 shadow-none">
-                        <SelectValue placeholder="Avulsa" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="none">Sem projeto (avulsa)</SelectItem>
-                        {projectsList.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
-                  </SidebarRow>
-                  <SidebarRow label="Cliente">
-                    <Select
-                      value={clientId || "none"}
-                      onValueChange={v => {
-                        const nv = v === "none" ? "" : v;
-                        setClientId(nv);
-                        save.mutate({ client_id: nv || null });
-                      }}
-                    >
-                      <SelectTrigger className="h-8 rounded-lg border-none bg-transparent hover:bg-muted/60 text-sm px-2 shadow-none">
-                        <SelectValue placeholder="—" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="none">—</SelectItem>
-                        {clientsList.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
-                  </SidebarRow>
-                </SidebarSection>
+          {/* Descrição */}
+          <div>
+            <Textarea
+              value={description}
+              onChange={e => setDescription(e.target.value)}
+              onBlur={() => save.mutate({ description })}
+              rows={4}
+              placeholder="Adicione uma descrição ou escreva com IA..."
+              className="rounded-xl resize-none border-none bg-transparent hover:bg-muted/30 focus-visible:bg-muted/30 focus-visible:ring-0 px-3 text-sm"
+            />
+          </div>
 
-                <SidebarSection title="Faturamento">
-                  <SidebarRow label="Modelo">
-                    <Select value={billingModel || "none"} onValueChange={v => { const nv = v === "none" ? "" : v; setBillingModel(nv as BillingModel | ""); save.mutate({ billing_model: (nv || null) as BillingModel | null }); }}>
-                      <SelectTrigger className="h-8 rounded-lg border-none bg-transparent hover:bg-muted/60 text-sm px-2 shadow-none">
-                        <SelectValue placeholder="—" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="none">—</SelectItem>
-                        <SelectItem value="hourly">Por hora</SelectItem>
-                        <SelectItem value="one_time">Fixo</SelectItem>
-                        <SelectItem value="package">Pacote</SelectItem>
-                        <SelectItem value="monthly">Recorrente</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </SidebarRow>
-                  <SidebarRow label="Valor">
-                    <div className="flex items-center gap-1.5 w-full">
-                      <span className="text-xs text-muted-foreground">R$</span>
-                      <Input
-                        type="number" min={0} step={0.01}
-                        value={billingValue}
-                        onChange={e => setBillingValue(e.target.value)}
-                        onBlur={() => save.mutate({ billing_value: billingValue ? Number(billingValue) : null })}
-                        className="h-8 rounded-lg border-none bg-transparent hover:bg-muted/60 text-sm px-2 shadow-none focus-visible:ring-0"
-                        placeholder="0,00"
-                      />
+          {/* Tabs abaixo */}
+          <Tabs defaultValue="subtasks" className="w-full">
+            <TabsList className="rounded-full bg-muted/60">
+              <TabsTrigger value="subtasks" className="rounded-full gap-1.5"><ListChecks className="h-4 w-4" />Subtarefas</TabsTrigger>
+              <TabsTrigger value="uploads" className="rounded-full gap-1.5"><Paperclip className="h-4 w-4" />Anexos</TabsTrigger>
+              <TabsTrigger value="comments" className="rounded-full gap-1.5"><MessageSquare className="h-4 w-4" />Comentários</TabsTrigger>
+              <TabsTrigger value="activity" className="rounded-full gap-1.5"><Activity className="h-4 w-4" />Atividade</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="subtasks" className="mt-4"><Subtasks /></TabsContent>
+
+            <TabsContent value="uploads" className="mt-4">
+              <Card className="rounded-2xl p-6 border-dashed border-2 text-center space-y-2">
+                <Paperclip className="h-6 w-6 mx-auto text-muted-foreground" />
+                <div className="text-sm font-medium">Arraste arquivos ou clique para enviar</div>
+                <div className="text-xs text-muted-foreground">PDF, PNG, JPG, MP4, PSD, AI — até 50 MB</div>
+                <Button variant="outline" size="sm" className="rounded-full mt-2">Selecionar arquivo</Button>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="comments" className="mt-4 space-y-3">
+              <Card className="rounded-2xl p-3">
+                <Textarea placeholder="Escreva um comentário… @mencione um membro" rows={2} className="rounded-xl border-none focus-visible:ring-0 resize-none" />
+                <div className="flex justify-end mt-2">
+                  <Button size="sm" className="rounded-full">Comentar</Button>
+                </div>
+              </Card>
+              <div className="text-xs text-muted-foreground text-center py-6">Nenhum comentário ainda.</div>
+            </TabsContent>
+
+            <TabsContent value="activity" className="mt-4">
+              <ul className="space-y-3">
+                <li className="flex items-start gap-3">
+                  <span className="mt-1.5 h-2 w-2 rounded-full bg-primary shrink-0" />
+                  <div className="text-sm">
+                    <div><strong>Você</strong> <span className="text-muted-foreground">criou a tarefa</span></div>
+                    <div className="text-xs text-muted-foreground">
+                      {task.created_at ? new Date(task.created_at).toLocaleString("pt-BR") : "agora"}
                     </div>
-                  </SidebarRow>
-                  <div className="p-3 space-y-2">
-                    <Button
-                      className="w-full rounded-full gap-1.5"
-                      disabled={!billingValue || Number(billingValue) <= 0 || bill.isPending || invoiced}
-                      onClick={() => bill.mutate()}
-                    >
-                      {invoiced ? <><Check className="h-4 w-4" />Lançado no Financeiro</> : <><DollarSign className="h-4 w-4" />Faturar tarefa</>}
-                    </Button>
-                    <p className="text-[11px] text-muted-foreground leading-snug">
-                      Cria uma cobrança pendente vinculada ao projeto e cliente, com o valor definido acima.
-                    </p>
                   </div>
-                  <div className="pt-1">
-                    <TaskTimer />
-                  </div>
-                </SidebarSection>
-              </aside>
-            </div>
+                </li>
+              </ul>
+            </TabsContent>
+          </Tabs>
+        </div>
+      </div>
     </div>
   );
 
@@ -752,35 +718,75 @@ export function TaskModal({ task, onClose }: { task: Task | null; onClose: () =>
   );
 }
 
-/* ---------- Property box (abaixo do título) ---------- */
-function PropertyBox({ label, children }: { label: string; children: React.ReactNode }) {
+/* ---------- Field row (label + valor inline estilo ClickUp) ---------- */
+function FieldRow({ icon: Icon, label, children }: { icon: React.ComponentType<{ className?: string }>; label: string; children: React.ReactNode }) {
   return (
-    <div className="rounded-xl bg-card border border-border p-3 space-y-1.5">
-      <div className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">{label}</div>
-      <div className="min-w-0">{children}</div>
+    <div className="flex items-start gap-3 py-2 min-h-[44px]">
+      <div className="flex items-center gap-2 w-48 shrink-0 pt-1.5 text-muted-foreground">
+        <Icon className="h-4 w-4" />
+        <span className="text-sm">{label}</span>
+      </div>
+      <div className="flex-1 min-w-0 flex items-center flex-wrap gap-2 py-0.5">{children}</div>
     </div>
   );
 }
 
-/* ---------- Sidebar helpers ---------- */
-function SidebarSection({ title, children }: { title: string; children: React.ReactNode }) {
+/* ---------- Plataforma multi-select ---------- */
+const PLATFORM_OPTIONS: { value: string; label: string }[] = [
+  { value: "instagram", label: "Instagram" },
+  { value: "tiktok", label: "TikTok" },
+  { value: "youtube", label: "YouTube" },
+  { value: "meta_ads", label: "Meta Ads" },
+  { value: "google_ads", label: "Google Ads" },
+  { value: "linkedin", label: "LinkedIn" },
+  { value: "site", label: "Site / Blog" },
+];
+function PlatformMultiPicker({ value, onChange }: { value: string[]; onChange: (v: string[]) => void }) {
+  const toggle = (v: string) => {
+    if (value.includes(v)) onChange(value.filter(x => x !== v));
+    else onChange([...value, v]);
+  };
+  const labels = value.map(v => PLATFORM_OPTIONS.find(p => p.value === v)?.label ?? v);
   return (
-    <div>
-      <div className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2 px-1">{title}</div>
-      <div className="rounded-xl bg-card border border-border divide-y divide-border">
-        {children}
-      </div>
-    </div>
+    <Popover>
+      <PopoverTrigger asChild>
+        <button className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1.5 hover:bg-muted/60 text-sm min-h-[32px] max-w-full">
+          {value.length === 0 ? (
+            <span className="text-muted-foreground">Vazio</span>
+          ) : (
+            <div className="flex items-center gap-1 flex-wrap">
+              {labels.map(l => (
+                <span key={l} className="inline-flex items-center gap-1 rounded-full bg-primary/10 text-primary px-2 py-0.5 text-xs font-medium">
+                  {l}
+                </span>
+              ))}
+            </div>
+          )}
+          <ChevronDown className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent align="start" className="p-1 w-56 rounded-xl">
+        {PLATFORM_OPTIONS.map(opt => {
+          const active = value.includes(opt.value);
+          return (
+            <button
+              key={opt.value}
+              onClick={() => toggle(opt.value)}
+              className={cn("w-full flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm hover:bg-muted", active && "bg-muted/60")}
+            >
+              <span className={cn("h-4 w-4 rounded border flex items-center justify-center", active ? "bg-primary border-primary text-primary-foreground" : "border-border")}>
+                {active && <Check className="h-3 w-3" />}
+              </span>
+              {opt.label}
+            </button>
+          );
+        })}
+      </PopoverContent>
+    </Popover>
   );
 }
-function SidebarRow({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div className="flex items-center gap-3 px-3 py-2 min-h-[40px]">
-      <span className="text-xs text-muted-foreground w-20 shrink-0">{label}</span>
-      <div className="flex-1 min-w-0">{children}</div>
-    </div>
-  );
-}
+
+
 
 
 /* ---------- Pickers ---------- */
