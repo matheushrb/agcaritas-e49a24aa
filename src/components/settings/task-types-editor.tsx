@@ -409,8 +409,16 @@ function TypeEditorPanel({ type, stages, onDelete, onDuplicate }:{
         </div>
       </div>
 
-      {/* Cor + defaults */}
-      <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto_auto] gap-3 items-end">
+      {/* Cor + ícone + defaults */}
+      <div className="grid grid-cols-1 sm:grid-cols-[auto_1fr_auto_auto] gap-3 items-end">
+        <div className="space-y-1.5">
+          <Label className="text-xs">Ícone</Label>
+          <IconPicker
+            value={icon}
+            color={color}
+            onChange={v => { setIcon(v); updateType.mutate({ icon: v }); }}
+          />
+        </div>
         <div className="space-y-1.5">
           <Label className="text-xs">Cor</Label>
           <div className="flex gap-1.5 flex-wrap">
@@ -442,14 +450,22 @@ function TypeEditorPanel({ type, stages, onDelete, onDuplicate }:{
         </div>
         <div className="space-y-1.5">
           <Label className="text-xs">Preço padrão (R$)</Label>
-          <Input
-            type="number" min={0} step={0.01}
-            value={defaultPrice}
-            onChange={e => setDefaultPrice(e.target.value)}
-            onBlur={() => updateType.mutate({ default_price: defaultPrice ? Number(defaultPrice) : null })}
-            className="h-9 rounded-lg w-32"
-            placeholder="0,00"
-          />
+          <div className="flex items-center gap-2">
+            <Input
+              type="number" min={0} step={0.01}
+              value={defaultPrice}
+              onChange={e => setDefaultPrice(e.target.value)}
+              onBlur={() => updateType.mutate({ default_price: defaultPrice ? Number(defaultPrice) : null })}
+              className="h-9 rounded-lg w-32"
+              placeholder="0,00"
+            />
+            <PriceCalculatorButton
+              onApply={price => {
+                setDefaultPrice(price.toString());
+                updateType.mutate({ default_price: price });
+              }}
+            />
+          </div>
         </div>
       </div>
 
