@@ -74,6 +74,9 @@ type Task = {
   current_stage_id: string | null;
   deliverables: Deliverable[];
   subtasks: Subtask[];
+  broadcast_kind: "premiere" | "live" | "recorded" | null;
+  recorded_at: string | null;
+  aired_at: string | null;
   created_at?: string;
 };
 
