@@ -242,12 +242,13 @@ export function TaskTypesEditor() {
 
 function NewTypeDialog({ onCancel, onCreate, pending }:{
   onCancel: () => void;
-  onCreate: (v: { name: string; description: string; color: string }) => void;
+  onCreate: (v: { name: string; description: string; color: string; icon: string | null }) => void;
   pending: boolean;
 }) {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [color, setColor] = useState(COLOR_PRESETS[0]);
+  const [icon, setIcon] = useState<string | null>(null);
   return (
     <Dialog open onOpenChange={v => !v && onCancel()}>
       <DialogContent className="max-w-md rounded-2xl">
@@ -261,21 +262,27 @@ function NewTypeDialog({ onCancel, onCreate, pending }:{
             <Label>Descrição</Label>
             <Textarea value={description} onChange={e => setDescription(e.target.value)} rows={2} placeholder="Opcional" />
           </div>
-          <div className="space-y-1.5">
-            <Label>Cor</Label>
-            <div className="flex gap-1.5 flex-wrap">
-              {COLOR_PRESETS.map(c => (
-                <button key={c} onClick={() => setColor(c)}
-                  className={cn("h-7 w-7 rounded-lg border-2 transition-all", color === c ? "border-foreground scale-110" : "border-transparent")}
-                  style={{ backgroundColor: c }} />
-              ))}
+          <div className="grid grid-cols-[auto_1fr] gap-3 items-start">
+            <div className="space-y-1.5">
+              <Label>Ícone</Label>
+              <IconPicker value={icon} onChange={setIcon} color={color} />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Cor</Label>
+              <div className="flex gap-1.5 flex-wrap">
+                {COLOR_PRESETS.map(c => (
+                  <button key={c} onClick={() => setColor(c)}
+                    className={cn("h-7 w-7 rounded-lg border-2 transition-all", color === c ? "border-foreground scale-110" : "border-transparent")}
+                    style={{ backgroundColor: c }} />
+                ))}
+              </div>
             </div>
           </div>
         </div>
         <div className="flex justify-end gap-2 mt-4">
           <Button variant="ghost" className="rounded-full" onClick={onCancel}>Cancelar</Button>
           <Button className="rounded-full" disabled={!name.trim() || pending}
-            onClick={() => onCreate({ name: name.trim(), description, color })}>
+            onClick={() => onCreate({ name: name.trim(), description, color, icon })}>
             Criar tipo
           </Button>
         </div>
