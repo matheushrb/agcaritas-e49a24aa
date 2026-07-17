@@ -57,8 +57,18 @@ function ClientsPage() {
   const [status, setStatus] = useState("all");
   const [segment, setSegment] = useState("all");
   const [newOpen, setNewOpen] = useState(false);
+  const [segmentsOpen, setSegmentsOpen] = useState(false);
   const [revealedId, setRevealedId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
+
+  const { data: segments = [] } = useQuery<string[]>({
+    queryKey: ["client-segments"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("client_segments").select("name").order("name");
+      if (error) throw error;
+      return (data ?? []).map(r => r.name as string);
+    },
+  });
 
   const { data: clients = [], isLoading } = useQuery<Client[]>({
     queryKey: ["clients-list"],
