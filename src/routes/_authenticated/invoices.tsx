@@ -314,6 +314,37 @@ function NewInvoiceWizard({
         if (inserted) newCharges.push(inserted.id);
       }
 
+      // Cria charges para os entregáveis selecionados e marca invoiced=true na tarefa
+      const deliverablesByTask = new Map<string, Set<string>>();
+      for (const d of billableDeliverables) {
+        if (!selectedDeliverables.has(d.key)) continue;
+        const { data: inserted, error } = await supabase.from("charges").insert({
+          organization_id: profile.organization_id,
+          project_id: d.project_id,
+          task_id: d.taskId,
+          deliverable_id: d.deliverableId,
+          client_id: d.client_id,
+          description: d.label,
+          amount: d.amount,
+          status: "pending_invoice",
+          due_date: dueDate || issueDate,
+          type: "income",
+        } as never).select("id").single();
+        if (error) throw error;
+        if (inserted) newCharges.push(inserted.id);
+        if (!deliverablesByTask.has(d.taskId)) deliverablesByTask.set(d.taskId, new Set());
+        deliverablesByTask.get(d.taskId)!.add(d.deliverableId);
+      }
+      // Marcar deliverables como invoiced na coluna JSONB da task
+      for (const [taskId, delIds] of deliverablesByTask) {
+        const task = tasks.find(t => t.id === taskId);
+        if (!task) continue;
+        const next = (task.deliverables ?? []).map(dd =>
+          delIds.has(dd.id) ? { ...dd, invoiced: true } : dd
+        );
+        await supabase.from("tasks").update({ deliverables: next } as never).eq("id", taskId);
+      }
+
       const chargeIds = [...selectedCharges, ...newCharges];
       const projectIds = new Set<string>();
       const clientIds = new Set<string>();
@@ -324,6 +355,10 @@ function NewInvoiceWizard({
       for (const tk of filteredTasks) if (selectedTasks.has(tk.id)) {
         if (tk.project_id) projectIds.add(tk.project_id);
         if (tk.client_id) clientIds.add(tk.client_id);
+      }
+      for (const d of billableDeliverables) if (selectedDeliverables.has(d.key)) {
+        if (d.project_id) projectIds.add(d.project_id);
+        if (d.client_id) clientIds.add(d.client_id);
       }
       const singleProject = projectIds.size === 1 ? [...projectIds][0] : null;
 
