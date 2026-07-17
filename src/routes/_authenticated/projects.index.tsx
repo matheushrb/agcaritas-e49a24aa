@@ -75,33 +75,45 @@ function ProjectsPage() {
     },
   });
 
-  const { data: taskCounts = {} } = useQuery<Record<string, { total: number; overdue: number }>>({
-    queryKey: ["projects-task-counts"],
+  const { data: tasksAgg = { counts: {}, projected: {} } } = useQuery<{
+    counts: Record<string, { total: number; overdue: number }>;
+    projected: Record<string, number>;
+  }>({
+    queryKey: ["projects-tasks-agg"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("tasks").select("project_id,status,due_date");
+      const { data, error } = await supabase
+        .from("tasks")
+        .select("project_id,status,due_date,billing_enabled,billing_value,broadcast_kind,aired_dates,deliverables");
       if (error) throw error;
-      const acc: Record<string, { total: number; overdue: number }> = {};
+      const counts: Record<string, { total: number; overdue: number }> = {};
+      const projected: Record<string, number> = {};
       for (const t of data ?? []) {
-        const pid = (t as { project_id: string | null }).project_id;
+        const row = t as {
+          project_id: string | null; due_date: string | null; status: string;
+          billing_enabled: boolean | null; billing_value: number | null;
+          broadcast_kind: string | null; aired_dates: string[] | null;
+          deliverables: Array<{ billing_enabled?: boolean; billing_value?: number | null }> | null;
+        };
+        const pid = row.project_id;
         if (!pid) continue;
-        acc[pid] ??= { total: 0, overdue: 0 };
-        acc[pid].total += 1;
-        const row = t as { due_date: string | null; status: string };
-        if (row.due_date && new Date(row.due_date) < new Date() && row.status !== "done") acc[pid].overdue += 1;
+        counts[pid] ??= { total: 0, overdue: 0 };
+        counts[pid].total += 1;
+        if (row.due_date && new Date(row.due_date) < new Date() && row.status !== "done") counts[pid].overdue += 1;
+        const base = row.billing_enabled && row.billing_value != null ? Number(row.billing_value) : 0;
+        const mult = row.broadcast_kind && (row.aired_dates?.length ?? 0) > 0 ? row.aired_dates!.length : 1;
+        const deliv = (row.deliverables ?? [])
+          .filter(d => d.billing_enabled && d.billing_value != null)
+          .reduce((s, d) => s + Number(d.billing_value ?? 0), 0);
+        projected[pid] = (projected[pid] ?? 0) + base * mult + deliv;
       }
-      return acc;
+      return { counts, projected };
     },
   });
+  const taskCounts = tasksAgg.counts;
+  const revenueByProject = tasksAgg.projected;
 
   const clientById = useMemo(() => Object.fromEntries(clients.map(c => [c.id, c.name])), [clients]);
-  const revenueByProject = useMemo(() => {
-    const acc: Record<string, number> = {};
-    for (const c of charges) {
-      if (!c.project_id) continue;
-      acc[c.project_id] = (acc[c.project_id] ?? 0) + Number(c.amount ?? 0);
-    }
-    return acc;
-  }, [charges]);
+
 
   const filtered = useMemo(() => {
     let arr = projects;
