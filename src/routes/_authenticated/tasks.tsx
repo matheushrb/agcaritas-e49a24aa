@@ -403,8 +403,13 @@ export function TaskModal({
   const [deliverables, setDeliverables] = useState<Deliverable[]>([]);
   const [subtasks, setSubtasks] = useState<Subtask[]>([]);
   const [assigneeId, setAssigneeId] = useState<string>("");
+  const [taskTypeId, setTaskTypeId] = useState<string>("");
+  const [currentStageId, setCurrentStageId] = useState<string>("");
   const persistedDraftIdRef = useRef<string | null>(null);
   const creatingDraftRef = useRef<Promise<string> | null>(null);
+
+  const { data: taskTypes = [] } = useTaskTypes();
+  const { data: typeStages = [] } = useTaskTypeStages(taskTypeId || null);
 
   const { data: teamMembers = [] } = useQuery({
     queryKey: ["tasks-modal-team"],
