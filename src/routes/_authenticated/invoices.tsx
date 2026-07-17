@@ -323,15 +323,17 @@ function NewInvoiceWizard({
     return lines;
   }, [filteredCharges, filteredTasks, billableDeliverables, selectedCharges, selectedTasks, selectedDeliverables]);
 
-  function openPreviewPDF() {
+  async function openPreviewPDF() {
     const client = clients.find(c => c.id === payerClient);
-    const doc = generateInvoicePDF({
+    const doc = await generateInvoicePDF({
       number: "PRÉVIA",
       issue_date: issueDate || new Date().toISOString().slice(0, 10),
       due_date: dueDate || null,
       client: { name: client?.name ?? "—", document: client?.tax_id, email: client?.email },
       lines: previewLines,
       notes: notes || undefined,
+      payment_terms: paymentTerms || undefined,
+      payment_link: paymentLink || undefined,
     });
     const url = doc.output("bloburl") as unknown as string;
     window.open(url, "_blank", "noopener,noreferrer");
