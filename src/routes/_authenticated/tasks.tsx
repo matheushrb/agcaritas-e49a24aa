@@ -519,96 +519,68 @@ export function TaskModal({ task, onClose }: { task: Task | null; onClose: () =>
                 />
 
                 {/* Propriedades — estilo ClickUp / Monday / Notion (inline, sem cards) */}
-                <div className="space-y-2">
-                  <div className="flex flex-wrap items-center gap-1">
-                    <InlineField label="Status">
-                      <StatusPicker value={status} onChange={v => { setStatus(v); save.mutate({ status: v }); }} inline />
-                    </InlineField>
-                    <InlineField label="Prioridade">
-                      <PriorityPicker value={priority} onChange={v => { setPriority(v); save.mutate({ priority: v }); }} inline />
-                    </InlineField>
-                    <InlineField label="Prazo">
-                      <DatePicker value={dueDate} overdue={!!overdue} onChange={v => { setDueDate(v); save.mutate({ due_date: v || null }); }} inline />
-                    </InlineField>
-                    <InlineField label="Progresso">
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <button className="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium hover:bg-muted transition-colors">
-                            <div className="h-1.5 w-8 rounded-full bg-muted overflow-hidden">
-                              <div className="h-full bg-primary rounded-full" style={{ width: `${progress}%` }} />
-                            </div>
-                            <span className="tabular-nums">{progress}%</span>
-                          </button>
-                        </PopoverTrigger>
-                        <PopoverContent align="start" className="p-3 w-56 rounded-xl">
-                          <div className="space-y-2">
-                            <div className="flex items-center justify-between text-xs text-muted-foreground">
-                              <span>Progresso</span>
-                              <span className="tabular-nums">{progress}%</span>
-                            </div>
-                            <input
-                              type="range" min={0} max={100} step={5}
-                              value={progress}
-                              onChange={e => setProgress(Number(e.target.value))}
-                              onMouseUp={() => save.mutate({ progress })}
-                              onTouchEnd={() => save.mutate({ progress })}
-                              className="w-full accent-primary"
-                            />
+                <div className="flex flex-wrap items-center gap-1">
+                  <InlineField label="Status">
+                    <StatusPicker value={status} onChange={v => { setStatus(v); save.mutate({ status: v }); }} inline />
+                  </InlineField>
+                  <InlineField label="Prioridade">
+                    <PriorityPicker value={priority} onChange={v => { setPriority(v); save.mutate({ priority: v }); }} inline />
+                  </InlineField>
+                  <InlineField label="Prazo">
+                    <DatePicker value={dueDate} overdue={!!overdue} onChange={v => { setDueDate(v); save.mutate({ due_date: v || null }); }} inline />
+                  </InlineField>
+                  <InlineField label="Progresso">
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <button className="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium hover:bg-muted transition-colors">
+                          <div className="h-1.5 w-8 rounded-full bg-muted overflow-hidden">
+                            <div className="h-full bg-primary rounded-full" style={{ width: `${progress}%` }} />
                           </div>
-                        </PopoverContent>
-                      </Popover>
-                    </InlineField>
-                  </div>
-
-                  <div className="flex flex-wrap items-center gap-1">
-                    <InlineField label="Plataforma">
-                      <Select value={platform || "none"} onValueChange={v => { const nv = v === "none" ? "" : v; setPlatform(nv); save.mutate({ platform: nv || null }); }}>
-                        <SelectTrigger className="h-7 border-none bg-transparent hover:bg-muted rounded-md px-2 py-1 text-xs shadow-none focus:ring-0 gap-1">
-                          <SelectValue placeholder="—" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="none">—</SelectItem>
-                          <SelectItem value="instagram">Instagram</SelectItem>
-                          <SelectItem value="tiktok">TikTok</SelectItem>
-                          <SelectItem value="youtube">YouTube</SelectItem>
-                          <SelectItem value="meta_ads">Meta Ads</SelectItem>
-                          <SelectItem value="google_ads">Google Ads</SelectItem>
-                          <SelectItem value="site">Site / Blog</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </InlineField>
-                    <InlineField label="Tipo">
-                      <Select value={deliveryType || "none"} onValueChange={v => { const nv = v === "none" ? "" : v; setDeliveryType(nv); save.mutate({ delivery_type: nv || null }); }}>
-                        <SelectTrigger className="h-7 border-none bg-transparent hover:bg-muted rounded-md px-2 py-1 text-xs shadow-none focus:ring-0 gap-1">
-                          <SelectValue placeholder="—" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="none">—</SelectItem>
-                          <SelectItem value="post">Post</SelectItem>
-                          <SelectItem value="reels">Reels</SelectItem>
-                          <SelectItem value="story">Story</SelectItem>
-                          <SelectItem value="carrossel">Carrossel</SelectItem>
-                          <SelectItem value="video">Vídeo</SelectItem>
-                          <SelectItem value="arte">Arte</SelectItem>
-                          <SelectItem value="copy">Copy</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </InlineField>
-                    <InlineField label="Estimativa">
-                      <div className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs hover:bg-muted transition-colors">
-                        <Input
-                          type="number" min={0} step={0.5}
-                          value={estimatedHours}
-                          onChange={e => setEstimatedHours(e.target.value)}
-                          onBlur={() => save.mutate({ estimated_hours: estimatedHours ? Number(estimatedHours) : null })}
-                          className="h-6 w-14 border-none bg-transparent p-0 text-xs text-right shadow-none focus-visible:ring-0"
-                          placeholder="0"
-                        />
-                        <span className="text-muted-foreground">h</span>
-                      </div>
-                    </InlineField>
-                  </div>
+                          <span className="tabular-nums">{progress}%</span>
+                        </button>
+                      </PopoverTrigger>
+                      <PopoverContent align="start" className="p-3 w-56 rounded-xl">
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between text-xs text-muted-foreground">
+                            <span>Progresso</span>
+                            <span className="tabular-nums">{progress}%</span>
+                          </div>
+                          <input
+                            type="range" min={0} max={100} step={5}
+                            value={progress}
+                            onChange={e => setProgress(Number(e.target.value))}
+                            onMouseUp={() => save.mutate({ progress })}
+                            onTouchEnd={() => save.mutate({ progress })}
+                            className="w-full accent-primary"
+                          />
+                        </div>
+                      </PopoverContent>
+                    </Popover>
+                  </InlineField>
+                  <InlineField label="Estimativa">
+                    <div className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs hover:bg-muted transition-colors">
+                      <Input
+                        type="number" min={0} step={0.5}
+                        value={estimatedHours}
+                        onChange={e => setEstimatedHours(e.target.value)}
+                        onBlur={() => save.mutate({ estimated_hours: estimatedHours ? Number(estimatedHours) : null })}
+                        className="h-6 w-14 border-none bg-transparent p-0 text-xs text-right shadow-none focus-visible:ring-0"
+                        placeholder="0"
+                      />
+                      <span className="text-muted-foreground">h</span>
+                    </div>
+                  </InlineField>
                 </div>
+
+                {/* Etapa da tarefa — inspiração no workflow de produção de conteúdo */}
+                <TaskStageSection
+                  stage={stage}
+                  onStageChange={v => { setStage(v); save.mutate({ stage: v }); }}
+                  platform={platform}
+                  onPlatformChange={v => { setPlatform(v); save.mutate({ platform: v || null }); }}
+                  deliveryType={deliveryType}
+                  onDeliveryTypeChange={v => { setDeliveryType(v); save.mutate({ delivery_type: v || null }); }}
+                />
 
                 <div>
                   <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Descrição</label>
