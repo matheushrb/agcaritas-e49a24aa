@@ -369,6 +369,7 @@ export function TaskModal({ task, onClose }: { task: Task | null; onClose: () =>
     setProgress(task.progress ?? 0);
     setProjectId(task.project_id ?? "");
     setClientId(task.client_id ?? "");
+    setBillingEnabled(task.billing_enabled ?? false);
   }, [task]);
 
   const save = useMutation({
