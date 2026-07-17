@@ -612,8 +612,10 @@ export function TaskModal({
       task_type_id: taskTypeId || null,
       current_stage_id: currentStageId || null,
       broadcast_kind: broadcastKind || null,
-      recorded_at: recordedAt || null,
-      aired_at: airedAt || null,
+      recorded_at: recordedDates[0] || null,
+      aired_at: airedDates[0] || null,
+      recorded_dates: recordedDates,
+      aired_dates: airedDates,
     };
   };
 
