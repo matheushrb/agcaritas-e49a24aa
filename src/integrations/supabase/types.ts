@@ -1502,6 +1502,7 @@ export type Database = {
           priority: Database["public"]["Enums"]["task_priority"]
           progress: number
           project_id: string | null
+          stage: Database["public"]["Enums"]["task_stage"]
           start_date: string | null
           status: Database["public"]["Enums"]["task_status"]
           title: string
@@ -1525,6 +1526,7 @@ export type Database = {
           priority?: Database["public"]["Enums"]["task_priority"]
           progress?: number
           project_id?: string | null
+          stage?: Database["public"]["Enums"]["task_stage"]
           start_date?: string | null
           status?: Database["public"]["Enums"]["task_status"]
           title: string
@@ -1548,6 +1550,7 @@ export type Database = {
           priority?: Database["public"]["Enums"]["task_priority"]
           progress?: number
           project_id?: string | null
+          stage?: Database["public"]["Enums"]["task_stage"]
           start_date?: string | null
           status?: Database["public"]["Enums"]["task_status"]
           title?: string
@@ -1740,6 +1743,7 @@ export type Database = {
       project_status: "planning" | "active" | "review" | "done" | "paused"
       proposal_status: "draft" | "sent" | "viewed" | "approved" | "declined"
       task_priority: "low" | "medium" | "high"
+      task_stage: "briefing" | "creation" | "review" | "approval" | "delivery"
       task_status: "todo" | "in_progress" | "review" | "done"
       team_level: "junior" | "mid" | "senior" | "lead"
       team_status: "active" | "vacation" | "away" | "inactive"
@@ -1879,6 +1883,7 @@ export const Constants = {
       project_status: ["planning", "active", "review", "done", "paused"],
       proposal_status: ["draft", "sent", "viewed", "approved", "declined"],
       task_priority: ["low", "medium", "high"],
+      task_stage: ["briefing", "creation", "review", "approval", "delivery"],
       task_status: ["todo", "in_progress", "review", "done"],
       team_level: ["junior", "mid", "senior", "lead"],
       team_status: ["active", "vacation", "away", "inactive"],
