@@ -1,0 +1,1 @@
+ALTER TABLE public.project_types ADD COLUMN IF NOT EXISTS platform_ids uuid[] NOT NULL DEFAULT '{}'::uuid[];
