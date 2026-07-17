@@ -12,10 +12,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { EntityDialog, DialogField, DialogCancelButton } from "@/components/entity-dialog";
 import {
   ChevronLeft, Mail, Phone, Building2, Globe, MapPin, Users, Briefcase, FileText,
-  Plus, Save, Trash2, User as UserIcon,
+  Plus, Save, Trash2, User as UserIcon, Pencil,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { NewClientDialog } from "./clients";
+
 
 export const Route = createFileRoute("/_authenticated/clients/$clientId")({
   head: () => ({ meta: [{ title: "Cliente · Caritas" }] }),
