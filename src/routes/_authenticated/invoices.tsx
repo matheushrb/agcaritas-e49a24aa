@@ -866,16 +866,18 @@ function InvoiceDetail({ id, clients, onClose }: { id: string; clients: Client[]
     onError: (e: Error) => toast.error(e.message),
   });
 
-  function downloadPDF() {
+  async function downloadPDF() {
     if (!invoice) return;
     const client = clients.find(c => c.id === invoice.client_id);
-    const doc = generateInvoicePDF({
+    const doc = await generateInvoicePDF({
       number: invoice.number,
       issue_date: invoice.issue_date,
       due_date: invoice.due_date,
       client: { name: client?.name ?? "—", document: client?.tax_id, email: client?.email },
       lines: charges.map(c => ({ title: c.description, amount: Number(c.amount ?? 0) })),
       notes: invoice.notes ?? undefined,
+      payment_terms: invoice.payment_terms ?? undefined,
+      payment_link: invoice.payment_link ?? undefined,
     });
     doc.save(`Fatura-${invoice.number}.pdf`);
   }
