@@ -164,6 +164,7 @@ export function ProjectTypesEditor() {
             onClick={() => setDraft({
               name: "", color: "#3B82F6", icon: "FolderKanban", active: true,
               base_tasks: [], avg_task_hours: null, avg_duration_days: null, description: "",
+              platform_ids: [],
             })}>
             <Plus className="h-4 w-4" /> Novo tipo
           </Button>
