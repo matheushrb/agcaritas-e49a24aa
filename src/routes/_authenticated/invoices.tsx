@@ -507,9 +507,43 @@ function NewInvoiceWizard({
               </div>
             </section>
 
+            <section>
+              <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1.5">Entregáveis prontos para faturar</h3>
+              {billableDeliverables.length === 0 && (
+                <p className="text-xs text-muted-foreground py-2">
+                  Nenhum entregável pronto. Marque o entregável como <strong>Entregue</strong> na tarefa e ative faturamento com valor.
+                </p>
+              )}
+              <div className="space-y-1">
+                {billableDeliverables.map(d => (
+                  <label key={d.key} className="flex items-center gap-3 px-3 py-2 rounded-lg border hover:bg-muted/40 cursor-pointer">
+                    <Checkbox
+                      checked={selectedDeliverables.has(d.key)}
+                      onCheckedChange={(v) => {
+                        const next = new Set(selectedDeliverables);
+                        v ? next.add(d.key) : next.delete(d.key);
+                        setSelectedDeliverables(next);
+                      }}
+                    />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm truncate flex items-center gap-2">
+                        {d.label}
+                        <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium bg-emerald-500/15 text-emerald-600">Entregue</span>
+                      </p>
+                      <p className="text-[11px] text-muted-foreground">
+                        {d.client_id ? clients.find(cl => cl.id === d.client_id)?.name : "—"}
+                        {d.project_id && ` • ${projects.find(p => p.id === d.project_id)?.name ?? ""}`}
+                      </p>
+                    </div>
+                    <div className="text-sm font-medium">{money(d.amount)}</div>
+                  </label>
+                ))}
+              </div>
+            </section>
+
             <div className="sticky bottom-0 bg-background pt-3 border-t flex items-center justify-between">
               <span className="text-xs text-muted-foreground">
-                {selectedCharges.size + selectedTasks.size} item(ns) selecionado(s)
+                {selectedCharges.size + selectedTasks.size + selectedDeliverables.size} item(ns) selecionado(s)
               </span>
               <span className="text-lg font-semibold">Total: {money(total)}</span>
             </div>
