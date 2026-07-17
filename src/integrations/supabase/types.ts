@@ -285,63 +285,126 @@ export type Database = {
       clients: {
         Row: {
           address_city: string | null
+          address_complement: string | null
+          address_country: string | null
+          address_neighborhood: string | null
+          address_number: string | null
           address_state: string | null
           address_street: string | null
           address_zip: string | null
+          billing_email: string | null
+          cnae: string | null
           company: string | null
+          contact_email: string | null
+          contact_name: string | null
+          contact_phone: string | null
+          contact_role: string | null
           created_at: string
           email: string | null
           id: string
+          instagram: string | null
           legal_name: string | null
+          legal_nature: string | null
+          linkedin: string | null
+          municipal_registration: string | null
           name: string
           notes: string | null
+          opening_date: string | null
           organization_id: string
+          payment_terms: string | null
+          person_type: string | null
           phone: string | null
           segment: string | null
+          size: string | null
+          state_registration: string | null
           status: string | null
+          tags: string[] | null
           tax_id: string | null
+          trade_name: string | null
           type: string | null
           updated_at: string
           website: string | null
         }
         Insert: {
           address_city?: string | null
+          address_complement?: string | null
+          address_country?: string | null
+          address_neighborhood?: string | null
+          address_number?: string | null
           address_state?: string | null
           address_street?: string | null
           address_zip?: string | null
+          billing_email?: string | null
+          cnae?: string | null
           company?: string | null
+          contact_email?: string | null
+          contact_name?: string | null
+          contact_phone?: string | null
+          contact_role?: string | null
           created_at?: string
           email?: string | null
           id?: string
+          instagram?: string | null
           legal_name?: string | null
+          legal_nature?: string | null
+          linkedin?: string | null
+          municipal_registration?: string | null
           name: string
           notes?: string | null
+          opening_date?: string | null
           organization_id: string
+          payment_terms?: string | null
+          person_type?: string | null
           phone?: string | null
           segment?: string | null
+          size?: string | null
+          state_registration?: string | null
           status?: string | null
+          tags?: string[] | null
           tax_id?: string | null
+          trade_name?: string | null
           type?: string | null
           updated_at?: string
           website?: string | null
         }
         Update: {
           address_city?: string | null
+          address_complement?: string | null
+          address_country?: string | null
+          address_neighborhood?: string | null
+          address_number?: string | null
           address_state?: string | null
           address_street?: string | null
           address_zip?: string | null
+          billing_email?: string | null
+          cnae?: string | null
           company?: string | null
+          contact_email?: string | null
+          contact_name?: string | null
+          contact_phone?: string | null
+          contact_role?: string | null
           created_at?: string
           email?: string | null
           id?: string
+          instagram?: string | null
           legal_name?: string | null
+          legal_nature?: string | null
+          linkedin?: string | null
+          municipal_registration?: string | null
           name?: string
           notes?: string | null
+          opening_date?: string | null
           organization_id?: string
+          payment_terms?: string | null
+          person_type?: string | null
           phone?: string | null
           segment?: string | null
+          size?: string | null
+          state_registration?: string | null
           status?: string | null
+          tags?: string[] | null
           tax_id?: string | null
+          trade_name?: string | null
           type?: string | null
           updated_at?: string
           website?: string | null
