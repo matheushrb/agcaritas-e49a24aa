@@ -80,10 +80,11 @@ const STEPS = [
 
 const defaultValue: ProjectWizardValue = {
   name: "", client_id: null, description: "",
-  project_type: "marketing", billing_model: "fixed",
+  project_type: "", billing_model: "fixed",
   fixed_value: null, urgency: "medium",
   start_date: null, end_date: null,
   tools: [],
+  strategy_enabled: false,
   scope_flags: { swot: false, personas: false, competitors: false, roadmap: false, kpis: false, action_plan: false },
   traffic_budget: { enabled: false, amount: null, platforms: [] },
   other_budgets: [],
