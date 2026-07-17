@@ -26,6 +26,7 @@ export type ProjectWizardValue = {
   start_date: string | null;
   end_date: string | null;
   tools: string[];
+  strategy_enabled: boolean;
   scope_flags: {
     swot: boolean;
     personas: boolean;
@@ -37,6 +38,8 @@ export type ProjectWizardValue = {
   traffic_budget: { enabled: boolean; amount: number | null; platforms: string[] } | null;
   other_budgets: { label: string; amount: number }[];
 };
+
+type CatalogItem = { id: string; name: string; slug: string | null; color: string | null; icon: string | null; category?: string | null };
 
 const PROJECT_TYPES_FALLBACK = [
   { value: "marketing", label: "Marketing Digital" },
