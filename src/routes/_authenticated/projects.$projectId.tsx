@@ -38,6 +38,7 @@ export const Route = createFileRoute("/_authenticated/projects/$projectId")({
 type ProjectStatus = "planning" | "active" | "review" | "done" | "paused";
 type Project = {
   id: string;
+  organization_id: string;
   name: string;
   description: string | null;
   status: ProjectStatus;
