@@ -31,7 +31,7 @@ const STATUS: Record<string, { label: string; color: string }> = {
   churned:  { label: "Churned",  color: "bg-red-500/15 text-red-600 dark:text-red-400" },
 };
 
-const SEGMENTS = [
+const DEFAULT_SEGMENTS = [
   "Tecnologia","Saúde","Educação","Varejo","Alimentação","Construção",
   "Financeiro","Jurídico","Marketing","Moda","Beleza","Automotivo",
   "Imobiliário","Entretenimento","Indústria","Serviços","Outro",
