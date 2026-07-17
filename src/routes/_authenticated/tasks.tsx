@@ -55,6 +55,7 @@ type Deliverable = {
   link?: string | null;
   channel?: string | null;
   invoiced?: boolean;
+  delivered?: boolean;
 };
 
 type Task = {
