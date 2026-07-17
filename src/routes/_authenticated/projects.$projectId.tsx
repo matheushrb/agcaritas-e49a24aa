@@ -297,7 +297,12 @@ function ProjectDetail() {
     return <div className="text-sm text-muted-foreground">Carregando projeto…</div>;
   }
 
-  const fmt = (d: string | null) => d ? new Date(d).toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric" }) : "—";
+  const fmt = (d: string | null) => {
+    if (!d) return "—";
+    const iso = d.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    const dt = iso ? new Date(+iso[1], +iso[2] - 1, +iso[3]) : new Date(d);
+    return dt.toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric" });
+  };
 
   return (
     <div className="space-y-6">
