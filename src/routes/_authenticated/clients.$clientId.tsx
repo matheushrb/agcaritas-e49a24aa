@@ -178,12 +178,16 @@ function ClientDetailPage() {
           </div>
         </div>
         <div className="flex items-center gap-2">
+          <Button className="rounded-full gap-1.5" onClick={() => setEditOpen(true)}>
+            <Pencil className="h-4 w-4" /> Editar cadastro
+          </Button>
           <Button variant="outline" className="rounded-full gap-1.5"
             onClick={() => { if (confirm("Excluir este cliente?")) removeClient.mutate(); }}>
             <Trash2 className="h-4 w-4" /> Excluir
           </Button>
         </div>
       </div>
+
 
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
