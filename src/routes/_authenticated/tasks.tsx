@@ -12,6 +12,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar as CalendarPicker } from "@/components/ui/calendar";
 import {
   Search, Plus, LayoutGrid, List as ListIcon, Play, Pause, Square, Clock, Zap,
   ChevronLeft, ChevronRight, X, Calendar as CalendarIcon, Flag, Circle,
@@ -29,6 +30,8 @@ type TaskStatus = "todo" | "in_progress" | "review" | "done";
 type TaskPriority = "low" | "medium" | "high";
 type BillingModel = "hourly" | "one_time" | "package" | "monthly" | "per_task";
 type TaskStage = "briefing" | "creation" | "review" | "approval" | "delivery";
+
+type Subtask = { id: string; title: string; done: boolean };
 
 type Deliverable = {
   id: string;
@@ -59,6 +62,7 @@ type Task = {
   estimated_hours: number | null;
   stage: TaskStage;
   deliverables: Deliverable[];
+  subtasks: Subtask[];
   created_at?: string;
 };
 
@@ -92,7 +96,7 @@ function TasksPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("tasks")
-        .select("id,title,description,status,priority,project_id,client_id,assignee_id,due_date,billing_model,billing_value,billing_enabled,progress,platform,delivery_type,estimated_hours,stage,deliverables,created_at")
+        .select("id,title,description,status,priority,project_id,client_id,assignee_id,due_date,billing_model,billing_value,billing_enabled,progress,platform,delivery_type,estimated_hours,stage,deliverables,subtasks,created_at")
         .order("created_at", { ascending: false });
       if (error) throw error;
       return (data ?? []) as Task[];
@@ -310,6 +314,7 @@ function createLocalTask(overrides: Partial<Task> = {}): Task {
     estimated_hours: null,
     stage: "creation",
     deliverables: [],
+    subtasks: [],
     created_at: new Date().toISOString(),
     ...overrides,
   };
@@ -390,8 +395,18 @@ export function TaskModal({
   const [clientId, setClientId] = useState<string>("");
   const [billingEnabled, setBillingEnabled] = useState<boolean>(false);
   const [deliverables, setDeliverables] = useState<Deliverable[]>([]);
+  const [subtasks, setSubtasks] = useState<Subtask[]>([]);
+  const [assigneeId, setAssigneeId] = useState<string>("");
   const persistedDraftIdRef = useRef<string | null>(null);
   const creatingDraftRef = useRef<Promise<string> | null>(null);
+
+  const { data: teamMembers = [] } = useQuery({
+    queryKey: ["tasks-modal-team"],
+    queryFn: async () => {
+      const { data } = await supabase.from("team_members").select("id,name,avatar_url").order("name");
+      return (data ?? []) as { id: string; name: string; avatar_url: string | null }[];
+    },
+  });
 
   const { data: projectsList = [] } = useQuery({
     queryKey: ["tasks-modal-projects"],
@@ -428,6 +443,8 @@ export function TaskModal({
     setClientId(task.client_id ?? "");
     setBillingEnabled(task.billing_enabled ?? false);
     setDeliverables(Array.isArray(task.deliverables) ? task.deliverables : []);
+    setSubtasks(Array.isArray(task.subtasks) ? task.subtasks : []);
+    setAssigneeId(task.assignee_id ?? "");
   }, [task]);
 
   const isLocalDraft = !!task?.id.startsWith("draft-");
@@ -453,6 +470,8 @@ export function TaskModal({
       estimated_hours: patch.estimated_hours ?? (estimatedHours ? Number(estimatedHours) : null),
       stage: patch.stage ?? stage,
       deliverables: patch.deliverables ?? deliverables,
+      subtasks: patch.subtasks ?? subtasks,
+      assignee_id: patch.assignee_id ?? (assigneeId || null),
     };
   };
 
@@ -602,8 +621,31 @@ export function TaskModal({
     return () => window.removeEventListener("keydown", onKey);
   }, [task, mode, onClose]);
 
+  // Progresso automático: subtarefas concluídas + etapas passadas ÷ total
+  const computedProgress = useMemo(() => {
+    const total = subtasks.length + STAGE_ORDER.length;
+    if (total === 0) return 0;
+    const stagesDone = status === "done" ? STAGE_ORDER.length : Math.max(0, STAGE_ORDER.indexOf(stage));
+    const subDone = subtasks.filter(s => s.done).length;
+    return Math.round(((subDone + stagesDone) / total) * 100);
+  }, [subtasks, stage, status]);
+
+  const lastProgressRef = useRef<number | null>(null);
+  useEffect(() => {
+    if (!task) return;
+    if (lastProgressRef.current === computedProgress) return;
+    lastProgressRef.current = computedProgress;
+    if (progress !== computedProgress) setProgress(computedProgress);
+    if (!isLocalDraft || persistedDraftIdRef.current) {
+      save.mutate({ progress: computedProgress });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [computedProgress, task?.id]);
+
   if (!task) return null;
   const overdue = dueDate && new Date(dueDate) < new Date() && status !== "done";
+  const subtasksDone = subtasks.filter(s => s.done).length;
+  const stagesDoneCount = status === "done" ? STAGE_ORDER.length : Math.max(0, STAGE_ORDER.indexOf(stage));
 
   // Minimized pill
   if (mode === "minimized") {
@@ -682,7 +724,7 @@ export function TaskModal({
                 />
 
                 {/* Propriedades — estilo ClickUp / Monday / Notion (inline, sem cards) */}
-                <div className="flex flex-wrap items-center gap-1">
+                <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
                   <InlineField label="Status">
                     <StatusPicker value={status} onChange={v => { setStatus(v); save.mutate({ status: v }); }} inline />
                   </InlineField>
@@ -690,33 +732,52 @@ export function TaskModal({
                     <PriorityPicker value={priority} onChange={v => { setPriority(v); save.mutate({ priority: v }); }} inline />
                   </InlineField>
                   <InlineField label="Prazo">
-                    <DatePicker value={dueDate} overdue={!!overdue} onChange={v => { setDueDate(v); save.mutate({ due_date: v || null }); }} inline />
+                    <DueDatePicker
+                      value={dueDate}
+                      overdue={!!overdue}
+                      onChange={v => { setDueDate(v); save.mutate({ due_date: v || null }); }}
+                    />
+                  </InlineField>
+                  <InlineField label="Responsável">
+                    <AssigneePicker
+                      value={assigneeId}
+                      members={teamMembers}
+                      onChange={v => { setAssigneeId(v); save.mutate({ assignee_id: v || null }); }}
+                    />
                   </InlineField>
                   <InlineField label="Progresso">
                     <Popover>
                       <PopoverTrigger asChild>
-                        <button className="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium hover:bg-muted transition-colors">
-                          <div className="h-1.5 w-8 rounded-full bg-muted overflow-hidden">
-                            <div className="h-full bg-primary rounded-full" style={{ width: `${progress}%` }} />
+                        <button
+                          type="button"
+                          className="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium hover:bg-muted transition-colors"
+                          title="Calculado automaticamente"
+                        >
+                          <div className="h-1.5 w-16 rounded-full bg-muted overflow-hidden">
+                            <div className="h-full bg-primary rounded-full transition-all" style={{ width: `${computedProgress}%` }} />
                           </div>
-                          <span className="tabular-nums">{progress}%</span>
+                          <span className="tabular-nums">{computedProgress}%</span>
                         </button>
                       </PopoverTrigger>
-                      <PopoverContent align="start" className="p-3 w-56 rounded-xl">
-                        <div className="space-y-2">
-                          <div className="flex items-center justify-between text-xs text-muted-foreground">
-                            <span>Progresso</span>
-                            <span className="tabular-nums">{progress}%</span>
-                          </div>
-                          <input
-                            type="range" min={0} max={100} step={5}
-                            value={progress}
-                            onChange={e => setProgress(Number(e.target.value))}
-                            onMouseUp={() => save.mutate({ progress })}
-                            onTouchEnd={() => save.mutate({ progress })}
-                            className="w-full accent-primary"
-                          />
-                        </div>
+                      <PopoverContent align="start" className="p-3 w-64 rounded-xl">
+                        <div className="text-xs font-semibold mb-2">Progresso automático</div>
+                        <ul className="space-y-1 text-xs text-muted-foreground">
+                          <li className="flex items-center justify-between">
+                            <span>Etapas concluídas</span>
+                            <span className="tabular-nums text-foreground">{stagesDoneCount} / {STAGE_ORDER.length}</span>
+                          </li>
+                          <li className="flex items-center justify-between">
+                            <span>Subtarefas feitas</span>
+                            <span className="tabular-nums text-foreground">{subtasksDone} / {subtasks.length}</span>
+                          </li>
+                          <li className="flex items-center justify-between pt-1 border-t border-border mt-1">
+                            <span>Total</span>
+                            <span className="tabular-nums text-foreground font-semibold">{computedProgress}%</span>
+                          </li>
+                        </ul>
+                        <p className="mt-2 text-[11px] text-muted-foreground">
+                          O progresso é calculado a partir das etapas do fluxo e das subtarefas concluídas.
+                        </p>
                       </PopoverContent>
                     </Popover>
                   </InlineField>
@@ -764,7 +825,10 @@ export function TaskModal({
                   </TabsList>
 
                   <TabsContent value="subtasks" className="mt-4">
-                    <Subtasks />
+                    <Subtasks
+                      items={subtasks}
+                      onChange={next => { setSubtasks(next); save.mutate({ subtasks: next }); }}
+                    />
                   </TabsContent>
 
                   <TabsContent value="uploads" className="mt-4 space-y-3">
@@ -1344,44 +1408,108 @@ function PriorityPicker({ value, onChange, inline }: { value: TaskPriority; onCh
   );
 }
 function DatePicker({ value, onChange, overdue, inline }: { value: string; onChange: (v: string) => void; overdue?: boolean; inline?: boolean }) {
-  if (inline) {
-    return (
-      <label className={cn(
-        "inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium cursor-pointer transition-colors hover:bg-muted",
-        overdue && "text-red-600 dark:text-red-400",
-      )}>
-        <CalendarIcon className="h-3.5 w-3.5 text-muted-foreground" />
-        {value ? new Date(value).toLocaleDateString("pt-BR", { day: "2-digit", month: "short" }) : "Sem prazo"}
-        <input type="date" value={value} onChange={e => onChange(e.target.value)} className="sr-only" />
-      </label>
-    );
-  }
+  const label = value ? new Date(value + "T00:00:00").toLocaleDateString("pt-BR", { day: "2-digit", month: "short" }) : (inline ? "Sem prazo" : "Prazo");
   return (
-    <label className={cn(
-      "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium cursor-pointer transition-colors bg-muted text-foreground hover:bg-muted/70",
-      overdue && "bg-red-500/15 text-red-600 dark:text-red-400",
-    )}>
-      <CalendarIcon className="h-3.5 w-3.5" />
-      {value ? new Date(value).toLocaleDateString("pt-BR", { day: "2-digit", month: "short" }) : "Prazo"}
-      <input type="date" value={value} onChange={e => onChange(e.target.value)} className="sr-only" />
-    </label>
+    <Popover>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          className={cn(
+            inline
+              ? "inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium cursor-pointer transition-colors hover:bg-muted"
+              : "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium cursor-pointer transition-colors bg-muted text-foreground hover:bg-muted/70",
+            overdue && (inline ? "text-red-600 dark:text-red-400" : "bg-red-500/15 text-red-600 dark:text-red-400"),
+          )}
+        >
+          <CalendarIcon className="h-3.5 w-3.5 text-muted-foreground" />
+          {label}
+        </button>
+      </PopoverTrigger>
+      <PopoverContent align="start" className="p-0 w-auto rounded-xl pointer-events-auto">
+        <CalendarPicker
+          mode="single"
+          selected={value ? new Date(value + "T00:00:00") : undefined}
+          onSelect={(d: Date | undefined) => {
+            if (!d) { onChange(""); return; }
+            const iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+            onChange(iso);
+          }}
+          initialFocus
+          className="p-3 pointer-events-auto"
+        />
+        {value && (
+          <div className="p-2 border-t border-border">
+            <Button variant="ghost" size="sm" className="w-full text-xs" onClick={() => onChange("")}>Limpar</Button>
+          </div>
+        )}
+      </PopoverContent>
+    </Popover>
   );
 }
 
-/* ---------- Subtasks (in-memory por enquanto) ---------- */
-function Subtasks() {
-  const [items, setItems] = useState<{ id: string; title: string; done: boolean }[]>([]);
+function DueDatePicker(props: { value: string; onChange: (v: string) => void; overdue?: boolean }) {
+  return <DatePicker {...props} inline />;
+}
+
+function AssigneePicker({ value, members, onChange }: { value: string; members: { id: string; name: string; avatar_url: string | null }[]; onChange: (v: string) => void }) {
+  const selected = members.find(m => m.id === value);
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <button type="button" className="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium hover:bg-muted transition-colors">
+          {selected ? (
+            <>
+              <span className="h-5 w-5 rounded-full bg-primary/15 text-primary text-[10px] font-semibold inline-flex items-center justify-center">
+                {selected.name.split(" ").map(p => p[0]).slice(0, 2).join("").toUpperCase()}
+              </span>
+              <span className="max-w-[120px] truncate">{selected.name}</span>
+            </>
+          ) : (
+            <span className="text-muted-foreground">Atribuir</span>
+          )}
+        </button>
+      </PopoverTrigger>
+      <PopoverContent align="start" className="p-1 w-56 rounded-xl">
+        <button
+          onClick={() => onChange("")}
+          className={cn("w-full flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm hover:bg-muted", !value && "bg-muted/60")}
+        >
+          <span className="h-5 w-5 rounded-full bg-muted inline-flex" />
+          <span className="text-muted-foreground">Sem responsável</span>
+        </button>
+        {members.map(m => (
+          <button
+            key={m.id}
+            onClick={() => onChange(m.id)}
+            className={cn("w-full flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm hover:bg-muted", m.id === value && "bg-muted/60")}
+          >
+            <span className="h-5 w-5 rounded-full bg-primary/15 text-primary text-[10px] font-semibold inline-flex items-center justify-center">
+              {m.name.split(" ").map(p => p[0]).slice(0, 2).join("").toUpperCase()}
+            </span>
+            <span className="truncate">{m.name}</span>
+          </button>
+        ))}
+        {members.length === 0 && (
+          <div className="text-xs text-muted-foreground px-2 py-2">Sem membros cadastrados.</div>
+        )}
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+/* ---------- Subtasks (persistidas em jsonb) ---------- */
+function Subtasks({ items, onChange }: { items: Subtask[]; onChange: (next: Subtask[]) => void }) {
   const [draft, setDraft] = useState("");
   const add = () => {
     const t = draft.trim();
     if (!t) return;
-    setItems(prev => [...prev, { id: crypto.randomUUID(), title: t, done: false }]);
+    onChange([...items, { id: crypto.randomUUID(), title: t, done: false }]);
     setDraft("");
   };
   return (
     <div className="space-y-2">
       {items.length === 0 && (
-        <div className="text-xs text-muted-foreground py-3">Divida esta tarefa em passos menores.</div>
+        <div className="text-xs text-muted-foreground py-3">Divida esta tarefa em passos menores. O progresso é calculado automaticamente.</div>
       )}
       <ul className="space-y-1">
         {items.map(i => (
@@ -1389,12 +1517,12 @@ function Subtasks() {
             <input
               type="checkbox"
               checked={i.done}
-              onChange={() => setItems(prev => prev.map(p => p.id === i.id ? { ...p, done: !p.done } : p))}
+              onChange={() => onChange(items.map(p => p.id === i.id ? { ...p, done: !p.done } : p))}
               className="accent-primary"
             />
             <span className={cn("flex-1 text-sm", i.done && "line-through text-muted-foreground")}>{i.title}</span>
             <button
-              onClick={() => setItems(prev => prev.filter(p => p.id !== i.id))}
+              onClick={() => onChange(items.filter(p => p.id !== i.id))}
               className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive"
             ><X className="h-3.5 w-3.5" /></button>
           </li>
