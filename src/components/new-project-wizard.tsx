@@ -356,26 +356,55 @@ function StepBilling({ v, patch }: {
   );
 }
 
-function StepTools({ v, toggleTool }: { v: ProjectWizardValue; toggleTool: (t: string) => void }) {
+function StepTools({ v, toggleTool, platforms }: {
+  v: ProjectWizardValue;
+  toggleTool: (t: string) => void;
+  platforms: CatalogItem[];
+}) {
+  const groups: Record<string, CatalogItem[]> = {};
+  platforms.forEach(p => {
+    const k = p.category || "Outros";
+    (groups[k] ??= []).push(p);
+  });
   return (
-    <Section title="Ferramentas que serão utilizadas neste projeto">
-      <p className="text-xs text-muted-foreground -mt-1">Selecione quantas quiser — usado para relatórios e onboarding do time.</p>
-      <div className="flex flex-wrap gap-2">
-        {TOOLS.map(t => {
-          const on = v.tools.includes(t);
-          return (
-            <button
-              key={t}
-              type="button"
-              onClick={() => toggleTool(t)}
-              className={cn(
-                "rounded-full px-3 py-1.5 text-xs font-medium border transition-colors",
-                on ? "border-primary bg-primary text-primary-foreground" : "border-border hover:bg-muted",
-              )}
-            >{t}</button>
-          );
-        })}
-      </div>
+    <Section title="Plataformas usadas neste projeto">
+      <p className="text-xs text-muted-foreground -mt-1">
+        Selecione as redes, canais e mídias envolvidas. Gerencie a lista em <b>Configurações → Plataformas</b>.
+      </p>
+      {platforms.length === 0 ? (
+        <div className="text-sm text-muted-foreground py-8 text-center border border-dashed rounded-xl">
+          Nenhuma plataforma cadastrada ainda.
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {Object.entries(groups).map(([cat, items]) => (
+            <div key={cat}>
+              <div className="text-[11px] uppercase tracking-wider font-medium text-muted-foreground mb-2">{cat}</div>
+              <div className="flex flex-wrap gap-2">
+                {items.map(p => {
+                  const Icon = (p.icon && (Icons as any)[p.icon]) || Icons.Circle;
+                  const on = v.tools.includes(p.name);
+                  return (
+                    <button
+                      key={p.id}
+                      type="button"
+                      onClick={() => toggleTool(p.name)}
+                      className={cn(
+                        "rounded-full px-3 py-1.5 text-xs font-medium border transition-colors flex items-center gap-1.5",
+                        on ? "border-primary bg-primary text-primary-foreground" : "border-border hover:bg-muted",
+                      )}
+                      style={on ? undefined : { color: p.color ?? undefined, borderColor: (p.color ?? "") + "66" }}
+                    >
+                      <Icon className="h-3.5 w-3.5" />
+                      {p.name}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </Section>
   );
 }
