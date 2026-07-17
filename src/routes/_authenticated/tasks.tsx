@@ -548,6 +548,51 @@ export function TaskModal({
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const billDeliverable = useMutation({
+    mutationFn: async (d: Deliverable) => {
+      if (!task) return;
+      if (!d.billing_enabled) throw new Error("Ative o faturamento deste entregável");
+      const value = d.billing_value ?? 0;
+      if (!value || value <= 0) throw new Error("Defina um valor para este entregável");
+      const persistedTaskId = isLocalDraft ? (await createDraftRecord({})).id : task.id;
+      const { data: profile } = await supabase.from("profiles").select("organization_id").maybeSingle();
+      if (!profile?.organization_id) throw new Error("Sem organização");
+      const resolvedProjectId = projectId || task.project_id || null;
+      let resolvedClient: string | null = clientId || task.client_id || null;
+      if (!resolvedClient && resolvedProjectId) {
+        const { data: proj } = await supabase.from("projects").select("client_id").eq("id", resolvedProjectId).maybeSingle();
+        resolvedClient = (proj?.client_id as string) ?? null;
+      }
+      const today = new Date().toISOString().slice(0, 10);
+      const platLabel = d.platform ? platformLabel(d.platform) : "Entregável";
+      const typeLabel = d.type ? (DELIVERY_TYPE_OPTIONS.find(o => o.value === d.type)?.label ?? d.type) : "";
+      const { error } = await supabase.from("charges").insert({
+        organization_id: profile.organization_id,
+        project_id: resolvedProjectId,
+        task_id: persistedTaskId,
+        client_id: resolvedClient,
+        description: `${title.trim() || task.title || "Tarefa"} — ${platLabel}${typeLabel ? ` (${typeLabel})` : ""}`,
+        amount: value,
+        status: "pending",
+        due_date: today,
+        type: "income",
+      });
+      if (error) throw error;
+      const next = deliverables.map(x => x.id === d.id ? { ...x, invoiced: true } : x);
+      setDeliverables(next);
+      const { error: upErr } = await supabase.from("tasks").update({ deliverables: next }).eq("id", persistedTaskId);
+      if (upErr) throw upErr;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["charges"] });
+      qc.invalidateQueries({ queryKey: ["project-charges"] });
+      qc.invalidateQueries({ queryKey: ["tasks"] });
+      toast.success("Entregável lançado no Financeiro");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+
   const [mode, setMode] = useState<"modal" | "docked" | "minimized">("modal");
   useEffect(() => { if (task) setMode("modal"); }, [task?.id]);
   useEffect(() => {
