@@ -611,37 +611,6 @@ export function TaskModal({ task, onClose }: { task: Task | null; onClose: () =>
 
               {/* ---------- SIDEBAR ---------- */}
               <aside className="min-h-0 overflow-y-auto bg-muted/20 px-5 py-6 space-y-5">
-                <SidebarSection title="Propriedades">
-                  <SidebarRow label="Status">
-                    <StatusPicker value={status} onChange={v => { setStatus(v); save.mutate({ status: v }); }} inline />
-                  </SidebarRow>
-                  <SidebarRow label="Prioridade">
-                    <PriorityPicker value={priority} onChange={v => { setPriority(v); save.mutate({ priority: v }); }} inline />
-                  </SidebarRow>
-                  <SidebarRow label="Prazo">
-                    <input
-                      type="date"
-                      value={dueDate}
-                      onChange={e => setDueDate(e.target.value)}
-                      onBlur={() => save.mutate({ due_date: dueDate || null })}
-                      className="bg-transparent text-sm outline-none w-full"
-                    />
-                  </SidebarRow>
-                  <SidebarRow label="Progresso">
-                    <div className="flex items-center gap-2 w-full">
-                      <input
-                        type="range" min={0} max={100} step={5}
-                        value={progress}
-                        onChange={e => setProgress(Number(e.target.value))}
-                        onMouseUp={() => save.mutate({ progress })}
-                        onTouchEnd={() => save.mutate({ progress })}
-                        className="flex-1 accent-primary"
-                      />
-                      <span className="text-xs tabular-nums w-9 text-right">{progress}%</span>
-                    </div>
-                  </SidebarRow>
-                </SidebarSection>
-
                 <SidebarSection title="Vínculo">
                   <SidebarRow label="Projeto">
                     <Select
