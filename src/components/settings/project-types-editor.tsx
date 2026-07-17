@@ -81,9 +81,10 @@ export function ProjectTypesEditor() {
         icon: row.icon,
         description: row.description ?? null,
         active: row.active ?? true,
-        base_tasks: row.base_tasks ?? [],
+        base_tasks: (row.base_tasks ?? []).filter(b => b?.task_type_id),
         avg_task_hours: row.avg_task_hours ?? null,
         avg_duration_days: row.avg_duration_days ?? null,
+        platform_ids: row.platform_ids ?? [],
       };
       if (row.id) {
         const { error } = await (supabase as any).from("project_types").update(payload).eq("id", row.id);
