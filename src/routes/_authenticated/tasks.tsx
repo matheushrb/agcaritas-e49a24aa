@@ -30,6 +30,8 @@ type TaskPriority = "low" | "medium" | "high";
 type BillingModel = "hourly" | "one_time" | "package" | "monthly" | "per_task";
 type TaskStage = "briefing" | "creation" | "review" | "approval" | "delivery";
 
+type Subtask = { id: string; title: string; done: boolean };
+
 type Deliverable = {
   id: string;
   platform: string;
