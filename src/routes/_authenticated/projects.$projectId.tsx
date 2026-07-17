@@ -54,6 +54,7 @@ type Task = {
   billing_value: number | null;
   billing_model: "hourly" | "one_time" | "package" | "monthly" | null;
   project_id: string | null;
+  client_id: string | null;
   assignee_id: string | null;
   platform: string | null;
   delivery_type: string | null;
