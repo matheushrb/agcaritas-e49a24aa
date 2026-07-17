@@ -1507,6 +1507,9 @@ export type Database = {
       project_types: {
         Row: {
           active: boolean
+          avg_duration_days: number | null
+          avg_task_hours: number | null
+          base_tasks: Json
           color: string | null
           created_at: string
           description: string | null
@@ -1520,6 +1523,9 @@ export type Database = {
         }
         Insert: {
           active?: boolean
+          avg_duration_days?: number | null
+          avg_task_hours?: number | null
+          base_tasks?: Json
           color?: string | null
           created_at?: string
           description?: string | null
@@ -1533,6 +1539,9 @@ export type Database = {
         }
         Update: {
           active?: boolean
+          avg_duration_days?: number | null
+          avg_task_hours?: number | null
+          base_tasks?: Json
           color?: string | null
           created_at?: string
           description?: string | null

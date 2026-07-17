@@ -8,8 +8,8 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { Plus, Trash2, GripVertical } from "lucide-react";
-import * as Icons from "lucide-react";
 import { cn } from "@/lib/utils";
+import { IconPicker, ColorPicker, IconPreview } from "./icon-color-pickers";
 
 type Row = {
   id: string;
@@ -24,17 +24,6 @@ type Row = {
   active: boolean;
 };
 
-function IconPreview({ name, color }: { name: string | null; color: string | null }) {
-  const Comp = (name && (Icons as any)[name]) || Icons.Circle;
-  return (
-    <div
-      className="grid h-8 w-8 place-items-center rounded-lg shrink-0"
-      style={{ backgroundColor: (color ?? "#3B82F6") + "22", color: color ?? "#3B82F6" }}
-    >
-      <Comp className="h-4 w-4" />
-    </div>
-  );
-}
 
 export function CatalogEditor({
   table,
@@ -168,22 +157,18 @@ export function CatalogEditor({
                   onChange={e => setDraft({ ...editing, category: e.target.value })} />
               </div>
             )}
-            <div className="grid grid-cols-2 gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <div className="space-y-1.5">
                 <Label className="text-xs">Cor</Label>
-                <div className="flex items-center gap-2">
-                  <input type="color" value={editing.color ?? "#3B82F6"}
-                    onChange={e => setDraft({ ...editing, color: e.target.value })}
-                    className="h-9 w-12 rounded-md border border-border bg-transparent cursor-pointer" />
-                  <Input value={editing.color ?? "#3B82F6"} onChange={e => setDraft({ ...editing, color: e.target.value })} />
-                </div>
+                <ColorPicker value={editing.color ?? "#3B82F6"} onChange={c => setDraft({ ...editing, color: c })} />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs">Ícone (Lucide)</Label>
-                <Input value={editing.icon ?? ""} placeholder="Instagram, Target, Globe…"
-                  onChange={e => setDraft({ ...editing, icon: e.target.value })} />
+                <Label className="text-xs">Ícone</Label>
+                <IconPicker value={editing.icon ?? null} color={editing.color ?? "#3B82F6"}
+                  onChange={n => setDraft({ ...editing, icon: n })} />
               </div>
             </div>
+
             <div className="flex items-center justify-between rounded-lg border border-border px-3 py-2">
               <div className="text-xs">Ativo</div>
               <Switch checked={editing.active ?? true} onCheckedChange={c => setDraft({ ...editing, active: c })} />
