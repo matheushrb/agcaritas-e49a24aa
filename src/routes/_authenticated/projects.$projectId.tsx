@@ -156,11 +156,23 @@ function ProjectDetail() {
 
   const stats = useMemo(() => {
     const total = tasks.length;
-    const overdue = tasks.filter(t => t.due_date && new Date(t.due_date) < new Date() && t.status !== "done").length;
+    const now = new Date(); now.setHours(0, 0, 0, 0);
+    const overdue = tasks.filter(t => t.due_date && new Date(t.due_date) < now && t.status !== "done").length;
     const done = tasks.filter(t => t.status === "done").length;
     const invoiced = charges.reduce((s, c) => s + Number(c.amount ?? 0), 0);
-    return { total, overdue, done, invoiced };
-  }, [tasks, charges]);
+    const team = new Set(tasks.map(t => t.assignee_id).filter(Boolean) as string[]).size;
+    let daysDelta: number | null = null;
+    if (project?.end_date) {
+      const end = new Date(project.end_date); end.setHours(0, 0, 0, 0);
+      daysDelta = Math.round((end.getTime() - now.getTime()) / 86_400_000);
+    }
+    const progress = total > 0 ? Math.round((done / total) * 100) : 0;
+    return { total, overdue, done, invoiced, team, daysDelta, progress };
+  }, [tasks, charges, project?.end_date]);
+
+  const isOverdueActive = !!project && (project.status === "active" || project.status === "planning" || project.status === "review")
+    && !!project.end_date && new Date(project.end_date) < new Date();
+  const isClosed = project?.status === "done" || project?.status === "paused";
 
   const setStatus = useMutation({
     mutationFn: async (s: ProjectStatus) => {
