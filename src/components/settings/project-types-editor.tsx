@@ -16,9 +16,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Badge } from "@/components/ui/badge";
 
 type BaseTask = {
-  name: string;
-  task_type_id?: string | null;
-  estimated_hours?: number | null;
+  task_type_id: string;
+  quantity?: number | null;
 };
 
 type Row = {
@@ -33,6 +32,7 @@ type Row = {
   base_tasks: BaseTask[];
   avg_task_hours: number | null;
   avg_duration_days: number | null;
+  platform_ids: string[];
 };
 
 export function ProjectTypesEditor() {
