@@ -9,8 +9,9 @@ import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Receipt, Plus, Download, CheckCircle2, XCircle, ArrowLeft, ArrowRight, FileText, Building2 } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Receipt, Plus, Download, CheckCircle2, XCircle, ArrowLeft, ArrowRight, FileText, Building2, Pencil, Trash2, RotateCcw, Save, X } from "lucide-react";
 import { toast } from "sonner";
 import { generateInvoicePDF } from "@/lib/pdf/invoice-pdf";
 import { cn } from "@/lib/utils";
@@ -473,6 +474,15 @@ function NewInvoiceWizard({
 /* ----------------------------------- Detail ------------------------------ */
 function InvoiceDetail({ id, clients, onClose }: { id: string; clients: Client[]; onClose: () => void }) {
   const qc = useQueryClient();
+  const [editing, setEditing] = useState(false);
+  const [editIssue, setEditIssue] = useState("");
+  const [editDue, setEditDue] = useState("");
+  const [editNotes, setEditNotes] = useState("");
+  const [confirmCancel, setConfirmCancel] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [returnItems, setReturnItems] = useState(true);
+  const [removingItem, setRemovingItem] = useState<PendingCharge | null>(null);
+  const [removeReturn, setRemoveReturn] = useState(true);
 
   const { data: invoice } = useQuery<Invoice | null>({
     queryKey: ["invoice", id],
@@ -494,6 +504,42 @@ function InvoiceDetail({ id, clients, onClose }: { id: string; clients: Client[]
     },
   });
 
+  useEffect(() => {
+    if (invoice && !editing) {
+      setEditIssue(invoice.issue_date ?? "");
+      setEditDue(invoice.due_date ?? "");
+      setEditNotes(invoice.notes ?? "");
+    }
+  }, [invoice, editing]);
+
+  const invalidateAll = () => {
+    qc.invalidateQueries({ queryKey: ["invoice", id] });
+    qc.invalidateQueries({ queryKey: ["invoice-charges", id] });
+    qc.invalidateQueries({ queryKey: ["invoices"] });
+    qc.invalidateQueries({ queryKey: ["charges"] });
+  };
+
+  const isLocked = invoice?.status === "paid" || invoice?.status === "canceled";
+
+  const saveEdit = useMutation({
+    mutationFn: async () => {
+      const total = charges.reduce((a, c) => a + Number(c.amount ?? 0), 0);
+      const { error } = await supabase.from("invoices")
+        .update({
+          issue_date: editIssue || undefined,
+          due_date: editDue || null,
+          notes: editNotes || null,
+          amount: total,
+          total,
+          subtotal: total,
+        })
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => { invalidateAll(); setEditing(false); toast.success("Fatura atualizada"); },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   const markPaid = useMutation({
     mutationFn: async () => {
       const now = new Date().toISOString();
@@ -502,28 +548,88 @@ function InvoiceDetail({ id, clients, onClose }: { id: string; clients: Client[]
       const { error: e2 } = await supabase.from("charges").update({ status: "paid", paid_at: now }).eq("invoice_id", id);
       if (e2) throw e2;
     },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["invoice", id] });
-      qc.invalidateQueries({ queryKey: ["invoices"] });
-      qc.invalidateQueries({ queryKey: ["charges"] });
-      toast.success("Fatura marcada como paga");
+    onSuccess: () => { invalidateAll(); toast.success("Fatura marcada como paga"); },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const reopen = useMutation({
+    mutationFn: async () => {
+      const { error: e1 } = await supabase.from("invoices").update({ status: "issued", paid_at: null }).eq("id", id);
+      if (e1) throw e1;
+      const { error: e2 } = await supabase.from("charges").update({ status: "pending", paid_at: null }).eq("invoice_id", id);
+      if (e2) throw e2;
+    },
+    onSuccess: () => { invalidateAll(); toast.success("Fatura reaberta"); },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const cancelInvoice = useMutation({
+    mutationFn: async (opts: { returnItems: boolean }) => {
+      const { error: e1 } = await supabase.from("invoices").update({ status: "canceled" }).eq("id", id);
+      if (e1) throw e1;
+      if (opts.returnItems) {
+        const { error: e2 } = await supabase.from("charges")
+          .update({ status: "pending_invoice", invoice_id: null })
+          .eq("invoice_id", id);
+        if (e2) throw e2;
+      } else {
+        // marca como canceladas
+        const { error: e2 } = await supabase.from("charges").update({ status: "cancelled" }).eq("invoice_id", id);
+        if (e2) throw e2;
+      }
+    },
+    onSuccess: (_r, vars) => {
+      invalidateAll();
+      toast.success(vars.returnItems ? "Fatura cancelada. Itens voltaram para 'a faturar'." : "Fatura e itens cancelados.");
+      setConfirmCancel(false);
+      onClose();
     },
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const cancel = useMutation({
-    mutationFn: async () => {
-      const { error: e1 } = await supabase.from("invoices").update({ status: "canceled" }).eq("id", id);
-      if (e1) throw e1;
-      const { error: e2 } = await supabase.from("charges").update({ status: "pending_invoice", invoice_id: null }).eq("invoice_id", id);
+  const deleteInvoice = useMutation({
+    mutationFn: async (opts: { returnItems: boolean }) => {
+      if (opts.returnItems) {
+        const { error: e1 } = await supabase.from("charges")
+          .update({ status: "pending_invoice", invoice_id: null })
+          .eq("invoice_id", id);
+        if (e1) throw e1;
+      } else {
+        const { error: e1 } = await supabase.from("charges").delete().eq("invoice_id", id);
+        if (e1) throw e1;
+      }
+      const { error: e2 } = await supabase.from("invoices").delete().eq("id", id);
       if (e2) throw e2;
     },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["invoice", id] });
-      qc.invalidateQueries({ queryKey: ["invoices"] });
-      qc.invalidateQueries({ queryKey: ["charges"] });
-      toast.success("Fatura cancelada. Itens voltaram para pendentes.");
+    onSuccess: (_r, vars) => {
+      invalidateAll();
+      toast.success(vars.returnItems ? "Fatura excluída. Itens voltaram para 'a faturar'." : "Fatura e itens excluídos.");
+      setConfirmDelete(false);
       onClose();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const removeItem = useMutation({
+    mutationFn: async (opts: { chargeId: string; returnItem: boolean }) => {
+      if (opts.returnItem) {
+        const { error } = await supabase.from("charges")
+          .update({ status: "pending_invoice", invoice_id: null })
+          .eq("id", opts.chargeId);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from("charges").delete().eq("id", opts.chargeId);
+        if (error) throw error;
+      }
+      // recalcula total
+      const { data: remaining } = await supabase.from("charges").select("amount").eq("invoice_id", id);
+      const total = (remaining ?? []).reduce((a, c) => a + Number(c.amount ?? 0), 0);
+      await supabase.from("invoices").update({ amount: total, total, subtotal: total }).eq("id", id);
+    },
+    onSuccess: (_r, vars) => {
+      invalidateAll();
+      toast.success(vars.returnItem ? "Item removido e devolvido para 'a faturar'." : "Item removido da fatura.");
+      setRemovingItem(null);
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -547,6 +653,7 @@ function InvoiceDetail({ id, clients, onClose }: { id: string; clients: Client[]
   const meta = STATUS_META[invoice.status] ?? STATUS_META.pending;
 
   return (
+    <>
     <Dialog open onOpenChange={(v) => !v && onClose()}>
       <DialogContent className="max-w-3xl">
         <DialogHeader>
@@ -555,24 +662,46 @@ function InvoiceDetail({ id, clients, onClose }: { id: string; clients: Client[]
             Fatura {invoice.number}
             <Badge variant="secondary" className={cn("text-[10px]", meta.className)}>{meta.label}</Badge>
           </DialogTitle>
+          <DialogDescription className="text-xs">
+            Número gerado automaticamente no formato <span className="font-mono">AAAAMM-####</span> (sequencial por mês).
+          </DialogDescription>
         </DialogHeader>
 
         <div className="grid grid-cols-2 gap-3 text-sm">
           <div className="flex items-center gap-2"><Building2 className="h-4 w-4 text-muted-foreground" />
             <span>{clients.find(c => c.id === invoice.client_id)?.name ?? "—"}</span>
           </div>
-          <div className="text-right">
-            <span className="text-muted-foreground text-xs">Emissão </span>{fmtDate(invoice.issue_date)}
-            <span className="text-muted-foreground text-xs ml-3">Vencimento </span>{fmtDate(invoice.due_date)}
-          </div>
+          {!editing ? (
+            <div className="text-right">
+              <span className="text-muted-foreground text-xs">Emissão </span>{fmtDate(invoice.issue_date)}
+              <span className="text-muted-foreground text-xs ml-3">Vencimento </span>{fmtDate(invoice.due_date)}
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="text-[11px] text-muted-foreground">Emissão</label>
+                <Input type="date" value={editIssue} onChange={e => setEditIssue(e.target.value)} />
+              </div>
+              <div>
+                <label className="text-[11px] text-muted-foreground">Vencimento</label>
+                <Input type="date" value={editDue} onChange={e => setEditDue(e.target.value)} />
+              </div>
+            </div>
+          )}
         </div>
 
         <Card className="p-0 overflow-hidden">
           <div className="max-h-[45vh] overflow-y-auto">
             {charges.map(c => (
-              <div key={c.id} className="flex items-center justify-between px-4 py-2 border-b last:border-b-0 text-sm">
+              <div key={c.id} className="flex items-center justify-between px-4 py-2 border-b last:border-b-0 text-sm gap-2">
                 <div className="flex-1 min-w-0 truncate">{c.description}</div>
                 <div className="font-medium">{money(Number(c.amount ?? 0))}</div>
+                {editing && !isLocked && (
+                  <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-red-600"
+                    onClick={() => { setRemovingItem(c); setRemoveReturn(true); }}>
+                    <X className="h-4 w-4" />
+                  </Button>
+                )}
               </div>
             ))}
             {charges.length === 0 && <p className="text-xs text-muted-foreground p-4">Sem itens.</p>}
@@ -583,14 +712,45 @@ function InvoiceDetail({ id, clients, onClose }: { id: string; clients: Client[]
           </div>
         </Card>
 
-        {invoice.notes && <p className="text-xs text-muted-foreground whitespace-pre-wrap">{invoice.notes}</p>}
+        {editing ? (
+          <div>
+            <label className="text-xs font-medium text-muted-foreground">Observações</label>
+            <Textarea value={editNotes} onChange={e => setEditNotes(e.target.value)} rows={3} />
+          </div>
+        ) : invoice.notes && (
+          <p className="text-xs text-muted-foreground whitespace-pre-wrap">{invoice.notes}</p>
+        )}
 
-        <DialogFooter className="gap-2">
+        <DialogFooter className="gap-2 flex-wrap">
           <Button variant="ghost" onClick={downloadPDF}><Download className="h-4 w-4 mr-1" />PDF</Button>
-          <div className="flex-1" />
-          {invoice.status !== "canceled" && invoice.status !== "paid" && (
+
+          {!isLocked && !editing && (
+            <Button variant="ghost" onClick={() => setEditing(true)}><Pencil className="h-4 w-4 mr-1" />Editar</Button>
+          )}
+          {editing && (
             <>
-              <Button variant="ghost" onClick={() => cancel.mutate()} disabled={cancel.isPending}>
+              <Button variant="ghost" onClick={() => setEditing(false)}>Descartar</Button>
+              <Button onClick={() => saveEdit.mutate()} disabled={saveEdit.isPending}>
+                <Save className="h-4 w-4 mr-1" />Salvar
+              </Button>
+            </>
+          )}
+
+          <Button variant="ghost" className="text-red-600 hover:text-red-700"
+            onClick={() => setConfirmDelete(true)}>
+            <Trash2 className="h-4 w-4 mr-1" />Excluir
+          </Button>
+
+          <div className="flex-1" />
+
+          {invoice.status === "paid" && (
+            <Button variant="ghost" onClick={() => reopen.mutate()} disabled={reopen.isPending}>
+              <RotateCcw className="h-4 w-4 mr-1" />Reabrir
+            </Button>
+          )}
+          {!isLocked && !editing && (
+            <>
+              <Button variant="ghost" onClick={() => setConfirmCancel(true)}>
                 <XCircle className="h-4 w-4 mr-1" />Cancelar fatura
               </Button>
               <Button onClick={() => markPaid.mutate()} disabled={markPaid.isPending}>
@@ -598,11 +758,110 @@ function InvoiceDetail({ id, clients, onClose }: { id: string; clients: Client[]
               </Button>
             </>
           )}
-          {(invoice.status === "canceled" || invoice.status === "paid") && (
-            <Button onClick={onClose}>Fechar</Button>
-          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>
+
+    {/* Confirmação de cancelamento */}
+    <AlertDialog open={confirmCancel} onOpenChange={setConfirmCancel}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Cancelar esta fatura?</AlertDialogTitle>
+          <AlertDialogDescription>
+            A fatura ficará marcada como <strong>cancelada</strong>. Escolha o que fazer com os {charges.length} item(ns) faturado(s):
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <div className="space-y-2 py-2">
+          <label className="flex items-start gap-2 p-3 rounded-lg border cursor-pointer hover:bg-muted/40">
+            <input type="radio" checked={returnItems} onChange={() => setReturnItems(true)} className="mt-1" />
+            <div>
+              <div className="text-sm font-medium">Voltar itens para "a faturar"</div>
+              <div className="text-xs text-muted-foreground">Você poderá incluí-los em outra fatura depois.</div>
+            </div>
+          </label>
+          <label className="flex items-start gap-2 p-3 rounded-lg border cursor-pointer hover:bg-muted/40">
+            <input type="radio" checked={!returnItems} onChange={() => setReturnItems(false)} className="mt-1" />
+            <div>
+              <div className="text-sm font-medium">Cancelar itens também</div>
+              <div className="text-xs text-muted-foreground">Nenhum item volta para o fluxo de faturamento.</div>
+            </div>
+          </label>
+        </div>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Voltar</AlertDialogCancel>
+          <AlertDialogAction onClick={() => cancelInvoice.mutate({ returnItems })}>Confirmar</AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+
+    {/* Confirmação de exclusão */}
+    <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Excluir esta fatura?</AlertDialogTitle>
+          <AlertDialogDescription>
+            Esta ação é <strong>permanente</strong>. O que fazer com os {charges.length} item(ns)?
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <div className="space-y-2 py-2">
+          <label className="flex items-start gap-2 p-3 rounded-lg border cursor-pointer hover:bg-muted/40">
+            <input type="radio" checked={returnItems} onChange={() => setReturnItems(true)} className="mt-1" />
+            <div>
+              <div className="text-sm font-medium">Voltar itens para "a faturar"</div>
+              <div className="text-xs text-muted-foreground">Recomendado — preserva o histórico das tarefas/cobranças.</div>
+            </div>
+          </label>
+          <label className="flex items-start gap-2 p-3 rounded-lg border cursor-pointer hover:bg-muted/40">
+            <input type="radio" checked={!returnItems} onChange={() => setReturnItems(false)} className="mt-1" />
+            <div>
+              <div className="text-sm font-medium">Excluir os itens também</div>
+              <div className="text-xs text-muted-foreground">As cobranças serão apagadas junto com a fatura.</div>
+            </div>
+          </label>
+        </div>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Voltar</AlertDialogCancel>
+          <AlertDialogAction className="bg-red-600 hover:bg-red-700"
+            onClick={() => deleteInvoice.mutate({ returnItems })}>Excluir</AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+
+    {/* Remover item */}
+    <AlertDialog open={!!removingItem} onOpenChange={(v) => !v && setRemovingItem(null)}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Remover item da fatura?</AlertDialogTitle>
+          <AlertDialogDescription>
+            <span className="block truncate">{removingItem?.description}</span>
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <div className="space-y-2 py-2">
+          <label className="flex items-start gap-2 p-3 rounded-lg border cursor-pointer hover:bg-muted/40">
+            <input type="radio" checked={removeReturn} onChange={() => setRemoveReturn(true)} className="mt-1" />
+            <div>
+              <div className="text-sm font-medium">Voltar para "a faturar"</div>
+              <div className="text-xs text-muted-foreground">Fica disponível para outra fatura.</div>
+            </div>
+          </label>
+          <label className="flex items-start gap-2 p-3 rounded-lg border cursor-pointer hover:bg-muted/40">
+            <input type="radio" checked={!removeReturn} onChange={() => setRemoveReturn(false)} className="mt-1" />
+            <div>
+              <div className="text-sm font-medium">Excluir o item</div>
+              <div className="text-xs text-muted-foreground">A cobrança será apagada de vez.</div>
+            </div>
+          </label>
+        </div>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Voltar</AlertDialogCancel>
+          <AlertDialogAction
+            onClick={() => removingItem && removeItem.mutate({ chargeId: removingItem.id, returnItem: removeReturn })}>
+            Confirmar
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 }
+
