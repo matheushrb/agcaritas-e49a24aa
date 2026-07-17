@@ -2179,6 +2179,7 @@ export type Database = {
       tasks: {
         Row: {
           aired_at: string | null
+          aired_dates: Json
           assignee_id: string | null
           attachments_count: number
           billed: boolean
@@ -2203,6 +2204,7 @@ export type Database = {
           progress: number
           project_id: string | null
           recorded_at: string | null
+          recorded_dates: Json
           stage: Database["public"]["Enums"]["task_stage"]
           start_date: string | null
           status: Database["public"]["Enums"]["task_status"]
@@ -2213,6 +2215,7 @@ export type Database = {
         }
         Insert: {
           aired_at?: string | null
+          aired_dates?: Json
           assignee_id?: string | null
           attachments_count?: number
           billed?: boolean
@@ -2237,6 +2240,7 @@ export type Database = {
           progress?: number
           project_id?: string | null
           recorded_at?: string | null
+          recorded_dates?: Json
           stage?: Database["public"]["Enums"]["task_stage"]
           start_date?: string | null
           status?: Database["public"]["Enums"]["task_status"]
@@ -2247,6 +2251,7 @@ export type Database = {
         }
         Update: {
           aired_at?: string | null
+          aired_dates?: Json
           assignee_id?: string | null
           attachments_count?: number
           billed?: boolean
@@ -2271,6 +2276,7 @@ export type Database = {
           progress?: number
           project_id?: string | null
           recorded_at?: string | null
+          recorded_dates?: Json
           stage?: Database["public"]["Enums"]["task_stage"]
           start_date?: string | null
           status?: Database["public"]["Enums"]["task_status"]
