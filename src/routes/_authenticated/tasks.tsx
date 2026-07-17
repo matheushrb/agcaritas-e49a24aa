@@ -772,12 +772,12 @@ export function TaskModal({ task, onClose }: { task: Task | null; onClose: () =>
   );
 }
 
-/* ---------- Property box (abaixo do título) ---------- */
-function PropertyBox({ label, children }: { label: string; children: React.ReactNode }) {
+/* ---------- Inline field (estilo Notion / Monday / ClickUp) ---------- */
+function InlineField({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="rounded-xl bg-card border border-border p-3 space-y-1.5">
-      <div className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">{label}</div>
-      <div className="min-w-0">{children}</div>
+    <div className="inline-flex items-center gap-1.5 text-xs">
+      <span className="text-muted-foreground whitespace-nowrap">{label}</span>
+      {children}
     </div>
   );
 }
