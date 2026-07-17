@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import {
   ArrowLeft, Calendar, CheckSquare, FileText, Grid3x3, Timer as TimerIcon,
   Megaphone, Compass, Rocket, DollarSign, Plus, Flag, Zap,
+  Building2, CheckCircle2, RotateCcw, Pencil, AlertTriangle, Users as UsersIcon,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -77,7 +78,7 @@ type Charge = {
   paid_at: string | null;
   project_id: string | null;
 };
-type Client = { id: string; name: string };
+type Client = { id: string; name: string; trade_name: string | null };
 
 const STATUS_META: Record<ProjectStatus, { label: string; color: string }> = {
   planning: { label: "Planejamento", color: "bg-muted text-muted-foreground" },
@@ -123,7 +124,7 @@ function ProjectDetail() {
     enabled: !!project?.client_id,
     queryFn: async () => {
       if (!project?.client_id) return null;
-      const { data } = await supabase.from("clients").select("id,name").eq("id", project.client_id).maybeSingle();
+      const { data } = await supabase.from("clients").select("id,name,trade_name").eq("id", project.client_id).maybeSingle();
       return (data as Client) ?? null;
     },
   });
@@ -155,11 +156,23 @@ function ProjectDetail() {
 
   const stats = useMemo(() => {
     const total = tasks.length;
-    const overdue = tasks.filter(t => t.due_date && new Date(t.due_date) < new Date() && t.status !== "done").length;
+    const now = new Date(); now.setHours(0, 0, 0, 0);
+    const overdue = tasks.filter(t => t.due_date && new Date(t.due_date) < now && t.status !== "done").length;
     const done = tasks.filter(t => t.status === "done").length;
     const invoiced = charges.reduce((s, c) => s + Number(c.amount ?? 0), 0);
-    return { total, overdue, done, invoiced };
-  }, [tasks, charges]);
+    const team = new Set(tasks.map(t => t.assignee_id).filter(Boolean) as string[]).size;
+    let daysDelta: number | null = null;
+    if (project?.end_date) {
+      const end = new Date(project.end_date); end.setHours(0, 0, 0, 0);
+      daysDelta = Math.round((end.getTime() - now.getTime()) / 86_400_000);
+    }
+    const progress = total > 0 ? Math.round((done / total) * 100) : 0;
+    return { total, overdue, done, invoiced, team, daysDelta, progress };
+  }, [tasks, charges, project?.end_date]);
+
+  const isOverdueActive = !!project && (project.status === "active" || project.status === "planning" || project.status === "review")
+    && !!project.end_date && new Date(project.end_date) < new Date();
+  const isClosed = project?.status === "done" || project?.status === "paused";
 
   const setStatus = useMutation({
     mutationFn: async (s: ProjectStatus) => {
@@ -216,39 +229,101 @@ function ProjectDetail() {
 
   return (
     <div className="space-y-6">
+      {/* Alertas */}
+      {isClosed && (
+        <div className="flex items-center gap-2 rounded-2xl border border-amber-500/30 bg-amber-500/10 px-4 py-2 text-sm text-amber-700 dark:text-amber-300">
+          <AlertTriangle className="h-4 w-4 shrink-0" />
+          Projeto {STATUS_META[project.status].label.toLowerCase()} — lançamentos financeiros ainda são permitidos.
+        </div>
+      )}
+      {isOverdueActive && (
+        <div className="flex items-center gap-2 rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-2 text-sm text-red-700 dark:text-red-300">
+          <AlertTriangle className="h-4 w-4 shrink-0" />
+          Este projeto ultrapassou a data final ({fmt(project.end_date)}) e continua ativo.
+        </div>
+      )}
+
       {/* Header */}
-      <div className="space-y-3">
+      <div className="space-y-4 rounded-3xl border border-border bg-card p-6">
         <Link to="/projects" className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
           <ArrowLeft className="h-3.5 w-3.5" /> Projetos
         </Link>
 
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-3 flex-wrap">
+            <div className="flex items-center gap-2 flex-wrap">
               <h1 className="font-display text-3xl font-bold tracking-tight truncate">{project.name}</h1>
               <Badge className={cn("rounded-full", STATUS_META[project.status].color)}>{STATUS_META[project.status].label}</Badge>
+              {isOverdueActive && (
+                <Badge className="rounded-full bg-red-500/15 text-red-600 dark:text-red-400">Vencido</Badge>
+              )}
             </div>
-            <div className="mt-1 text-sm text-muted-foreground flex items-center gap-3 flex-wrap">
-              {client && <span>{client.name}</span>}
-              <span className="inline-flex items-center gap-1"><Calendar className="h-3.5 w-3.5" />{fmt(project.start_date)} → {fmt(project.end_date)}</span>
-            </div>
+            {(client || project.end_date) && (
+              <div className="mt-1.5 text-sm text-muted-foreground flex items-center gap-3 flex-wrap">
+                {client && (
+                  <span className="inline-flex items-center gap-1.5">
+                    <Building2 className="h-3.5 w-3.5" />
+                    {client.trade_name || client.name}
+                  </span>
+                )}
+                <span className="inline-flex items-center gap-1">
+                  <Calendar className="h-3.5 w-3.5" />
+                  {fmt(project.start_date)} → {fmt(project.end_date)}
+                </span>
+              </div>
+            )}
           </div>
 
-          <Select value={project.status} onValueChange={v => setStatus.mutate(v as ProjectStatus)}>
-            <SelectTrigger className="w-[170px] rounded-full"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              {(Object.keys(STATUS_META) as ProjectStatus[]).map(s => (
-                <SelectItem key={s} value={s}>{STATUS_META[s].label}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className="flex items-center gap-2">
+            {isClosed ? (
+              <Button
+                variant="outline"
+                className="rounded-full gap-1.5"
+                onClick={() => setStatus.mutate("active")}
+              >
+                <RotateCcw className="h-4 w-4" /> Reabrir
+              </Button>
+            ) : (
+              <Button
+                className="rounded-full gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white"
+                onClick={() => {
+                  if (confirm("Concluir este projeto? Lançamentos financeiros continuam permitidos.")) {
+                    setStatus.mutate("done");
+                  }
+                }}
+              >
+                <CheckCircle2 className="h-4 w-4" /> Concluir Projeto
+              </Button>
+            )}
+            <Button variant="outline" className="rounded-full gap-1.5" disabled title="Em breve">
+              <Pencil className="h-4 w-4" /> Editar
+            </Button>
+          </div>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {/* Progresso geral */}
+        <div className="space-y-1.5">
+          <div className="flex items-center justify-between text-xs text-muted-foreground">
+            <span>Progresso geral</span>
+            <span>{stats.done}/{stats.total} tarefas · {stats.progress}%</span>
+          </div>
+          <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
+            <div className="h-full bg-primary transition-all" style={{ width: `${stats.progress}%` }} />
+          </div>
+        </div>
+
+        {/* Grid de 6 métricas */}
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
           <Kpi label="Tarefas" value={stats.total.toString()} />
           <Kpi label="Concluídas" value={stats.done.toString()} />
           <Kpi label="Atrasadas" value={stats.overdue.toString()} tone={stats.overdue > 0 ? "danger" : "default"} />
+          <Kpi label="Equipe" value={stats.team.toString()} />
           <Kpi label="Faturado" value={`R$ ${stats.invoiced.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`} />
+          <Kpi
+            label={stats.daysDelta === null ? "Prazo" : stats.daysDelta >= 0 ? "Dias restantes" : "Dias excedidos"}
+            value={stats.daysDelta === null ? "—" : Math.abs(stats.daysDelta).toString()}
+            tone={stats.daysDelta !== null && stats.daysDelta < 0 ? "danger" : "default"}
+          />
         </div>
       </div>
 
