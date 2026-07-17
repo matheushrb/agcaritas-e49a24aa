@@ -909,6 +909,7 @@ export type Database = {
           number: string
           organization_id: string
           paid_at: string | null
+          payment_link: string | null
           payment_method: string | null
           payment_terms: string | null
           pdf_url: string | null
@@ -935,6 +936,7 @@ export type Database = {
           number: string
           organization_id: string
           paid_at?: string | null
+          payment_link?: string | null
           payment_method?: string | null
           payment_terms?: string | null
           pdf_url?: string | null
@@ -961,6 +963,7 @@ export type Database = {
           number?: string
           organization_id?: string
           paid_at?: string | null
+          payment_link?: string | null
           payment_method?: string | null
           payment_terms?: string | null
           pdf_url?: string | null
