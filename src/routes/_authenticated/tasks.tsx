@@ -429,7 +429,7 @@ export function TaskModal({
     if (!profile?.organization_id) throw new Error("Sem organização");
     return {
       organization_id: profile.organization_id,
-      title: (patch.title ?? title.trim() || "Nova tarefa") as string,
+      title: (patch.title ?? (title.trim() || "Nova tarefa")) as string,
       description: patch.description ?? (description || null),
       status: patch.status ?? status,
       priority: patch.priority ?? priority,
