@@ -343,7 +343,7 @@ export function ProjectTypesEditor() {
                   {(editing.base_tasks ?? []).map((t, idx) => {
                     const tt = taskTypes.find((x: any) => x.id === t.task_type_id);
                     return (
-                      <div key={idx} className="grid grid-cols-[24px_1fr_90px_auto] gap-2 items-center">
+                      <div key={idx} className="grid grid-cols-[24px_1fr_auto] gap-2 items-center">
                         <IconPreview name={tt?.icon ?? null} color={tt?.color ?? null} size={22} />
                         <Select
                           value={t.task_type_id}
@@ -356,15 +356,6 @@ export function ProjectTypesEditor() {
                             ))}
                           </SelectContent>
                         </Select>
-                        <div className="flex items-center gap-1">
-                          <Input
-                            type="number" min={1} step={1}
-                            value={t.quantity ?? 1}
-                            onChange={e => updateBaseTask(idx, { quantity: e.target.value === "" ? 1 : Number(e.target.value) })}
-                            className="h-8"
-                          />
-                          <span className="text-[10px] text-muted-foreground">un</span>
-                        </div>
                         <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive"
                           onClick={() => removeBaseTask(idx)}>
                           <Trash2 className="h-4 w-4" />
@@ -373,8 +364,7 @@ export function ProjectTypesEditor() {
                     );
                   })}
                   <div className="text-[11px] text-muted-foreground text-right pt-1">
-                    Total: <b>{totalQty} tarefa{totalQty === 1 ? "" : "s"}</b>
-                    {editing.avg_task_hours ? <> · <b>{totalHours}h</b> estimadas</> : null}
+                    {baseCount} modelo{baseCount === 1 ? "" : "s"} disponíve{baseCount === 1 ? "l" : "is"} ao criar tarefas
                   </div>
                 </div>
               )}
