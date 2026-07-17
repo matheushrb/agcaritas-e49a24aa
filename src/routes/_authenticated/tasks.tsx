@@ -26,7 +26,7 @@ export const Route = createFileRoute("/_authenticated/tasks")({
 
 type TaskStatus = "todo" | "in_progress" | "review" | "done";
 type TaskPriority = "low" | "medium" | "high";
-type BillingModel = "hourly" | "one_time" | "package" | "monthly";
+type BillingModel = "hourly" | "one_time" | "package" | "monthly" | "per_task";
 type TaskStage = "briefing" | "creation" | "review" | "approval" | "delivery";
 
 type Task = {
@@ -41,6 +41,7 @@ type Task = {
   due_date: string | null;
   billing_model: BillingModel | null;
   billing_value: number | null;
+  billing_enabled: boolean;
   progress: number;
   platform: string | null;
   delivery_type: string | null;
