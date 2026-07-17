@@ -127,7 +127,7 @@ function ProjectDetail() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("tasks")
-        .select("id,title,description,status,priority,due_date,billing_value,billing_model,project_id,assignee_id,platform,delivery_type,estimated_hours,progress,created_at")
+        .select("id,title,description,status,priority,due_date,billing_value,billing_model,project_id,client_id,assignee_id,platform,delivery_type,estimated_hours,progress,created_at")
         .eq("project_id", projectId)
         .order("created_at", { ascending: false });
       if (error) throw error;
