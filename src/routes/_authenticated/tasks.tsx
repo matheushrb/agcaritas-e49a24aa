@@ -456,6 +456,8 @@ export function TaskModal({
     setDeliverables(Array.isArray(task.deliverables) ? task.deliverables : []);
     setSubtasks(Array.isArray(task.subtasks) ? task.subtasks : []);
     setAssigneeId(task.assignee_id ?? "");
+    setTaskTypeId(task.task_type_id ?? "");
+    setCurrentStageId(task.current_stage_id ?? "");
   }, [task]);
 
   const isLocalDraft = !!task?.id.startsWith("draft-");
@@ -483,6 +485,8 @@ export function TaskModal({
       deliverables: patch.deliverables ?? deliverables,
       subtasks: patch.subtasks ?? subtasks,
       assignee_id: patch.assignee_id ?? (assigneeId || null),
+      task_type_id: patch.task_type_id ?? (taskTypeId || null),
+      current_stage_id: patch.current_stage_id ?? (currentStageId || null),
     };
   };
 
