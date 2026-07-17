@@ -94,12 +94,12 @@
 }
 
 .dark {
-  --background: oklch(0.15 0.03 260);             /* deep navy */
+  --background: oklch(0.11 0.035 262);            /* deeper navy base */
   --foreground: oklch(0.97 0.005 255);
-  --surface: oklch(0.20 0.035 262);
-  --card: oklch(0.20 0.035 262);
+  --surface: oklch(0.16 0.04 262);
+  --card: oklch(0.16 0.04 262);
   --card-foreground: oklch(0.97 0.005 255);
-  --popover: oklch(0.20 0.035 262);
+  --popover: oklch(0.16 0.04 262);
   --popover-foreground: oklch(0.97 0.005 255);
 
   --primary: oklch(0.68 0.18 255);
