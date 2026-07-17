@@ -481,12 +481,16 @@ function TypeEditorPanel({ type, stages, onDelete, onDuplicate }:{
         <div className="flex items-center justify-between">
           <div>
             <div className="text-sm font-medium">Etapas do fluxo</div>
-            <p className="text-[11px] text-muted-foreground">Ordem, cor e o status macro a que cada etapa pertence.</p>
+            <p className="text-[11px] text-muted-foreground">
+              Cada etapa tem uma cor, um status macro e um <b>peso</b> — quanto vale essa etapa no cálculo automático do progresso da tarefa (ex.: Edição peso 3, Aprovação peso 1). O total é somado; ao concluir uma etapa, sua parte entra no progresso.
+            </p>
           </div>
           <Button size="sm" variant="outline" className="rounded-full gap-1" onClick={() => addStage.mutate()}>
             <Plus className="h-3.5 w-3.5" /> Adicionar etapa
           </Button>
         </div>
+
+
 
         {stages.length === 0 ? (
           <div className="rounded-xl border border-dashed p-6 text-center text-sm text-muted-foreground">
