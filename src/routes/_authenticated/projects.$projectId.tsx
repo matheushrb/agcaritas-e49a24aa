@@ -512,7 +512,7 @@ function ProjectDetail() {
             </TabsContent>
 
             <TabsContent value="finance" className="mt-4">
-              <FinanceTab charges={charges} />
+              <FinanceTab charges={charges} tasks={tasks} costs={costs} />
             </TabsContent>
           </Tabs>
         );
