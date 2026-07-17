@@ -1422,21 +1422,21 @@ function DeliverablesSection({
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-2 px-1">
-        <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Entregáveis</span>
-        <Button size="sm" variant="ghost" className="h-6 px-2 rounded-full text-xs gap-1" onClick={add}>
-          <Plus className="h-3 w-3" /> Adicionar
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Entregáveis</span>
+        <Button size="sm" variant="outline" className="h-7 rounded-full text-xs gap-1" onClick={add}>
+          <Plus className="h-3.5 w-3.5" /> Adicionar entregável
         </Button>
       </div>
 
       {deliverables.length === 0 ? (
-        <div className="rounded-xl bg-card border border-dashed border-border px-3 py-4 text-center text-xs text-muted-foreground">
-          Nenhum entregável ainda. Adicione uma plataforma para começar.
+        <div className="rounded-xl bg-card border border-dashed border-border px-4 py-6 text-center text-xs text-muted-foreground">
+          Nenhum entregável nesta tarefa. Adicione um para separar plataforma, canal, data de entrega, link e valor.
         </div>
       ) : (
         <div className="space-y-2">
           {deliverables.map((d, i) => (
-            <div key={d.id} className="rounded-xl bg-card border border-border p-3 space-y-2">
+            <div key={d.id} className="rounded-xl bg-card border border-border p-3 space-y-2.5">
               <div className="flex items-center justify-between">
                 <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
                   Entregável {i + 1}
@@ -1447,28 +1447,58 @@ function DeliverablesSection({
                 </Button>
               </div>
 
-              <div className="grid grid-cols-2 gap-1.5">
-                <Select value={d.platform || "none"} onValueChange={v => update(d.id, { platform: v === "none" ? "" : v })}>
-                  <SelectTrigger className="h-8 rounded-lg text-xs">
-                    <SelectValue placeholder="Plataforma" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">—</SelectItem>
-                    {PLATFORM_OPTIONS.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-                <Select value={d.type || "none"} onValueChange={v => update(d.id, { type: v === "none" ? "" : v })}>
-                  <SelectTrigger className="h-8 rounded-lg text-xs">
-                    <SelectValue placeholder="Tipo" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">—</SelectItem>
-                    {DELIVERY_TYPE_OPTIONS.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
-                  </SelectContent>
-                </Select>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-1.5">
+                <div>
+                  <label className="text-[10px] text-muted-foreground uppercase">Plataforma</label>
+                  <Select value={d.platform || "none"} onValueChange={v => update(d.id, { platform: v === "none" ? "" : v })}>
+                    <SelectTrigger className="h-8 rounded-lg text-xs mt-1"><SelectValue placeholder="—" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">—</SelectItem>
+                      {PLATFORM_OPTIONS.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <label className="text-[10px] text-muted-foreground uppercase">Tipo</label>
+                  <Select value={d.type || "none"} onValueChange={v => update(d.id, { type: v === "none" ? "" : v })}>
+                    <SelectTrigger className="h-8 rounded-lg text-xs mt-1"><SelectValue placeholder="—" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">—</SelectItem>
+                      {DELIVERY_TYPE_OPTIONS.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <label className="text-[10px] text-muted-foreground uppercase">Canal</label>
+                  <Input
+                    value={d.channel ?? ""}
+                    onChange={e => update(d.id, { channel: e.target.value || null })}
+                    placeholder="Ex: @caritas"
+                    className="h-8 rounded-lg text-xs mt-1"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] text-muted-foreground uppercase">Entregue em</label>
+                  <Input
+                    type="date"
+                    value={d.delivered_date ?? ""}
+                    onChange={e => update(d.id, { delivered_date: e.target.value || null })}
+                    className="h-8 rounded-lg text-xs mt-1"
+                  />
+                </div>
               </div>
 
-              <div className="flex items-center justify-between pt-1 border-t border-border">
+              <div>
+                <label className="text-[10px] text-muted-foreground uppercase">Link da entrega</label>
+                <Input
+                  value={d.link ?? ""}
+                  onChange={e => update(d.id, { link: e.target.value || null })}
+                  placeholder="https://…"
+                  className="h-8 rounded-lg text-xs mt-1"
+                />
+              </div>
+
+              <div className="flex items-center justify-between pt-1.5 border-t border-border">
                 <span className="text-[11px] text-muted-foreground">Faturar este entregável</span>
                 <Switch
                   checked={d.billing_enabled}
