@@ -2504,7 +2504,12 @@ export type Database = {
     Enums: {
       app_role: "admin" | "manager" | "member"
       billing_model: "monthly" | "one_time" | "hourly" | "package" | "per_task"
-      charge_status: "pending" | "paid" | "overdue" | "cancelled"
+      charge_status:
+        | "pending"
+        | "paid"
+        | "overdue"
+        | "cancelled"
+        | "pending_invoice"
       contract_status: "active" | "closed" | "suspended" | "renewing"
       lead_stage: "lead" | "contact" | "proposal" | "negotiation" | "closed"
       plan_status: "draft" | "in_review" | "approved" | "archived"
@@ -2656,7 +2661,13 @@ export const Constants = {
     Enums: {
       app_role: ["admin", "manager", "member"],
       billing_model: ["monthly", "one_time", "hourly", "package", "per_task"],
-      charge_status: ["pending", "paid", "overdue", "cancelled"],
+      charge_status: [
+        "pending",
+        "paid",
+        "overdue",
+        "cancelled",
+        "pending_invoice",
+      ],
       contract_status: ["active", "closed", "suspended", "renewing"],
       lead_stage: ["lead", "contact", "proposal", "negotiation", "closed"],
       plan_status: ["draft", "in_review", "approved", "archived"],
