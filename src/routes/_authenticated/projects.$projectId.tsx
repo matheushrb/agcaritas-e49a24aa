@@ -45,6 +45,14 @@ type Project = {
   start_date: string | null;
   end_date: string | null;
   created_at: string;
+  project_type: string | null;
+  billing_model: string | null;
+  urgency: string | null;
+  fixed_value: number | null;
+  monthly_value: number | null;
+  hourly_rate: number | null;
+  printing_budget: number | null;
+  notes: string | null;
   has_content_calendar?: boolean;
   has_content_grid?: boolean;
   has_timeline?: boolean;
