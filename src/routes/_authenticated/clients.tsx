@@ -263,6 +263,49 @@ function ClientsPage() {
       <NewClientDialog open={newOpen} onOpenChange={setNewOpen}
         onSubmit={v => create.mutate(v)} pending={create.isPending} />
 
+      <NewClientDialog
+        open={!!editingId && !!editingClient}
+        onOpenChange={(v) => { if (!v) setEditingId(null); }}
+        onSubmit={v => update.mutate(v)}
+        pending={update.isPending}
+        mode="edit"
+        initial={editingClient ? {
+          person_type: (editingClient.person_type as "PJ"|"PF") ?? "PJ",
+          tax_id: editingClient.tax_id ?? "",
+          name: editingClient.name ?? "",
+          legal_name: editingClient.legal_name ?? "",
+          trade_name: editingClient.trade_name ?? "",
+          state_registration: editingClient.state_registration ?? "",
+          municipal_registration: editingClient.municipal_registration ?? "",
+          cnae: editingClient.cnae ?? "",
+          legal_nature: editingClient.legal_nature ?? "",
+          opening_date: editingClient.opening_date ?? "",
+          size: editingClient.size ?? "",
+          segment: editingClient.segment ?? "",
+          status: editingClient.status ?? "prospect",
+          website: editingClient.website ?? "",
+          instagram: editingClient.instagram ?? "",
+          linkedin: editingClient.linkedin ?? "",
+          email: editingClient.email ?? "",
+          phone: editingClient.phone ?? "",
+          contact_name: editingClient.contact_name ?? "",
+          contact_role: editingClient.contact_role ?? "",
+          contact_email: editingClient.contact_email ?? "",
+          contact_phone: editingClient.contact_phone ?? "",
+          billing_email: editingClient.billing_email ?? "",
+          payment_terms: editingClient.payment_terms ?? "",
+          address_zip: editingClient.address_zip ?? "",
+          address_street: editingClient.address_street ?? "",
+          address_number: editingClient.address_number ?? "",
+          address_complement: editingClient.address_complement ?? "",
+          address_neighborhood: editingClient.address_neighborhood ?? "",
+          address_city: editingClient.address_city ?? "",
+          address_state: editingClient.address_state ?? "",
+          address_country: editingClient.address_country ?? "Brasil",
+          notes: editingClient.notes ?? "",
+        } : undefined}
+      />
+
     </>
   );
 }
