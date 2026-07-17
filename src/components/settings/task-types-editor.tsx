@@ -12,6 +12,8 @@ import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Plus, Trash2, GripVertical, Layers, Palette, Copy, Pencil, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { IconPicker, TaskTypeIcon } from "./icon-picker";
+import { PriceCalculatorButton } from "./price-calculator";
 
 export type StatusGroup = "todo" | "in_progress" | "review" | "done";
 
