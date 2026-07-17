@@ -1462,17 +1462,26 @@ function DeliverablesSection({
   onChange,
   onBill,
   billingPending,
+  canBill,
+  taskFinalized,
+  taskInvoiced,
 }: {
   deliverables: Deliverable[];
   onChange: (next: Deliverable[]) => void;
   onBill: (d: Deliverable) => void;
   billingPending: boolean;
+  canBill: boolean;
+  taskFinalized: boolean;
+  taskInvoiced: boolean;
 }) {
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+
   const add = () => {
+    const id = `d-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
     onChange([
       ...deliverables,
       {
-        id: `d-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+        id,
         platform: "",
         type: "",
         billing_enabled: false,
@@ -1480,15 +1489,25 @@ function DeliverablesSection({
         billing_value: null,
       },
     ]);
+    setExpandedId(id);
   };
   const update = (id: string, patch: Partial<Deliverable>) => {
     onChange(deliverables.map(d => (d.id === id ? { ...d, ...patch } : d)));
   };
-  const remove = (id: string) => onChange(deliverables.filter(d => d.id !== id));
+  const remove = (id: string) => {
+    onChange(deliverables.filter(d => d.id !== id));
+    if (expandedId === id) setExpandedId(null);
+  };
 
   const totalBillable = deliverables
     .filter(d => d.billing_enabled && d.billing_value)
     .reduce((sum, d) => sum + (d.billing_value ?? 0), 0);
+
+  const billHelper = taskFinalized
+    ? "Tarefa finalizada — reabra para faturar novos entregáveis."
+    : !taskInvoiced
+      ? "Fature a tarefa principal antes para lançar entregáveis como sub-itens da mesma fatura."
+      : null;
 
   return (
     <div>
@@ -1504,124 +1523,175 @@ function DeliverablesSection({
           Nenhum entregável nesta tarefa. Adicione um para separar plataforma, canal, data de entrega, link e valor.
         </div>
       ) : (
-        <div className="space-y-2">
-          {deliverables.map((d, i) => (
-            <div key={d.id} className="rounded-xl bg-card border border-border p-3 space-y-2.5">
-              <div className="flex items-center justify-between">
-                <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
-                  Entregável {i + 1}
-                  {d.invoiced && <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 px-1.5 py-0.5 text-[10px] font-medium normal-case tracking-normal"><Check className="h-2.5 w-2.5" />Faturado</span>}
-                </span>
-                <Button size="icon" variant="ghost" className="h-6 w-6 rounded-full text-muted-foreground hover:text-destructive" onClick={() => remove(d.id)}>
-                  <X className="h-3 w-3" />
-                </Button>
-              </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          {deliverables.map((d, i) => {
+            const isOpen = expandedId === d.id;
+            const platLabel = d.platform ? platformLabel(d.platform) : "—";
+            const typeLabel = d.type ? (DELIVERY_TYPE_OPTIONS.find(o => o.value === d.type)?.label ?? d.type) : "";
+            const title = [typeLabel, platLabel !== "—" ? `no ${platLabel}` : ""].filter(Boolean).join(" ") || `Entregável ${i + 1}`;
 
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-1.5">
-                <div>
-                  <label className="text-[10px] text-muted-foreground uppercase">Plataforma</label>
-                  <Select value={d.platform || "none"} onValueChange={v => update(d.id, { platform: v === "none" ? "" : v })}>
-                    <SelectTrigger className="h-8 rounded-lg text-xs mt-1"><SelectValue placeholder="—" /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">—</SelectItem>
-                      {PLATFORM_OPTIONS.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <label className="text-[10px] text-muted-foreground uppercase">Tipo</label>
-                  <Select value={d.type || "none"} onValueChange={v => update(d.id, { type: v === "none" ? "" : v })}>
-                    <SelectTrigger className="h-8 rounded-lg text-xs mt-1"><SelectValue placeholder="—" /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">—</SelectItem>
-                      {DELIVERY_TYPE_OPTIONS.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <label className="text-[10px] text-muted-foreground uppercase">Canal</label>
-                  <Input
-                    value={d.channel ?? ""}
-                    onChange={e => update(d.id, { channel: e.target.value || null })}
-                    placeholder="Ex: @caritas"
-                    className="h-8 rounded-lg text-xs mt-1"
-                  />
-                </div>
-                <div>
-                  <label className="text-[10px] text-muted-foreground uppercase">Entregue em</label>
-                  <Input
-                    type="date"
-                    value={d.delivered_date ?? ""}
-                    onChange={e => update(d.id, { delivered_date: e.target.value || null })}
-                    className="h-8 rounded-lg text-xs mt-1"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="text-[10px] text-muted-foreground uppercase">Link da entrega</label>
-                <Input
-                  value={d.link ?? ""}
-                  onChange={e => update(d.id, { link: e.target.value || null })}
-                  placeholder="https://…"
-                  className="h-8 rounded-lg text-xs mt-1"
-                />
-              </div>
-
-              <div className="flex items-center justify-between pt-1.5 border-t border-border">
-                <span className="text-[11px] text-muted-foreground">Faturar este entregável</span>
-                <Switch
-                  checked={d.billing_enabled}
-                  onCheckedChange={v => update(d.id, { billing_enabled: v })}
-                />
-              </div>
-
-              {d.billing_enabled && (
-                <div className="space-y-1.5">
-                  <div className="grid grid-cols-2 gap-1.5">
-                    <Select
-                      value={d.billing_model ?? "none"}
-                      onValueChange={v => update(d.id, { billing_model: v === "none" ? null : (v as BillingModel) })}
-                    >
-                      <SelectTrigger className="h-8 rounded-lg text-xs">
-                        <SelectValue placeholder="Modelo" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="none">—</SelectItem>
-                        <SelectItem value="per_task">Por tarefa</SelectItem>
-                        <SelectItem value="hourly">Por hora</SelectItem>
-                        <SelectItem value="one_time">Fixo</SelectItem>
-                        <SelectItem value="package">Pacote</SelectItem>
-                        <SelectItem value="monthly">Recorrente</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <div className="flex items-center gap-1 rounded-lg border border-border px-2 h-8">
-                      <span className="text-[11px] text-muted-foreground">R$</span>
-                      <Input
-                        type="number"
-                        min={0}
-                        step={0.01}
-                        value={d.billing_value ?? ""}
-                        onChange={e => update(d.id, { billing_value: e.target.value ? Number(e.target.value) : null })}
-                        className="h-7 border-none bg-transparent p-0 text-xs shadow-none focus-visible:ring-0"
-                        placeholder="0,00"
-                      />
+            if (!isOpen) {
+              return (
+                <button
+                  key={d.id}
+                  type="button"
+                  onClick={() => setExpandedId(d.id)}
+                  className="text-left rounded-xl bg-card border border-border p-3 hover:border-primary/40 hover:shadow-sm transition-all group sm:col-span-1 col-span-1"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-1.5 mb-1">
+                        <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">#{i + 1}</span>
+                        {d.invoiced && (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 px-1.5 py-0.5 text-[10px] font-medium"><Check className="h-2.5 w-2.5" />Lançado</span>
+                        )}
+                        {d.billing_enabled && !d.invoiced && (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 text-primary px-1.5 py-0.5 text-[10px] font-medium">Faturável</span>
+                        )}
+                      </div>
+                      <div className="text-sm font-medium truncate">{title}</div>
+                      <div className="mt-1 flex items-center gap-2 text-[11px] text-muted-foreground">
+                        {d.channel && <span className="truncate">{d.channel}</span>}
+                        {d.delivered_date && <span>· {new Date(d.delivered_date + "T00:00:00").toLocaleDateString("pt-BR")}</span>}
+                      </div>
+                    </div>
+                    <div className="text-right shrink-0">
+                      {d.billing_enabled && d.billing_value != null && (
+                        <div className="text-sm font-semibold">R$ {d.billing_value.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</div>
+                      )}
                     </div>
                   </div>
-                  <Button
-                    size="sm"
-                    className="w-full rounded-full gap-1.5 h-8 text-xs"
-                    disabled={!d.billing_value || d.billing_value <= 0 || billingPending || d.invoiced}
-                    onClick={() => onBill(d)}
-                  >
-                    {d.invoiced ? <><Check className="h-3.5 w-3.5" />Lançado</> : <><DollarSign className="h-3.5 w-3.5" />Faturar entregável</>}
-                  </Button>
+                </button>
+              );
+            }
+
+            return (
+              <div key={d.id} className="rounded-xl bg-card border border-primary/40 p-3 space-y-2.5 sm:col-span-2 col-span-1">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+                    Entregável {i + 1}
+                    {d.invoiced && <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 px-1.5 py-0.5 text-[10px] font-medium normal-case tracking-normal"><Check className="h-2.5 w-2.5" />Faturado</span>}
+                  </span>
+                  <div className="flex items-center gap-1">
+                    <Button size="sm" variant="ghost" className="h-7 rounded-full text-xs" onClick={() => setExpandedId(null)}>
+                      Recolher
+                    </Button>
+                    <Button size="icon" variant="ghost" className="h-6 w-6 rounded-full text-muted-foreground hover:text-destructive" onClick={() => remove(d.id)}>
+                      <X className="h-3 w-3" />
+                    </Button>
+                  </div>
                 </div>
-              )}
-            </div>
-          ))}
+
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-1.5">
+                  <div>
+                    <label className="text-[10px] text-muted-foreground uppercase">Plataforma</label>
+                    <Select value={d.platform || "none"} onValueChange={v => update(d.id, { platform: v === "none" ? "" : v })}>
+                      <SelectTrigger className="h-8 rounded-lg text-xs mt-1"><SelectValue placeholder="—" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">—</SelectItem>
+                        {PLATFORM_OPTIONS.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <label className="text-[10px] text-muted-foreground uppercase">Tipo</label>
+                    <Select value={d.type || "none"} onValueChange={v => update(d.id, { type: v === "none" ? "" : v })}>
+                      <SelectTrigger className="h-8 rounded-lg text-xs mt-1"><SelectValue placeholder="—" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">—</SelectItem>
+                        {DELIVERY_TYPE_OPTIONS.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <label className="text-[10px] text-muted-foreground uppercase">Canal</label>
+                    <Input
+                      value={d.channel ?? ""}
+                      onChange={e => update(d.id, { channel: e.target.value || null })}
+                      placeholder="Ex: @caritas"
+                      className="h-8 rounded-lg text-xs mt-1"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] text-muted-foreground uppercase">Entregue em</label>
+                    <Input
+                      type="date"
+                      value={d.delivered_date ?? ""}
+                      onChange={e => update(d.id, { delivered_date: e.target.value || null })}
+                      className="h-8 rounded-lg text-xs mt-1"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-[10px] text-muted-foreground uppercase">Link da entrega</label>
+                  <Input
+                    value={d.link ?? ""}
+                    onChange={e => update(d.id, { link: e.target.value || null })}
+                    placeholder="https://…"
+                    className="h-8 rounded-lg text-xs mt-1"
+                  />
+                </div>
+
+                <div className="flex items-center justify-between pt-1.5 border-t border-border">
+                  <span className="text-[11px] text-muted-foreground">Faturar este entregável</span>
+                  <Switch
+                    checked={d.billing_enabled}
+                    onCheckedChange={v => update(d.id, { billing_enabled: v })}
+                  />
+                </div>
+
+                {d.billing_enabled && (
+                  <div className="space-y-1.5">
+                    <div className="grid grid-cols-2 gap-1.5">
+                      <Select
+                        value={d.billing_model ?? "none"}
+                        onValueChange={v => update(d.id, { billing_model: v === "none" ? null : (v as BillingModel) })}
+                      >
+                        <SelectTrigger className="h-8 rounded-lg text-xs">
+                          <SelectValue placeholder="Modelo" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">—</SelectItem>
+                          <SelectItem value="per_task">Por tarefa</SelectItem>
+                          <SelectItem value="hourly">Por hora</SelectItem>
+                          <SelectItem value="one_time">Fixo</SelectItem>
+                          <SelectItem value="package">Pacote</SelectItem>
+                          <SelectItem value="monthly">Recorrente</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <div className="flex items-center gap-1 rounded-lg border border-border px-2 h-8">
+                        <span className="text-[11px] text-muted-foreground">R$</span>
+                        <Input
+                          type="number"
+                          min={0}
+                          step={0.01}
+                          value={d.billing_value ?? ""}
+                          onChange={e => update(d.id, { billing_value: e.target.value ? Number(e.target.value) : null })}
+                          className="h-7 border-none bg-transparent p-0 text-xs shadow-none focus-visible:ring-0"
+                          placeholder="0,00"
+                        />
+                      </div>
+                    </div>
+                    <Button
+                      size="sm"
+                      className="w-full rounded-full gap-1.5 h-8 text-xs"
+                      disabled={!d.billing_value || d.billing_value <= 0 || billingPending || d.invoiced || !canBill}
+                      onClick={() => onBill(d)}
+                      title={billHelper ?? undefined}
+                    >
+                      {d.invoiced ? <><Check className="h-3.5 w-3.5" />Lançado</> : <><DollarSign className="h-3.5 w-3.5" />Faturar entregável</>}
+                    </Button>
+                    {billHelper && !d.invoiced && (
+                      <p className="text-[10px] text-muted-foreground leading-relaxed">{billHelper}</p>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })}
           {totalBillable > 0 && (
-            <div className="rounded-xl bg-muted/40 px-3 py-2 text-xs flex items-center justify-between">
+            <div className="sm:col-span-2 rounded-xl bg-muted/40 px-3 py-2 text-xs flex items-center justify-between">
               <span className="text-muted-foreground">Total faturável</span>
               <span className="font-semibold">R$ {totalBillable.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</span>
             </div>
