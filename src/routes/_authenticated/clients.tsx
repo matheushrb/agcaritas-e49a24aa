@@ -338,15 +338,16 @@ export function NewClientDialog({
       address_country: form.address_country || null,
       notes: form.notes || null,
     };
-    onCreate(payload);
+    onSubmit(payload);
   };
 
   return (
     <EntityDialog
       open={open} onOpenChange={handleOpen}
       icon={UsersIcon} tone="emerald" eyebrow="Clientes"
-      title="Novo cliente"
+      title={mode === "edit" ? "Editar cliente" : "Novo cliente"}
       subtitle="Cadastro fiscal, comercial e operacional — CNPJ preenche o restante automaticamente."
+
       size="lg"
       main={
         <Tabs value={tab} onValueChange={setTab} className="w-full">
