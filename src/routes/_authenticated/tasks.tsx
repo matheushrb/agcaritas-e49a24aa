@@ -352,6 +352,8 @@ function createLocalTask(overrides: Partial<Task> = {}): Task {
     broadcast_kind: null,
     recorded_at: null,
     aired_at: null,
+    recorded_dates: [],
+    aired_dates: [],
     created_at: new Date().toISOString(),
     ...overrides,
   };
