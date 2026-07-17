@@ -29,7 +29,7 @@ type Invoice = {
   status: InvoiceStatus; issue_date: string; due_date: string | null;
   total: number | null; amount: number; paid_at: string | null; notes: string | null;
 };
-type Client = { id: string; name: string; document?: string | null; email?: string | null };
+type Client = { id: string; name: string; tax_id?: string | null; email?: string | null };
 type Project = { id: string; name: string; client_id: string | null };
 type PendingCharge = {
   id: string; description: string; amount: number; due_date: string;
@@ -76,7 +76,7 @@ function InvoicesPage() {
   const { data: clients = [] } = useQuery<Client[]>({
     queryKey: ["clients-basic"],
     queryFn: async () => {
-      const { data } = await supabase.from("clients").select("id,name,document,email").order("name");
+      const { data } = await supabase.from("clients").select("id,name,tax_id,email").order("name");
       return (data ?? []) as Client[];
     },
   });
@@ -270,6 +270,7 @@ function NewInvoiceWizard({
 
       const { data: invoice, error: invErr } = await supabase.from("invoices").insert({
         organization_id: profile.organization_id,
+        number: "",
         client_id: payerClient || null,
         project_id: singleProject,
         issue_date: issueDate,
