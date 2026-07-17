@@ -723,7 +723,7 @@ export function TaskModal({
                 />
 
                 {/* Propriedades — estilo ClickUp / Monday / Notion (inline, sem cards) */}
-                <div className="flex flex-wrap items-center gap-1">
+                <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
                   <InlineField label="Status">
                     <StatusPicker value={status} onChange={v => { setStatus(v); save.mutate({ status: v }); }} inline />
                   </InlineField>
@@ -731,33 +731,52 @@ export function TaskModal({
                     <PriorityPicker value={priority} onChange={v => { setPriority(v); save.mutate({ priority: v }); }} inline />
                   </InlineField>
                   <InlineField label="Prazo">
-                    <DatePicker value={dueDate} overdue={!!overdue} onChange={v => { setDueDate(v); save.mutate({ due_date: v || null }); }} inline />
+                    <DueDatePicker
+                      value={dueDate}
+                      overdue={!!overdue}
+                      onChange={v => { setDueDate(v); save.mutate({ due_date: v || null }); }}
+                    />
+                  </InlineField>
+                  <InlineField label="Responsável">
+                    <AssigneePicker
+                      value={assigneeId}
+                      members={teamMembers}
+                      onChange={v => { setAssigneeId(v); save.mutate({ assignee_id: v || null }); }}
+                    />
                   </InlineField>
                   <InlineField label="Progresso">
                     <Popover>
                       <PopoverTrigger asChild>
-                        <button className="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium hover:bg-muted transition-colors">
-                          <div className="h-1.5 w-8 rounded-full bg-muted overflow-hidden">
-                            <div className="h-full bg-primary rounded-full" style={{ width: `${progress}%` }} />
+                        <button
+                          type="button"
+                          className="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium hover:bg-muted transition-colors"
+                          title="Calculado automaticamente"
+                        >
+                          <div className="h-1.5 w-16 rounded-full bg-muted overflow-hidden">
+                            <div className="h-full bg-primary rounded-full transition-all" style={{ width: `${computedProgress}%` }} />
                           </div>
-                          <span className="tabular-nums">{progress}%</span>
+                          <span className="tabular-nums">{computedProgress}%</span>
                         </button>
                       </PopoverTrigger>
-                      <PopoverContent align="start" className="p-3 w-56 rounded-xl">
-                        <div className="space-y-2">
-                          <div className="flex items-center justify-between text-xs text-muted-foreground">
-                            <span>Progresso</span>
-                            <span className="tabular-nums">{progress}%</span>
-                          </div>
-                          <input
-                            type="range" min={0} max={100} step={5}
-                            value={progress}
-                            onChange={e => setProgress(Number(e.target.value))}
-                            onMouseUp={() => save.mutate({ progress })}
-                            onTouchEnd={() => save.mutate({ progress })}
-                            className="w-full accent-primary"
-                          />
-                        </div>
+                      <PopoverContent align="start" className="p-3 w-64 rounded-xl">
+                        <div className="text-xs font-semibold mb-2">Progresso automático</div>
+                        <ul className="space-y-1 text-xs text-muted-foreground">
+                          <li className="flex items-center justify-between">
+                            <span>Etapas concluídas</span>
+                            <span className="tabular-nums text-foreground">{stagesDoneCount} / {STAGE_ORDER.length}</span>
+                          </li>
+                          <li className="flex items-center justify-between">
+                            <span>Subtarefas feitas</span>
+                            <span className="tabular-nums text-foreground">{subtasksDone} / {subtasks.length}</span>
+                          </li>
+                          <li className="flex items-center justify-between pt-1 border-t border-border mt-1">
+                            <span>Total</span>
+                            <span className="tabular-nums text-foreground font-semibold">{computedProgress}%</span>
+                          </li>
+                        </ul>
+                        <p className="mt-2 text-[11px] text-muted-foreground">
+                          O progresso é calculado a partir das etapas do fluxo e das subtarefas concluídas.
+                        </p>
                       </PopoverContent>
                     </Popover>
                   </InlineField>
