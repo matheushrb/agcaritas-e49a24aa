@@ -206,6 +206,7 @@ function ProjectsPage() {
                 project={p}
                 clientName={p.client_id ? clientById[p.client_id] ?? "Cliente" : null}
                 counts={taskCounts[p.id] ?? { total: 0, overdue: 0 }}
+                revenue={revenueByProject[p.id] ?? 0}
               />
             ))}
           </div>
