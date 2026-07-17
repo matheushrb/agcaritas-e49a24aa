@@ -1041,18 +1041,7 @@ export function TaskModal({
                   </SidebarRow>
                 </SidebarSection>
 
-                <DeliverablesSection
-                  deliverables={deliverables}
-                  onChange={(next) => {
-                    setDeliverables(next);
-                    // manter platform legado sincronizado (comma-joined)
-                    const legacyPlatform = next.map(d => d.platform).filter(Boolean).join(",");
-                    setPlatform(legacyPlatform);
-                    save.mutate({ deliverables: next, platform: legacyPlatform || null });
-                  }}
-                  onBill={(d) => billDeliverable.mutate(d)}
-                  billingPending={billDeliverable.isPending}
-                />
+
 
 
 
