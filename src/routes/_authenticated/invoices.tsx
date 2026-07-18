@@ -315,7 +315,7 @@ function NewInvoiceWizard({
     queryFn: async () => {
       const { data } = await supabase
         .from("tasks")
-        .select("id,title,billing_value,billing_enabled,client_id,project_id,status,deliverables")
+        .select("id,title,billing_value,billing_enabled,client_id,project_id,status,deliverables,due_date,aired_at,aired_dates,recorded_at,recorded_dates")
         .eq("billing_enabled", true);
       const ts = (data ?? []) as BillableTask[];
       // Cobranças já existentes (main sem deliverable_id, e por entregável)
