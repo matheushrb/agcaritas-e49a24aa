@@ -150,13 +150,13 @@ export async function generateInvoicePDF(data: InvoicePDFData): Promise<jsPDF> {
   const total = subtotal - Number(data.discount ?? 0) + Number(data.taxes ?? 0);
 
   /* ============================================================
-     CARD PRINCIPAL — imita a "Prévia da fatura" do wizard.
-     Borda azul-clara, cabeçalho azul sólido, corpo branco.
+     CARD PRINCIPAL — sóbrio, azul apenas nos destaques.
+     Fundo branco, borda azul-clara, título/número em azul do sistema.
      ============================================================ */
   const cardX = marginX;
   const cardW = contentW;
   const cardY = 14;                       // topo do card
-  const headerH = 12;                     // barra azul do topo
+  const headerH = 12;                     // faixa do topo
   const bodyPadX = 9;
   const bodyPadY = 7;
   const innerX = cardX + bodyPadX;
@@ -166,22 +166,23 @@ export async function generateInvoicePDF(data: InvoicePDFData): Promise<jsPDF> {
   setColor(doc, PDF_COLORS.hairline, "draw"); doc.setLineWidth(0.5);
   doc.roundedRect(cardX, cardY, cardW, pageH - cardY - 22, 3, 3);
 
-  // --- header azul ---
-  setColor(doc, PDF_COLORS.graphite, "fill");
+  // --- header sóbrio com destaque azul ---
+  setColor(doc, PDF_COLORS.white, "fill");
   doc.roundedRect(cardX, cardY, cardW, headerH, 3, 3, "F");
-  // "corta" cantos inferiores do header (retângulo por cima da parte de baixo)
-  doc.rect(cardX, cardY + headerH - 3, cardW, 3, "F");
+  // borda inferior do header em azul claro
+  setColor(doc, PDF_COLORS.hairline, "draw"); doc.setLineWidth(0.3);
+  doc.line(cardX + 3, cardY + headerH, cardX + cardW - 3, cardY + headerH);
 
   // logo mini (se houver)
   if (logoDataUrl) {
     try { doc.addImage(logoDataUrl, "PNG", cardX + 6, cardY + 2, 8, 8); } catch { /* ignore */ }
   }
-  // título do header
-  setColor(doc, PDF_COLORS.white, "text");
+  // título do header em azul (destaque)
+  setColor(doc, PDF_COLORS.graphite, "text");
   doc.setFont("helvetica", "bold"); doc.setFontSize(9);
   const titleTxt = data.is_preview ? "PRÉVIA DA FATURA" : "FATURA";
   doc.text(titleTxt, cardX + (logoDataUrl ? 18 : 8), cardY + 8, { charSpace: 0.8 });
-  // número à direita (fonte mono-like)
+  // número à direita em azul (destaque)
   doc.setFont("courier", "bold"); doc.setFontSize(11);
   doc.text(data.number, cardX + cardW - 8, cardY + 8, { align: "right" });
 
