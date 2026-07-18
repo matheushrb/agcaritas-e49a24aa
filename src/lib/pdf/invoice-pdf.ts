@@ -356,18 +356,21 @@ export async function generateInvoicePDF(data: InvoicePDFData): Promise<jsPDF> {
     y += rowH;
   }
 
+  // Espaço entre a última linha de itens e o Total a pagar
+  y += 4;
+
   // Linha "Total a pagar" com tint azul-clarissimo
-  const totalRowH = 8;
+  const totalRowH = 9;
   setColor(doc, PDF_COLORS.paper, "fill");
   doc.rect(tableX, y, tableW, totalRowH, "F");
   setColor(doc, PDF_COLORS.hairline, "draw"); doc.setLineWidth(0.2);
   doc.rect(tableX, y, tableW, totalRowH);
   setColor(doc, PDF_COLORS.ink, "text");
   doc.setFont("helvetica", "bold"); doc.setFontSize(8);
-  doc.text("TOTAL A PAGAR", tableX + descColW - rowPadX, y + 5.4, { align: "right", charSpace: 0.6 });
+  doc.text("TOTAL A PAGAR", tableX + descColW - rowPadX, y + 5.8, { align: "right", charSpace: 0.6 });
   setColor(doc, PDF_COLORS.graphite, "text");
   doc.setFont("helvetica", "bold"); doc.setFontSize(10.5);
-  doc.text(brl(total), tableX + tableW - rowPadX, y + 5.6, { align: "right" });
+  doc.text(brl(total), tableX + tableW - rowPadX, y + 6, { align: "right" });
   y += totalRowH + 6;
 
   // Bordas externas da tabela (contorno cinza)
