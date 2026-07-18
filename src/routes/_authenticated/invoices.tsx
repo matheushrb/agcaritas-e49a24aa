@@ -951,9 +951,10 @@ function NewInvoiceWizard({
                 </div>
               );
             })()}
-
+           </div>
           </div>
         )}
+
 
         <DialogFooter className="gap-2">
           {step > 1 && <Button variant="ghost" onClick={() => setStep(step - 1)}><ArrowLeft className="h-4 w-4 mr-1" />Voltar</Button>}
