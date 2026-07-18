@@ -72,17 +72,17 @@ export function drawIndustrialHeader(doc: jsPDF, opts: {
     setColor(doc, PDF_COLORS.hairline, "draw"); doc.setLineWidth(0.3);
     doc.rect(logoX, logoY, logoSize, logoSize);
     setColor(doc, PDF_COLORS.muted, "text");
-    doc.setFont("helvetica", "bold"); doc.setFontSize(6);
+    doc.setFont("LiberationSans", "bold"); doc.setFontSize(6);
     doc.text("LOGO", logoX + logoSize / 2, logoY + logoSize / 2 + 1, { align: "center", charSpace: 0.4 });
   }
 
   // Wordmark (deslocado para a direita da logo)
   const textX = logoX + logoSize + 5;
   setColor(doc, PDF_COLORS.ink, "text");
-  doc.setFont("helvetica", "bold");
+  doc.setFont("LiberationSans", "bold");
   doc.setFontSize(16);
   doc.text("CARITAS", textX, 20);
-  doc.setFont("helvetica", "normal");
+  doc.setFont("LiberationSans", "normal");
   doc.setFontSize(8);
   setColor(doc, PDF_COLORS.muted, "text");
   doc.text("AGÊNCIA · GESTÃO CRIATIVA", textX, 25);
@@ -90,18 +90,18 @@ export function drawIndustrialHeader(doc: jsPDF, opts: {
   // Bloco à direita: tipo de documento + número
   const rightX = pageW - marginX;
   setColor(doc, PDF_COLORS.muted, "text");
-  doc.setFont("helvetica", "bold");
+  doc.setFont("LiberationSans", "bold");
   doc.setFontSize(7.5);
   doc.text(opts.documentKind, rightX, 18, { align: "right" });
 
   setColor(doc, PDF_COLORS.ink, "text");
-  doc.setFont("helvetica", "bold");
+  doc.setFont("LiberationSans", "bold");
   doc.setFontSize(22);
   doc.text(opts.documentNumber, rightX, 27, { align: "right" });
 
   if (opts.competence) {
     setColor(doc, PDF_COLORS.muted, "text");
-    doc.setFont("helvetica", "normal");
+    doc.setFont("LiberationSans", "normal");
     doc.setFontSize(8);
     doc.text(opts.competence, rightX, 32, { align: "right" });
   }
@@ -122,7 +122,7 @@ export function drawIndustrialFooter(doc: jsPDF, opts: { pageLabel?: string; not
   doc.line(marginX, pageH - 16, pageW - marginX, pageH - 16);
 
   setColor(doc, PDF_COLORS.muted, "text");
-  doc.setFont("helvetica", "normal");
+  doc.setFont("LiberationSans", "normal");
   doc.setFontSize(7.5);
   doc.text(opts.note ?? "Documento gerado eletronicamente por Caritas Agência.", marginX, pageH - 10);
   if (opts.pageLabel) doc.text(opts.pageLabel, pageW - marginX, pageH - 10, { align: "right" });
@@ -133,7 +133,7 @@ export function drawIndustrialFooter(doc: jsPDF, opts: { pageLabel?: string; not
  */
 export function drawSectionLabel(doc: jsPDF, y: number, label: string, maxX?: number) {
   setColor(doc, PDF_COLORS.muted, "text");
-  doc.setFont("helvetica", "bold");
+  doc.setFont("LiberationSans", "bold");
   doc.setFontSize(7.5);
   doc.text(label.toUpperCase(), PDF_LAYOUT.marginX, y, { charSpace: 0.6 });
   setColor(doc, PDF_COLORS.hairline, "draw");
@@ -147,11 +147,11 @@ export function drawSectionLabel(doc: jsPDF, y: number, label: string, maxX?: nu
  */
 export function drawKV(doc: jsPDF, x: number, y: number, key: string, value: string, width = 60) {
   setColor(doc, PDF_COLORS.muted, "text");
-  doc.setFont("helvetica", "normal");
+  doc.setFont("LiberationSans", "normal");
   doc.setFontSize(7.5);
   doc.text(key.toUpperCase(), x, y, { charSpace: 0.4 });
   setColor(doc, PDF_COLORS.ink, "text");
-  doc.setFont("helvetica", "bold");
+  doc.setFont("LiberationSans", "bold");
   doc.setFontSize(10);
   const lines = doc.splitTextToSize(value || "—", width);
   doc.text(lines, x, y + 5);
