@@ -440,7 +440,7 @@ export async function generateInvoicePDF(data: InvoicePDFData): Promise<jsPDF> {
     doc.setFont("helvetica", "normal"); doc.setFontSize(5.8);
     const linkLines = doc.splitTextToSize(paymentPayload, qrBoxW - 6);
     doc.text(linkLines.slice(0, 3), qrBoxX + qrBoxW / 2, qrY + qrSize + 5, { align: "center" });
-    if (/^https?:\/\/\//i.test(paymentPayload)) {
+    if (/^https?:\/\//i.test(paymentPayload)) {
       doc.link(qrX, qrY, qrSize, qrSize, { url: paymentPayload });
     }
   } else {
