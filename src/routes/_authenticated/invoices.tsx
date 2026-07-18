@@ -285,7 +285,26 @@ function NewInvoiceWizard({
   const [notes, setNotes] = useState(DEFAULT_LEGAL_NOTES);
   const [paymentTerms, setPaymentTerms] = useState(DEFAULT_PAYMENT_TERMS);
   const [paymentLink, setPaymentLink] = useState("");
+  const [previewNumber, setPreviewNumber] = useState<string>("—");
   const [submitting, setSubmitting] = useState(false);
+
+  // Calcula o número da fatura em tempo real quando a data de emissão muda
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const issue = issueDate || new Date().toISOString().slice(0, 10);
+      const ym = issue.slice(0, 7).replace("-", "");
+      const { data } = await supabase.from("invoices").select("number").like("number", `${ym}-%`);
+      let max = 0;
+      for (const r of (data ?? []) as Array<{ number: string | null }>) {
+        const n = parseInt(String(r.number ?? "").split("-")[1] ?? "0", 10);
+        if (!isNaN(n) && n > max) max = n;
+      }
+      if (!cancelled) setPreviewNumber(`${ym}-${String(max + 1).padStart(4, "0")}`);
+    })();
+    return () => { cancelled = true; };
+  }, [issueDate]);
+
 
   const [selectedDeliverables, setSelectedDeliverables] = useState<Set<string>>(new Set());
 
@@ -818,10 +837,116 @@ function NewInvoiceWizard({
                 Se preenchido, um QR Code é gerado no PDF apontando para este link.
               </p>
             </div>
-            <div className="rounded-lg border p-3 bg-muted/30 flex items-center justify-between">
-              <span className="text-sm">{selectedCharges.size + selectedTasks.size + selectedDeliverables.size} item(ns)</span>
-              <span className="text-lg font-semibold">{money(total)}</span>
-            </div>
+            {/* ------- Prévia da fatura ------- */}
+            {(() => {
+              const clientObj = clients.find(c => c.id === payerClient);
+              const clientParty = buildClientParty(clientObj);
+              const agencyParty = buildAgencyParty(organization) ?? { name: "Caritas Agência", legal_name: null, document: null, email: null, phone: null, address: null, website: null, bank_info: null };
+
+              return (
+                <div className="rounded-lg border-2 border-primary/20 bg-card overflow-hidden">
+                  <div className="bg-primary text-primary-foreground px-4 py-2 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <FileText className="h-4 w-4" />
+                      <span className="text-xs font-semibold tracking-wider uppercase">Prévia da fatura</span>
+                    </div>
+                    <span className="font-mono text-sm font-bold">{previewNumber}</span>
+                  </div>
+                  <div className="p-4 space-y-3 text-xs">
+                    {/* topo: emissão / vencimento / total */}
+                    <div className="grid grid-cols-3 gap-3 pb-3 border-b">
+                      <div>
+                        <div className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">Emitida em</div>
+                        <div className="font-semibold text-sm">{fmtDate(issueDate)}</div>
+                      </div>
+                      <div>
+                        <div className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">Vencimento</div>
+                        <div className="font-semibold text-sm">{dueDate ? fmtDate(dueDate) : "—"}</div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">Valor total</div>
+                        <div className="font-bold text-base text-primary">{money(total)}</div>
+                      </div>
+                    </div>
+
+                    {/* partes */}
+                    <div className="grid grid-cols-2 gap-4 pb-3 border-b">
+                      <div>
+                        <div className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground mb-1">Faturado para</div>
+                        <div className="font-semibold">{clientParty.legal_name || clientParty.company || clientParty.name || "—"}</div>
+                        {clientParty.document && <div className="text-muted-foreground">CNPJ/CPF: {clientParty.document}</div>}
+                        {clientParty.email && <div className="text-muted-foreground truncate">{clientParty.email}</div>}
+                      </div>
+                      <div>
+                        <div className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground mb-1">Emitido por</div>
+                        <div className="font-semibold">{agencyParty.legal_name || agencyParty.name || "Caritas Agência"}</div>
+                        {agencyParty.document && <div className="text-muted-foreground">CNPJ: {agencyParty.document}</div>}
+                        {agencyParty.email && <div className="text-muted-foreground truncate">{agencyParty.email}</div>}
+                      </div>
+                    </div>
+
+                    {/* itens */}
+                    <div>
+                      <div className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground mb-1">Itens ({previewLines.length})</div>
+                      <div className="rounded border overflow-hidden">
+                        <div className="grid grid-cols-[1fr_80px_100px] gap-2 px-2 py-1 bg-muted/50 text-[9px] font-bold uppercase tracking-wider text-muted-foreground">
+                          <div>Descrição</div><div>Data</div><div className="text-right">Total</div>
+                        </div>
+                        {previewLines.length === 0 && (
+                          <div className="px-2 py-3 text-center text-muted-foreground">Nenhum item selecionado.</div>
+                        )}
+                        {previewLines.map((l, i) => (
+                          <div key={i} className={cn(
+                            "grid grid-cols-[1fr_80px_100px] gap-2 px-2 py-1.5 border-t items-center",
+                            i % 2 === 1 && "bg-muted/20",
+                          )}>
+                            <div className={cn("truncate", l.is_child && "pl-4 text-muted-foreground")}>
+                              {l.is_child && "↳ "}{l.title}
+                            </div>
+                            <div className="text-[10px] text-muted-foreground">{l.reference_date ? fmtDate(l.reference_date) : "—"}</div>
+                            <div className="text-right font-semibold">{money(l.amount)}</div>
+                          </div>
+                        ))}
+                        <div className="grid grid-cols-[1fr_80px_100px] gap-2 px-2 py-2 border-t bg-primary/5">
+                          <div className="col-span-2 text-right font-bold uppercase text-[10px] tracking-wider">Total a pagar</div>
+                          <div className="text-right font-bold text-primary">{money(total)}</div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* condições / observações / link */}
+                    <div className="grid grid-cols-2 gap-3 pt-2">
+                      <div className="space-y-2">
+                        <div>
+                          <div className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">Condições de pagamento</div>
+                          <div className="text-[11px] leading-relaxed whitespace-pre-wrap">{paymentTerms || "—"}</div>
+                        </div>
+                        <div>
+                          <div className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">Observações legais</div>
+                          <div className="text-[11px] leading-relaxed whitespace-pre-wrap text-muted-foreground">{notes || "—"}</div>
+                        </div>
+                      </div>
+                      <div className="rounded border border-dashed p-3 flex flex-col items-center justify-center text-center bg-muted/20">
+                        <div className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground mb-1">Pagamento</div>
+                        {paymentLink ? (
+                          <>
+                            <div className="w-16 h-16 bg-primary/10 border rounded flex items-center justify-center mb-2">
+                              <span className="text-[8px] text-primary font-semibold">QR CODE</span>
+                            </div>
+                            <div className="text-[10px] text-primary font-medium truncate max-w-full">{paymentLink}</div>
+                          </>
+                        ) : (
+                          <div className="text-[10px] text-muted-foreground italic">
+                            Anexe um link de pagamento para gerar o QR Code no PDF.
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
+
           </div>
         )}
 
