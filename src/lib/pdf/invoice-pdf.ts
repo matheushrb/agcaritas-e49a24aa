@@ -396,21 +396,21 @@ export async function generateInvoicePDF(data: InvoicePDFData): Promise<jsPDF> {
 
   // --- Coluna esquerda ---
   let ly = y;
-  setColor(doc, PDF_COLORS.muted, "text");
+  setColor(doc, PDF_COLORS.graphite, "text");
   doc.setFont("helvetica", "bold"); doc.setFontSize(6.6);
   doc.text("CONDIÇÕES DE PAGAMENTO", leftX, ly, { charSpace: 0.6 });
   ly += 4;
-  setColor(doc, PDF_COLORS.ink, "text");
+  setColor(doc, PDF_COLORS.black, "text");
   doc.setFont("helvetica", "normal"); doc.setFontSize(8);
   const terms = doc.splitTextToSize(data.payment_terms || DEFAULT_PAYMENT_TERMS, leftW);
   doc.text(terms, leftX, ly);
   ly += terms.length * 3.6 + 4;
 
-  setColor(doc, PDF_COLORS.muted, "text");
+  setColor(doc, PDF_COLORS.graphite, "text");
   doc.setFont("helvetica", "bold"); doc.setFontSize(6.6);
   doc.text("OBSERVAÇÕES LEGAIS", leftX, ly, { charSpace: 0.6 });
   ly += 4;
-  setColor(doc, PDF_COLORS.muted, "text");
+  setColor(doc, PDF_COLORS.black, "text");
   doc.setFont("helvetica", "normal"); doc.setFontSize(7.6);
   const legal = doc.splitTextToSize(data.notes || DEFAULT_LEGAL_NOTES, leftW);
   doc.text(legal, leftX, ly);
