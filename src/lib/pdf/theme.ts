@@ -1,6 +1,6 @@
 /**
  * Sistema de design tipográfico/industrial para PDFs (faturas e propostas).
- * Paleta densa, editorial, sem gradientes. Preto/grafite + acento sóbrio.
+ * Paleta sóbria: preto/cinza base, azul do sistema apenas para destaques.
  */
 import type { jsPDF } from "jspdf";
 
