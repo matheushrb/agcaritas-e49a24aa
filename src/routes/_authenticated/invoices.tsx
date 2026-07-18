@@ -365,6 +365,7 @@ function NewInvoiceWizard({
         if (d.invoiced) continue;
         if (invoicedDeliverableIds.has(d.id)) continue;
         const parts = [d.platform, d.channel, d.type].filter(Boolean).join(" • ");
+        const ref = deliverableReference(t, d);
         out.push({
           key: `${t.id}::${d.id}`,
           taskId: t.id,
@@ -374,6 +375,8 @@ function NewInvoiceWizard({
           amount,
           client_id: t.client_id,
           project_id: t.project_id,
+          reference_date: ref.reference_date,
+          reference_label: ref.reference_label,
         });
       }
     }
