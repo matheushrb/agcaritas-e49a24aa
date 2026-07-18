@@ -31,7 +31,16 @@ type Invoice = {
   total: number | null; amount: number; paid_at: string | null; notes: string | null;
   payment_terms: string | null; payment_link: string | null;
 };
-type Client = { id: string; name: string; tax_id?: string | null; email?: string | null };
+type Client = {
+  id: string; name: string;
+  tax_id?: string | null; email?: string | null;
+  legal_name?: string | null; company?: string | null; trade_name?: string | null;
+  state_registration?: string | null; billing_email?: string | null;
+  phone?: string | null; contact_name?: string | null; contact_role?: string | null;
+  address_street?: string | null; address_number?: string | null; address_complement?: string | null;
+  address_neighborhood?: string | null; address_city?: string | null; address_state?: string | null;
+  address_zip?: string | null; address_country?: string | null;
+};
 type Project = { id: string; name: string; client_id: string | null };
 type PendingCharge = {
   id: string; description: string; amount: number; due_date: string;
@@ -41,18 +50,86 @@ type Deliverable = {
   id: string; platform?: string | null; type?: string | null; channel?: string | null;
   billing_enabled?: boolean; billing_value?: number | null;
   delivered?: boolean; invoiced?: boolean;
+  delivered_at?: string | null; delivered_date?: string | null;
+  aired_at?: string | null; recorded_at?: string | null;
 };
 type BillableTask = {
   id: string; title: string; billing_value: number | null; billing_enabled: boolean;
   client_id: string | null; project_id: string | null; status: string | null;
   deliverables?: Deliverable[] | null;
+  due_date?: string | null;
+  aired_at?: string | null; aired_dates?: string[] | null;
+  recorded_at?: string | null; recorded_dates?: string[] | null;
 };
 type BillableDeliverable = {
   key: string; // taskId::deliverableId
   taskId: string; deliverableId: string; taskTitle: string;
   label: string; amount: number;
   client_id: string | null; project_id: string | null;
+  reference_date?: string | null; reference_label?: string;
 };
+type Organization = {
+  id: string; name: string | null;
+  legal_name?: string | null; tax_id?: string | null; email?: string | null;
+  phone?: string | null; address?: string | null; website?: string | null; bank_info?: string | null;
+};
+
+/* ---------- helpers de partes / datas ---------- */
+function formatClientAddress(c: Client): string | null {
+  const line1 = [c.address_street, c.address_number].filter(Boolean).join(", ");
+  const line2 = [c.address_complement, c.address_neighborhood].filter(Boolean).join(" · ");
+  const line3 = [
+    [c.address_city, c.address_state].filter(Boolean).join("/"),
+    c.address_zip ? `CEP ${c.address_zip}` : null,
+  ].filter(Boolean).join(" · ");
+  const joined = [line1, line2, line3].filter(Boolean).join("\n");
+  return joined || null;
+}
+function buildClientParty(c: Client | undefined) {
+  if (!c) return { name: "—" };
+  return {
+    name: c.name,
+    company: c.trade_name || c.company || null,
+    legal_name: c.legal_name || null,
+    document: c.tax_id || null,
+    state_registration: c.state_registration || null,
+    email: c.billing_email || c.email || null,
+    phone: c.phone || null,
+    address: formatClientAddress(c),
+    contact_name: c.contact_name || null,
+    contact_role: c.contact_role || null,
+  };
+}
+function buildAgencyParty(o: Organization | null | undefined) {
+  if (!o) return undefined;
+  return {
+    name: o.name ?? null,
+    legal_name: o.legal_name ?? null,
+    document: o.tax_id ?? null,
+    email: o.email ?? null,
+    phone: o.phone ?? null,
+    address: o.address ?? null,
+    website: o.website ?? null,
+    bank_info: o.bank_info ?? null,
+  };
+}
+function taskReference(t: Pick<BillableTask, "aired_at" | "aired_dates" | "recorded_at" | "recorded_dates" | "due_date">) {
+  const air = (t.aired_dates && t.aired_dates.length ? t.aired_dates[0] : null) ?? t.aired_at ?? null;
+  if (air) return { reference_date: air, reference_label: "Transmissão" };
+  const rec = (t.recorded_dates && t.recorded_dates.length ? t.recorded_dates[0] : null) ?? t.recorded_at ?? null;
+  if (rec) return { reference_date: rec, reference_label: "Gravação" };
+  if (t.due_date) return { reference_date: t.due_date, reference_label: "Prazo" };
+  return { reference_date: null as string | null, reference_label: "Referência" };
+}
+function deliverableReference(t: BillableTask, d: Deliverable) {
+  const delivered = d.delivered_at || d.delivered_date;
+  if (delivered) return { reference_date: delivered, reference_label: "Entregue em" };
+  const air = d.aired_at ?? null;
+  if (air) return { reference_date: air, reference_label: "Transmissão" };
+  const rec = d.recorded_at ?? null;
+  if (rec) return { reference_date: rec, reference_label: "Gravação" };
+  return taskReference(t);
+}
 
 const STATUS_META: Record<InvoiceStatus, { label: string; className: string }> = {
   draft:    { label: "Rascunho", className: "bg-muted text-muted-foreground" },
