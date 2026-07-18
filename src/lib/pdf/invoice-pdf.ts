@@ -422,7 +422,7 @@ export async function generateInvoicePDF(data: InvoicePDFData): Promise<jsPDF> {
   doc.roundedRect(qrBoxX, qrBoxY, qrBoxW, qrBoxH, 2, 2);
   if (doc.setLineDashPattern) doc.setLineDashPattern([], 0);
 
-  setColor(doc, PDF_COLORS.muted, "text");
+  setColor(doc, PDF_COLORS.graphite, "text");
   doc.setFont("helvetica", "bold"); doc.setFontSize(6.6);
   doc.text("PAGAMENTO", qrBoxX + qrBoxW / 2, qrBoxY + 5, { align: "center", charSpace: 0.6 });
 
