@@ -452,3 +452,87 @@ function NewEventDialog({ open, onOpenChange, defaultDate, onCreate }: {
     />
   );
 }
+
+function NewBlockDialog({ open, onOpenChange, defaultDate, onCreated }: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  defaultDate: string;
+  onCreated: () => void;
+}) {
+  const [kind, setKind] = useState<CalendarBlock["kind"]>("ferias");
+  const [startDate, setStartDate] = useState(defaultDate);
+  const [endDate, setEndDate] = useState(defaultDate);
+  const [reason, setReason] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (open) { setStartDate(defaultDate); setEndDate(defaultDate); setReason(""); setKind("ferias"); }
+  }, [open, defaultDate]);
+
+  const submit = async () => {
+    if (endDate < startDate) { toast.error("Data final deve ser maior ou igual à inicial"); return; }
+    setSaving(true);
+    try {
+      const { data: profile } = await supabase.from("profiles").select("organization_id").maybeSingle();
+      const { data: userRes } = await supabase.auth.getUser();
+      if (!profile?.organization_id || !userRes.user) throw new Error("Sessão inválida");
+      const { error } = await supabase.from("calendar_blocks" as any).insert({
+        organization_id: profile.organization_id,
+        user_id: userRes.user.id,
+        kind, start_date: startDate, end_date: endDate,
+        reason: reason || null, all_day: true,
+      });
+      if (error) throw error;
+      toast.success("Agenda trancada nessas datas");
+      onCreated();
+      onOpenChange(false);
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <EntityDialog
+      open={open} onOpenChange={onOpenChange}
+      icon={Lock} tone="amber"
+      eyebrow="Agenda"
+      title="Bloquear datas na agenda"
+      subtitle="Ninguém poderá te atribuir tarefas, projetos ou reuniões nesse período."
+      main={
+        <>
+          <DialogField label="Tipo">
+            <Select value={kind} onValueChange={(v) => setKind(v as CalendarBlock["kind"])}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {(Object.keys(BLOCK_META) as CalendarBlock["kind"][]).map(k => (
+                  <SelectItem key={k} value={k}>{BLOCK_META[k].label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </DialogField>
+          <div className="grid grid-cols-2 gap-3">
+            <DialogField label="De"><Input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} /></DialogField>
+            <DialogField label="Até"><Input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} /></DialogField>
+          </div>
+          <DialogField label="Motivo (opcional)">
+            <Textarea rows={3} placeholder="Ex.: viagem em família, curso, etc." value={reason} onChange={e => setReason(e.target.value)} />
+          </DialogField>
+          <div className={cn("rounded-lg border p-3 text-xs flex items-center gap-2", BLOCK_META[kind].color)}>
+            <Lock className="h-3.5 w-3.5" />
+            Durante esse período seu nome aparecerá como <b>indisponível</b> no seletor de responsável e nos convites de reunião.
+          </div>
+        </>
+      }
+      footer={
+        <>
+          <DialogCancelButton onClick={() => onOpenChange(false)} />
+          <Button className="rounded-full" onClick={submit} disabled={saving}>
+            {saving ? "Salvando..." : "Bloquear datas"}
+          </Button>
+        </>
+      }
+    />
+  );
+}
