@@ -284,6 +284,41 @@ function CalendarPage() {
               </div>
             ))}
           </div>
+
+          <div className="mt-5 pt-4 border-t">
+            <div className="flex items-center justify-between mb-2">
+              <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                <Lock className="h-3.5 w-3.5" /> Meus bloqueios
+              </h4>
+              <Button size="sm" variant="ghost" onClick={() => setBlockOpen(true)}><Plus className="h-4 w-4" /></Button>
+            </div>
+            {blocks.filter(b => b.user_id === currentUserId).length === 0 && (
+              <p className="text-xs text-muted-foreground">Nenhum bloqueio. Marque férias, folgas ou dias trancados para que ninguém te atribua tarefas nessas datas.</p>
+            )}
+            <div className="space-y-1.5">
+              {blocks.filter(b => b.user_id === currentUserId).map(b => (
+                <div key={b.id} className={cn("rounded-lg border px-2.5 py-1.5 flex items-center gap-2 text-xs", BLOCK_META[b.kind].color)}>
+                  <span className={cn("h-1.5 w-1.5 rounded-full shrink-0", BLOCK_META[b.kind].dot)} />
+                  <div className="flex-1 min-w-0">
+                    <div className="font-medium">
+                      {BLOCK_META[b.kind].label} · {new Date(`${b.start_date}T12:00:00`).toLocaleDateString("pt-BR", { day: "2-digit", month: "short" })}
+                      {b.start_date !== b.end_date && ` – ${new Date(`${b.end_date}T12:00:00`).toLocaleDateString("pt-BR", { day: "2-digit", month: "short" })}`}
+                    </div>
+                    {b.reason && <div className="text-[10px] opacity-80 truncate">{b.reason}</div>}
+                  </div>
+                  <button
+                    onClick={async () => {
+                      const { error } = await supabase.from("calendar_blocks" as any).delete().eq("id", b.id);
+                      if (error) return toast.error(error.message);
+                      qc.invalidateQueries({ queryKey: ["calendar-blocks"] });
+                      toast.success("Bloqueio removido");
+                    }}
+                    className="opacity-60 hover:opacity-100"
+                  ><Trash2 className="h-3 w-3" /></button>
+                </div>
+              ))}
+            </div>
+          </div>
         </Card>
       </div>
 
@@ -292,6 +327,13 @@ function CalendarPage() {
         onOpenChange={setNewOpen}
         defaultDate={dialogDate}
         onCreate={(v) => create.mutate(v)}
+      />
+
+      <NewBlockDialog
+        open={blockOpen}
+        onOpenChange={setBlockOpen}
+        defaultDate={selectedDate}
+        onCreated={() => qc.invalidateQueries({ queryKey: ["calendar-blocks"] })}
       />
     </div>
   );
