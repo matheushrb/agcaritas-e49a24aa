@@ -179,11 +179,11 @@ export async function generateInvoicePDF(data: InvoicePDFData): Promise<jsPDF> {
   }
   // título do header em azul (destaque)
   setColor(doc, PDF_COLORS.graphite, "text");
-  doc.setFont("helvetica", "bold"); doc.setFontSize(9);
+  doc.setFont("LiberationSans", "bold"); doc.setFontSize(9);
   const titleTxt = data.is_preview ? "PRÉVIA DA FATURA" : "FATURA";
   doc.text(titleTxt, cardX + (logoDataUrl ? 18 : 8), cardY + 8, { charSpace: 0.8 });
   // número à direita em azul (destaque)
-  doc.setFont("courier", "bold"); doc.setFontSize(11);
+  doc.setFont("LiberationSans", "bold"); doc.setFontSize(11);
   doc.text(data.number, cardX + cardW - 8, cardY + 8, { align: "right" });
 
   /* ---------- Bloco topo: Emitida em / Vencimento / Valor total ---------- */
@@ -192,7 +192,7 @@ export async function generateInvoicePDF(data: InvoicePDFData): Promise<jsPDF> {
   const col3W = innerW / 3;
   const smallLabel = (x: number, label: string, align: "left" | "right" = "left") => {
     setColor(doc, PDF_COLORS.muted, "text");
-    doc.setFont("helvetica", "bold"); doc.setFontSize(6.6);
+    doc.setFont("LiberationSans", "bold"); doc.setFontSize(6.6);
     doc.text(label.toUpperCase(), x, y, { charSpace: 0.6, align });
   };
   smallLabel(innerX, "Emitida em");
@@ -200,12 +200,12 @@ export async function generateInvoicePDF(data: InvoicePDFData): Promise<jsPDF> {
   smallLabel(innerX + innerW - 1, "Valor total", "right");
 
   setColor(doc, PDF_COLORS.ink, "text");
-  doc.setFont("helvetica", "bold"); doc.setFontSize(11);
+  doc.setFont("LiberationSans", "bold"); doc.setFontSize(11);
   doc.text(formatDate(data.issue_date), innerX, y + 5.5);
   doc.text(formatDate(data.due_date ?? null), innerX + col3W, y + 5.5);
   // valor total destacado (accent)
   setColor(doc, PDF_COLORS.graphite, "text");
-  doc.setFont("helvetica", "bold"); doc.setFontSize(14);
+  doc.setFont("LiberationSans", "bold"); doc.setFontSize(14);
   doc.text(brl(total), innerX + innerW, y + 6, { align: "right" });
 
   y += 11;
@@ -223,19 +223,19 @@ export async function generateInvoicePDF(data: InvoicePDFData): Promise<jsPDF> {
   ) => {
     let cy = y;
     setColor(doc, PDF_COLORS.graphite, "text");
-    doc.setFont("helvetica", "bold"); doc.setFontSize(6.6);
+    doc.setFont("LiberationSans", "bold"); doc.setFontSize(6.6);
     doc.text(header.toUpperCase(), x, cy, { charSpace: 0.6 });
     cy += 4;
 
     setColor(doc, PDF_COLORS.ink, "text");
-    doc.setFont("helvetica", "bold"); doc.setFontSize(10);
+    doc.setFont("LiberationSans", "bold"); doc.setFontSize(10);
     const titleLines = doc.splitTextToSize(title, halfW - 2);
     doc.text(titleLines, x, cy);
     cy += titleLines.length * 4 + 1;
 
     const clean = rows.filter(r => r.value && String(r.value).trim().length);
     setColor(doc, PDF_COLORS.muted, "text");
-    doc.setFont("helvetica", "normal"); doc.setFontSize(7.8);
+    doc.setFont("LiberationSans", "normal"); doc.setFontSize(7.8);
     for (const r of clean) {
       const wrapped = doc.splitTextToSize(`${r.label}: ${r.value}`, halfW - 2);
       doc.text(wrapped, x, cy);
@@ -277,7 +277,7 @@ export async function generateInvoicePDF(data: InvoicePDFData): Promise<jsPDF> {
 
   /* ---------- Itens ---------- */
   setColor(doc, PDF_COLORS.muted, "text");
-  doc.setFont("helvetica", "bold"); doc.setFontSize(6.6);
+  doc.setFont("LiberationSans", "bold"); doc.setFontSize(6.6);
   doc.text(`ITENS (${data.lines.length})`, innerX, y, { charSpace: 0.6 });
   y += 3;
 
@@ -298,7 +298,7 @@ export async function generateInvoicePDF(data: InvoicePDFData): Promise<jsPDF> {
   doc.rect(tableX, headerRowY, tableW, headerRowH);
 
   setColor(doc, PDF_COLORS.muted, "text");
-  doc.setFont("helvetica", "bold"); doc.setFontSize(6.6);
+  doc.setFont("LiberationSans", "bold"); doc.setFontSize(6.6);
   doc.text("DESCRIÇÃO", tableX + rowPadX, headerRowY + 4.2, { charSpace: 0.6 });
   doc.text("DATA", tableX + descColW + rowPadX, headerRowY + 4.2, { charSpace: 0.6 });
   doc.text("TOTAL", tableX + tableW - rowPadX, headerRowY + 4.2, { align: "right", charSpace: 0.6 });
@@ -328,18 +328,18 @@ export async function generateInvoicePDF(data: InvoicePDFData): Promise<jsPDF> {
     zebra = !zebra;
 
     setColor(doc, line.is_child ? PDF_COLORS.muted : PDF_COLORS.black, "text");
-    doc.setFont("helvetica", line.is_child ? "normal" : "bold"); doc.setFontSize(8.6);
+    doc.setFont("LiberationSans", line.is_child ? "normal" : "bold"); doc.setFontSize(8.6);
     doc.text(titleLines, tableX + indent, y + 4);
 
     if (detailLines.length) {
       setColor(doc, PDF_COLORS.muted, "text");
-      doc.setFont("helvetica", "normal"); doc.setFontSize(7.4);
+      doc.setFont("LiberationSans", "normal"); doc.setFontSize(7.4);
       doc.text(detailLines, tableX + indent, y + 4 + titleLines.length * 4);
     }
 
     // Data
     setColor(doc, PDF_COLORS.black, "text");
-    doc.setFont("helvetica", "normal"); doc.setFontSize(8.2);
+    doc.setFont("LiberationSans", "normal"); doc.setFontSize(8.2);
     doc.text(
       line.reference_date ? formatDate(line.reference_date) : "—",
       tableX + descColW + rowPadX,
@@ -348,7 +348,7 @@ export async function generateInvoicePDF(data: InvoicePDFData): Promise<jsPDF> {
 
     // Total
     setColor(doc, PDF_COLORS.black, "text");
-    doc.setFont("helvetica", "bold"); doc.setFontSize(8.8);
+    doc.setFont("LiberationSans", "bold"); doc.setFontSize(8.8);
     doc.text(brl(line.amount), tableX + tableW - rowPadX, y + 4, { align: "right" });
 
     // divisória fina
@@ -368,10 +368,10 @@ export async function generateInvoicePDF(data: InvoicePDFData): Promise<jsPDF> {
   setColor(doc, PDF_COLORS.hairline, "draw"); doc.setLineWidth(0.2);
   doc.rect(tableX, y, tableW, totalRowH);
   setColor(doc, PDF_COLORS.black, "text");
-  doc.setFont("helvetica", "bold"); doc.setFontSize(8);
+  doc.setFont("LiberationSans", "bold"); doc.setFontSize(8);
   doc.text("TOTAL A PAGAR", tableX + descColW - rowPadX, y + 5.8, { align: "right", charSpace: 0.6 });
   setColor(doc, PDF_COLORS.graphite, "text");
-  doc.setFont("helvetica", "bold"); doc.setFontSize(10.5);
+  doc.setFont("LiberationSans", "bold"); doc.setFontSize(10.5);
   doc.text(brl(total), tableX + tableW - rowPadX, y + 6, { align: "right" });
   // Aproxima o bloco inferior do QR/condições
   y += totalRowH + 3;
@@ -397,21 +397,21 @@ export async function generateInvoicePDF(data: InvoicePDFData): Promise<jsPDF> {
   // --- Coluna esquerda ---
   let ly = y;
   setColor(doc, PDF_COLORS.graphite, "text");
-  doc.setFont("helvetica", "bold"); doc.setFontSize(6.6);
+  doc.setFont("LiberationSans", "bold"); doc.setFontSize(6.6);
   doc.text("CONDIÇÕES DE PAGAMENTO", leftX, ly, { charSpace: 0.6 });
   ly += 4;
   setColor(doc, PDF_COLORS.black, "text");
-  doc.setFont("helvetica", "normal"); doc.setFontSize(8);
+  doc.setFont("LiberationSans", "normal"); doc.setFontSize(8);
   const terms = doc.splitTextToSize(data.payment_terms || DEFAULT_PAYMENT_TERMS, leftW);
   doc.text(terms, leftX, ly);
   ly += terms.length * 3.6 + 4;
 
   setColor(doc, PDF_COLORS.graphite, "text");
-  doc.setFont("helvetica", "bold"); doc.setFontSize(6.6);
+  doc.setFont("LiberationSans", "bold"); doc.setFontSize(6.6);
   doc.text("OBSERVAÇÕES LEGAIS", leftX, ly, { charSpace: 0.6 });
   ly += 4;
   setColor(doc, PDF_COLORS.black, "text");
-  doc.setFont("helvetica", "normal"); doc.setFontSize(7.6);
+  doc.setFont("LiberationSans", "normal"); doc.setFontSize(7.6);
   const legal = doc.splitTextToSize(data.notes || DEFAULT_LEGAL_NOTES, leftW);
   doc.text(legal, leftX, ly);
   ly += legal.length * 3.4;
@@ -423,7 +423,7 @@ export async function generateInvoicePDF(data: InvoicePDFData): Promise<jsPDF> {
   if (doc.setLineDashPattern) doc.setLineDashPattern([], 0);
 
   setColor(doc, PDF_COLORS.graphite, "text");
-  doc.setFont("helvetica", "bold"); doc.setFontSize(6.6);
+  doc.setFont("LiberationSans", "bold"); doc.setFontSize(6.6);
   doc.text("PAGAMENTO", qrBoxX + qrBoxW / 2, qrBoxY + 5, { align: "center", charSpace: 0.6 });
 
   const qrSize = 34;
@@ -437,7 +437,7 @@ export async function generateInvoicePDF(data: InvoicePDFData): Promise<jsPDF> {
       if (qrDataUrl) doc.addImage(qrDataUrl, "PNG", qrX, qrY, qrSize, qrSize);
     }
     setColor(doc, PDF_COLORS.black, "text");
-    doc.setFont("helvetica", "normal"); doc.setFontSize(5.8);
+    doc.setFont("LiberationSans", "normal"); doc.setFontSize(5.8);
     const linkLines = doc.splitTextToSize(paymentPayload, qrBoxW - 6);
     doc.text(linkLines.slice(0, 3), qrBoxX + qrBoxW / 2, qrY + qrSize + 5, { align: "center" });
     if (/^https?:\/\//i.test(paymentPayload)) {
@@ -445,7 +445,7 @@ export async function generateInvoicePDF(data: InvoicePDFData): Promise<jsPDF> {
     }
   } else {
     setColor(doc, PDF_COLORS.muted, "text");
-    doc.setFont("helvetica", "italic"); doc.setFontSize(6.5);
+    doc.setFont("LiberationSans", "italic"); doc.setFontSize(6.5);
     doc.text(
       "Anexe um link de\npagamento para gerar\no QR Code.",
       qrBoxX + qrBoxW / 2,
@@ -459,11 +459,11 @@ export async function generateInvoicePDF(data: InvoicePDFData): Promise<jsPDF> {
   if (data.payment_instructions) {
     if (y > pageH - 30) { doc.addPage(); y = 20; }
     setColor(doc, PDF_COLORS.graphite, "text");
-    doc.setFont("helvetica", "bold"); doc.setFontSize(6.6);
+    doc.setFont("LiberationSans", "bold"); doc.setFontSize(6.6);
     doc.text("INSTRUÇÕES EXTRAS", innerX, y, { charSpace: 0.6 });
     y += 4;
     setColor(doc, PDF_COLORS.black, "text");
-    doc.setFont("helvetica", "normal"); doc.setFontSize(8);
+    doc.setFont("LiberationSans", "normal"); doc.setFontSize(8);
     const wrapped = doc.splitTextToSize(data.payment_instructions, innerW);
     doc.text(wrapped, innerX, y);
   }
