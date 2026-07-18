@@ -15,7 +15,6 @@ import { SwipeableRow, type SwipeAction } from "@/components/swipeable-row";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState } from "react";
-import { Card } from "@/components/ui/card";
 
 function NewsCarousel() {
   const { data: news = [] } = useQuery({
