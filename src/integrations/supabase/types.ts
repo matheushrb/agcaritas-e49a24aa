@@ -1186,11 +1186,20 @@ export type Database = {
         Row: {
           address: string | null
           automation_settings: Json
+          bank_account: string | null
+          bank_account_type: string | null
+          bank_agency: string | null
+          bank_holder: string | null
+          bank_holder_document: string | null
           bank_info: string | null
+          bank_name: string | null
+          bank_pix_key: string | null
           created_at: string
           email: string | null
+          favicon_url: string | null
           id: string
           legal_name: string | null
+          logo_url: string | null
           name: string
           phone: string | null
           pricing_settings: Json
@@ -1200,11 +1209,20 @@ export type Database = {
         Insert: {
           address?: string | null
           automation_settings?: Json
+          bank_account?: string | null
+          bank_account_type?: string | null
+          bank_agency?: string | null
+          bank_holder?: string | null
+          bank_holder_document?: string | null
           bank_info?: string | null
+          bank_name?: string | null
+          bank_pix_key?: string | null
           created_at?: string
           email?: string | null
+          favicon_url?: string | null
           id?: string
           legal_name?: string | null
+          logo_url?: string | null
           name: string
           phone?: string | null
           pricing_settings?: Json
@@ -1214,11 +1232,20 @@ export type Database = {
         Update: {
           address?: string | null
           automation_settings?: Json
+          bank_account?: string | null
+          bank_account_type?: string | null
+          bank_agency?: string | null
+          bank_holder?: string | null
+          bank_holder_document?: string | null
           bank_info?: string | null
+          bank_name?: string | null
+          bank_pix_key?: string | null
           created_at?: string
           email?: string | null
+          favicon_url?: string | null
           id?: string
           legal_name?: string | null
+          logo_url?: string | null
           name?: string
           phone?: string | null
           pricing_settings?: Json
