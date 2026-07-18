@@ -241,6 +241,7 @@ function InvoicesPage() {
           initialProjectId={search.projectId}
           clients={clients}
           projects={projects}
+          organization={organization}
           onClose={() => setWizardOpen(false)}
           onCreated={(id) => {
             setWizardOpen(false);
@@ -255,6 +256,7 @@ function InvoicesPage() {
         <InvoiceDetail
           id={detailId}
           clients={clients}
+          organization={organization}
           onClose={() => setDetailId(null)}
         />
       )}
@@ -264,10 +266,11 @@ function InvoicesPage() {
 
 /* ----------------------------------- Wizard ------------------------------ */
 function NewInvoiceWizard({
-  initialProjectId, clients, projects, onClose, onCreated,
+  initialProjectId, clients, projects, organization, onClose, onCreated,
 }: {
   initialProjectId?: string;
   clients: Client[]; projects: Project[];
+  organization: Organization | null;
   onClose: () => void; onCreated: (id: string) => void;
 }) {
   const initialClient = initialProjectId ? projects.find(p => p.id === initialProjectId)?.client_id ?? "" : "";
