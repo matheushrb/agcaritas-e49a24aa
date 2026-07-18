@@ -74,7 +74,7 @@ async function makeQRCodeDataUrl(text: string): Promise<string | null> {
       errorCorrectionLevel: "M",
       margin: 1,
       width: 400,
-      color: { dark: "#1E3A8A", light: "#ffffff" },
+      color: { dark: "#000000", light: "#ffffff" },
     });
     return url;
   } catch (e) {
