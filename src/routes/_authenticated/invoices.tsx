@@ -329,6 +329,7 @@ function NewInvoiceWizard({
 
 
   const [selectedDeliverables, setSelectedDeliverables] = useState<Set<string>>(new Set());
+  const [lineDateOverrides, setLineDateOverrides] = useState<Record<string, string>>({});
 
   // Sincroniza o cliente pagador com o filtro (ou com o cliente do projeto filtrado)
   useEffect(() => {
