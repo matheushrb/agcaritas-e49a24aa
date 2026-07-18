@@ -35,6 +35,10 @@ import { suggestTaskCost, type CostMode } from "@/components/team-cost-fields";
 import { useCalendarBlocks, BLOCK_META, type CalendarBlock } from "@/lib/calendar-blocks";
 
 export const Route = createFileRoute("/_authenticated/tasks")({
+  validateSearch: (s: Record<string, unknown>) => ({
+    open: typeof s.open === "string" ? s.open : undefined,
+    new: s.new === 1 || s.new === "1" ? 1 : undefined,
+  }),
   component: TasksPage,
 });
 
