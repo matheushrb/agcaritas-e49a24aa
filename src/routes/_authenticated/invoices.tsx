@@ -440,30 +440,39 @@ function NewInvoiceWizard({
 
   const previewLines = useMemo(() => {
     const lines: Array<{
+      key: string;
       title: string; detail?: string; amount: number; is_child?: boolean;
       reference_date?: string | null; reference_label?: string;
     }> = [];
+    const withOverride = (key: string, fallback: string | null | undefined) =>
+      lineDateOverrides[key] ?? (fallback ?? null);
     for (const c of filteredCharges) if (selectedCharges.has(c.id)) {
+      const key = `charge:${c.id}`;
       lines.push({
+        key,
         title: c.description || "Cobrança",
         amount: Number(c.amount ?? 0),
-        reference_date: c.due_date ?? null,
+        reference_date: withOverride(key, c.due_date),
         reference_label: "Prazo",
       });
     }
     for (const tk of filteredTasks) if (selectedTasks.has(tk.id)) {
       const ref = taskReference(tk);
+      const key = `task:${tk.id}`;
       lines.push({
+        key,
         title: tk.title,
         amount: Number(tk.billing_value ?? 0),
-        reference_date: ref.reference_date,
+        reference_date: withOverride(key, ref.reference_date),
         reference_label: ref.reference_label,
       });
       for (const d of billableDeliverables) {
         if (d.taskId === tk.id && selectedDeliverables.has(d.key)) {
+          const dkey = `deliv:${d.key}`;
           lines.push({
+            key: dkey,
             title: d.label, amount: d.amount, is_child: true,
-            reference_date: d.reference_date ?? null,
+            reference_date: withOverride(dkey, d.reference_date),
             reference_label: d.reference_label,
           });
         }
@@ -472,15 +481,17 @@ function NewInvoiceWizard({
     const includedTaskIds = new Set(Array.from(selectedTasks));
     for (const d of billableDeliverables) {
       if (selectedDeliverables.has(d.key) && !includedTaskIds.has(d.taskId)) {
+        const dkey = `deliv:${d.key}`;
         lines.push({
+          key: dkey,
           title: d.label, amount: d.amount,
-          reference_date: d.reference_date ?? null,
+          reference_date: withOverride(dkey, d.reference_date),
           reference_label: d.reference_label,
         });
       }
     }
     return lines;
-  }, [filteredCharges, filteredTasks, billableDeliverables, selectedCharges, selectedTasks, selectedDeliverables]);
+  }, [filteredCharges, filteredTasks, billableDeliverables, selectedCharges, selectedTasks, selectedDeliverables, lineDateOverrides]);
 
   async function computeNextInvoiceNumber(issue: string): Promise<string> {
     const ym = issue.slice(0, 7).replace("-", ""); // AAAAMM
