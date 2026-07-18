@@ -20,7 +20,7 @@ export const Route = createFileRoute("/_authenticated/finance")({
   component: FinancePage,
 });
 
-type ChargeStatus = "pending" | "paid" | "overdue" | "cancelled" | "pending_invoice";
+type ChargeStatus = "pending" | "paid" | "overdue" | "cancelled" | "pending_invoice" | "draft";
 type Charge = {
   id: string;
   description: string | null;
