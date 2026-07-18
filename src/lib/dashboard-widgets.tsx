@@ -198,26 +198,44 @@ function notificationChannel(n: any): { kind: "chat" | "email" | "system"; icon:
 export const WIDGETS: WidgetDef[] = [
   {
     id: "greeting",
-    title: "Saudação e atalhos",
-    description: "Cabeçalho com boas-vindas e botão Novo.",
+    title: "Saudação e resumo",
+    description: "Boas-vindas, resumo do dia e botão Novo.",
     category: "Saudação",
     colSpan: 8,
-    render: ({ firstName }) => (
-      <div className="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
-        <div className="min-w-0">
-          <h1 className="font-display text-3xl md:text-4xl font-bold leading-tight">
-            Olá, {firstName}!<br />
-            Quais são seus planos para hoje?
-          </h1>
-          <p className="mt-3 text-sm text-muted-foreground max-w-md">
-            O ERP da Caritas Agência: organize leads, propostas, projetos e faturamento em um único painel.
-          </p>
+    render: ({ firstName, data }) => {
+      const open = openTasks(data.allTasks);
+      const due = dueSoon(data.allTasks);
+      const nextEv = data.events[0];
+      return (
+        <div className="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
+          <div className="min-w-0">
+            <h1 className="font-display text-3xl md:text-4xl font-bold leading-tight">
+              Olá, {firstName}!<br />
+              Quais são seus planos para hoje?
+            </h1>
+            <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm">
+              <span className="inline-flex items-center gap-2 text-muted-foreground">
+                <CheckSquare className="h-4 w-4 text-primary" />
+                <b className="text-foreground">{open}</b> tarefas abertas
+              </span>
+              <span className="inline-flex items-center gap-2 text-muted-foreground">
+                <CalendarClock className="h-4 w-4 text-warning" />
+                <b className="text-foreground">{due}</b> vencem em 7 dias
+              </span>
+              <span className="inline-flex items-center gap-2 text-muted-foreground">
+                <Calendar className="h-4 w-4 text-info" />
+                {nextEv
+                  ? <>Próxima reunião <b className="text-foreground">{new Date(nextEv.starts_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</b></>
+                  : "Sem reuniões hoje"}
+              </span>
+            </div>
+          </div>
+          <div className="flex flex-wrap items-center gap-2 shrink-0">
+            <QuickCreateButton />
+          </div>
         </div>
-        <div className="flex flex-wrap items-center gap-2 shrink-0">
-          <QuickCreateButton />
-        </div>
-      </div>
-    ),
+      );
+    },
   },
   {
     id: "calendar",
