@@ -6,12 +6,12 @@ import type { jsPDF } from "jspdf";
 
 // Paleta industrial (RGB)
 export const PDF_COLORS = {
-  ink:       [23, 37, 84] as [number, number, number],    // #172554 - azul marinho profundo
-  graphite:  [30, 58, 138] as [number, number, number],   // #1E3A8A - azul marinho
+  ink:       [29, 78, 216] as [number, number, number],   // #1D4ED8 - azul do sistema (blue-700)
+  graphite:  [37, 99, 235] as [number, number, number],   // #2563EB - azul primário (blue-600)
   muted:     [100, 116, 139] as [number, number, number], // #64748B - azul acinzentado
-  hairline:  [191, 219, 254] as [number, number, number], // #BFDBFE - azul claro (linhas)
+  hairline:  [219, 234, 254] as [number, number, number], // #DBEAFE - azul claro (linhas)
   paper:     [239, 246, 255] as [number, number, number], // #EFF6FF - azul-gelo
-  accent:    [37, 99, 235] as [number, number, number],   // #2563EB - azul royal
+  accent:    [59, 130, 246] as [number, number, number],  // #3B82F6 - azul acento (blue-500)
   black:     [0, 0, 0] as [number, number, number],
   white:     [255, 255, 255] as [number, number, number],
 };
@@ -50,6 +50,7 @@ export function drawIndustrialHeader(doc: jsPDF, opts: {
   documentKind: string;   // "FATURA" | "PROPOSTA COMERCIAL"
   documentNumber: string; // "PRO-0007" | "202601-0004"
   competence?: string;    // "Competência 01/2026"
+  logoDataUrl?: string | null; // opcional: logo da agência (dataURL)
 }) {
   const { marginX, pageW } = PDF_LAYOUT;
 
@@ -57,15 +58,34 @@ export function drawIndustrialHeader(doc: jsPDF, opts: {
   setColor(doc, PDF_COLORS.ink, "fill");
   doc.rect(0, 0, pageW, 4, "F");
 
-  // Wordmark
+  // Slot da LOGO (14x14mm) — usa a imagem se fornecida, senão desenha placeholder
+  const logoSize = 14;
+  const logoX = marginX;
+  const logoY = 12;
+  if (opts.logoDataUrl) {
+    try {
+      doc.addImage(opts.logoDataUrl, "PNG", logoX, logoY, logoSize, logoSize);
+    } catch {
+      // ignora e desenha placeholder abaixo
+    }
+  } else {
+    setColor(doc, PDF_COLORS.hairline, "draw"); doc.setLineWidth(0.3);
+    doc.rect(logoX, logoY, logoSize, logoSize);
+    setColor(doc, PDF_COLORS.muted, "text");
+    doc.setFont("helvetica", "bold"); doc.setFontSize(6);
+    doc.text("LOGO", logoX + logoSize / 2, logoY + logoSize / 2 + 1, { align: "center", charSpace: 0.4 });
+  }
+
+  // Wordmark (deslocado para a direita da logo)
+  const textX = logoX + logoSize + 5;
   setColor(doc, PDF_COLORS.ink, "text");
   doc.setFont("helvetica", "bold");
   doc.setFontSize(16);
-  doc.text("CARITAS", marginX, 20);
+  doc.text("CARITAS", textX, 20);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8);
   setColor(doc, PDF_COLORS.muted, "text");
-  doc.text("AGÊNCIA · GESTÃO CRIATIVA", marginX, 25);
+  doc.text("AGÊNCIA · GESTÃO CRIATIVA", textX, 25);
 
   // Bloco à direita: tipo de documento + número
   const rightX = pageW - marginX;
@@ -111,14 +131,15 @@ export function drawIndustrialFooter(doc: jsPDF, opts: { pageLabel?: string; not
 /**
  * Rótulo de seção estilo editorial (SMALL CAPS + letter-spacing).
  */
-export function drawSectionLabel(doc: jsPDF, y: number, label: string) {
+export function drawSectionLabel(doc: jsPDF, y: number, label: string, maxX?: number) {
   setColor(doc, PDF_COLORS.muted, "text");
   doc.setFont("helvetica", "bold");
   doc.setFontSize(7.5);
   doc.text(label.toUpperCase(), PDF_LAYOUT.marginX, y, { charSpace: 0.6 });
   setColor(doc, PDF_COLORS.hairline, "draw");
   doc.setLineWidth(0.15);
-  doc.line(PDF_LAYOUT.marginX, y + 1.5, PDF_LAYOUT.pageW - PDF_LAYOUT.marginX, y + 1.5);
+  const endX = maxX ?? (PDF_LAYOUT.pageW - PDF_LAYOUT.marginX);
+  doc.line(PDF_LAYOUT.marginX, y + 1.5, endX, y + 1.5);
 }
 
 /**
