@@ -882,13 +882,13 @@ const ALL_IDS = WIDGETS.map(w => w.id);
 
 const PRESETS: Record<string, string[]> = {
   founder: ALL_IDS,
-  manager: ["greeting", "kpi-rings", "calendar", "next-meeting", "tasks-today", "assignments", "notifications", "operations", "projects-active"],
-  traffic: ["greeting", "kpi-rings", "calendar", "next-meeting", "tasks-today", "finance", "sales-pipeline"],
-  sales: ["greeting", "kpi-rings", "calendar", "next-meeting", "sales-pipeline", "finance", "notifications"],
-  designer: ["greeting", "calendar", "next-meeting", "tasks-today", "assignments", "notifications", "operations"],
-  copywriter: ["greeting", "calendar", "next-meeting", "tasks-today", "assignments", "notifications", "operations"],
-  developer: ["greeting", "calendar", "next-meeting", "tasks-today", "assignments", "operations", "projects-active"],
-  operations: ["greeting", "kpi-rings", "calendar", "next-meeting", "tasks-today", "notifications", "operations", "hr-team"],
+  manager: ["greeting", "kpi-rings", "calendar", "next-meeting", "tasks-today", "assignments", "notifications", "finance", "news", "operations", "projects-active"],
+  traffic: ["greeting", "kpi-rings", "calendar", "next-meeting", "tasks-today", "finance", "news", "sales-pipeline"],
+  sales: ["greeting", "kpi-rings", "calendar", "next-meeting", "sales-pipeline", "finance", "news", "notifications"],
+  designer: ["greeting", "calendar", "next-meeting", "tasks-today", "assignments", "notifications", "news", "operations"],
+  copywriter: ["greeting", "calendar", "next-meeting", "tasks-today", "assignments", "notifications", "news", "operations"],
+  developer: ["greeting", "calendar", "next-meeting", "tasks-today", "assignments", "news", "operations", "projects-active"],
+  operations: ["greeting", "kpi-rings", "calendar", "next-meeting", "tasks-today", "notifications", "finance", "news", "operations", "hr-team"],
 };
 
 const ROLE_KEYWORDS: Array<[RegExp, string]> = [
