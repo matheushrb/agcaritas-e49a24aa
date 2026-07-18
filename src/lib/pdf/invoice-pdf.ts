@@ -222,7 +222,7 @@ export async function generateInvoicePDF(data: InvoicePDFData): Promise<jsPDF> {
     rows: Array<{ label: string; value: string | null | undefined }>,
   ) => {
     let cy = y;
-    setColor(doc, PDF_COLORS.muted, "text");
+    setColor(doc, PDF_COLORS.graphite, "text");
     doc.setFont("helvetica", "bold"); doc.setFontSize(6.6);
     doc.text(header.toUpperCase(), x, cy, { charSpace: 0.6 });
     cy += 4;
