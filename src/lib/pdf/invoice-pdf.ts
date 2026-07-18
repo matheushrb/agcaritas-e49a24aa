@@ -347,6 +347,7 @@ export async function generateInvoicePDF(data: InvoicePDFData): Promise<jsPDF> {
     );
 
     // Total
+    setColor(doc, PDF_COLORS.black, "text");
     doc.setFont("helvetica", "bold"); doc.setFontSize(8.8);
     doc.text(brl(line.amount), tableX + tableW - rowPadX, y + 4, { align: "right" });
 
