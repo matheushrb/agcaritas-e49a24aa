@@ -330,36 +330,48 @@ export const WIDGETS: WidgetDef[] = [
   // Trocado de lugar: "Próxima reunião" agora ocupa o slot de 4 colunas
   {
     id: "next-meeting",
-    title: "Próxima reunião",
-    description: "Próximo evento agendado.",
+    title: "Próximas reuniões",
+    description: "Convites de reunião com confirmar/recusar por item.",
     category: "Agenda",
     colSpan: 4,
     render: ({ data }) => {
-      const ev = data.events[0];
+      const list = data.events.slice(0, 3);
       return (
         <Card className="card-surface p-5 h-full flex flex-col">
           <div className="flex items-start justify-between">
             <div className="min-w-0">
-              <h3 className="font-display font-semibold">Próxima reunião</h3>
-              <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
-                <span className="inline-block h-2 w-2 rounded-full bg-primary" />
-                {upcomingText(data.events)}
-              </div>
+              <h3 className="font-display font-semibold">Próximas reuniões</h3>
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                {list.length === 0 ? "Nenhuma reunião agendada." : `${list.length} convite${list.length > 1 ? "s" : ""} pendente${list.length > 1 ? "s" : ""}`}
+              </p>
             </div>
-            <Link to="/calendar" className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1">
-              <Pencil className="h-3.5 w-3.5" />
-            </Link>
+            <Link to="/calendar" className="text-xs text-muted-foreground hover:text-foreground">Ver agenda</Link>
           </div>
-          <div className="mt-4 flex-1">
-            <p className="text-sm line-clamp-3">
-              {ev?.description ?? ev?.title ?? "Nenhuma reunião agendada. Adicione um evento pela agenda."}
-            </p>
-          </div>
-          <div className="mt-4 flex gap-2">
-            <Link to="/calendar" className="flex-1">
-              <Button variant="outline" className="rounded-full w-full">Remarcar</Button>
-            </Link>
-            <Button className="rounded-full gap-2 flex-1"><Check className="h-4 w-4" /> Confirmar</Button>
+
+          <div className="mt-4 flex-1 space-y-3">
+            {list.length === 0 && (
+              <EmptyRow icon={Calendar} label="Adicione um evento pela agenda." />
+            )}
+            {list.map(ev => (
+              <div key={ev.id} className="rounded-2xl border border-border bg-muted/30 p-3">
+                <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
+                  <span className="inline-block h-1.5 w-1.5 rounded-full bg-primary" />
+                  {new Date(ev.starts_at).toLocaleDateString("pt-BR", { day: "2-digit", month: "short" })}
+                  {" · "}
+                  {new Date(ev.starts_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+                </div>
+                <p className="mt-1 text-sm font-medium line-clamp-1">{ev.title}</p>
+                {ev.description && <p className="text-xs text-muted-foreground line-clamp-2">{ev.description}</p>}
+                <div className="mt-3 flex gap-2">
+                  <Button size="sm" className="rounded-full gap-1 flex-1 h-8">
+                    <Check className="h-3.5 w-3.5" /> Confirmar
+                  </Button>
+                  <Button size="sm" variant="outline" className="rounded-full flex-1 h-8">
+                    Recusar
+                  </Button>
+                </div>
+              </div>
+            ))}
           </div>
         </Card>
       );
