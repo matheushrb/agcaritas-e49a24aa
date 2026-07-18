@@ -63,6 +63,7 @@ function CalendarPage() {
   const [view, setView] = useState<"month" | "week">(search.view ?? "month");
   const [newOpen, setNewOpen] = useState(false);
   const [dialogDate, setDialogDate] = useState<string>(selectedDate);
+  const [blockOpen, setBlockOpen] = useState(false);
 
   // Abre dialog automaticamente se ?new=1
   useEffect(() => {
@@ -89,6 +90,24 @@ function CalendarPage() {
       return (data ?? []) as Ev[];
     },
   });
+
+  const { data: blocks = [] } = useCalendarBlocks();
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  useEffect(() => { supabase.auth.getUser().then(({ data }) => setCurrentUserId(data.user?.id ?? null)); }, []);
+
+  // Bloqueios do usuário atual indexados por dia (para pintar o calendário)
+  const myBlocksByDay = useMemo(() => {
+    const m = new Map<string, CalendarBlock>();
+    for (const b of blocks) {
+      if (currentUserId && b.user_id !== currentUserId) continue;
+      const start = new Date(`${b.start_date}T12:00:00`);
+      const end = new Date(`${b.end_date}T12:00:00`);
+      for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+        m.set(ymd(d), b);
+      }
+    }
+    return m;
+  }, [blocks, currentUserId]);
 
   const byDay = useMemo(() => {
     const acc: Record<string, Ev[]> = {};
