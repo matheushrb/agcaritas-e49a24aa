@@ -85,7 +85,7 @@ export async function generateInvoicePDF(data: InvoicePDFData): Promise<jsPDF> {
   const contentW = pageW - marginX * 2;
 
   drawIndustrialHeader(doc, {
-    documentKind: "FATURA",
+    documentKind: data.is_preview ? "FATURA · PRÉVIA" : "FATURA",
     documentNumber: data.number,
     competence: data.competence ? `Competência ${data.competence}` : undefined,
   });
