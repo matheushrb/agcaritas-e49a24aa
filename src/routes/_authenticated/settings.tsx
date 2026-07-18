@@ -91,38 +91,87 @@ function AgencyTab() {
       return data;
     },
   });
-  const [name, setName] = useState("");
-  useEffect(() => { if (org?.name) setName(org.name); }, [org?.name]);
+  const [form, setForm] = useState({
+    name: "", legal_name: "", tax_id: "", email: "", phone: "", address: "", website: "", bank_info: "",
+  });
+  useEffect(() => {
+    if (!org) return;
+    setForm({
+      name: org.name ?? "",
+      legal_name: (org as any).legal_name ?? "",
+      tax_id: (org as any).tax_id ?? "",
+      email: (org as any).email ?? "",
+      phone: (org as any).phone ?? "",
+      address: (org as any).address ?? "",
+      website: (org as any).website ?? "",
+      bank_info: (org as any).bank_info ?? "",
+    });
+  }, [org]);
 
   const save = useMutation({
     mutationFn: async () => {
       if (!org?.id) throw new Error("Organização não encontrada");
-      const { error } = await supabase.from("organizations").update({ name }).eq("id", org.id);
+      const { error } = await supabase.from("organizations").update(form).eq("id", org.id);
       if (error) throw error;
     },
     onSuccess: () => { toast.success("Dados atualizados"); qc.invalidateQueries({ queryKey: ["organization"] }); },
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const bind = (k: keyof typeof form) => ({
+    value: form[k],
+    onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+      setForm(prev => ({ ...prev, [k]: e.target.value })),
+  });
+
   return (
-    <Card className="rounded-2xl p-6 max-w-2xl space-y-4">
+    <Card className="rounded-2xl p-6 max-w-3xl space-y-5">
       <div className="space-y-1">
-        <div className="text-sm font-medium">Identificação</div>
-        <p className="text-xs text-muted-foreground">Razão social e dados básicos da agência. CNPJ, endereço e dados bancários chegam nas próximas etapas.</p>
+        <div className="text-sm font-medium">Identificação da agência emissora</div>
+        <p className="text-xs text-muted-foreground">Estes dados aparecem no cabeçalho de faturas, propostas e contratos.</p>
       </div>
       <div className="grid gap-3">
-        <div className="space-y-1.5">
-          <Label htmlFor="org-name">Razão social</Label>
-          <Input id="org-name" value={name} onChange={e => setName(e.target.value)} placeholder="Agência Caritas" />
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-1.5">
+            <Label>Nome fantasia</Label>
+            <Input placeholder="Caritas Agência" {...bind("name")} />
+          </div>
+          <div className="space-y-1.5">
+            <Label>Razão social</Label>
+            <Input placeholder="Caritas Agência LTDA" {...bind("legal_name")} />
+          </div>
         </div>
         <div className="grid grid-cols-2 gap-3">
-          <div className="space-y-1.5"><Label>CNPJ</Label><Input placeholder="00.000.000/0001-00" disabled /></div>
-          <div className="space-y-1.5"><Label>Telefone</Label><Input placeholder="(11) 99999-9999" disabled /></div>
+          <div className="space-y-1.5">
+            <Label>CNPJ</Label>
+            <Input placeholder="00.000.000/0001-00" {...bind("tax_id")} />
+          </div>
+          <div className="space-y-1.5">
+            <Label>Telefone</Label>
+            <Input placeholder="(11) 99999-9999" {...bind("phone")} />
+          </div>
         </div>
-        <div className="space-y-1.5"><Label>Endereço</Label><Textarea placeholder="Preenchimento por CEP em breve" rows={2} disabled /></div>
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-1.5">
+            <Label>E-mail financeiro</Label>
+            <Input placeholder="financeiro@caritas.ag" {...bind("email")} />
+          </div>
+          <div className="space-y-1.5">
+            <Label>Site</Label>
+            <Input placeholder="https://caritas.ag" {...bind("website")} />
+          </div>
+        </div>
+        <div className="space-y-1.5">
+          <Label>Endereço</Label>
+          <Textarea placeholder="Rua, número, complemento, bairro, cidade/UF, CEP" rows={2} {...bind("address")} />
+        </div>
+        <div className="space-y-1.5">
+          <Label>Dados bancários</Label>
+          <Textarea placeholder="Banco · Agência · Conta · PIX · Titular" rows={2} {...bind("bank_info")} />
+        </div>
       </div>
       <div className="flex justify-end">
-        <Button className="rounded-full" disabled={!name.trim() || save.isPending} onClick={() => save.mutate()}>Salvar</Button>
+        <Button className="rounded-full" disabled={!form.name.trim() || save.isPending} onClick={() => save.mutate()}>Salvar</Button>
       </div>
     </Card>
   );
