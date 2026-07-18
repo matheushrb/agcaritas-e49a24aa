@@ -624,19 +624,20 @@ function NewInvoiceWizard({
         amount: total,
         total,
         subtotal: total,
-        status: "issued",
+        status: "draft",
         notes: notes || null,
         payment_terms: paymentTerms || null,
         payment_link: paymentLink.trim() || null,
       }).select("id").single();
       if (invErr) throw invErr;
 
+      // Vincula cobranças à fatura, mas mantém em "draft" — não são lançamentos financeiros até confirmar
       const { error: linkErr } = await supabase.from("charges")
-        .update({ invoice_id: invoice.id, status: "pending" })
+        .update({ invoice_id: invoice.id, status: "draft" } as never)
         .in("id", chargeIds);
       if (linkErr) throw linkErr;
 
-      toast.success("Fatura emitida");
+      toast.success("Fatura criada como rascunho. Confirme para gerar lançamento financeiro.");
       onCreated(invoice.id);
     } catch (e) {
       toast.error((e as Error).message);
