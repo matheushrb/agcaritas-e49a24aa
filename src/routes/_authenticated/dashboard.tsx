@@ -45,7 +45,7 @@ const dashboardQuery = {
     const end = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1).toISOString();
 
     const [tasksRes, notifsRes, eventsRes, proposalsRes, projectsRes, allTasksRes] = await Promise.all([
-      supabase.from("tasks").select("*").order("due_date", { ascending: true }).limit(6),
+      supabase.from("tasks").select("*").order("due_date", { ascending: true, nullsFirst: false }).limit(100),
       supabase.from("notifications").select("*").order("created_at", { ascending: false }).limit(5),
       supabase.from("calendar_events").select("*").gte("starts_at", start).lt("starts_at", end).order("starts_at"),
       supabase.from("proposals").select("id, status, total_value"),
