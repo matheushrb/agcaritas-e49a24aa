@@ -111,14 +111,15 @@ export function drawIndustrialFooter(doc: jsPDF, opts: { pageLabel?: string; not
 /**
  * Rótulo de seção estilo editorial (SMALL CAPS + letter-spacing).
  */
-export function drawSectionLabel(doc: jsPDF, y: number, label: string) {
+export function drawSectionLabel(doc: jsPDF, y: number, label: string, maxX?: number) {
   setColor(doc, PDF_COLORS.muted, "text");
   doc.setFont("helvetica", "bold");
   doc.setFontSize(7.5);
   doc.text(label.toUpperCase(), PDF_LAYOUT.marginX, y, { charSpace: 0.6 });
   setColor(doc, PDF_COLORS.hairline, "draw");
   doc.setLineWidth(0.15);
-  doc.line(PDF_LAYOUT.marginX, y + 1.5, PDF_LAYOUT.pageW - PDF_LAYOUT.marginX, y + 1.5);
+  const endX = maxX ?? (PDF_LAYOUT.pageW - PDF_LAYOUT.marginX);
+  doc.line(PDF_LAYOUT.marginX, y + 1.5, endX, y + 1.5);
 }
 
 /**
