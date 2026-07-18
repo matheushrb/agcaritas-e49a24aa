@@ -223,7 +223,7 @@ export const WIDGETS: WidgetDef[] = [
   {
     id: "greeting",
     title: "Saudação e resumo",
-    description: "Boas-vindas, resumo do dia e botão Novo.",
+    description: "Boas-vindas e resumo do dia.",
     category: "Saudação",
     colSpan: 8,
     render: ({ firstName, data }) => {
@@ -231,48 +231,31 @@ export const WIDGETS: WidgetDef[] = [
       const due = dueSoon(data.allTasks);
       const nextEv = data.events[0];
       return (
-        <div className="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
-          <div className="min-w-0">
-            <h1 className="font-display text-3xl md:text-4xl font-bold leading-tight">
-              Olá, {firstName}!<br />
-              Quais são seus planos para hoje?
-            </h1>
-            <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm">
-              <span className="inline-flex items-center gap-2 text-muted-foreground">
-                <CheckSquare className="h-4 w-4 text-primary" />
-                <b className="text-foreground">{open}</b> tarefas abertas
-              </span>
-              <span className="inline-flex items-center gap-2 text-muted-foreground">
-                <CalendarClock className="h-4 w-4 text-warning" />
-                <b className="text-foreground">{due}</b> vencem em 7 dias
-              </span>
-              <span className="inline-flex items-center gap-2 text-muted-foreground">
-                <Calendar className="h-4 w-4 text-info" />
-                {nextEv
-                  ? <>Próxima reunião <b className="text-foreground">{new Date(nextEv.starts_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</b></>
-                  : "Sem reuniões hoje"}
-              </span>
-            </div>
-          </div>
-          <div className="flex flex-wrap items-center gap-1 shrink-0">
-            <Button asChild variant="ghost" size="sm" className="h-9 rounded-full gap-1.5 text-muted-foreground hover:text-foreground">
-              <Link to="/dashboard" search={{ customize: 1 } as any}>
-                <LayoutGrid className="h-3.5 w-3.5" />
-                Organizar
-              </Link>
-            </Button>
-            <SyncButton />
-            <Button asChild variant="ghost" size="sm" className="h-9 rounded-full gap-1.5 text-muted-foreground hover:text-foreground">
-              <Link to="/team">
-                <Share2 className="h-3.5 w-3.5" />
-                Colaborar
-              </Link>
-            </Button>
-            <QuickCreateButton />
+        <div className="min-w-0">
+          <h1 className="font-display text-3xl md:text-4xl font-bold leading-tight">
+            Olá, {firstName}!<br />
+            Quais são seus planos para hoje?
+          </h1>
+          <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm">
+            <span className="inline-flex items-center gap-2 text-muted-foreground">
+              <CheckSquare className="h-4 w-4 text-primary" />
+              <b className="text-foreground">{open}</b> tarefas abertas
+            </span>
+            <span className="inline-flex items-center gap-2 text-muted-foreground">
+              <CalendarClock className="h-4 w-4 text-warning" />
+              <b className="text-foreground">{due}</b> vencem em 7 dias
+            </span>
+            <span className="inline-flex items-center gap-2 text-muted-foreground">
+              <Calendar className="h-4 w-4 text-info" />
+              {nextEv
+                ? <>Próxima reunião <b className="text-foreground">{new Date(nextEv.starts_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</b></>
+                : "Sem reuniões hoje"}
+            </span>
           </div>
         </div>
       );
     },
+
   },
   {
     id: "calendar",
