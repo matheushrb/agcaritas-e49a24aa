@@ -32,6 +32,7 @@ import { useAutomationSettings, effectivePriority, DEFAULT_AUTOMATION_SETTINGS }
 import { Link } from "@tanstack/react-router";
 import { CostConfirmDialog, type CostSuggestion } from "@/components/cost-confirm-dialog";
 import { suggestTaskCost, type CostMode } from "@/components/team-cost-fields";
+import { useCalendarBlocks, BLOCK_META, type CalendarBlock } from "@/lib/calendar-blocks";
 
 export const Route = createFileRoute("/_authenticated/tasks")({
   component: TasksPage,
