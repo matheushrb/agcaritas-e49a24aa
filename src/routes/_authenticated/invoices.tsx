@@ -285,7 +285,26 @@ function NewInvoiceWizard({
   const [notes, setNotes] = useState(DEFAULT_LEGAL_NOTES);
   const [paymentTerms, setPaymentTerms] = useState(DEFAULT_PAYMENT_TERMS);
   const [paymentLink, setPaymentLink] = useState("");
+  const [previewNumber, setPreviewNumber] = useState<string>("—");
   const [submitting, setSubmitting] = useState(false);
+
+  // Calcula o número da fatura em tempo real quando a data de emissão muda
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const issue = issueDate || new Date().toISOString().slice(0, 10);
+      const ym = issue.slice(0, 7).replace("-", "");
+      const { data } = await supabase.from("invoices").select("number").like("number", `${ym}-%`);
+      let max = 0;
+      for (const r of (data ?? []) as Array<{ number: string | null }>) {
+        const n = parseInt(String(r.number ?? "").split("-")[1] ?? "0", 10);
+        if (!isNaN(n) && n > max) max = n;
+      }
+      if (!cancelled) setPreviewNumber(`${ym}-${String(max + 1).padStart(4, "0")}`);
+    })();
+    return () => { cancelled = true; };
+  }, [issueDate]);
+
 
   const [selectedDeliverables, setSelectedDeliverables] = useState<Set<string>>(new Set());
 
