@@ -935,18 +935,24 @@ function NewInvoiceWizard({
                           <div className="px-2 py-3 text-center text-muted-foreground">Nenhum item selecionado.</div>
                         )}
                         {previewLines.map((l, i) => (
-                          <div key={i} className={cn(
-                            "grid grid-cols-[1fr_80px_100px] gap-2 px-2 py-1.5 border-t items-center",
+                          <div key={l.key} className={cn(
+                            "grid grid-cols-[1fr_110px_100px] gap-2 px-3 py-1.5 border-t items-center",
                             i % 2 === 1 && "bg-muted/20",
                           )}>
                             <div className={cn("truncate", l.is_child && "pl-4 text-muted-foreground")}>
                               {l.is_child && "↳ "}{l.title}
                             </div>
-                            <div className="text-[10px] text-muted-foreground">{l.reference_date ? fmtDate(l.reference_date) : "—"}</div>
+                            <input
+                              type="date"
+                              value={l.reference_date ?? ""}
+                              onChange={(e) => setLineDateOverrides(prev => ({ ...prev, [l.key]: e.target.value }))}
+                              className="h-6 px-1 text-[10px] rounded border bg-background text-foreground w-full"
+                              title="Data do item (editável)"
+                            />
                             <div className="text-right font-semibold">{money(l.amount)}</div>
                           </div>
                         ))}
-                        <div className="grid grid-cols-[1fr_80px_100px] gap-2 px-2 py-2 border-t bg-primary/5">
+                        <div className="grid grid-cols-[1fr_110px_100px] gap-2 px-3 py-2 border-t bg-primary/5">
                           <div className="col-span-2 text-right font-bold uppercase text-[10px] tracking-wider">Total a pagar</div>
                           <div className="text-right font-bold text-primary">{money(total)}</div>
                         </div>
