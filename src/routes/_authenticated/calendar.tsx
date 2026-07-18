@@ -9,10 +9,11 @@ import { Badge } from "@/components/ui/badge";
 import { EntityDialog, DialogField, DialogCancelButton } from "@/components/entity-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Calendar as CalendarIcon, Plus, ChevronLeft, ChevronRight, MapPin, Video, Users as UsersIcon } from "lucide-react";
+import { Calendar as CalendarIcon, Plus, ChevronLeft, ChevronRight, MapPin, Video, Users as UsersIcon, Lock, Trash2, Palmtree } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { z } from "zod";
+import { useCalendarBlocks, BLOCK_META, type CalendarBlock } from "@/lib/calendar-blocks";
 
 const searchSchema = z.object({
   d: z.string().optional(),
