@@ -215,7 +215,7 @@ export async function generateInvoicePDF(data: InvoicePDFData): Promise<jsPDF> {
   setColor(doc, PDF_COLORS.white, "text");
   doc.setFont("helvetica", "bold"); doc.setFontSize(7);
   doc.text("DESCRIÇÃO",  colDesc + 2, y, { charSpace: 0.6 });
-  doc.text("REFERÊNCIA", colDate,     y, { charSpace: 0.6 });
+  doc.text("DATA", colDate,     y, { charSpace: 0.6 });
   doc.text("TOTAL",      colTotal - 2, y, { align: "right", charSpace: 0.6 });
   y += 6;
 
