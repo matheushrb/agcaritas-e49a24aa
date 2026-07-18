@@ -2534,6 +2534,7 @@ export type Database = {
         | "overdue"
         | "cancelled"
         | "pending_invoice"
+        | "draft"
       contract_status: "active" | "closed" | "suspended" | "renewing"
       lead_stage: "lead" | "contact" | "proposal" | "negotiation" | "closed"
       plan_status: "draft" | "in_review" | "approved" | "archived"
@@ -2691,6 +2692,7 @@ export const Constants = {
         "overdue",
         "cancelled",
         "pending_invoice",
+        "draft",
       ],
       contract_status: ["active", "closed", "suspended", "renewing"],
       lead_stage: ["lead", "contact", "proposal", "negotiation", "closed"],

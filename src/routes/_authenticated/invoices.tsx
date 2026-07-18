@@ -133,7 +133,7 @@ function deliverableReference(t: BillableTask, d: Deliverable) {
 }
 
 const STATUS_META: Record<InvoiceStatus, { label: string; className: string }> = {
-  draft:    { label: "Rascunho", className: "bg-muted text-muted-foreground" },
+  draft:    { label: "Aguardando confirmação", className: "bg-amber-500/15 text-amber-700 dark:text-amber-400" },
   issued:   { label: "Emitida",  className: "bg-blue-500/15 text-blue-600 dark:text-blue-400" },
   pending:  { label: "Emitida",  className: "bg-blue-500/15 text-blue-600 dark:text-blue-400" },
   paid:     { label: "Paga",     className: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400" },
@@ -624,19 +624,20 @@ function NewInvoiceWizard({
         amount: total,
         total,
         subtotal: total,
-        status: "issued",
+        status: "draft",
         notes: notes || null,
         payment_terms: paymentTerms || null,
         payment_link: paymentLink.trim() || null,
       }).select("id").single();
       if (invErr) throw invErr;
 
+      // Vincula cobranças à fatura, mas mantém em "draft" — não são lançamentos financeiros até confirmar
       const { error: linkErr } = await supabase.from("charges")
-        .update({ invoice_id: invoice.id, status: "pending" })
+        .update({ invoice_id: invoice.id, status: "draft" } as never)
         .in("id", chargeIds);
       if (linkErr) throw linkErr;
 
-      toast.success("Fatura emitida");
+      toast.success("Fatura criada como rascunho. Confirme para gerar lançamento financeiro.");
       onCreated(invoice.id);
     } catch (e) {
       toast.error((e as Error).message);
@@ -1096,6 +1097,19 @@ function InvoiceDetail({ id, clients, organization, onClose }: { id: string; cli
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const confirmInvoice = useMutation({
+    mutationFn: async () => {
+      const { error: e1 } = await supabase.from("invoices").update({ status: "issued" }).eq("id", id);
+      if (e1) throw e1;
+      const { error: e2 } = await supabase.from("charges")
+        .update({ status: "pending" })
+        .eq("invoice_id", id);
+      if (e2) throw e2;
+    },
+    onSuccess: () => { invalidateAll(); toast.success("Fatura confirmada — lançamentos financeiros gerados"); },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   const markPaid = useMutation({
     mutationFn: async () => {
       const now = new Date().toISOString();
@@ -1312,7 +1326,17 @@ function InvoiceDetail({ id, clients, organization, onClose }: { id: string; cli
               <RotateCcw className="h-4 w-4 mr-1" />Reabrir
             </Button>
           )}
-          {!isLocked && !editing && (
+          {!isLocked && !editing && invoice.status === "draft" && (
+            <>
+              <Button variant="ghost" onClick={() => setConfirmCancel(true)}>
+                <XCircle className="h-4 w-4 mr-1" />Cancelar fatura
+              </Button>
+              <Button onClick={() => confirmInvoice.mutate()} disabled={confirmInvoice.isPending}>
+                <CheckCircle2 className="h-4 w-4 mr-1" />Confirmar fatura
+              </Button>
+            </>
+          )}
+          {!isLocked && !editing && invoice.status !== "draft" && (
             <>
               <Button variant="ghost" onClick={() => setConfirmCancel(true)}>
                 <XCircle className="h-4 w-4 mr-1" />Cancelar fatura

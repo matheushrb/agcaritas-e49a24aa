@@ -20,7 +20,7 @@ export const Route = createFileRoute("/_authenticated/finance")({
   component: FinancePage,
 });
 
-type ChargeStatus = "pending" | "paid" | "overdue" | "cancelled" | "pending_invoice";
+type ChargeStatus = "pending" | "paid" | "overdue" | "cancelled" | "pending_invoice" | "draft";
 type Charge = {
   id: string;
   description: string | null;
@@ -42,6 +42,7 @@ const STATUS_META: Record<ChargeStatus, { label: string; color: string; icon: ty
   paid:            { label: "Pago",               color: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400", icon: CheckCircle2 },
   overdue:         { label: "Atrasado",           color: "bg-red-500/15 text-red-600 dark:text-red-400",       icon: AlertCircle },
   cancelled:       { label: "Cancelado",          color: "bg-muted text-muted-foreground",                     icon: AlertCircle },
+  draft:           { label: "Rascunho",            color: "bg-muted text-muted-foreground",                     icon: Clock },
 };
 
 function money(n: number) {
@@ -86,6 +87,8 @@ function FinancePage() {
     const monthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
     let received = 0, pending = 0, overdue = 0, monthTotal = 0;
     for (const c of charges) {
+      // Rascunhos (fatura aguardando confirmação) e pending_invoice não são lançamentos ainda
+      if (c.status === "draft" || c.status === "pending_invoice") continue;
       const amt = Number(c.amount ?? 0);
       if (c.status === "paid") received += amt;
       if (c.status === "pending") pending += amt;
