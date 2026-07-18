@@ -6,9 +6,13 @@ import {
   Pencil, Check, FolderKanban, Bell, TrendingUp, TrendingDown, Wallet,
   Activity, BarChart3, Target, FolderOpen, CheckCircle2, CalendarClock,
   CheckSquare, ChevronLeft, ChevronRight, Sparkles, Cake, PieChart,
-  Briefcase, Layers, HeartHandshake,
+  Briefcase, Layers, HeartHandshake, Mail, MessagesSquare, Archive,
+  Eye, UserPlus, UserMinus,
 } from "lucide-react";
 import type { JSX } from "react";
+import { Link } from "@tanstack/react-router";
+import { SwipeableRow, type SwipeAction } from "@/components/swipeable-row";
+import { QuickCreateButton } from "@/components/quick-create-button";
 
 export type WidgetCategory =
   | "Saudação"
@@ -45,7 +49,7 @@ export interface WidgetDef {
 const BRL = (n: number) =>
   n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
-// ---------- Helpers (shared visual atoms) ----------
+// ---------- Helpers ----------
 
 type StatTone = "success" | "destructive" | "primary" | "accent" | "warning" | "info";
 
@@ -97,11 +101,14 @@ function StatCard({
   );
 }
 
-function SectionLabel({ children }: { children: React.ReactNode }) {
+function SectionLabel({ children, action }: { children: React.ReactNode; action?: React.ReactNode }) {
   return (
-    <p className="text-[10px] font-semibold tracking-[0.18em] text-muted-foreground uppercase mb-3">
-      {children}
-    </p>
+    <div className="mb-3 flex items-end justify-between">
+      <p className="text-[10px] font-semibold tracking-[0.18em] text-muted-foreground uppercase">
+        {children}
+      </p>
+      {action}
+    </div>
   );
 }
 
@@ -118,20 +125,6 @@ function Avatar({ initials }: { initials: string }) {
     <div className="grid h-7 w-7 place-items-center rounded-full bg-accent text-accent-foreground text-[10px] font-bold border-2 border-card">
       {initials}
     </div>
-  );
-}
-
-function InlineActionButton({ title, icon: Icon }: { title: string; icon: any }) {
-  return (
-    <button
-      type="button"
-      className="group inline-flex items-center gap-2 rounded-full border border-border bg-card px-3.5 py-2 text-sm font-medium text-foreground shadow-sm transition hover:border-primary/50 hover:bg-primary/5"
-    >
-      <span className="grid h-7 w-7 place-items-center rounded-full bg-primary/10 text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
-        <Icon className="h-3.5 w-3.5" />
-      </span>
-      {title}
-    </button>
   );
 }
 
@@ -188,13 +181,25 @@ function upcomingText(events: any[]) {
   return `${new Date(e.starts_at).toLocaleDateString("pt-BR", { day: "2-digit", month: "long" })} · ${new Date(e.starts_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}`;
 }
 
+// Categoriza notificações por tipo (chat interno, email externo, sistema)
+function notificationChannel(n: any): { kind: "chat" | "email" | "system"; icon: any; tone: string } {
+  const t = String(n.type ?? n.channel ?? "").toLowerCase();
+  if (t.includes("chat") || t.includes("message") || t.includes("mensagem")) {
+    return { kind: "chat", icon: MessagesSquare, tone: "bg-primary/10 text-primary" };
+  }
+  if (t.includes("email") || t.includes("mail")) {
+    return { kind: "email", icon: Mail, tone: "bg-info/15 text-info" };
+  }
+  return { kind: "system", icon: Bell, tone: "bg-muted text-muted-foreground" };
+}
+
 // ---------- Widgets ----------
 
 export const WIDGETS: WidgetDef[] = [
   {
     id: "greeting",
     title: "Saudação e atalhos",
-    description: "Cabeçalho com boas-vindas e botões rápidos.",
+    description: "Cabeçalho com boas-vindas e botão Novo.",
     category: "Saudação",
     colSpan: 8,
     render: ({ firstName }) => (
@@ -208,10 +213,8 @@ export const WIDGETS: WidgetDef[] = [
             O ERP da Caritas Agência: organize leads, propostas, projetos e faturamento em um único painel.
           </p>
         </div>
-        <div className="flex flex-wrap gap-2 shrink-0">
-          <InlineActionButton title="Organizar" icon={FolderKanban} />
-          <InlineActionButton title="Sincronizar" icon={TrendingUp} />
-          <InlineActionButton title="Colaborar" icon={Users} />
+        <div className="flex flex-wrap items-center gap-2 shrink-0">
+          <QuickCreateButton />
         </div>
       </div>
     ),
@@ -244,28 +247,51 @@ export const WIDGETS: WidgetDef[] = [
             ))}
             {days.map(d => {
               const isToday = d.toDateString() === now.toDateString();
+              const iso = d.toISOString().slice(0, 10);
               return (
-                <div key={d.toISOString() + "n"} className="py-1">
-                  <div className={`mx-auto grid h-8 w-8 place-items-center rounded-full text-xs font-medium ${isToday ? "bg-primary text-primary-foreground" : "text-foreground"}`}>
+                <Link
+                  to="/calendar"
+                  search={{ d: iso, new: 1 } as any}
+                  key={d.toISOString() + "n"}
+                  className="py-1"
+                  title={`Novo compromisso em ${d.toLocaleDateString("pt-BR")}`}
+                >
+                  <div className={`mx-auto grid h-8 w-8 place-items-center rounded-full text-xs font-medium transition-colors ${
+                    isToday
+                      ? "bg-primary text-primary-foreground"
+                      : "text-foreground hover:bg-primary/10 hover:text-primary"
+                  }`}>
                     {d.getDate()}
                   </div>
-                </div>
+                </Link>
               );
             })}
           </div>
           <div className="mt-4 space-y-3">
             {data.events.length === 0 && <EmptyRow icon={Calendar} label="Nenhum compromisso hoje." />}
             {data.events.map(ev => (
-              <div key={ev.id} className="rounded-2xl border-l-2 border-primary bg-muted/40 pl-3 py-2">
+              <Link
+                to="/calendar"
+                search={{ d: ev.starts_at.slice(0, 10) } as any}
+                key={ev.id}
+                className="block rounded-2xl border-l-2 border-primary bg-muted/40 pl-3 py-2 hover:bg-muted"
+              >
                 <p className="text-xs text-muted-foreground">
                   {new Date(ev.starts_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
                   {ev.ends_at && ` – ${new Date(ev.ends_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}`}
                 </p>
                 <p className="text-sm font-medium">{ev.title}</p>
-                {ev.description && <p className="text-xs text-muted-foreground">{ev.description}</p>}
-              </div>
+                {ev.description && <p className="text-xs text-muted-foreground line-clamp-1">{ev.description}</p>}
+              </Link>
             ))}
           </div>
+          <Link
+            to="/calendar"
+            search={{ new: 1 } as any}
+            className="mt-3 flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-border py-2 text-xs text-muted-foreground hover:border-primary hover:text-primary"
+          >
+            <Plus className="h-3.5 w-3.5" /> Novo compromisso
+          </Link>
         </Card>
       );
     },
@@ -283,36 +309,43 @@ export const WIDGETS: WidgetDef[] = [
       </div>
     ),
   },
+  // Trocado de lugar: "Próxima reunião" agora ocupa o slot de 4 colunas
   {
-    id: "notifications",
-    title: "Notificações",
-    description: "Alertas recentes do sistema.",
-    category: "Outros",
+    id: "next-meeting",
+    title: "Próxima reunião",
+    description: "Próximo evento agendado.",
+    category: "Agenda",
     colSpan: 4,
-    render: ({ data }) => (
-      <Card className="card-surface p-5 h-full">
-        <div className="flex items-center justify-between">
-          <h3 className="font-display font-semibold">Notificações</h3>
-          <button className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1">
-            <Trash2 className="h-3.5 w-3.5" /> Limpar
-          </button>
-        </div>
-        <div className="mt-4 space-y-3">
-          {data.notifications.length === 0 && <EmptyRow icon={Bell} label="Sem notificações no momento." />}
-          {data.notifications.map(n => (
-            <div key={n.id} className="group flex items-start gap-3 rounded-2xl bg-muted/40 p-3">
-              <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary">
-                <Bell className="h-4 w-4" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-medium truncate">{n.title}</p>
-                {n.body && <p className="text-xs text-muted-foreground truncate">{n.body}</p>}
+    render: ({ data }) => {
+      const ev = data.events[0];
+      return (
+        <Card className="card-surface p-5 h-full flex flex-col">
+          <div className="flex items-start justify-between">
+            <div className="min-w-0">
+              <h3 className="font-display font-semibold">Próxima reunião</h3>
+              <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
+                <span className="inline-block h-2 w-2 rounded-full bg-primary" />
+                {upcomingText(data.events)}
               </div>
             </div>
-          ))}
-        </div>
-      </Card>
-    ),
+            <Link to="/calendar" className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1">
+              <Pencil className="h-3.5 w-3.5" />
+            </Link>
+          </div>
+          <div className="mt-4 flex-1">
+            <p className="text-sm line-clamp-3">
+              {ev?.description ?? ev?.title ?? "Nenhuma reunião agendada. Adicione um evento pela agenda."}
+            </p>
+          </div>
+          <div className="mt-4 flex gap-2">
+            <Link to="/calendar" className="flex-1">
+              <Button variant="outline" className="rounded-full w-full">Remarcar</Button>
+            </Link>
+            <Button className="rounded-full gap-2 flex-1"><Check className="h-4 w-4" /> Confirmar</Button>
+          </div>
+        </Card>
+      );
+    },
   },
   {
     id: "assignments",
@@ -329,22 +362,36 @@ export const WIDGETS: WidgetDef[] = [
           </div>
           {!priority && <div className="mt-4"><EmptyRow icon={ClipboardList} label="Nenhuma atribuição em destaque." /></div>}
           {priority && (
-            <div className="mt-4 rounded-2xl bg-muted/40 p-4 space-y-3">
-              <div className="flex items-center justify-between text-xs text-muted-foreground">
-                <span className="rounded-full bg-primary/10 px-2 py-0.5 text-primary font-medium uppercase">{priority.platform ?? "Geral"}</span>
-                <span>{priority.delivery_type ?? "Entrega"}</span>
+            <SwipeableRow
+              className="mt-4"
+              rightActions={[
+                { id: "assign",   label: "Atribuir",   icon: UserPlus,   tone: "primary",     onClick: () => {} },
+                { id: "unassign", label: "Desatribuir", icon: UserMinus,  tone: "muted",       onClick: () => {} },
+                { id: "open",     label: "Abrir",      icon: Eye,        tone: "success",     onClick: () => {} },
+              ]}
+            >
+              <div className="rounded-2xl bg-muted/40 p-3 space-y-2">
+                <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+                  <span className="rounded-full bg-primary/10 px-2 py-0.5 text-primary font-medium uppercase">{priority.platform ?? "Geral"}</span>
+                  <span>{priority.delivery_type ?? "Entrega"}</span>
+                </div>
+                <p className="font-display font-semibold text-sm">{priority.title}</p>
+                <div className="flex items-center justify-between">
+                  <span className="rounded-full bg-success/20 px-2.5 py-0.5 text-[11px] font-medium text-success-foreground">
+                    {priority.priority === "high" ? "Alta" : priority.priority === "medium" ? "Média" : "Baixa"}
+                  </span>
+                  <span className="text-[11px] text-muted-foreground">{priority.progress ?? 0}%</span>
+                </div>
               </div>
-              <p className="font-display font-semibold">{priority.title}</p>
-              <div className="flex items-center justify-between">
-                <span className="rounded-full bg-success/20 px-2.5 py-0.5 text-xs font-medium text-success-foreground">
-                  {priority.priority === "high" ? "Alta" : priority.priority === "medium" ? "Média" : "Baixa"}
-                </span>
-              </div>
-            </div>
+            </SwipeableRow>
           )}
-          <button className="mt-3 flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-border py-3 text-sm text-muted-foreground hover:border-primary hover:text-primary">
-            <Plus className="h-4 w-4" /> Adicionar atribuição
-          </button>
+          <Link
+            to="/tasks"
+            search={{ new: 1 } as any}
+            className="mt-3 flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-border py-2.5 text-xs text-muted-foreground hover:border-primary hover:text-primary"
+          >
+            <Plus className="h-3.5 w-3.5" /> Adicionar atribuição
+          </Link>
         </Card>
       );
     },
@@ -352,7 +399,7 @@ export const WIDGETS: WidgetDef[] = [
   {
     id: "tasks-today",
     title: "Tarefas de hoje",
-    description: "Até 4 tarefas prioritárias de hoje.",
+    description: "Até 5 tarefas prioritárias de hoje.",
     category: "Tarefas",
     colSpan: 8,
     render: ({ data }) => (
@@ -367,70 +414,119 @@ export const WIDGETS: WidgetDef[] = [
               <div className="grid h-7 w-7 place-items-center rounded-full bg-primary text-primary-foreground text-[10px] font-bold border-2 border-card">+3</div>
             </div>
           </div>
+          <Link to="/tasks" className="text-xs text-muted-foreground hover:text-foreground">Ver todas</Link>
         </div>
-        <div className="mt-4 space-y-3">
+        <div className="mt-4 space-y-2">
           {data.tasks.length === 0 && <EmptyRow icon={ClipboardList} label="Nenhuma tarefa para hoje ainda." />}
-          {data.tasks.slice(0, 4).map(t => (
-            <div key={t.id} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-2xl bg-muted/40 p-3 md:p-4">
-              <div className="min-w-0">
-                <div className="flex flex-wrap items-center gap-3">
-                  <p className="font-medium truncate">{t.title}</p>
-                  <span className="text-xs text-muted-foreground">Duração {t.estimated_hours ?? "—"}h</span>
+          {data.tasks.slice(0, 5).map(t => (
+            <SwipeableRow
+              key={t.id}
+              rightActions={[
+                { id: "open",     label: "Abrir",       icon: Eye,        tone: "primary", onClick: () => {} },
+                { id: "assign",   label: "Atribuir",    icon: UserPlus,   tone: "success", onClick: () => {} },
+                { id: "unassign", label: "Sair",        icon: UserMinus,  tone: "muted",   onClick: () => {} },
+              ]}
+            >
+              <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-2xl bg-muted/40 px-3 py-2">
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="font-medium truncate text-sm">{t.title}</p>
+                    {t.priority === "high" && (
+                      <span className="rounded-full bg-destructive/10 text-destructive text-[10px] font-medium px-1.5 py-0.5">
+                        Alta
+                      </span>
+                    )}
+                    {t.platform && (
+                      <span className="text-[10px] text-muted-foreground uppercase tracking-wide">{t.platform}</span>
+                    )}
+                  </div>
+                  <div className="mt-1.5 flex items-center gap-3">
+                    <Progress value={t.progress ?? 0} className="h-1 max-w-[180px]" />
+                    <span className="text-[10px] text-muted-foreground shrink-0">{t.progress ?? 0}%</span>
+                    <span className="text-[10px] text-muted-foreground shrink-0">· {t.estimated_hours ?? "—"}h</span>
+                  </div>
                 </div>
-                <div className="mt-2 flex items-center gap-3">
-                  <Progress value={t.progress ?? 0} className="h-1.5 max-w-[220px]" />
-                  <span className="text-xs text-muted-foreground">{t.progress ?? 0}%</span>
+                <div className="flex items-center gap-3 text-[11px] text-muted-foreground shrink-0">
+                  <span className="flex items-center gap-1"><MessageCircle className="h-3 w-3" />{t.comments_count ?? 0}</span>
+                  <span className="flex items-center gap-1"><Paperclip className="h-3 w-3" />{t.attachments_count ?? 0}</span>
+                  <span className="hidden md:inline">{t.due_date ? new Date(t.due_date).toLocaleDateString("pt-BR", { day: "2-digit", month: "short" }) : "—"}</span>
                 </div>
               </div>
-              <div className="flex items-center gap-3 text-xs text-muted-foreground shrink-0">
-                <span className="flex items-center gap-1"><MessageCircle className="h-3.5 w-3.5" />{t.comments_count ?? 0}</span>
-                <span className="flex items-center gap-1"><Paperclip className="h-3.5 w-3.5" />{t.attachments_count ?? 0}</span>
-                <span className="hidden md:inline">{t.due_date ? new Date(t.due_date).toLocaleDateString("pt-BR", { day: "2-digit", month: "short" }) : "—"}</span>
-              </div>
-            </div>
+            </SwipeableRow>
           ))}
-          {data.tasks.length > 4 && (
-            <button className="w-full text-xs text-muted-foreground hover:text-foreground py-1">
-              Ver todas ({data.tasks.length})
-            </button>
-          )}
         </div>
       </Card>
     ),
   },
+  // Notifications agora no slot largo (8 col), com categorias chat/email/sistema e ações por swipe
   {
-    id: "next-meeting",
-    title: "Próxima reunião",
-    description: "Próximo evento agendado.",
-    category: "Agenda",
+    id: "notifications",
+    title: "Notificações",
+    description: "Chat interno, e-mails e alertas do sistema.",
+    category: "Outros",
     colSpan: 8,
-    render: ({ data }) => (
-      <Card className="card-surface p-5">
-        <div className="flex items-center justify-between">
-          <div>
-            <h3 className="font-display font-semibold">Próxima reunião</h3>
-            <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
-              <span className="inline-block h-2 w-2 rounded-full bg-primary" />
-              {upcomingText(data.events)}
+    render: ({ data }) => {
+      const list = data.notifications;
+      return (
+        <Card className="card-surface p-5 h-full">
+          <div className="flex items-center justify-between flex-wrap gap-3">
+            <div>
+              <h3 className="font-display font-semibold">Notificações</h3>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Chat interno, e-mails vinculados e alertas do sistema — arraste para ações rápidas.
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 text-primary text-[10px] font-medium px-2 py-1">
+                <MessagesSquare className="h-3 w-3" /> Chat
+              </span>
+              <span className="inline-flex items-center gap-1 rounded-full bg-info/15 text-info text-[10px] font-medium px-2 py-1">
+                <Mail className="h-3 w-3" /> E-mail
+              </span>
+              <button className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1">
+                <Trash2 className="h-3.5 w-3.5" /> Limpar
+              </button>
             </div>
           </div>
-          <button className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1">
-            <Pencil className="h-3.5 w-3.5" /> Editar
-          </button>
-        </div>
-        <div className="mt-4 grid grid-cols-1 md:grid-cols-[1fr_auto] gap-4 items-center">
-          <div>
-            <p className="text-sm">
-              {data.events[0]?.description ?? "Nenhuma reunião agendada. Adicione um evento pela agenda."}
-            </p>
+          <div className="mt-4 space-y-2">
+            {list.length === 0 && (
+              <EmptyRow icon={Bell} label="Sem notificações. Chat interno e integração de e-mail em breve." />
+            )}
+            {list.map((n: any) => {
+              const ch = notificationChannel(n);
+              const Icon = ch.icon;
+              const actions: SwipeAction[] = [
+                { id: "read",    label: "Ler",      icon: Check,   tone: "success",     onClick: () => {} },
+                { id: "archive", label: "Arquivar", icon: Archive, tone: "muted",       onClick: () => {} },
+                { id: "delete",  label: "Excluir",  icon: Trash2,  tone: "destructive", onClick: () => {} },
+                { id: "open",    label: "Acessar",  icon: Eye,     tone: "primary",     onClick: () => {} },
+              ];
+              return (
+                <SwipeableRow key={n.id} rightActions={actions}>
+                  <div className="flex items-start gap-3 rounded-2xl bg-muted/40 px-3 py-2.5">
+                    <div className={`grid h-8 w-8 shrink-0 place-items-center rounded-xl ${ch.tone}`}>
+                      <Icon className="h-4 w-4" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm font-medium truncate">{n.title}</p>
+                        <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                          {ch.kind === "chat" ? "Chat" : ch.kind === "email" ? "E-mail" : "Sistema"}
+                        </span>
+                      </div>
+                      {n.body && <p className="text-xs text-muted-foreground line-clamp-1">{n.body}</p>}
+                    </div>
+                    <span className="text-[10px] text-muted-foreground shrink-0">
+                      {n.created_at ? new Date(n.created_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) : ""}
+                    </span>
+                  </div>
+                </SwipeableRow>
+              );
+            })}
           </div>
-          <div className="flex gap-2">
-            <Button variant="outline" className="rounded-full">Remarcar</Button>
-            <Button className="rounded-full gap-2"><Check className="h-4 w-4" /> Confirmar</Button>
-          </div>
-        </div>
-      </Card>
-    ),
+        </Card>
+      );
+    },
   },
   {
     id: "finance",
@@ -440,14 +536,16 @@ export const WIDGETS: WidgetDef[] = [
     colSpan: 12,
     render: ({ data }) => (
       <div>
-        <SectionLabel>Financeiro</SectionLabel>
+        <SectionLabel action={<Link to="/finance" className="text-[11px] font-medium text-primary hover:underline">Ver módulo →</Link>}>
+          Financeiro
+        </SectionLabel>
         <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">
-          <StatCard label="Faturamento" value={BRL(0)} hint="vs mês anterior" icon={TrendingUp} tone="success" delta={{ value: "0%", direction: "up" }} />
-          <StatCard label="Despesas" value={BRL(0)} hint="vs mês anterior" icon={TrendingDown} tone="destructive" delta={{ value: "0%", direction: "up" }} />
-          <StatCard label="Lucro Líquido" value={BRL(0)} hint="Margem 0%" icon={Wallet} tone="primary" delta={{ value: "0%", direction: "up" }} />
-          <StatCard label="MRR" value={BRL(0)} hint="Recorrente mensal" icon={Activity} tone="info" />
-          <StatCard label="Pipeline" value={BRL(pipelineValue(data.proposals))} hint={`${data.proposals.length} deals`} icon={BarChart3} tone="accent" />
-          <StatCard label="Conversão" value={`${proposalsRate(data.proposals)}%`} hint="Taxa de fechamento" icon={Target} tone="warning" />
+          <FinanceCard label="Faturamento"  value={BRL(0)} hint="vs mês anterior" icon={TrendingUp}   tone="success"     delta={{ value: "0%", direction: "up" }} />
+          <FinanceCard label="Despesas"     value={BRL(0)} hint="vs mês anterior" icon={TrendingDown} tone="destructive" delta={{ value: "0%", direction: "up" }} />
+          <FinanceCard label="Lucro Líquido" value={BRL(0)} hint="Margem 0%"       icon={Wallet}       tone="primary"     delta={{ value: "0%", direction: "up" }} />
+          <FinanceCard label="MRR"          value={BRL(0)} hint="Recorrente mensal" icon={Activity}    tone="info" />
+          <FinanceCard label="Pipeline"     value={BRL(pipelineValue(data.proposals))} hint={`${data.proposals.length} deals`} icon={BarChart3} tone="accent" />
+          <FinanceCard label="Conversão"    value={`${proposalsRate(data.proposals)}%`} hint="Taxa de fechamento" icon={Target} tone="warning" />
         </div>
       </div>
     ),
@@ -524,6 +622,60 @@ export const WIDGETS: WidgetDef[] = [
   },
 ];
 
+// FinanceCard — variação de StatCard com destaque visual mais rico e ícone maior
+function FinanceCard({
+  label, value, hint, icon: Icon, tone = "primary", delta,
+}: {
+  label: string; value: string; hint?: string; icon: any; tone?: StatTone;
+  delta?: { value: string; direction: "up" | "down" | "flat" };
+}) {
+  const toneClasses: Record<StatTone, { bg: string; text: string; ring: string }> = {
+    success:     { bg: "bg-success/10",     text: "text-success",     ring: "ring-success/20" },
+    destructive: { bg: "bg-destructive/10", text: "text-destructive", ring: "ring-destructive/20" },
+    primary:     { bg: "bg-primary/10",     text: "text-primary",     ring: "ring-primary/20" },
+    accent:      { bg: "bg-accent/20",      text: "text-accent-foreground", ring: "ring-accent/30" },
+    warning:     { bg: "bg-warning/15",     text: "text-warning",     ring: "ring-warning/20" },
+    info:        { bg: "bg-info/15",        text: "text-info",        ring: "ring-info/20" },
+  };
+  const t = toneClasses[tone];
+  return (
+    <Card className={`card-surface relative overflow-hidden p-4 md:p-5 ring-1 ${t.ring}`}>
+      {/* Fundo decorativo circular sutil */}
+      <div className={`pointer-events-none absolute -top-6 -right-6 h-24 w-24 rounded-full ${t.bg} opacity-60`} />
+      <div className="relative">
+        <div className="flex items-start justify-between gap-3">
+          <span className="text-[10px] font-semibold tracking-wider text-muted-foreground uppercase">
+            {label}
+          </span>
+          <span className={`grid h-9 w-9 place-items-center rounded-xl ${t.bg} ${t.text} shadow-sm`}>
+            <Icon className="h-4 w-4" />
+          </span>
+        </div>
+        <p className="mt-3 font-display text-2xl md:text-3xl font-bold leading-none">{value}</p>
+        <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
+          <span className="truncate">{hint}</span>
+          {delta && (
+            <span
+              className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium ${
+                delta.direction === "down"
+                  ? "bg-destructive/10 text-destructive"
+                  : "bg-success/10 text-success"
+              }`}
+            >
+              {delta.direction === "down" ? (
+                <TrendingDown className="h-3 w-3" />
+              ) : (
+                <TrendingUp className="h-3 w-3" />
+              )}
+              {delta.value}
+            </span>
+          )}
+        </div>
+      </div>
+    </Card>
+  );
+}
+
 function KpiRing({ label, percent, note, tone }: { label: string; percent: number; note: string; tone: "success" | "destructive" }) {
   const color = tone === "success" ? "var(--success)" : "var(--destructive)";
   return (
@@ -563,13 +715,13 @@ const ALL_IDS = WIDGETS.map(w => w.id);
 
 const PRESETS: Record<string, string[]> = {
   founder: ALL_IDS,
-  manager: ["greeting", "kpi-rings", "calendar", "tasks-today", "assignments", "next-meeting", "operations", "projects-active", "notifications"],
-  traffic: ["greeting", "kpi-rings", "calendar", "tasks-today", "next-meeting", "finance", "sales-pipeline"],
-  sales: ["greeting", "kpi-rings", "calendar", "sales-pipeline", "next-meeting", "finance", "notifications"],
-  designer: ["greeting", "calendar", "tasks-today", "assignments", "next-meeting", "operations", "notifications"],
-  copywriter: ["greeting", "calendar", "tasks-today", "assignments", "next-meeting", "operations", "notifications"],
-  developer: ["greeting", "calendar", "tasks-today", "assignments", "operations", "projects-active", "notifications"],
-  operations: ["greeting", "kpi-rings", "calendar", "tasks-today", "next-meeting", "operations", "hr-team", "notifications"],
+  manager: ["greeting", "kpi-rings", "calendar", "next-meeting", "tasks-today", "assignments", "notifications", "operations", "projects-active"],
+  traffic: ["greeting", "kpi-rings", "calendar", "next-meeting", "tasks-today", "finance", "sales-pipeline"],
+  sales: ["greeting", "kpi-rings", "calendar", "next-meeting", "sales-pipeline", "finance", "notifications"],
+  designer: ["greeting", "calendar", "next-meeting", "tasks-today", "assignments", "notifications", "operations"],
+  copywriter: ["greeting", "calendar", "next-meeting", "tasks-today", "assignments", "notifications", "operations"],
+  developer: ["greeting", "calendar", "next-meeting", "tasks-today", "assignments", "operations", "projects-active"],
+  operations: ["greeting", "kpi-rings", "calendar", "next-meeting", "tasks-today", "notifications", "operations", "hr-team"],
 };
 
 const ROLE_KEYWORDS: Array<[RegExp, string]> = [
@@ -586,8 +738,6 @@ const ROLE_KEYWORDS: Array<[RegExp, string]> = [
 export function getPresetForRole(roleTitle: string | null | undefined): UserPref[] {
   const key = detectPresetKey(roleTitle);
   const ids = PRESETS[key] ?? ALL_IDS;
-  // Sempre inclui todos os widgets no array, marcando enabled conforme o preset,
-  // para que a ordem seja estável e o usuário veja também os desligados no painel.
   const enabledSet = new Set(ids);
   const orderedEnabled = ids.map(id => ({ id, enabled: true } as UserPref));
   const rest = ALL_IDS.filter(id => !enabledSet.has(id)).map(id => ({ id, enabled: false } as UserPref));
@@ -605,7 +755,6 @@ export function reconcilePrefs(saved: UserPref[] | null | undefined, roleTitle: 
   const knownIds = new Set(ALL_IDS);
   const filtered = saved.filter(p => knownIds.has(p.id));
   const seen = new Set(filtered.map(p => p.id));
-  // Anexa widgets novos (que ainda não existiam quando salvou) desligados no final
   const missing = ALL_IDS.filter(id => !seen.has(id)).map(id => ({ id, enabled: false } as UserPref));
   return [...filtered, ...missing];
 }
