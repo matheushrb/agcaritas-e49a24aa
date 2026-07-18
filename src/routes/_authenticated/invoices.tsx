@@ -167,8 +167,22 @@ function InvoicesPage() {
   const { data: clients = [] } = useQuery<Client[]>({
     queryKey: ["clients-basic"],
     queryFn: async () => {
-      const { data } = await supabase.from("clients").select("id,name,tax_id,email").order("name");
+      const { data } = await supabase.from("clients").select(
+        "id,name,tax_id,email,legal_name,company,trade_name,state_registration,billing_email,phone,contact_name,contact_role,address_street,address_number,address_complement,address_neighborhood,address_city,address_state,address_zip,address_country",
+      ).order("name");
       return (data ?? []) as Client[];
+    },
+  });
+
+  const { data: organization = null } = useQuery<Organization | null>({
+    queryKey: ["organization-invoice"],
+    queryFn: async () => {
+      const { data: p } = await supabase.from("profiles").select("organization_id").maybeSingle();
+      if (!p?.organization_id) return null;
+      const { data } = await supabase.from("organizations")
+        .select("id,name,legal_name,tax_id,email,phone,address,website,bank_info")
+        .eq("id", p.organization_id).maybeSingle();
+      return (data ?? null) as Organization | null;
     },
   });
 
