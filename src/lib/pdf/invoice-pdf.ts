@@ -229,7 +229,7 @@ export async function generateInvoicePDF(data: InvoicePDFData): Promise<jsPDF> {
     doc.text(header.toUpperCase(), x, cy, { charSpace: 0.6 });
     cy += 4;
 
-    setColor(doc, PDF_COLORS.ink, "text");
+    setColor(doc, PDF_COLORS.black, "text");
     doc.setFont("LiberationSans", "bold"); doc.setFontSize(10);
     const titleLines = doc.splitTextToSize(title, halfW - 2);
     doc.text(titleLines, x, cy);
