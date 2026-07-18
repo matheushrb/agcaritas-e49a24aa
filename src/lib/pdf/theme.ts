@@ -6,12 +6,12 @@ import type { jsPDF } from "jspdf";
 
 // Paleta industrial (RGB)
 export const PDF_COLORS = {
-  ink:       [23, 37, 84] as [number, number, number],    // #172554 - azul marinho profundo
-  graphite:  [30, 58, 138] as [number, number, number],   // #1E3A8A - azul marinho
+  ink:       [29, 78, 216] as [number, number, number],   // #1D4ED8 - azul do sistema (blue-700)
+  graphite:  [37, 99, 235] as [number, number, number],   // #2563EB - azul primário (blue-600)
   muted:     [100, 116, 139] as [number, number, number], // #64748B - azul acinzentado
-  hairline:  [191, 219, 254] as [number, number, number], // #BFDBFE - azul claro (linhas)
+  hairline:  [219, 234, 254] as [number, number, number], // #DBEAFE - azul claro (linhas)
   paper:     [239, 246, 255] as [number, number, number], // #EFF6FF - azul-gelo
-  accent:    [37, 99, 235] as [number, number, number],   // #2563EB - azul royal
+  accent:    [59, 130, 246] as [number, number, number],  // #3B82F6 - azul acento (blue-500)
   black:     [0, 0, 0] as [number, number, number],
   white:     [255, 255, 255] as [number, number, number],
 };
