@@ -1326,7 +1326,17 @@ function InvoiceDetail({ id, clients, organization, onClose }: { id: string; cli
               <RotateCcw className="h-4 w-4 mr-1" />Reabrir
             </Button>
           )}
-          {!isLocked && !editing && (
+          {!isLocked && !editing && invoice.status === "draft" && (
+            <>
+              <Button variant="ghost" onClick={() => setConfirmCancel(true)}>
+                <XCircle className="h-4 w-4 mr-1" />Cancelar fatura
+              </Button>
+              <Button onClick={() => confirmInvoice.mutate()} disabled={confirmInvoice.isPending}>
+                <CheckCircle2 className="h-4 w-4 mr-1" />Confirmar fatura
+              </Button>
+            </>
+          )}
+          {!isLocked && !editing && invoice.status !== "draft" && (
             <>
               <Button variant="ghost" onClick={() => setConfirmCancel(true)}>
                 <XCircle className="h-4 w-4 mr-1" />Cancelar fatura
