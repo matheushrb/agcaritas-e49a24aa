@@ -10,11 +10,15 @@ import {
   Eye, UserPlus, UserMinus, Newspaper, ExternalLink,
 } from "lucide-react";
 import type { JSX } from "react";
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { SwipeableRow, type SwipeAction } from "@/components/swipeable-row";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
 
 function NewsCarousel() {
   const { data: news = [] } = useQuery({
