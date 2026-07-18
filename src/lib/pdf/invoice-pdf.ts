@@ -284,7 +284,7 @@ export async function generateInvoicePDF(data: InvoicePDFData): Promise<jsPDF> {
     if (line.is_child) {
       setColor(doc, PDF_COLORS.muted, "text");
       doc.setFont("helvetica", "normal"); doc.setFontSize(9);
-      doc.text("↳", colDesc + 2, y);
+      doc.text("-", colDesc + 2, y);
     }
 
     setColor(doc, PDF_COLORS.ink, "text");
