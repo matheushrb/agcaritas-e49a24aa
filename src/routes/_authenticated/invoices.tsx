@@ -133,7 +133,7 @@ function deliverableReference(t: BillableTask, d: Deliverable) {
 }
 
 const STATUS_META: Record<InvoiceStatus, { label: string; className: string }> = {
-  draft:    { label: "Rascunho", className: "bg-muted text-muted-foreground" },
+  draft:    { label: "Aguardando confirmação", className: "bg-amber-500/15 text-amber-700 dark:text-amber-400" },
   issued:   { label: "Emitida",  className: "bg-blue-500/15 text-blue-600 dark:text-blue-400" },
   pending:  { label: "Emitida",  className: "bg-blue-500/15 text-blue-600 dark:text-blue-400" },
   paid:     { label: "Paga",     className: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400" },
