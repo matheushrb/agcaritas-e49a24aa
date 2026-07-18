@@ -918,9 +918,9 @@ function detectPresetKey(roleTitle: string | null | undefined): string {
 }
 
 // Widgets recém-introduzidos que devem entrar ativos mesmo em prefs salvas antigas.
-const AUTO_ENABLE_NEW: Record<string, string> = {
-  // insere "news" imediatamente após "next-meeting" (ou "finance", ou no início dos habilitados)
-  news: "next-meeting",
+const AUTO_ENABLE_NEW: Record<string, string[]> = {
+  // tenta inserir "news" logo após kpi-rings (espaço vazio ao lado do calendário); cai para outras âncoras se faltar
+  news: ["kpi-rings", "greeting", "next-meeting", "finance"],
 };
 
 export function reconcilePrefs(saved: UserPref[] | null | undefined, roleTitle: string | null | undefined): UserPref[] {
@@ -929,12 +929,17 @@ export function reconcilePrefs(saved: UserPref[] | null | undefined, roleTitle: 
   const filtered = saved.filter(p => knownIds.has(p.id));
   const seen = new Set(filtered.map(p => p.id));
 
-  // injeta widgets novos ativados, próximos da âncora quando possível
-  for (const [id, anchor] of Object.entries(AUTO_ENABLE_NEW)) {
-    if (seen.has(id)) continue;
-    const anchorIdx = filtered.findIndex(p => p.id === anchor);
-    const insertAt = anchorIdx >= 0 ? anchorIdx + 1 : filtered.length;
-    filtered.splice(insertAt, 0, { id, enabled: true });
+  // injeta / reposiciona widgets novos, próximos da primeira âncora encontrada
+  for (const [id, anchors] of Object.entries(AUTO_ENABLE_NEW)) {
+    const existingIdx = filtered.findIndex(p => p.id === id);
+    const wasEnabled = existingIdx >= 0 ? filtered[existingIdx].enabled : true;
+    if (existingIdx >= 0) filtered.splice(existingIdx, 1);
+    let insertAt = filtered.length;
+    for (const a of anchors) {
+      const i = filtered.findIndex(p => p.id === a);
+      if (i >= 0) { insertAt = i + 1; break; }
+    }
+    filtered.splice(insertAt, 0, { id, enabled: wasEnabled });
     seen.add(id);
   }
 
