@@ -111,6 +111,8 @@ const PRIORITY_META: Record<TaskPriority, { label: string; color: string; badge:
 
 function TasksPage() {
   const qc = useQueryClient();
+  const searchParams = Route.useSearch();
+  const navigate = Route.useNavigate();
   const [search, setSearch] = useState("");
   const [priorityFilter, setPriorityFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -119,6 +121,14 @@ function TasksPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [draftTask, setDraftTask] = useState<Task | null>(null);
   const [quickTitle, setQuickTitle] = useState<Record<string, string>>({});
+
+  // Abrir tarefa via ?open=<id>
+  useEffect(() => {
+    if (searchParams.open && searchParams.open !== selectedId) {
+      setSelectedId(searchParams.open);
+      navigate({ search: (prev) => ({ ...prev, open: undefined }), replace: true });
+    }
+  }, [searchParams.open]);
 
   const { data: automation } = useAutomationSettings();
   const settings = automation?.settings ?? DEFAULT_AUTOMATION_SETTINGS;
