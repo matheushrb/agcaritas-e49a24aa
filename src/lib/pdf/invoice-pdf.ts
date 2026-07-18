@@ -11,7 +11,33 @@ export interface InvoiceLine {
   qty?: number;
   unit_price?: number;
   amount: number;
-  is_child?: boolean; // entregável faturado dentro de uma tarefa-pai
+  is_child?: boolean;              // entregável faturado dentro de uma tarefa-pai
+  reference_date?: string | Date | null; // Data usada como referência do item
+  reference_label?: string;        // "Prazo" | "Transmissão" | "Gravação" | "Entregue em"
+}
+
+export interface InvoicePartyClient {
+  name: string;
+  company?: string | null;
+  legal_name?: string | null;
+  document?: string | null;
+  state_registration?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  address?: string | null;
+  contact_name?: string | null;
+  contact_role?: string | null;
+}
+
+export interface InvoicePartyAgency {
+  name?: string | null;
+  legal_name?: string | null;
+  document?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  address?: string | null;
+  website?: string | null;
+  bank_info?: string | null;
 }
 
 export interface InvoicePDFData {
@@ -19,21 +45,16 @@ export interface InvoicePDFData {
   competence?: string;
   issue_date: string | Date;
   due_date?: string | Date | null;
-  client: {
-    name: string;
-    company?: string | null;
-    document?: string | null;
-    email?: string | null;
-    address?: string | null;
-  };
-  agency?: { name?: string; document?: string; email?: string; address?: string };
+  client: InvoicePartyClient;
+  agency?: InvoicePartyAgency;
   lines: InvoiceLine[];
   discount?: number;
   taxes?: number;
-  notes?: string;              // observações legais (NF, juros, etc.)
-  payment_terms?: string;      // condições de pagamento editáveis
-  payment_link?: string;       // URL → vira QR code
-  payment_instructions?: string; // instruções extras opcionais
+  notes?: string;
+  payment_terms?: string;
+  payment_link?: string;
+  payment_instructions?: string;
+  is_preview?: boolean;
 }
 
 export const DEFAULT_PAYMENT_TERMS =
@@ -64,7 +85,7 @@ export async function generateInvoicePDF(data: InvoicePDFData): Promise<jsPDF> {
   const contentW = pageW - marginX * 2;
 
   drawIndustrialHeader(doc, {
-    documentKind: "FATURA",
+    documentKind: data.is_preview ? "FATURA · PRÉVIA" : "FATURA",
     documentNumber: data.number,
     competence: data.competence ? `Competência ${data.competence}` : undefined,
   });
@@ -111,40 +132,78 @@ export async function generateInvoicePDF(data: InvoicePDFData): Promise<jsPDF> {
   drawSectionLabel(doc, y, "Faturado para  ·  Emitido por"); y += 7;
   const halfW = (contentW - 6) / 2;
 
-  const drawParty = (x: number, title: string, lines: (string | null | undefined)[]) => {
+  const drawParty = (
+    x: number,
+    title: string,
+    subtitle: string | null,
+    rows: Array<{ label: string; value: string | null | undefined }>,
+  ) => {
     setColor(doc, PDF_COLORS.ink, "text");
-    doc.setFont("helvetica", "bold"); doc.setFontSize(10.5);
-    doc.text(title, x, y);
-    setColor(doc, PDF_COLORS.graphite, "text");
-    doc.setFont("helvetica", "normal"); doc.setFontSize(8.8);
-    const clean = lines.filter(Boolean) as string[];
-    clean.forEach((l, i) => {
-      const wrapped = doc.splitTextToSize(l, halfW - 2);
-      doc.text(wrapped, x, y + 5 + i * 4.5);
-    });
-    return 5 + clean.length * 4.5;
+    doc.setFont("helvetica", "bold"); doc.setFontSize(11);
+    const titleLines = doc.splitTextToSize(title, halfW - 2);
+    doc.text(titleLines, x, y);
+    let cy = y + titleLines.length * 4.5;
+    if (subtitle) {
+      setColor(doc, PDF_COLORS.muted, "text");
+      doc.setFont("helvetica", "italic"); doc.setFontSize(8);
+      const subLines = doc.splitTextToSize(subtitle, halfW - 2);
+      doc.text(subLines, x, cy + 1);
+      cy += subLines.length * 3.6 + 1;
+    }
+    cy += 2;
+    const clean = rows.filter(r => r.value && String(r.value).trim().length);
+    for (const r of clean) {
+      setColor(doc, PDF_COLORS.muted, "text");
+      doc.setFont("helvetica", "bold"); doc.setFontSize(6.6);
+      doc.text(r.label.toUpperCase(), x, cy, { charSpace: 0.6 });
+      setColor(doc, PDF_COLORS.ink, "text");
+      doc.setFont("helvetica", "normal"); doc.setFontSize(8.4);
+      const wrapped = doc.splitTextToSize(String(r.value), halfW - 2);
+      doc.text(wrapped, x, cy + 3.2);
+      cy += 3.2 + wrapped.length * 3.6 + 2;
+    }
+    return cy - y;
   };
 
-  const clientHeight = drawParty(marginX, data.client.company || data.client.name, [
-    data.client.company ? data.client.name : null,
-    data.client.document ? `CNPJ/CPF ${data.client.document}` : null,
-    data.client.email ?? null,
-    data.client.address ?? null,
-  ]);
-  const agency = data.agency ?? {};
-  const agencyHeight = drawParty(marginX + halfW + 6, agency.name || "Caritas Agência", [
-    agency.document ? `CNPJ ${agency.document}` : null,
-    agency.email ?? null,
-    agency.address ?? null,
-  ]);
-  y += Math.max(clientHeight, agencyHeight) + 6;
+  const c = data.client;
+  const contactValue = c.contact_name
+    ? `${c.contact_name}${c.contact_role ? ` — ${c.contact_role}` : ""}`
+    : null;
+  const clientHeight = drawParty(
+    marginX,
+    c.legal_name || c.company || c.name,
+    c.legal_name && c.name && c.name !== c.legal_name ? c.name : (c.company && c.company !== c.name ? c.name : null),
+    [
+      { label: "CNPJ / CPF", value: c.document },
+      { label: "Inscrição estadual", value: c.state_registration },
+      { label: "E-mail", value: c.email },
+      { label: "Telefone", value: c.phone },
+      { label: "Endereço", value: c.address },
+      { label: "Contato", value: contactValue },
+    ],
+  );
+
+  const a = data.agency ?? {};
+  const agencyHeight = drawParty(
+    marginX + halfW + 6,
+    a.legal_name || a.name || "Caritas Agência",
+    a.legal_name && a.name && a.name !== a.legal_name ? a.name : null,
+    [
+      { label: "CNPJ", value: a.document },
+      { label: "E-mail financeiro", value: a.email },
+      { label: "Telefone", value: a.phone },
+      { label: "Endereço", value: a.address },
+      { label: "Site", value: a.website },
+      { label: "Dados bancários", value: a.bank_info },
+    ],
+  );
+  y += Math.max(clientHeight, agencyHeight) + 4;
 
   /* ---------- Itens ---------- */
   drawSectionLabel(doc, y, "Itens desta fatura"); y += 7;
 
   const colDesc  = marginX;
-  const colQty   = pageW - marginX - 78;
-  const colUnit  = pageW - marginX - 42;
+  const colDate  = pageW - marginX - 46;
   const colTotal = pageW - marginX;
 
   // header table
@@ -152,10 +211,9 @@ export async function generateInvoicePDF(data: InvoicePDFData): Promise<jsPDF> {
   doc.rect(marginX, y - 4, contentW, 6, "F");
   setColor(doc, PDF_COLORS.white, "text");
   doc.setFont("helvetica", "bold"); doc.setFontSize(7);
-  doc.text("DESCRIÇÃO", colDesc + 2, y, { charSpace: 0.6 });
-  doc.text("QTD",      colQty,  y, { align: "right", charSpace: 0.6 });
-  doc.text("UNIT.",    colUnit, y, { align: "right", charSpace: 0.6 });
-  doc.text("TOTAL",    colTotal - 2, y, { align: "right", charSpace: 0.6 });
+  doc.text("DESCRIÇÃO",  colDesc + 2, y, { charSpace: 0.6 });
+  doc.text("REFERÊNCIA", colDate,     y, { charSpace: 0.6 });
+  doc.text("TOTAL",      colTotal - 2, y, { align: "right", charSpace: 0.6 });
   y += 6;
 
   let zebra = false;
@@ -168,11 +226,12 @@ export async function generateInvoicePDF(data: InvoicePDFData): Promise<jsPDF> {
     }
 
     const indent = line.is_child ? 6 : 2;
-    const titleLines = doc.splitTextToSize(line.title, colQty - colDesc - indent - 6);
+    const descMaxW = colDate - colDesc - indent - 4;
+    const titleLines = doc.splitTextToSize(line.title, descMaxW);
     const detailLines = line.detail
-      ? doc.splitTextToSize(line.detail, colQty - colDesc - indent - 6)
+      ? doc.splitTextToSize(line.detail, descMaxW)
       : [];
-    const rowH = Math.max(7, titleLines.length * 4 + detailLines.length * 3.6 + 3);
+    const rowH = Math.max(9, titleLines.length * 4 + detailLines.length * 3.6 + 4);
 
     if (zebra) {
       setColor(doc, PDF_COLORS.paper, "fill");
@@ -180,7 +239,6 @@ export async function generateInvoicePDF(data: InvoicePDFData): Promise<jsPDF> {
     }
     zebra = !zebra;
 
-    // sub-item marker
     if (line.is_child) {
       setColor(doc, PDF_COLORS.muted, "text");
       doc.setFont("helvetica", "normal"); doc.setFontSize(9);
@@ -197,18 +255,29 @@ export async function generateInvoicePDF(data: InvoicePDFData): Promise<jsPDF> {
       doc.text(detailLines, colDesc + indent, y + titleLines.length * 4);
     }
 
+    // Data de referência
+    if (line.reference_date) {
+      setColor(doc, PDF_COLORS.muted, "text");
+      doc.setFont("helvetica", "bold"); doc.setFontSize(6.4);
+      doc.text((line.reference_label ?? "Data").toUpperCase(), colDate, y, { charSpace: 0.4 });
+      setColor(doc, PDF_COLORS.ink, "text");
+      doc.setFont("helvetica", "normal"); doc.setFontSize(8.6);
+      doc.text(formatDate(line.reference_date), colDate, y + 3.6);
+    } else {
+      setColor(doc, PDF_COLORS.muted, "text");
+      doc.setFont("helvetica", "normal"); doc.setFontSize(8.6);
+      doc.text("—", colDate, y);
+    }
+
     setColor(doc, PDF_COLORS.ink, "text");
-    doc.setFont("helvetica", "normal"); doc.setFontSize(9);
-    doc.text(String(line.qty ?? "—"), colQty, y, { align: "right" });
-    doc.text(line.unit_price != null ? brl(line.unit_price) : "—", colUnit, y, { align: "right" });
-    doc.setFont("helvetica", "bold");
+    doc.setFont("helvetica", "bold"); doc.setFontSize(9.4);
     doc.text(brl(line.amount), colTotal - 2, y, { align: "right" });
 
     y += rowH;
-    // hairline separator
     setColor(doc, PDF_COLORS.hairline, "draw"); doc.setLineWidth(0.1);
     doc.line(marginX, y - 2, pageW - marginX, y - 2);
   }
+
 
   y += 3;
 

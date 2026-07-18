@@ -31,7 +31,16 @@ type Invoice = {
   total: number | null; amount: number; paid_at: string | null; notes: string | null;
   payment_terms: string | null; payment_link: string | null;
 };
-type Client = { id: string; name: string; tax_id?: string | null; email?: string | null };
+type Client = {
+  id: string; name: string;
+  tax_id?: string | null; email?: string | null;
+  legal_name?: string | null; company?: string | null; trade_name?: string | null;
+  state_registration?: string | null; billing_email?: string | null;
+  phone?: string | null; contact_name?: string | null; contact_role?: string | null;
+  address_street?: string | null; address_number?: string | null; address_complement?: string | null;
+  address_neighborhood?: string | null; address_city?: string | null; address_state?: string | null;
+  address_zip?: string | null; address_country?: string | null;
+};
 type Project = { id: string; name: string; client_id: string | null };
 type PendingCharge = {
   id: string; description: string; amount: number; due_date: string;
@@ -41,18 +50,86 @@ type Deliverable = {
   id: string; platform?: string | null; type?: string | null; channel?: string | null;
   billing_enabled?: boolean; billing_value?: number | null;
   delivered?: boolean; invoiced?: boolean;
+  delivered_at?: string | null; delivered_date?: string | null;
+  aired_at?: string | null; recorded_at?: string | null;
 };
 type BillableTask = {
   id: string; title: string; billing_value: number | null; billing_enabled: boolean;
   client_id: string | null; project_id: string | null; status: string | null;
   deliverables?: Deliverable[] | null;
+  due_date?: string | null;
+  aired_at?: string | null; aired_dates?: string[] | null;
+  recorded_at?: string | null; recorded_dates?: string[] | null;
 };
 type BillableDeliverable = {
   key: string; // taskId::deliverableId
   taskId: string; deliverableId: string; taskTitle: string;
   label: string; amount: number;
   client_id: string | null; project_id: string | null;
+  reference_date?: string | null; reference_label?: string;
 };
+type Organization = {
+  id: string; name: string | null;
+  legal_name?: string | null; tax_id?: string | null; email?: string | null;
+  phone?: string | null; address?: string | null; website?: string | null; bank_info?: string | null;
+};
+
+/* ---------- helpers de partes / datas ---------- */
+function formatClientAddress(c: Client): string | null {
+  const line1 = [c.address_street, c.address_number].filter(Boolean).join(", ");
+  const line2 = [c.address_complement, c.address_neighborhood].filter(Boolean).join(" · ");
+  const line3 = [
+    [c.address_city, c.address_state].filter(Boolean).join("/"),
+    c.address_zip ? `CEP ${c.address_zip}` : null,
+  ].filter(Boolean).join(" · ");
+  const joined = [line1, line2, line3].filter(Boolean).join("\n");
+  return joined || null;
+}
+function buildClientParty(c: Client | undefined) {
+  if (!c) return { name: "—" };
+  return {
+    name: c.name,
+    company: c.trade_name || c.company || null,
+    legal_name: c.legal_name || null,
+    document: c.tax_id || null,
+    state_registration: c.state_registration || null,
+    email: c.billing_email || c.email || null,
+    phone: c.phone || null,
+    address: formatClientAddress(c),
+    contact_name: c.contact_name || null,
+    contact_role: c.contact_role || null,
+  };
+}
+function buildAgencyParty(o: Organization | null | undefined) {
+  if (!o) return undefined;
+  return {
+    name: o.name ?? null,
+    legal_name: o.legal_name ?? null,
+    document: o.tax_id ?? null,
+    email: o.email ?? null,
+    phone: o.phone ?? null,
+    address: o.address ?? null,
+    website: o.website ?? null,
+    bank_info: o.bank_info ?? null,
+  };
+}
+function taskReference(t: Pick<BillableTask, "aired_at" | "aired_dates" | "recorded_at" | "recorded_dates" | "due_date">) {
+  const air = (t.aired_dates && t.aired_dates.length ? t.aired_dates[0] : null) ?? t.aired_at ?? null;
+  if (air) return { reference_date: air, reference_label: "Transmissão" };
+  const rec = (t.recorded_dates && t.recorded_dates.length ? t.recorded_dates[0] : null) ?? t.recorded_at ?? null;
+  if (rec) return { reference_date: rec, reference_label: "Gravação" };
+  if (t.due_date) return { reference_date: t.due_date, reference_label: "Prazo" };
+  return { reference_date: null as string | null, reference_label: "Referência" };
+}
+function deliverableReference(t: BillableTask, d: Deliverable) {
+  const delivered = d.delivered_at || d.delivered_date;
+  if (delivered) return { reference_date: delivered, reference_label: "Entregue em" };
+  const air = d.aired_at ?? null;
+  if (air) return { reference_date: air, reference_label: "Transmissão" };
+  const rec = d.recorded_at ?? null;
+  if (rec) return { reference_date: rec, reference_label: "Gravação" };
+  return taskReference(t);
+}
 
 const STATUS_META: Record<InvoiceStatus, { label: string; className: string }> = {
   draft:    { label: "Rascunho", className: "bg-muted text-muted-foreground" },
@@ -90,8 +167,22 @@ function InvoicesPage() {
   const { data: clients = [] } = useQuery<Client[]>({
     queryKey: ["clients-basic"],
     queryFn: async () => {
-      const { data } = await supabase.from("clients").select("id,name,tax_id,email").order("name");
+      const { data } = await supabase.from("clients").select(
+        "id,name,tax_id,email,legal_name,company,trade_name,state_registration,billing_email,phone,contact_name,contact_role,address_street,address_number,address_complement,address_neighborhood,address_city,address_state,address_zip,address_country",
+      ).order("name");
       return (data ?? []) as Client[];
+    },
+  });
+
+  const { data: organization = null } = useQuery<Organization | null>({
+    queryKey: ["organization-invoice"],
+    queryFn: async () => {
+      const { data: p } = await supabase.from("profiles").select("organization_id").maybeSingle();
+      if (!p?.organization_id) return null;
+      const { data } = await supabase.from("organizations")
+        .select("id,name,legal_name,tax_id,email,phone,address,website,bank_info")
+        .eq("id", p.organization_id).maybeSingle();
+      return (data ?? null) as Organization | null;
     },
   });
 
@@ -150,6 +241,7 @@ function InvoicesPage() {
           initialProjectId={search.projectId}
           clients={clients}
           projects={projects}
+          organization={organization}
           onClose={() => setWizardOpen(false)}
           onCreated={(id) => {
             setWizardOpen(false);
@@ -164,6 +256,7 @@ function InvoicesPage() {
         <InvoiceDetail
           id={detailId}
           clients={clients}
+          organization={organization}
           onClose={() => setDetailId(null)}
         />
       )}
@@ -173,10 +266,11 @@ function InvoicesPage() {
 
 /* ----------------------------------- Wizard ------------------------------ */
 function NewInvoiceWizard({
-  initialProjectId, clients, projects, onClose, onCreated,
+  initialProjectId, clients, projects, organization, onClose, onCreated,
 }: {
   initialProjectId?: string;
   clients: Client[]; projects: Project[];
+  organization: Organization | null;
   onClose: () => void; onCreated: (id: string) => void;
 }) {
   const initialClient = initialProjectId ? projects.find(p => p.id === initialProjectId)?.client_id ?? "" : "";
@@ -221,7 +315,7 @@ function NewInvoiceWizard({
     queryFn: async () => {
       const { data } = await supabase
         .from("tasks")
-        .select("id,title,billing_value,billing_enabled,client_id,project_id,status,deliverables")
+        .select("id,title,billing_value,billing_enabled,client_id,project_id,status,deliverables,due_date,aired_at,aired_dates,recorded_at,recorded_dates")
         .eq("billing_enabled", true);
       const ts = (data ?? []) as BillableTask[];
       // Cobranças já existentes (main sem deliverable_id, e por entregável)
@@ -271,6 +365,7 @@ function NewInvoiceWizard({
         if (d.invoiced) continue;
         if (invoicedDeliverableIds.has(d.id)) continue;
         const parts = [d.platform, d.channel, d.type].filter(Boolean).join(" • ");
+        const ref = deliverableReference(t, d);
         out.push({
           key: `${t.id}::${d.id}`,
           taskId: t.id,
@@ -280,6 +375,8 @@ function NewInvoiceWizard({
           amount,
           client_id: t.client_id,
           project_id: t.project_id,
+          reference_date: ref.reference_date,
+          reference_label: ref.reference_label,
         });
       }
     }
@@ -300,40 +397,78 @@ function NewInvoiceWizard({
     : !!payerClient && !!issueDate;
 
   const previewLines = useMemo(() => {
-    const lines: { title: string; detail?: string; amount: number; is_child?: boolean }[] = [];
+    const lines: Array<{
+      title: string; detail?: string; amount: number; is_child?: boolean;
+      reference_date?: string | null; reference_label?: string;
+    }> = [];
     for (const c of filteredCharges) if (selectedCharges.has(c.id)) {
-      lines.push({ title: c.description || "Cobrança", amount: Number(c.amount ?? 0) });
+      lines.push({
+        title: c.description || "Cobrança",
+        amount: Number(c.amount ?? 0),
+        reference_date: c.due_date ?? null,
+        reference_label: "Prazo",
+      });
     }
     for (const tk of filteredTasks) if (selectedTasks.has(tk.id)) {
-      lines.push({ title: tk.title, amount: Number(tk.billing_value ?? 0) });
-      // entregáveis selecionados desta tarefa (indentados)
+      const ref = taskReference(tk);
+      lines.push({
+        title: tk.title,
+        amount: Number(tk.billing_value ?? 0),
+        reference_date: ref.reference_date,
+        reference_label: ref.reference_label,
+      });
       for (const d of billableDeliverables) {
         if (d.taskId === tk.id && selectedDeliverables.has(d.key)) {
-          lines.push({ title: d.label, amount: d.amount, is_child: true });
+          lines.push({
+            title: d.label, amount: d.amount, is_child: true,
+            reference_date: d.reference_date ?? null,
+            reference_label: d.reference_label,
+          });
         }
       }
     }
-    // entregáveis órfãos (tarefa não selecionada, mas o entregável foi)
     const includedTaskIds = new Set(Array.from(selectedTasks));
     for (const d of billableDeliverables) {
       if (selectedDeliverables.has(d.key) && !includedTaskIds.has(d.taskId)) {
-        lines.push({ title: d.label, amount: d.amount });
+        lines.push({
+          title: d.label, amount: d.amount,
+          reference_date: d.reference_date ?? null,
+          reference_label: d.reference_label,
+        });
       }
     }
     return lines;
   }, [filteredCharges, filteredTasks, billableDeliverables, selectedCharges, selectedTasks, selectedDeliverables]);
 
+  async function computeNextInvoiceNumber(issue: string): Promise<string> {
+    const ym = issue.slice(0, 7).replace("-", ""); // AAAAMM
+    const { data } = await supabase
+      .from("invoices")
+      .select("number")
+      .like("number", `${ym}-%`);
+    let max = 0;
+    for (const r of (data ?? []) as Array<{ number: string | null }>) {
+      const n = parseInt(String(r.number ?? "").split("-")[1] ?? "0", 10);
+      if (!isNaN(n) && n > max) max = n;
+    }
+    return `${ym}-${String(max + 1).padStart(4, "0")}`;
+  }
+
   async function openPreviewPDF() {
     const client = clients.find(c => c.id === payerClient);
+    const issue = issueDate || new Date().toISOString().slice(0, 10);
+    const previewNumber = await computeNextInvoiceNumber(issue);
     const doc = await generateInvoicePDF({
-      number: "PRÉVIA",
-      issue_date: issueDate || new Date().toISOString().slice(0, 10),
+      number: previewNumber,
+      issue_date: issue,
       due_date: dueDate || null,
-      client: { name: client?.name ?? "—", document: client?.tax_id, email: client?.email },
+      client: buildClientParty(client),
+      agency: buildAgencyParty(organization),
       lines: previewLines,
       notes: notes || undefined,
       payment_terms: paymentTerms || undefined,
       payment_link: paymentLink || undefined,
+      is_preview: true,
     });
     const url = doc.output("bloburl") as unknown as string;
     window.open(url, "_blank", "noopener,noreferrer");
@@ -704,7 +839,7 @@ function NewInvoiceWizard({
 }
 
 /* ----------------------------------- Detail ------------------------------ */
-function InvoiceDetail({ id, clients, onClose }: { id: string; clients: Client[]; onClose: () => void }) {
+function InvoiceDetail({ id, clients, organization, onClose }: { id: string; clients: Client[]; organization: Organization | null; onClose: () => void }) {
   const qc = useQueryClient();
   const [editing, setEditing] = useState(false);
   const [editIssue, setEditIssue] = useState("");
@@ -873,8 +1008,14 @@ function InvoiceDetail({ id, clients, onClose }: { id: string; clients: Client[]
       number: invoice.number,
       issue_date: invoice.issue_date,
       due_date: invoice.due_date,
-      client: { name: client?.name ?? "—", document: client?.tax_id, email: client?.email },
-      lines: charges.map(c => ({ title: c.description, amount: Number(c.amount ?? 0) })),
+      client: buildClientParty(client),
+      agency: buildAgencyParty(organization),
+      lines: charges.map(c => ({
+        title: c.description,
+        amount: Number(c.amount ?? 0),
+        reference_date: c.due_date ?? null,
+        reference_label: "Prazo",
+      })),
       notes: invoice.notes ?? undefined,
       payment_terms: invoice.payment_terms ?? undefined,
       payment_link: invoice.payment_link ?? undefined,
