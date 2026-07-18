@@ -1039,6 +1039,7 @@ export function TaskModal({
                     <AssigneePicker
                       value={assigneeId}
                       members={teamMembers}
+                      dueDate={dueDate}
                       onChange={v => {
                         setAssigneeId(v);
                         markDirty();
