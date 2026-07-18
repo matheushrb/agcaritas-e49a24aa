@@ -268,18 +268,19 @@ export async function generateInvoicePDF(data: InvoicePDFData): Promise<jsPDF> {
   /* ---------- Itens ---------- */
   drawSectionLabel(doc, y, "Itens desta fatura"); y += 7;
 
-  const colDesc  = marginX;
-  const colDate  = pageW - marginX - 46;
-  const colTotal = pageW - marginX;
+  const rowPadX = 4;                                   // padding interno das linhas
+  const colDesc  = marginX;                            // início da linha (fundo zebra)
+  const colDate  = pageW - marginX - 50;               // início da coluna DATA
+  const colTotal = pageW - marginX;                    // fim da linha (borda direita)
 
   // header table
   setColor(doc, PDF_COLORS.ink, "fill");
   doc.rect(marginX, y - 4, contentW, 6, "F");
   setColor(doc, PDF_COLORS.white, "text");
   doc.setFont("helvetica", "bold"); doc.setFontSize(7);
-  doc.text("DESCRIÇÃO",  colDesc + 2, y, { charSpace: 0.6 });
-  doc.text("DATA", colDate,     y, { charSpace: 0.6 });
-  doc.text("TOTAL",      colTotal - 2, y, { align: "right", charSpace: 0.6 });
+  doc.text("DESCRIÇÃO", colDesc + rowPadX, y, { charSpace: 0.6 });
+  doc.text("DATA",      colDate + rowPadX, y, { charSpace: 0.6 });
+  doc.text("TOTAL",     colTotal - rowPadX, y, { align: "right", charSpace: 0.6 });
   y += 6;
 
   let zebra = false;
@@ -291,7 +292,7 @@ export async function generateInvoicePDF(data: InvoicePDFData): Promise<jsPDF> {
       y = 48;
     }
 
-    const indent = line.is_child ? 6 : 2;
+    const indent = line.is_child ? rowPadX + 4 : rowPadX;
     const descMaxW = colDate - colDesc - indent - 4;
     const titleLines = doc.splitTextToSize(line.title, descMaxW);
     const detailLines = line.detail
@@ -308,7 +309,7 @@ export async function generateInvoicePDF(data: InvoicePDFData): Promise<jsPDF> {
     if (line.is_child) {
       setColor(doc, PDF_COLORS.muted, "text");
       doc.setFont("helvetica", "normal"); doc.setFontSize(9);
-      doc.text("-", colDesc + 2, y);
+      doc.text("-", colDesc + rowPadX, y);
     }
 
     setColor(doc, PDF_COLORS.ink, "text");
@@ -322,22 +323,20 @@ export async function generateInvoicePDF(data: InvoicePDFData): Promise<jsPDF> {
     }
 
     // Data de referência
+    const dateX = colDate + rowPadX;
     if (line.reference_date) {
-      setColor(doc, PDF_COLORS.muted, "text");
-      doc.setFont("helvetica", "bold"); doc.setFontSize(6.4);
-      doc.text("DATA", colDate, y, { charSpace: 0.4 });
       setColor(doc, PDF_COLORS.ink, "text");
       doc.setFont("helvetica", "normal"); doc.setFontSize(8.6);
-      doc.text(formatDate(line.reference_date), colDate, y + 3.6);
+      doc.text(formatDate(line.reference_date), dateX, y);
     } else {
       setColor(doc, PDF_COLORS.muted, "text");
       doc.setFont("helvetica", "normal"); doc.setFontSize(8.6);
-      doc.text("—", colDate, y);
+      doc.text("—", dateX, y);
     }
 
     setColor(doc, PDF_COLORS.ink, "text");
     doc.setFont("helvetica", "bold"); doc.setFontSize(9.4);
-    doc.text(brl(line.amount), colTotal - 2, y, { align: "right" });
+    doc.text(brl(line.amount), colTotal - rowPadX, y, { align: "right" });
 
     y += rowH;
     setColor(doc, PDF_COLORS.hairline, "draw"); doc.setLineWidth(0.1);
