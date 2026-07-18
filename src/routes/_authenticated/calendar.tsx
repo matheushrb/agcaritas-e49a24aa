@@ -110,16 +110,18 @@ function CalendarPage() {
       const { data: profile } = await supabase.from("profiles").select("organization_id").maybeSingle();
       if (!profile?.organization_id) throw new Error("Sem organização");
       const { data: user } = await supabase.auth.getUser();
+      const composedDescription = input.location
+        ? `${input.description ? input.description + "\n\n" : ""}📍 ${input.location}`
+        : input.description;
       const { error } = await supabase.from("calendar_events").insert({
         organization_id: profile.organization_id,
         owner_id: user.user?.id,
         title: input.title,
-        description: input.description || null,
-        location: input.location || null,
+        description: composedDescription || null,
         starts_at: input.starts_at,
         ends_at: input.ends_at,
         kind: input.kind,
-      } as any);
+      });
       if (error) throw error;
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["calendar"] }); toast.success("Compromisso criado"); setNewOpen(false); },
