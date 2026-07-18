@@ -254,7 +254,20 @@ export const WIDGETS: WidgetDef[] = [
               </span>
             </div>
           </div>
-          <div className="flex flex-wrap items-center gap-2 shrink-0">
+          <div className="flex flex-wrap items-center gap-1 shrink-0">
+            <Button asChild variant="ghost" size="sm" className="h-9 rounded-full gap-1.5 text-muted-foreground hover:text-foreground">
+              <Link to="/dashboard" search={{ customize: 1 } as any}>
+                <LayoutGrid className="h-3.5 w-3.5" />
+                Organizar
+              </Link>
+            </Button>
+            <SyncButton />
+            <Button asChild variant="ghost" size="sm" className="h-9 rounded-full gap-1.5 text-muted-foreground hover:text-foreground">
+              <Link to="/team">
+                <Share2 className="h-3.5 w-3.5" />
+                Colaborar
+              </Link>
+            </Button>
             <QuickCreateButton />
           </div>
         </div>
