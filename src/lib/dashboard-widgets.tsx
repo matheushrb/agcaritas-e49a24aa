@@ -917,11 +917,27 @@ function detectPresetKey(roleTitle: string | null | undefined): string {
   return "founder";
 }
 
+// Widgets recém-introduzidos que devem entrar ativos mesmo em prefs salvas antigas.
+const AUTO_ENABLE_NEW: Record<string, string> = {
+  // insere "news" imediatamente após "next-meeting" (ou "finance", ou no início dos habilitados)
+  news: "next-meeting",
+};
+
 export function reconcilePrefs(saved: UserPref[] | null | undefined, roleTitle: string | null | undefined): UserPref[] {
   if (!saved || saved.length === 0) return getPresetForRole(roleTitle);
   const knownIds = new Set(ALL_IDS);
   const filtered = saved.filter(p => knownIds.has(p.id));
   const seen = new Set(filtered.map(p => p.id));
+
+  // injeta widgets novos ativados, próximos da âncora quando possível
+  for (const [id, anchor] of Object.entries(AUTO_ENABLE_NEW)) {
+    if (seen.has(id)) continue;
+    const anchorIdx = filtered.findIndex(p => p.id === anchor);
+    const insertAt = anchorIdx >= 0 ? anchorIdx + 1 : filtered.length;
+    filtered.splice(insertAt, 0, { id, enabled: true });
+    seen.add(id);
+  }
+
   const missing = ALL_IDS.filter(id => !seen.has(id)).map(id => ({ id, enabled: false } as UserPref));
   return [...filtered, ...missing];
 }
