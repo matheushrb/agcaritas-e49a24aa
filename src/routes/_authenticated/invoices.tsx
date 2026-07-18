@@ -537,6 +537,9 @@ function NewInvoiceWizard({
       const newCharges: string[] = [];
       for (const tk of filteredTasks) {
         if (!selectedTasks.has(tk.id)) continue;
+        const overrideDate = lineDateOverrides[`task:${tk.id}`];
+        const ref = taskReference(tk);
+        const chargeDate = overrideDate || ref.reference_date || dueDate || issueDate;
         const { data: inserted, error } = await supabase.from("charges").insert({
           organization_id: profile.organization_id,
           project_id: tk.project_id,
@@ -545,7 +548,7 @@ function NewInvoiceWizard({
           description: `Tarefa: ${tk.title}`,
           amount: Number(tk.billing_value ?? 0),
           status: "pending_invoice",
-          due_date: dueDate || issueDate,
+          due_date: chargeDate,
           type: "income",
         }).select("id").single();
         if (error) throw error;
@@ -556,6 +559,8 @@ function NewInvoiceWizard({
       const deliverablesByTask = new Map<string, Set<string>>();
       for (const d of billableDeliverables) {
         if (!selectedDeliverables.has(d.key)) continue;
+        const overrideDate = lineDateOverrides[`deliv:${d.key}`];
+        const chargeDate = overrideDate || d.reference_date || dueDate || issueDate;
         const { data: inserted, error } = await supabase.from("charges").insert({
           organization_id: profile.organization_id,
           project_id: d.project_id,
@@ -565,13 +570,22 @@ function NewInvoiceWizard({
           description: d.label,
           amount: d.amount,
           status: "pending_invoice",
-          due_date: dueDate || issueDate,
+          due_date: chargeDate,
           type: "income",
         } as never).select("id").single();
         if (error) throw error;
         if (inserted) newCharges.push(inserted.id);
         if (!deliverablesByTask.has(d.taskId)) deliverablesByTask.set(d.taskId, new Set());
         deliverablesByTask.get(d.taskId)!.add(d.deliverableId);
+      }
+
+      // Atualiza a data das cobranças já existentes quando o usuário editou manualmente
+      for (const c of filteredCharges) {
+        if (!selectedCharges.has(c.id)) continue;
+        const ov = lineDateOverrides[`charge:${c.id}`];
+        if (ov && ov !== c.due_date) {
+          await supabase.from("charges").update({ due_date: ov }).eq("id", c.id);
+        }
       }
       // Marcar deliverables como invoiced na coluna JSONB da task
       for (const [taskId, delIds] of deliverablesByTask) {
