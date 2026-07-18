@@ -75,6 +75,7 @@ function SettingsPage() {
         <TabsContent value="task-flows" className="mt-4"><TaskTypesEditor /></TabsContent>
         <TabsContent value="automations" className="mt-4"><AutomationsTab /></TabsContent>
         <TabsContent value="crm-funnel" className="mt-4"><ComingSoonCard title="Funil CRM" hint="Etapas do pipeline com probabilidade padrão, ordem e flags ganho/perdido." /></TabsContent>
+        <TabsContent value="news" className="mt-4"><NewsEditor /></TabsContent>
         <TabsContent value="users" className="mt-4"><UsersTab /></TabsContent>
         <TabsContent value="integrations" className="mt-4"><ComingSoonCard title="Integrações" hint="Buffer (token + profile IDs), Google Calendar (OAuth) — configuração centralizada." /></TabsContent>
       </Tabs>
