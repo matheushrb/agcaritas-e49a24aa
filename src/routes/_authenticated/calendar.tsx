@@ -9,10 +9,11 @@ import { Badge } from "@/components/ui/badge";
 import { EntityDialog, DialogField, DialogCancelButton } from "@/components/entity-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Calendar as CalendarIcon, Plus, ChevronLeft, ChevronRight, MapPin, Video, Users as UsersIcon } from "lucide-react";
+import { Calendar as CalendarIcon, Plus, ChevronLeft, ChevronRight, MapPin, Video, Users as UsersIcon, Lock, Trash2, Palmtree } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { z } from "zod";
+import { useCalendarBlocks, BLOCK_META, type CalendarBlock } from "@/lib/calendar-blocks";
 
 const searchSchema = z.object({
   d: z.string().optional(),
@@ -62,6 +63,7 @@ function CalendarPage() {
   const [view, setView] = useState<"month" | "week">(search.view ?? "month");
   const [newOpen, setNewOpen] = useState(false);
   const [dialogDate, setDialogDate] = useState<string>(selectedDate);
+  const [blockOpen, setBlockOpen] = useState(false);
 
   // Abre dialog automaticamente se ?new=1
   useEffect(() => {
@@ -88,6 +90,24 @@ function CalendarPage() {
       return (data ?? []) as Ev[];
     },
   });
+
+  const { data: blocks = [] } = useCalendarBlocks();
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  useEffect(() => { supabase.auth.getUser().then(({ data }) => setCurrentUserId(data.user?.id ?? null)); }, []);
+
+  // Bloqueios do usuário atual indexados por dia (para pintar o calendário)
+  const myBlocksByDay = useMemo(() => {
+    const m = new Map<string, CalendarBlock>();
+    for (const b of blocks) {
+      if (currentUserId && b.user_id !== currentUserId) continue;
+      const start = new Date(`${b.start_date}T12:00:00`);
+      const end = new Date(`${b.end_date}T12:00:00`);
+      for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+        m.set(ymd(d), b);
+      }
+    }
+    return m;
+  }, [blocks, currentUserId]);
 
   const byDay = useMemo(() => {
     const acc: Record<string, Ev[]> = {};
@@ -162,6 +182,7 @@ function CalendarPage() {
               className={cn("px-3 py-1 text-xs font-medium rounded-full", view === "week" ? "bg-primary text-primary-foreground" : "text-muted-foreground")}
             >Semana</button>
           </div>
+          <Button variant="outline" onClick={() => setBlockOpen(true)}><Lock className="size-4 mr-1" />Bloquear datas</Button>
           <Button onClick={() => openNew(selectedDate)}><Plus className="size-4 mr-1" />Novo compromisso</Button>
         </div>
       </div>
@@ -184,31 +205,48 @@ function CalendarPage() {
               const inRange = view === "week" ? true : d.getMonth() === cursor.getMonth();
               const evs = byDay[k] ?? [];
               const isToday = d.toDateString() === new Date().toDateString();
+              const block = myBlocksByDay.get(k);
               return (
                 <button
                   key={k}
                   onClick={() => setSelectedDate(k)}
                   onDoubleClick={() => openNew(k)}
                   className={cn(
-                    "group relative border rounded-xl p-2 text-left flex flex-col hover:bg-muted/50 transition",
+                    "group relative border rounded-xl p-2 text-left flex flex-col hover:bg-muted/50 transition overflow-hidden",
                     view === "month" ? "h-24" : "h-40",
                     !inRange && "opacity-40",
                     selectedDate === k && "border-primary ring-1 ring-primary",
                     isToday && "bg-primary/5",
+                    block && "bg-muted/70 border-dashed",
                   )}
+                  title={block ? `${BLOCK_META[block.kind].label}${block.reason ? " · " + block.reason : ""}` : undefined}
                 >
-                  <div className="flex items-center justify-between">
+                  {block && (
+                    <div
+                      aria-hidden
+                      className="pointer-events-none absolute inset-0 opacity-25"
+                      style={{ backgroundImage: "repeating-linear-gradient(45deg, currentColor 0 1px, transparent 1px 8px)" }}
+                    />
+                  )}
+                  <div className="flex items-center justify-between relative">
                     <span className={cn("text-xs font-medium", isToday && "text-primary")}>{d.getDate()}</span>
-                    <span
-                      role="button"
-                      onClick={(e) => { e.stopPropagation(); openNew(k); }}
-                      className="opacity-0 group-hover:opacity-100 transition grid h-5 w-5 place-items-center rounded-full bg-primary text-primary-foreground"
-                      title="Novo compromisso"
-                    >
-                      <Plus className="h-3 w-3" />
-                    </span>
+                    {block ? (
+                      <span className={cn("inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[9px] font-medium border", BLOCK_META[block.kind].color)}>
+                        {block.kind === "ferias" ? <Palmtree className="h-2.5 w-2.5" /> : <Lock className="h-2.5 w-2.5" />}
+                        {BLOCK_META[block.kind].label}
+                      </span>
+                    ) : (
+                      <span
+                        role="button"
+                        onClick={(e) => { e.stopPropagation(); openNew(k); }}
+                        className="opacity-0 group-hover:opacity-100 transition grid h-5 w-5 place-items-center rounded-full bg-primary text-primary-foreground"
+                        title="Novo compromisso"
+                      >
+                        <Plus className="h-3 w-3" />
+                      </span>
+                    )}
                   </div>
-                  <div className="flex-1 space-y-0.5 mt-1 overflow-hidden">
+                  <div className="flex-1 space-y-0.5 mt-1 overflow-hidden relative">
                     {evs.slice(0, view === "month" ? 3 : 6).map(e => (
                       <div key={e.id} className={cn("text-[10px] truncate rounded px-1 flex items-center gap-1", KIND_META[e.kind]?.color ?? "bg-muted")}>
                         <span className={cn("h-1.5 w-1.5 rounded-full shrink-0", KIND_META[e.kind]?.dot ?? "bg-slate-500")} />
@@ -246,6 +284,41 @@ function CalendarPage() {
               </div>
             ))}
           </div>
+
+          <div className="mt-5 pt-4 border-t">
+            <div className="flex items-center justify-between mb-2">
+              <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                <Lock className="h-3.5 w-3.5" /> Meus bloqueios
+              </h4>
+              <Button size="sm" variant="ghost" onClick={() => setBlockOpen(true)}><Plus className="h-4 w-4" /></Button>
+            </div>
+            {blocks.filter(b => b.user_id === currentUserId).length === 0 && (
+              <p className="text-xs text-muted-foreground">Nenhum bloqueio. Marque férias, folgas ou dias trancados para que ninguém te atribua tarefas nessas datas.</p>
+            )}
+            <div className="space-y-1.5">
+              {blocks.filter(b => b.user_id === currentUserId).map(b => (
+                <div key={b.id} className={cn("rounded-lg border px-2.5 py-1.5 flex items-center gap-2 text-xs", BLOCK_META[b.kind].color)}>
+                  <span className={cn("h-1.5 w-1.5 rounded-full shrink-0", BLOCK_META[b.kind].dot)} />
+                  <div className="flex-1 min-w-0">
+                    <div className="font-medium">
+                      {BLOCK_META[b.kind].label} · {new Date(`${b.start_date}T12:00:00`).toLocaleDateString("pt-BR", { day: "2-digit", month: "short" })}
+                      {b.start_date !== b.end_date && ` – ${new Date(`${b.end_date}T12:00:00`).toLocaleDateString("pt-BR", { day: "2-digit", month: "short" })}`}
+                    </div>
+                    {b.reason && <div className="text-[10px] opacity-80 truncate">{b.reason}</div>}
+                  </div>
+                  <button
+                    onClick={async () => {
+                      const { error } = await supabase.from("calendar_blocks" as any).delete().eq("id", b.id);
+                      if (error) return toast.error(error.message);
+                      qc.invalidateQueries({ queryKey: ["calendar-blocks"] });
+                      toast.success("Bloqueio removido");
+                    }}
+                    className="opacity-60 hover:opacity-100"
+                  ><Trash2 className="h-3 w-3" /></button>
+                </div>
+              ))}
+            </div>
+          </div>
         </Card>
       </div>
 
@@ -254,6 +327,13 @@ function CalendarPage() {
         onOpenChange={setNewOpen}
         defaultDate={dialogDate}
         onCreate={(v) => create.mutate(v)}
+      />
+
+      <NewBlockDialog
+        open={blockOpen}
+        onOpenChange={setBlockOpen}
+        defaultDate={selectedDate}
+        onCreated={() => qc.invalidateQueries({ queryKey: ["calendar-blocks"] })}
       />
     </div>
   );
@@ -367,6 +447,90 @@ function NewEventDialog({ open, onOpenChange, defaultDate, onCreate }: {
               : new Date(`${date}T${endTime}:00`).toISOString(),
             kind,
           })} disabled={!title}>Criar compromisso</Button>
+        </>
+      }
+    />
+  );
+}
+
+function NewBlockDialog({ open, onOpenChange, defaultDate, onCreated }: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  defaultDate: string;
+  onCreated: () => void;
+}) {
+  const [kind, setKind] = useState<CalendarBlock["kind"]>("ferias");
+  const [startDate, setStartDate] = useState(defaultDate);
+  const [endDate, setEndDate] = useState(defaultDate);
+  const [reason, setReason] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (open) { setStartDate(defaultDate); setEndDate(defaultDate); setReason(""); setKind("ferias"); }
+  }, [open, defaultDate]);
+
+  const submit = async () => {
+    if (endDate < startDate) { toast.error("Data final deve ser maior ou igual à inicial"); return; }
+    setSaving(true);
+    try {
+      const { data: profile } = await supabase.from("profiles").select("organization_id").maybeSingle();
+      const { data: userRes } = await supabase.auth.getUser();
+      if (!profile?.organization_id || !userRes.user) throw new Error("Sessão inválida");
+      const { error } = await supabase.from("calendar_blocks" as any).insert({
+        organization_id: profile.organization_id,
+        user_id: userRes.user.id,
+        kind, start_date: startDate, end_date: endDate,
+        reason: reason || null, all_day: true,
+      });
+      if (error) throw error;
+      toast.success("Agenda trancada nessas datas");
+      onCreated();
+      onOpenChange(false);
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <EntityDialog
+      open={open} onOpenChange={onOpenChange}
+      icon={Lock} tone="amber"
+      eyebrow="Agenda"
+      title="Bloquear datas na agenda"
+      subtitle="Ninguém poderá te atribuir tarefas, projetos ou reuniões nesse período."
+      main={
+        <>
+          <DialogField label="Tipo">
+            <Select value={kind} onValueChange={(v) => setKind(v as CalendarBlock["kind"])}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {(Object.keys(BLOCK_META) as CalendarBlock["kind"][]).map(k => (
+                  <SelectItem key={k} value={k}>{BLOCK_META[k].label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </DialogField>
+          <div className="grid grid-cols-2 gap-3">
+            <DialogField label="De"><Input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} /></DialogField>
+            <DialogField label="Até"><Input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} /></DialogField>
+          </div>
+          <DialogField label="Motivo (opcional)">
+            <Textarea rows={3} placeholder="Ex.: viagem em família, curso, etc." value={reason} onChange={e => setReason(e.target.value)} />
+          </DialogField>
+          <div className={cn("rounded-lg border p-3 text-xs flex items-center gap-2", BLOCK_META[kind].color)}>
+            <Lock className="h-3.5 w-3.5" />
+            Durante esse período seu nome aparecerá como <b>indisponível</b> no seletor de responsável e nos convites de reunião.
+          </div>
+        </>
+      }
+      footer={
+        <>
+          <DialogCancelButton onClick={() => onOpenChange(false)} />
+          <Button className="rounded-full" onClick={submit} disabled={saving}>
+            {saving ? "Salvando..." : "Bloquear datas"}
+          </Button>
         </>
       }
     />

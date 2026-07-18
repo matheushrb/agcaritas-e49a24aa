@@ -17,7 +17,7 @@ import {
   Search, Plus, LayoutGrid, List as ListIcon, Play, Pause, Square, Clock, Zap,
   ChevronLeft, ChevronRight, X, Calendar as CalendarIcon, Flag, Circle,
   MessageSquare, Paperclip, ListChecks, Activity, Trash2, MoreHorizontal, Timer,
-  DollarSign, Check, Minus, PanelRightOpen, Maximize2, PanelLeftOpen, Radio, Save as SaveIcon,
+  DollarSign, Check, Minus, PanelRightOpen, Maximize2, PanelLeftOpen, Radio, Save as SaveIcon, Lock,
 } from "lucide-react";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -32,6 +32,7 @@ import { useAutomationSettings, effectivePriority, DEFAULT_AUTOMATION_SETTINGS }
 import { Link } from "@tanstack/react-router";
 import { CostConfirmDialog, type CostSuggestion } from "@/components/cost-confirm-dialog";
 import { suggestTaskCost, type CostMode } from "@/components/team-cost-fields";
+import { useCalendarBlocks, BLOCK_META, type CalendarBlock } from "@/lib/calendar-blocks";
 
 export const Route = createFileRoute("/_authenticated/tasks")({
   component: TasksPage,
@@ -1038,6 +1039,7 @@ export function TaskModal({
                     <AssigneePicker
                       value={assigneeId}
                       members={teamMembers}
+                      dueDate={dueDate}
                       onChange={v => {
                         setAssigneeId(v);
                         markDirty();
@@ -2247,8 +2249,18 @@ function DateListEditor({ label, dates, onChange, emptyHint, helper }: {
   );
 }
 
-function AssigneePicker({ value, members, onChange }: { value: string; members: { id: string; name: string; avatar_url: string | null }[]; onChange: (v: string) => void }) {
+function AssigneePicker({ value, members, onChange, dueDate }: { value: string; members: { id: string; name: string; avatar_url: string | null }[]; onChange: (v: string) => void; dueDate?: string | null }) {
   const selected = members.find(m => m.id === value);
+  const { data: blocks = [] } = useCalendarBlocks();
+  const blockedById = useMemo(() => {
+    const map = new Map<string, CalendarBlock>();
+    if (!dueDate) return map;
+    const d = dueDate.slice(0, 10);
+    for (const b of blocks) {
+      if (d >= b.start_date && d <= b.end_date) map.set(b.user_id, b);
+    }
+    return map;
+  }, [blocks, dueDate]);
   return (
     <Popover>
       <PopoverTrigger asChild>
@@ -2259,13 +2271,16 @@ function AssigneePicker({ value, members, onChange }: { value: string; members: 
                 {selected.name.split(" ").map(p => p[0]).slice(0, 2).join("").toUpperCase()}
               </span>
               <span className="max-w-[120px] truncate">{selected.name}</span>
+              {blockedById.has(selected.id) && (
+                <span className="text-[10px] text-amber-600 dark:text-amber-400 font-medium">· indisponível</span>
+              )}
             </>
           ) : (
             <span className="text-muted-foreground">Atribuir</span>
           )}
         </button>
       </PopoverTrigger>
-      <PopoverContent align="start" className="p-1 w-56 rounded-xl">
+      <PopoverContent align="start" className="p-1 w-64 rounded-xl">
         <button
           onClick={() => onChange("")}
           className={cn("w-full flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm hover:bg-muted", !value && "bg-muted/60")}
@@ -2273,18 +2288,38 @@ function AssigneePicker({ value, members, onChange }: { value: string; members: 
           <span className="h-5 w-5 rounded-full bg-muted inline-flex" />
           <span className="text-muted-foreground">Sem responsável</span>
         </button>
-        {members.map(m => (
-          <button
-            key={m.id}
-            onClick={() => onChange(m.id)}
-            className={cn("w-full flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm hover:bg-muted", m.id === value && "bg-muted/60")}
-          >
-            <span className="h-5 w-5 rounded-full bg-primary/15 text-primary text-[10px] font-semibold inline-flex items-center justify-center">
-              {m.name.split(" ").map(p => p[0]).slice(0, 2).join("").toUpperCase()}
-            </span>
-            <span className="truncate">{m.name}</span>
-          </button>
-        ))}
+        {members.map(m => {
+          const block = blockedById.get(m.id);
+          return (
+            <button
+              key={m.id}
+              onClick={() => {
+                if (block) {
+                  const ok = confirm(`${m.name} está com ${BLOCK_META[block.kind].label.toLowerCase()} nesse prazo${block.reason ? ` (${block.reason})` : ""}. Atribuir mesmo assim?`);
+                  if (!ok) return;
+                }
+                onChange(m.id);
+              }}
+              className={cn(
+                "w-full flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm hover:bg-muted",
+                m.id === value && "bg-muted/60",
+                block && "opacity-70",
+              )}
+              title={block ? `${BLOCK_META[block.kind].label}${block.reason ? " · " + block.reason : ""}` : undefined}
+            >
+              <span className="h-5 w-5 rounded-full bg-primary/15 text-primary text-[10px] font-semibold inline-flex items-center justify-center">
+                {m.name.split(" ").map(p => p[0]).slice(0, 2).join("").toUpperCase()}
+              </span>
+              <span className="truncate flex-1 text-left">{m.name}</span>
+              {block && (
+                <span className={cn("inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[9px] font-medium border", BLOCK_META[block.kind].color)}>
+                  <Lock className="h-2.5 w-2.5" />
+                  {BLOCK_META[block.kind].label}
+                </span>
+              )}
+            </button>
+          );
+        })}
         {members.length === 0 && (
           <div className="text-xs text-muted-foreground px-2 py-2">Sem membros cadastrados.</div>
         )}

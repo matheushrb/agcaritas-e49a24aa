@@ -59,6 +59,53 @@ export type Database = {
           },
         ]
       }
+      calendar_blocks: {
+        Row: {
+          all_day: boolean
+          created_at: string
+          end_date: string
+          id: string
+          kind: Database["public"]["Enums"]["calendar_block_kind"]
+          organization_id: string
+          reason: string | null
+          start_date: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          all_day?: boolean
+          created_at?: string
+          end_date: string
+          id?: string
+          kind?: Database["public"]["Enums"]["calendar_block_kind"]
+          organization_id: string
+          reason?: string | null
+          start_date: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          all_day?: boolean
+          created_at?: string
+          end_date?: string
+          id?: string
+          kind?: Database["public"]["Enums"]["calendar_block_kind"]
+          organization_id?: string
+          reason?: string | null
+          start_date?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "calendar_blocks_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       calendar_events: {
         Row: {
           created_at: string
@@ -2551,10 +2598,15 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_user_blocked: {
+        Args: { _date: string; _user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       app_role: "admin" | "manager" | "member"
       billing_model: "monthly" | "one_time" | "hourly" | "package" | "per_task"
+      calendar_block_kind: "ferias" | "folga" | "bloqueio" | "feriado"
       charge_status:
         | "pending"
         | "paid"
@@ -2713,6 +2765,7 @@ export const Constants = {
     Enums: {
       app_role: ["admin", "manager", "member"],
       billing_model: ["monthly", "one_time", "hourly", "package", "per_task"],
+      calendar_block_kind: ["ferias", "folga", "bloqueio", "feriado"],
       charge_status: [
         "pending",
         "paid",
