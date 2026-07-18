@@ -42,6 +42,7 @@ const STATUS_META: Record<ChargeStatus, { label: string; color: string; icon: ty
   paid:            { label: "Pago",               color: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400", icon: CheckCircle2 },
   overdue:         { label: "Atrasado",           color: "bg-red-500/15 text-red-600 dark:text-red-400",       icon: AlertCircle },
   cancelled:       { label: "Cancelado",          color: "bg-muted text-muted-foreground",                     icon: AlertCircle },
+  draft:           { label: "Rascunho",            color: "bg-muted text-muted-foreground",                     icon: Clock },
 };
 
 function money(n: number) {
