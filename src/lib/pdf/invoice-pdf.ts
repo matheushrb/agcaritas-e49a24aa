@@ -38,6 +38,7 @@ export interface InvoicePartyAgency {
   address?: string | null;
   website?: string | null;
   bank_info?: string | null;
+  logo_url?: string | null;
 }
 
 export interface InvoicePDFData {
