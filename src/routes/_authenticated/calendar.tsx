@@ -69,7 +69,7 @@ function CalendarPage() {
     if (search.new) {
       setDialogDate(search.d ?? ymd(new Date()));
       setNewOpen(true);
-      navigate({ search: (prev) => ({ ...prev, new: undefined }), replace: true });
+      navigate({ search: (prev: z.infer<typeof searchSchema>) => ({ ...prev, new: undefined }), replace: true });
     }
   }, [search.new, search.d, navigate]);
 
