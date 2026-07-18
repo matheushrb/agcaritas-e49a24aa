@@ -1097,6 +1097,19 @@ function InvoiceDetail({ id, clients, organization, onClose }: { id: string; cli
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const confirmInvoice = useMutation({
+    mutationFn: async () => {
+      const { error: e1 } = await supabase.from("invoices").update({ status: "issued" }).eq("id", id);
+      if (e1) throw e1;
+      const { error: e2 } = await supabase.from("charges")
+        .update({ status: "pending" })
+        .eq("invoice_id", id);
+      if (e2) throw e2;
+    },
+    onSuccess: () => { invalidateAll(); toast.success("Fatura confirmada — lançamentos financeiros gerados"); },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   const markPaid = useMutation({
     mutationFn: async () => {
       const now = new Date().toISOString();
