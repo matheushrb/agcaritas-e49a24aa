@@ -327,7 +327,7 @@ export async function generateInvoicePDF(data: InvoicePDFData): Promise<jsPDF> {
     }
     zebra = !zebra;
 
-    setColor(doc, line.is_child ? PDF_COLORS.muted : PDF_COLORS.ink, "text");
+    setColor(doc, line.is_child ? PDF_COLORS.muted : PDF_COLORS.black, "text");
     doc.setFont("helvetica", line.is_child ? "normal" : "bold"); doc.setFontSize(8.6);
     doc.text(titleLines, tableX + indent, y + 4);
 
@@ -338,7 +338,7 @@ export async function generateInvoicePDF(data: InvoicePDFData): Promise<jsPDF> {
     }
 
     // Data
-    setColor(doc, PDF_COLORS.ink, "text");
+    setColor(doc, PDF_COLORS.black, "text");
     doc.setFont("helvetica", "normal"); doc.setFontSize(8.2);
     doc.text(
       line.reference_date ? formatDate(line.reference_date) : "—",
