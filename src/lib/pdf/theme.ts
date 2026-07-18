@@ -50,6 +50,7 @@ export function drawIndustrialHeader(doc: jsPDF, opts: {
   documentKind: string;   // "FATURA" | "PROPOSTA COMERCIAL"
   documentNumber: string; // "PRO-0007" | "202601-0004"
   competence?: string;    // "Competência 01/2026"
+  logoDataUrl?: string | null; // opcional: logo da agência (dataURL)
 }) {
   const { marginX, pageW } = PDF_LAYOUT;
 
@@ -57,15 +58,34 @@ export function drawIndustrialHeader(doc: jsPDF, opts: {
   setColor(doc, PDF_COLORS.ink, "fill");
   doc.rect(0, 0, pageW, 4, "F");
 
-  // Wordmark
+  // Slot da LOGO (14x14mm) — usa a imagem se fornecida, senão desenha placeholder
+  const logoSize = 14;
+  const logoX = marginX;
+  const logoY = 12;
+  if (opts.logoDataUrl) {
+    try {
+      doc.addImage(opts.logoDataUrl, "PNG", logoX, logoY, logoSize, logoSize);
+    } catch {
+      // ignora e desenha placeholder abaixo
+    }
+  } else {
+    setColor(doc, PDF_COLORS.hairline, "draw"); doc.setLineWidth(0.3);
+    doc.rect(logoX, logoY, logoSize, logoSize);
+    setColor(doc, PDF_COLORS.muted, "text");
+    doc.setFont("helvetica", "bold"); doc.setFontSize(6);
+    doc.text("LOGO", logoX + logoSize / 2, logoY + logoSize / 2 + 1, { align: "center", charSpace: 0.4 });
+  }
+
+  // Wordmark (deslocado para a direita da logo)
+  const textX = logoX + logoSize + 5;
   setColor(doc, PDF_COLORS.ink, "text");
   doc.setFont("helvetica", "bold");
   doc.setFontSize(16);
-  doc.text("CARITAS", marginX, 20);
+  doc.text("CARITAS", textX, 20);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8);
   setColor(doc, PDF_COLORS.muted, "text");
-  doc.text("AGÊNCIA · GESTÃO CRIATIVA", marginX, 25);
+  doc.text("AGÊNCIA · GESTÃO CRIATIVA", textX, 25);
 
   // Bloco à direita: tipo de documento + número
   const rightX = pageW - marginX;
