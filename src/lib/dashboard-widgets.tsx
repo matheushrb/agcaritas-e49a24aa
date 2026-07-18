@@ -7,36 +7,107 @@ import {
   Activity, BarChart3, Target, FolderOpen, CheckCircle2, CalendarClock,
   CheckSquare, ChevronLeft, ChevronRight, Sparkles, Cake, PieChart,
   Briefcase, Layers, HeartHandshake, Mail, MessagesSquare, Archive,
-  Eye, UserPlus, UserMinus, RefreshCw, LayoutGrid, Share2,
+  Eye, UserPlus, UserMinus, Newspaper, ExternalLink,
 } from "lucide-react";
 import type { JSX } from "react";
 import { Link } from "@tanstack/react-router";
 import { SwipeableRow, type SwipeAction } from "@/components/swipeable-row";
-import { QuickCreateButton } from "@/components/quick-create-button";
-import { useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
-import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useEffect, useState } from "react";
 
-function SyncButton() {
-  const qc = useQueryClient();
-  const [spinning, setSpinning] = useState(false);
+function NewsCarousel() {
+  const { data: news = [] } = useQuery({
+    queryKey: ["dashboard-news-active"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("dashboard_news" as any)
+        .select("id,title,body,image_url,link_url,published_at")
+        .eq("active", true)
+        .order("sort_order", { ascending: true })
+        .order("published_at", { ascending: false });
+      return (data as any[]) ?? [];
+    },
+    staleTime: 60_000,
+  });
+
+  const [idx, setIdx] = useState(0);
+  useEffect(() => { if (idx >= news.length && news.length) setIdx(0); }, [news.length, idx]);
+  useEffect(() => {
+    if (news.length < 2) return;
+    const t = setInterval(() => setIdx(i => (i + 1) % news.length), 6000);
+    return () => clearInterval(t);
+  }, [news.length]);
+
   return (
-    <Button
-      variant="ghost"
-      size="sm"
-      className="h-9 rounded-full gap-1.5 text-muted-foreground hover:text-foreground"
-      onClick={async () => {
-        setSpinning(true);
-        await qc.invalidateQueries();
-        toast.success("Dados atualizados");
-        setTimeout(() => setSpinning(false), 600);
-      }}
-    >
-      <RefreshCw className={`h-3.5 w-3.5 ${spinning ? "animate-spin" : ""}`} />
-      Sincronizar
-    </Button>
+    <Card className="rounded-3xl overflow-hidden h-full flex flex-col border-border/60">
+      <div className="flex items-center justify-between px-5 pt-4 pb-3">
+        <div className="inline-flex items-center gap-2">
+          <span className="h-8 w-8 rounded-xl bg-primary/10 text-primary inline-flex items-center justify-center">
+            <Newspaper className="h-4 w-4" />
+          </span>
+          <div>
+            <div className="text-sm font-semibold leading-tight">Painel de notícias</div>
+            <div className="text-[11px] text-muted-foreground">Atualizações da agência</div>
+          </div>
+        </div>
+        {news.length > 1 && (
+          <div className="flex items-center gap-1">
+            <button onClick={() => setIdx(i => (i - 1 + news.length) % news.length)} className="h-6 w-6 rounded-full hover:bg-muted inline-flex items-center justify-center text-muted-foreground"><ChevronLeft className="h-3.5 w-3.5" /></button>
+            <span className="text-[11px] text-muted-foreground tabular-nums">{idx + 1}/{news.length}</span>
+            <button onClick={() => setIdx(i => (i + 1) % news.length)} className="h-6 w-6 rounded-full hover:bg-muted inline-flex items-center justify-center text-muted-foreground"><ChevronRight className="h-3.5 w-3.5" /></button>
+          </div>
+        )}
+      </div>
+
+      {news.length === 0 ? (
+        <div className="flex-1 flex flex-col items-center justify-center gap-2 px-6 pb-6 text-center">
+          <Newspaper className="h-8 w-8 text-muted-foreground/50" />
+          <div className="text-sm font-medium">Nenhuma notícia publicada</div>
+          <p className="text-xs text-muted-foreground max-w-[220px]">Vá em <b>Configurações → Painel de notícias</b> para publicar a primeira.</p>
+        </div>
+      ) : (
+        (() => {
+          const item = news[idx];
+          const content = (
+            <>
+              {item.image_url ? (
+                <div className="relative h-40 w-full overflow-hidden bg-muted">
+                  <img src={item.image_url} alt="" className="h-full w-full object-cover" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                  <div className="absolute bottom-2 left-3 right-3 text-white font-semibold text-sm line-clamp-2 drop-shadow">
+                    {item.title}
+                  </div>
+                </div>
+              ) : (
+                <div className="px-5 pt-1 pb-2 font-semibold text-sm">{item.title}</div>
+              )}
+              <div className="px-5 py-3 flex-1 min-h-0">
+                {item.body && <p className="text-xs text-muted-foreground line-clamp-4">{item.body}</p>}
+              </div>
+              <div className="px-5 pb-4 flex items-center justify-between text-[11px] text-muted-foreground">
+                <span>{new Date(item.published_at).toLocaleDateString("pt-BR", { day: "2-digit", month: "short" })}</span>
+                {item.link_url && (
+                  <span className="inline-flex items-center gap-1 text-primary font-medium">
+                    Abrir <ExternalLink className="h-3 w-3" />
+                  </span>
+                )}
+              </div>
+            </>
+          );
+          return item.link_url ? (
+            <a href={item.link_url} target="_blank" rel="noreferrer" className="flex flex-col flex-1 min-h-0 hover:bg-muted/30 transition-colors">
+              {content}
+            </a>
+          ) : (
+            <div className="flex flex-col flex-1 min-h-0">{content}</div>
+          );
+        })()
+      )}
+    </Card>
   );
 }
+
 
 export type WidgetCategory =
   | "Saudação"
@@ -223,7 +294,7 @@ export const WIDGETS: WidgetDef[] = [
   {
     id: "greeting",
     title: "Saudação e resumo",
-    description: "Boas-vindas, resumo do dia e botão Novo.",
+    description: "Boas-vindas e resumo do dia.",
     category: "Saudação",
     colSpan: 8,
     render: ({ firstName, data }) => {
@@ -231,48 +302,31 @@ export const WIDGETS: WidgetDef[] = [
       const due = dueSoon(data.allTasks);
       const nextEv = data.events[0];
       return (
-        <div className="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
-          <div className="min-w-0">
-            <h1 className="font-display text-3xl md:text-4xl font-bold leading-tight">
-              Olá, {firstName}!<br />
-              Quais são seus planos para hoje?
-            </h1>
-            <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm">
-              <span className="inline-flex items-center gap-2 text-muted-foreground">
-                <CheckSquare className="h-4 w-4 text-primary" />
-                <b className="text-foreground">{open}</b> tarefas abertas
-              </span>
-              <span className="inline-flex items-center gap-2 text-muted-foreground">
-                <CalendarClock className="h-4 w-4 text-warning" />
-                <b className="text-foreground">{due}</b> vencem em 7 dias
-              </span>
-              <span className="inline-flex items-center gap-2 text-muted-foreground">
-                <Calendar className="h-4 w-4 text-info" />
-                {nextEv
-                  ? <>Próxima reunião <b className="text-foreground">{new Date(nextEv.starts_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</b></>
-                  : "Sem reuniões hoje"}
-              </span>
-            </div>
-          </div>
-          <div className="flex flex-wrap items-center gap-1 shrink-0">
-            <Button asChild variant="ghost" size="sm" className="h-9 rounded-full gap-1.5 text-muted-foreground hover:text-foreground">
-              <Link to="/dashboard" search={{ customize: 1 } as any}>
-                <LayoutGrid className="h-3.5 w-3.5" />
-                Organizar
-              </Link>
-            </Button>
-            <SyncButton />
-            <Button asChild variant="ghost" size="sm" className="h-9 rounded-full gap-1.5 text-muted-foreground hover:text-foreground">
-              <Link to="/team">
-                <Share2 className="h-3.5 w-3.5" />
-                Colaborar
-              </Link>
-            </Button>
-            <QuickCreateButton />
+        <div className="min-w-0">
+          <h1 className="font-display text-3xl md:text-4xl font-bold leading-tight">
+            Olá, {firstName}!<br />
+            Quais são seus planos para hoje?
+          </h1>
+          <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm">
+            <span className="inline-flex items-center gap-2 text-muted-foreground">
+              <CheckSquare className="h-4 w-4 text-primary" />
+              <b className="text-foreground">{open}</b> tarefas abertas
+            </span>
+            <span className="inline-flex items-center gap-2 text-muted-foreground">
+              <CalendarClock className="h-4 w-4 text-warning" />
+              <b className="text-foreground">{due}</b> vencem em 7 dias
+            </span>
+            <span className="inline-flex items-center gap-2 text-muted-foreground">
+              <Calendar className="h-4 w-4 text-info" />
+              {nextEv
+                ? <>Próxima reunião <b className="text-foreground">{new Date(nextEv.starts_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</b></>
+                : "Sem reuniões hoje"}
+            </span>
           </div>
         </div>
       );
     },
+
   },
   {
     id: "calendar",
@@ -656,6 +710,14 @@ export const WIDGETS: WidgetDef[] = [
     },
   },
   {
+    id: "news",
+    title: "Painel de notícias",
+    description: "Carrossel de comunicados e novidades publicadas pela agência.",
+    category: "Outros",
+    colSpan: 4,
+    render: () => <NewsCarousel />,
+  },
+  {
     id: "operations",
     title: "Operacional",
     description: "Projetos ativos, tarefas abertas, concluídas hoje e prazos.",
@@ -820,13 +882,13 @@ const ALL_IDS = WIDGETS.map(w => w.id);
 
 const PRESETS: Record<string, string[]> = {
   founder: ALL_IDS,
-  manager: ["greeting", "kpi-rings", "calendar", "next-meeting", "tasks-today", "assignments", "notifications", "operations", "projects-active"],
-  traffic: ["greeting", "kpi-rings", "calendar", "next-meeting", "tasks-today", "finance", "sales-pipeline"],
-  sales: ["greeting", "kpi-rings", "calendar", "next-meeting", "sales-pipeline", "finance", "notifications"],
-  designer: ["greeting", "calendar", "next-meeting", "tasks-today", "assignments", "notifications", "operations"],
-  copywriter: ["greeting", "calendar", "next-meeting", "tasks-today", "assignments", "notifications", "operations"],
-  developer: ["greeting", "calendar", "next-meeting", "tasks-today", "assignments", "operations", "projects-active"],
-  operations: ["greeting", "kpi-rings", "calendar", "next-meeting", "tasks-today", "notifications", "operations", "hr-team"],
+  manager: ["greeting", "kpi-rings", "calendar", "next-meeting", "tasks-today", "assignments", "notifications", "finance", "news", "operations", "projects-active"],
+  traffic: ["greeting", "kpi-rings", "calendar", "next-meeting", "tasks-today", "finance", "news", "sales-pipeline"],
+  sales: ["greeting", "kpi-rings", "calendar", "next-meeting", "sales-pipeline", "finance", "news", "notifications"],
+  designer: ["greeting", "calendar", "next-meeting", "tasks-today", "assignments", "notifications", "news", "operations"],
+  copywriter: ["greeting", "calendar", "next-meeting", "tasks-today", "assignments", "notifications", "news", "operations"],
+  developer: ["greeting", "calendar", "next-meeting", "tasks-today", "assignments", "news", "operations", "projects-active"],
+  operations: ["greeting", "kpi-rings", "calendar", "next-meeting", "tasks-today", "notifications", "finance", "news", "operations", "hr-team"],
 };
 
 const ROLE_KEYWORDS: Array<[RegExp, string]> = [
