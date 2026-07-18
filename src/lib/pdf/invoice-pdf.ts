@@ -11,7 +11,33 @@ export interface InvoiceLine {
   qty?: number;
   unit_price?: number;
   amount: number;
-  is_child?: boolean; // entregável faturado dentro de uma tarefa-pai
+  is_child?: boolean;              // entregável faturado dentro de uma tarefa-pai
+  reference_date?: string | Date | null; // Data usada como referência do item
+  reference_label?: string;        // "Prazo" | "Transmissão" | "Gravação" | "Entregue em"
+}
+
+export interface InvoicePartyClient {
+  name: string;
+  company?: string | null;
+  legal_name?: string | null;
+  document?: string | null;
+  state_registration?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  address?: string | null;
+  contact_name?: string | null;
+  contact_role?: string | null;
+}
+
+export interface InvoicePartyAgency {
+  name?: string | null;
+  legal_name?: string | null;
+  document?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  address?: string | null;
+  website?: string | null;
+  bank_info?: string | null;
 }
 
 export interface InvoicePDFData {
@@ -19,21 +45,16 @@ export interface InvoicePDFData {
   competence?: string;
   issue_date: string | Date;
   due_date?: string | Date | null;
-  client: {
-    name: string;
-    company?: string | null;
-    document?: string | null;
-    email?: string | null;
-    address?: string | null;
-  };
-  agency?: { name?: string; document?: string; email?: string; address?: string };
+  client: InvoicePartyClient;
+  agency?: InvoicePartyAgency;
   lines: InvoiceLine[];
   discount?: number;
   taxes?: number;
-  notes?: string;              // observações legais (NF, juros, etc.)
-  payment_terms?: string;      // condições de pagamento editáveis
-  payment_link?: string;       // URL → vira QR code
-  payment_instructions?: string; // instruções extras opcionais
+  notes?: string;
+  payment_terms?: string;
+  payment_link?: string;
+  payment_instructions?: string;
+  is_preview?: boolean;
 }
 
 export const DEFAULT_PAYMENT_TERMS =
