@@ -34,6 +34,7 @@ const TABS = [
   { value: "task-flows",   label: "Tipos de Tarefa",   icon: Workflow },
   { value: "automations",  label: "Automações",        icon: Zap },
   { value: "crm-funnel",   label: "Funil CRM",         icon: TrendingUp },
+  { value: "news",         label: "Painel de Notícias",icon: Newspaper },
   { value: "users",        label: "Usuários",          icon: UserCog },
   { value: "integrations", label: "Integrações",       icon: Plug },
 ] as const;
