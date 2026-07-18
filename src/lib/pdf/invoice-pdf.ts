@@ -157,8 +157,8 @@ export async function generateInvoicePDF(data: InvoicePDFData): Promise<jsPDF> {
   const cardW = contentW;
   const cardY = 14;                       // topo do card
   const headerH = 12;                     // barra azul do topo
-  const bodyPadX = 6;
-  const bodyPadY = 6;
+  const bodyPadX = 9;
+  const bodyPadY = 7;
   const innerX = cardX + bodyPadX;
   const innerW = cardW - bodyPadX * 2;
 
