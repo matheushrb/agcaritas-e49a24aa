@@ -196,7 +196,7 @@ export async function generateInvoicePDF(data: InvoicePDFData): Promise<jsPDF> {
   };
   smallLabel(innerX, "Emitida em");
   smallLabel(innerX + col3W, "Vencimento");
-  smallLabel(innerX + innerW, "Valor total", "right");
+  smallLabel(innerX + innerW - 1, "Valor total", "right");
 
   setColor(doc, PDF_COLORS.ink, "text");
   doc.setFont("helvetica", "bold"); doc.setFontSize(11);
