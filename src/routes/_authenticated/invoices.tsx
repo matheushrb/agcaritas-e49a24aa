@@ -601,7 +601,7 @@ function NewInvoiceWizard({
 
   return (
     <Dialog open onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="max-w-4xl">
+      <DialogContent className={cn(step === 3 ? "max-w-[1200px]" : "max-w-4xl", "max-h-[92vh] flex flex-col")}>
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2"><Receipt className="h-5 w-5" />Nova fatura</DialogTitle>
         </DialogHeader>
@@ -798,7 +798,9 @@ function NewInvoiceWizard({
         )}
 
         {step === 3 && (
-          <div className="space-y-3">
+          <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,420px)_minmax(0,1fr)] gap-4 flex-1 min-h-0 overflow-hidden">
+           <div className="space-y-3 overflow-y-auto pr-2 min-h-0">
+
             <div>
               <label className="text-xs font-medium text-muted-foreground">Cliente pagador *</label>
               <Select value={payerClient} onValueChange={setPayerClient}>
@@ -837,8 +839,11 @@ function NewInvoiceWizard({
                 Se preenchido, um QR Code é gerado no PDF apontando para este link.
               </p>
             </div>
+           </div>
+           <div className="overflow-y-auto min-h-0 pr-1">
             {/* ------- Prévia da fatura ------- */}
             {(() => {
+
               const clientObj = clients.find(c => c.id === payerClient);
               const clientParty = buildClientParty(clientObj);
               const agencyParty = buildAgencyParty(organization) ?? { name: "Caritas Agência", legal_name: null, document: null, email: null, phone: null, address: null, website: null, bank_info: null };
@@ -946,9 +951,10 @@ function NewInvoiceWizard({
                 </div>
               );
             })()}
-
+           </div>
           </div>
         )}
+
 
         <DialogFooter className="gap-2">
           {step > 1 && <Button variant="ghost" onClick={() => setStep(step - 1)}><ArrowLeft className="h-4 w-4 mr-1" />Voltar</Button>}
