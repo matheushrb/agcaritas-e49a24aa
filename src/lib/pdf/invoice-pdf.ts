@@ -315,7 +315,7 @@ export async function generateInvoicePDF(data: InvoicePDFData): Promise<jsPDF> {
 
     const indent = line.is_child ? rowPadX + 4 : rowPadX;
     const descMaxW = descColW - indent - 2;
-    const titleText = line.is_child ? `└ ${line.title}` : line.title;
+    const titleText = line.is_child ? `» ${line.title}` : line.title;
     const titleLines = doc.splitTextToSize(titleText, descMaxW);
     const detailLines = line.detail ? doc.splitTextToSize(line.detail, descMaxW) : [];
     const rowH = Math.max(7, titleLines.length * 4 + detailLines.length * 3.4 + 3);
