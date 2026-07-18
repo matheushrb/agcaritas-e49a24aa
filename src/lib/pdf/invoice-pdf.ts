@@ -146,311 +146,320 @@ export async function generateInvoicePDF(data: InvoicePDFData): Promise<jsPDF> {
 
   const logoDataUrl = data.agency?.logo_url ? await loadImageAsDataUrl(data.agency.logo_url) : null;
 
-  drawIndustrialHeader(doc, {
-    documentKind: data.is_preview ? "FATURA · PRÉVIA" : "FATURA",
-    documentNumber: data.number,
-    competence: data.competence ? `Competência ${data.competence}` : undefined,
-    logoDataUrl,
-  });
-
   const subtotal = data.lines.reduce((a, l) => a + Number(l.amount || 0), 0);
   const total = subtotal - Number(data.discount ?? 0) + Number(data.taxes ?? 0);
 
-  /* ---------- Bloco resumo: 3 colunas com moldura industrial ---------- */
-  let y = 46;
-  const boxH = 24;
-  setColor(doc, PDF_COLORS.ink, "draw"); doc.setLineWidth(0.4);
-  doc.rect(marginX, y, contentW, boxH);
-  // linhas divisórias verticais
-  const colW = contentW / 3;
-  setColor(doc, PDF_COLORS.hairline, "draw"); doc.setLineWidth(0.15);
-  doc.line(marginX + colW,     y + 3, marginX + colW,     y + boxH - 3);
-  doc.line(marginX + colW * 2, y + 3, marginX + colW * 2, y + boxH - 3);
+  /* ============================================================
+     CARD PRINCIPAL — imita a "Prévia da fatura" do wizard.
+     Borda azul-clara, cabeçalho azul sólido, corpo branco.
+     ============================================================ */
+  const cardX = marginX;
+  const cardW = contentW;
+  const cardY = 14;                       // topo do card
+  const headerH = 12;                     // barra azul do topo
+  const bodyPadX = 6;
+  const bodyPadY = 6;
+  const innerX = cardX + bodyPadX;
+  const innerW = cardW - bodyPadX * 2;
 
-  const cellTitle = (x: number, label: string, align: "left" | "right" = "left") => {
+  // --- moldura do card ---
+  setColor(doc, PDF_COLORS.hairline, "draw"); doc.setLineWidth(0.5);
+  doc.roundedRect(cardX, cardY, cardW, pageH - cardY - 22, 3, 3);
+
+  // --- header azul ---
+  setColor(doc, PDF_COLORS.graphite, "fill");
+  doc.roundedRect(cardX, cardY, cardW, headerH, 3, 3, "F");
+  // "corta" cantos inferiores do header (retângulo por cima da parte de baixo)
+  doc.rect(cardX, cardY + headerH - 3, cardW, 3, "F");
+
+  // logo mini (se houver)
+  if (logoDataUrl) {
+    try { doc.addImage(logoDataUrl, "PNG", cardX + 4, cardY + 2, 8, 8); } catch { /* ignore */ }
+  }
+  // título do header
+  setColor(doc, PDF_COLORS.white, "text");
+  doc.setFont("helvetica", "bold"); doc.setFontSize(9);
+  const titleTxt = data.is_preview ? "PRÉVIA DA FATURA" : "FATURA";
+  doc.text(titleTxt, cardX + (logoDataUrl ? 14 : 4), cardY + 8, { charSpace: 0.8 });
+  // número à direita (fonte mono-like)
+  doc.setFont("courier", "bold"); doc.setFontSize(11);
+  doc.text(data.number, cardX + cardW - 4, cardY + 8, { align: "right" });
+
+  /* ---------- Bloco topo: Emitida em / Vencimento / Valor total ---------- */
+  let y = cardY + headerH + bodyPadY + 2;
+
+  const col3W = innerW / 3;
+  const smallLabel = (x: number, label: string, align: "left" | "right" = "left") => {
     setColor(doc, PDF_COLORS.muted, "text");
-    doc.setFont("helvetica", "bold"); doc.setFontSize(6.8);
-    const tx = align === "right" ? x + colW - 5 : x + 5;
-    doc.text(label, tx, y + 6, { charSpace: 0.6, align });
+    doc.setFont("helvetica", "bold"); doc.setFontSize(6.6);
+    doc.text(label.toUpperCase(), x, y, { charSpace: 0.6, align });
   };
-  cellTitle(marginX,             "EMITIDA EM");
-  cellTitle(marginX + colW,      "VENCIMENTO");
-  cellTitle(marginX + colW * 2,  "VALOR TOTAL", "right");
+  smallLabel(innerX, "Emitida em");
+  smallLabel(innerX + col3W, "Vencimento");
+  smallLabel(innerX + innerW, "Valor total", "right");
 
   setColor(doc, PDF_COLORS.ink, "text");
-  doc.setFont("helvetica", "bold"); doc.setFontSize(13);
-  doc.text(formatDate(data.issue_date), marginX + 5, y + 15);
-  doc.text(formatDate(data.due_date ?? null), marginX + colW + 5, y + 15);
-  // VALOR TOTAL destacado (à direita, azul acento)
-  setColor(doc, PDF_COLORS.accent, "text");
-  doc.setFont("helvetica", "bold"); doc.setFontSize(19);
-  doc.text(brl(total), marginX + contentW - 5, y + 16, { align: "right" });
+  doc.setFont("helvetica", "bold"); doc.setFontSize(11);
+  doc.text(formatDate(data.issue_date), innerX, y + 5.5);
+  doc.text(formatDate(data.due_date ?? null), innerX + col3W, y + 5.5);
+  // valor total destacado (accent)
+  setColor(doc, PDF_COLORS.graphite, "text");
+  doc.setFont("helvetica", "bold"); doc.setFontSize(14);
+  doc.text(brl(total), innerX + innerW, y + 6, { align: "right" });
 
-  // texto pequeno abaixo dos totais
-  setColor(doc, PDF_COLORS.muted, "text");
-  doc.setFont("helvetica", "normal"); doc.setFontSize(7);
-  doc.text(`${data.lines.length} item(ns) · Fatura nº ${data.number}`, marginX + 5, y + 21);
-  if (data.competence) doc.text(`Competência ${data.competence}`, marginX + colW + 5, y + 21);
+  y += 11;
+  setColor(doc, PDF_COLORS.hairline, "draw"); doc.setLineWidth(0.2);
+  doc.line(innerX, y, innerX + innerW, y);
+  y += 5;
 
-  y += boxH + 8;
-
-  /* ---------- Faturado para | Emitido por ---------- */
-  drawSectionLabel(doc, y, "Faturado para  ·  Emitido por"); y += 7;
-  const halfW = (contentW - 6) / 2;
-
+  /* ---------- Bloco Faturado para / Emitido por ---------- */
+  const halfW = (innerW - 6) / 2;
   const drawParty = (
     x: number,
+    header: string,
     title: string,
-    subtitle: string | null,
     rows: Array<{ label: string; value: string | null | undefined }>,
   ) => {
+    let cy = y;
+    setColor(doc, PDF_COLORS.muted, "text");
+    doc.setFont("helvetica", "bold"); doc.setFontSize(6.6);
+    doc.text(header.toUpperCase(), x, cy, { charSpace: 0.6 });
+    cy += 4;
+
     setColor(doc, PDF_COLORS.ink, "text");
-    doc.setFont("helvetica", "bold"); doc.setFontSize(11);
+    doc.setFont("helvetica", "bold"); doc.setFontSize(10);
     const titleLines = doc.splitTextToSize(title, halfW - 2);
-    doc.text(titleLines, x, y);
-    let cy = y + titleLines.length * 4.5;
-    if (subtitle) {
-      setColor(doc, PDF_COLORS.muted, "text");
-      doc.setFont("helvetica", "italic"); doc.setFontSize(8);
-      const subLines = doc.splitTextToSize(subtitle, halfW - 2);
-      doc.text(subLines, x, cy + 1);
-      cy += subLines.length * 3.6 + 1;
-    }
-    cy += 2;
+    doc.text(titleLines, x, cy);
+    cy += titleLines.length * 4 + 1;
+
     const clean = rows.filter(r => r.value && String(r.value).trim().length);
+    setColor(doc, PDF_COLORS.muted, "text");
+    doc.setFont("helvetica", "normal"); doc.setFontSize(7.8);
     for (const r of clean) {
-      setColor(doc, PDF_COLORS.muted, "text");
-      doc.setFont("helvetica", "bold"); doc.setFontSize(6.6);
-      doc.text(r.label.toUpperCase(), x, cy, { charSpace: 0.6 });
-      setColor(doc, PDF_COLORS.ink, "text");
-      doc.setFont("helvetica", "normal"); doc.setFontSize(8.4);
-      const wrapped = doc.splitTextToSize(String(r.value), halfW - 2);
-      doc.text(wrapped, x, cy + 3.2);
-      cy += 3.2 + wrapped.length * 3.6 + 2;
+      const wrapped = doc.splitTextToSize(`${r.label}: ${r.value}`, halfW - 2);
+      doc.text(wrapped, x, cy);
+      cy += wrapped.length * 3.4 + 0.6;
     }
     return cy - y;
   };
 
   const c = data.client;
-  const contactValue = c.contact_name
-    ? `${c.contact_name}${c.contact_role ? ` — ${c.contact_role}` : ""}`
-    : null;
-  const clientHeight = drawParty(
-    marginX,
+  const a = data.agency ?? {};
+  const clientH = drawParty(
+    innerX,
+    "Faturado para",
     c.legal_name || c.company || c.name,
-    c.legal_name && c.name && c.name !== c.legal_name ? c.name : (c.company && c.company !== c.name ? c.name : null),
     [
-      { label: "CNPJ / CPF", value: c.document },
-      { label: "Inscrição estadual", value: c.state_registration },
+      { label: "CNPJ/CPF", value: c.document },
+      { label: "IE", value: c.state_registration },
       { label: "E-mail", value: c.email },
       { label: "Telefone", value: c.phone },
       { label: "Endereço", value: c.address },
-      { label: "Contato", value: contactValue },
     ],
   );
-
-  const a = data.agency ?? {};
-  const agencyHeight = drawParty(
-    marginX + halfW + 6,
+  const agencyH = drawParty(
+    innerX + halfW + 6,
+    "Emitido por",
     a.legal_name || a.name || "Caritas Agência",
-    a.legal_name && a.name && a.name !== a.legal_name ? a.name : null,
     [
       { label: "CNPJ", value: a.document },
-      { label: "E-mail financeiro", value: a.email },
+      { label: "E-mail", value: a.email },
       { label: "Telefone", value: a.phone },
       { label: "Endereço", value: a.address },
       { label: "Site", value: a.website },
-      { label: "Dados bancários", value: a.bank_info },
     ],
   );
-  y += Math.max(clientHeight, agencyHeight) + 4;
+  y += Math.max(clientH, agencyH) + 2;
+  setColor(doc, PDF_COLORS.hairline, "draw"); doc.setLineWidth(0.2);
+  doc.line(innerX, y, innerX + innerW, y);
+  y += 5;
 
   /* ---------- Itens ---------- */
-  drawSectionLabel(doc, y, "Itens desta fatura"); y += 7;
+  setColor(doc, PDF_COLORS.muted, "text");
+  doc.setFont("helvetica", "bold"); doc.setFontSize(6.6);
+  doc.text(`ITENS (${data.lines.length})`, innerX, y, { charSpace: 0.6 });
+  y += 3;
 
-  const rowPadX = 4;                                   // padding interno das linhas
-  const colDesc  = marginX;                            // início da linha (fundo zebra)
-  const colDate  = pageW - marginX - 50;               // início da coluna DATA
-  const colTotal = pageW - marginX;                    // fim da linha (borda direita)
+  // tabela: bordas arredondadas simuladas com clip retângulo
+  const tableX = innerX;
+  const tableW = innerW;
+  const dateColW = 26;
+  const totalColW = 26;
+  const descColW = tableW - dateColW - totalColW;
+  const rowPadX = 3;
 
-  // header table
-  setColor(doc, PDF_COLORS.ink, "fill");
-  doc.rect(marginX, y - 4, contentW, 6, "F");
-  setColor(doc, PDF_COLORS.white, "text");
-  doc.setFont("helvetica", "bold"); doc.setFontSize(7);
-  doc.text("DESCRIÇÃO", colDesc + rowPadX, y, { charSpace: 0.6 });
-  doc.text("DATA",      colDate + rowPadX, y, { charSpace: 0.6 });
-  doc.text("TOTAL",     colTotal - rowPadX, y, { align: "right", charSpace: 0.6 });
-  y += 6;
+  // Header row (fundo cinza claro azulado)
+  const headerRowY = y;
+  const headerRowH = 6.5;
+  setColor(doc, PDF_COLORS.paper, "fill");
+  doc.rect(tableX, headerRowY, tableW, headerRowH, "F");
+  setColor(doc, PDF_COLORS.hairline, "draw"); doc.setLineWidth(0.2);
+  doc.rect(tableX, headerRowY, tableW, headerRowH);
 
+  setColor(doc, PDF_COLORS.muted, "text");
+  doc.setFont("helvetica", "bold"); doc.setFontSize(6.6);
+  doc.text("DESCRIÇÃO", tableX + rowPadX, headerRowY + 4.2, { charSpace: 0.6 });
+  doc.text("DATA", tableX + descColW + rowPadX, headerRowY + 4.2, { charSpace: 0.6 });
+  doc.text("TOTAL", tableX + tableW - rowPadX, headerRowY + 4.2, { align: "right", charSpace: 0.6 });
+  y = headerRowY + headerRowH;
+
+  // Linhas
   let zebra = false;
   for (const line of data.lines) {
+    // Quebra de página se necessário
     if (y > pageH - 90) {
       drawIndustrialFooter(doc, { pageLabel: `Página ${doc.getCurrentPageInfo().pageNumber}` });
       doc.addPage();
-      drawIndustrialHeader(doc, { documentKind: "FATURA", documentNumber: data.number });
-      y = 48;
+      y = 20;
     }
 
     const indent = line.is_child ? rowPadX + 4 : rowPadX;
-    const descMaxW = colDate - colDesc - indent - 4;
-    const titleLines = doc.splitTextToSize(line.title, descMaxW);
-    const detailLines = line.detail
-      ? doc.splitTextToSize(line.detail, descMaxW)
-      : [];
-    const rowH = Math.max(9, titleLines.length * 4 + detailLines.length * 3.6 + 4);
+    const descMaxW = descColW - indent - 2;
+    const titleText = line.is_child ? `↳ ${line.title}` : line.title;
+    const titleLines = doc.splitTextToSize(titleText, descMaxW);
+    const detailLines = line.detail ? doc.splitTextToSize(line.detail, descMaxW) : [];
+    const rowH = Math.max(7, titleLines.length * 4 + detailLines.length * 3.4 + 3);
 
     if (zebra) {
       setColor(doc, PDF_COLORS.paper, "fill");
-      doc.rect(marginX, y - 4, contentW, rowH, "F");
+      doc.rect(tableX, y, tableW, rowH, "F");
     }
     zebra = !zebra;
 
-    if (line.is_child) {
-      setColor(doc, PDF_COLORS.muted, "text");
-      doc.setFont("helvetica", "normal"); doc.setFontSize(9);
-      doc.text("-", colDesc + rowPadX, y);
-    }
-
-    setColor(doc, PDF_COLORS.ink, "text");
-    doc.setFont("helvetica", line.is_child ? "normal" : "bold"); doc.setFontSize(9.2);
-    doc.text(titleLines, colDesc + indent, y);
+    setColor(doc, line.is_child ? PDF_COLORS.muted : PDF_COLORS.ink, "text");
+    doc.setFont("helvetica", line.is_child ? "normal" : "bold"); doc.setFontSize(8.6);
+    doc.text(titleLines, tableX + indent, y + 4);
 
     if (detailLines.length) {
       setColor(doc, PDF_COLORS.muted, "text");
-      doc.setFont("helvetica", "normal"); doc.setFontSize(7.8);
-      doc.text(detailLines, colDesc + indent, y + titleLines.length * 4);
+      doc.setFont("helvetica", "normal"); doc.setFontSize(7.4);
+      doc.text(detailLines, tableX + indent, y + 4 + titleLines.length * 4);
     }
 
-    // Data de referência
-    const dateX = colDate + rowPadX;
-    if (line.reference_date) {
-      setColor(doc, PDF_COLORS.ink, "text");
-      doc.setFont("helvetica", "normal"); doc.setFontSize(8.6);
-      doc.text(formatDate(line.reference_date), dateX, y);
-    } else {
-      setColor(doc, PDF_COLORS.muted, "text");
-      doc.setFont("helvetica", "normal"); doc.setFontSize(8.6);
-      doc.text("—", dateX, y);
-    }
-
+    // Data
     setColor(doc, PDF_COLORS.ink, "text");
-    doc.setFont("helvetica", "bold"); doc.setFontSize(9.4);
-    doc.text(brl(line.amount), colTotal - rowPadX, y, { align: "right" });
+    doc.setFont("helvetica", "normal"); doc.setFontSize(8.2);
+    doc.text(
+      line.reference_date ? formatDate(line.reference_date) : "—",
+      tableX + descColW + rowPadX,
+      y + 4,
+    );
+
+    // Total
+    doc.setFont("helvetica", "bold"); doc.setFontSize(8.8);
+    doc.text(brl(line.amount), tableX + tableW - rowPadX, y + 4, { align: "right" });
+
+    // divisória fina
+    setColor(doc, PDF_COLORS.hairline, "draw"); doc.setLineWidth(0.1);
+    doc.line(tableX, y + rowH, tableX + tableW, y + rowH);
 
     y += rowH;
-    setColor(doc, PDF_COLORS.hairline, "draw"); doc.setLineWidth(0.1);
-    doc.line(marginX, y - 2, pageW - marginX, y - 2);
   }
 
+  // Linha "Total a pagar" com tint azul-clarissimo
+  const totalRowH = 8;
+  setColor(doc, PDF_COLORS.paper, "fill");
+  doc.rect(tableX, y, tableW, totalRowH, "F");
+  setColor(doc, PDF_COLORS.hairline, "draw"); doc.setLineWidth(0.2);
+  doc.rect(tableX, y, tableW, totalRowH);
+  setColor(doc, PDF_COLORS.ink, "text");
+  doc.setFont("helvetica", "bold"); doc.setFontSize(8);
+  doc.text("TOTAL A PAGAR", tableX + descColW + totalColW - rowPadX, y + 5.4, { align: "right", charSpace: 0.6 });
+  setColor(doc, PDF_COLORS.graphite, "text");
+  doc.setFont("helvetica", "bold"); doc.setFontSize(10.5);
+  doc.text(brl(total), tableX + tableW - rowPadX, y + 5.6, { align: "right" });
+  y += totalRowH + 6;
 
-  y += 3;
+  // Bordas externas da tabela (contorno cinza)
+  // (opcional) já desenhadas linha a linha
 
-  /* ---------- Totais (direita) ---------- */
-  const totalsX = pageW - marginX - 78;
-  const drawTotalRow = (label: string, value: string, opts: { bold?: boolean; size?: number } = {}) => {
-    setColor(doc, opts.bold ? PDF_COLORS.ink : PDF_COLORS.muted, "text");
-    doc.setFont("helvetica", opts.bold ? "bold" : "normal");
-    doc.setFontSize(opts.size ?? 8.5);
-    doc.text(label.toUpperCase(), totalsX, y, { charSpace: opts.bold ? 0 : 0.4 });
-    setColor(doc, PDF_COLORS.ink, "text");
-    doc.setFont("helvetica", "bold"); doc.setFontSize(opts.size ?? 8.5);
-    doc.text(value, colTotal - 2, y, { align: "right" });
-    y += (opts.size ?? 8.5) * 0.65;
-  };
-  drawTotalRow("Subtotal", brl(subtotal));
-  if (data.discount) drawTotalRow("Desconto", `- ${brl(data.discount)}`);
-  if (data.taxes) drawTotalRow("Impostos", brl(data.taxes));
-  y += 2;
-  setColor(doc, PDF_COLORS.ink, "draw"); doc.setLineWidth(0.4);
-  doc.line(totalsX, y - 3, colTotal, y - 3);
-  y += 3;
-  drawTotalRow("Total a pagar", brl(total), { bold: true, size: 13 });
-  y += 6;
-
-  /* ---------- Faixa inferior: Condições/Observações | QR ---------- */
-  const bottomBlockY = Math.max(y, pageH - 90);
-  if (bottomBlockY + 65 > pageH - 20) {
+  /* ---------- Bloco inferior: Condições/Observações  |  QR ---------- */
+  if (y + 60 > pageH - 22) {
     drawIndustrialFooter(doc, { pageLabel: `Página ${doc.getCurrentPageInfo().pageNumber}` });
     doc.addPage();
-    drawIndustrialHeader(doc, { documentKind: "FATURA", documentNumber: data.number });
-    y = 48;
-  } else {
-    y = bottomBlockY;
+    y = 20;
   }
 
-  // Left column: payment terms + legal notes
-  const qrBoxSize = 48;             // caixa externa (mantida)
-  const qrDraw    = qrBoxSize - 4;  // QR maior dentro da caixa (com pequena margem interna)
-  const leftW  = contentW - qrBoxSize - 8;
-  const leftX  = marginX;
-  const boxRightX = pageW - marginX - qrBoxSize; // canto sup-esq da caixa do QR
-  const leftMaxX  = boxRightX - 6;               // limite das linhas das seções da esquerda
+  const qrBoxW = 52;
+  const qrBoxH = 62;
+  const gapCol = 6;
+  const leftW = innerW - qrBoxW - gapCol;
+  const leftX = innerX;
+  const qrBoxX = innerX + innerW - qrBoxW;
+  const qrBoxY = y;
 
-  // Left content
+  // --- Coluna esquerda ---
   let ly = y;
-  drawSectionLabel(doc, ly, "Condições de pagamento", leftMaxX); ly += 6;
+  setColor(doc, PDF_COLORS.muted, "text");
+  doc.setFont("helvetica", "bold"); doc.setFontSize(6.6);
+  doc.text("CONDIÇÕES DE PAGAMENTO", leftX, ly, { charSpace: 0.6 });
+  ly += 4;
   setColor(doc, PDF_COLORS.ink, "text");
-  doc.setFont("helvetica", "normal"); doc.setFontSize(8.5);
+  doc.setFont("helvetica", "normal"); doc.setFontSize(8);
   const terms = doc.splitTextToSize(data.payment_terms || DEFAULT_PAYMENT_TERMS, leftW);
   doc.text(terms, leftX, ly);
-  ly += terms.length * 3.8 + 4;
+  ly += terms.length * 3.6 + 4;
 
-  drawSectionLabel(doc, ly, "Observações legais", leftMaxX); ly += 6;
-  setColor(doc, PDF_COLORS.graphite, "text");
-  doc.setFont("helvetica", "normal"); doc.setFontSize(7.8);
+  setColor(doc, PDF_COLORS.muted, "text");
+  doc.setFont("helvetica", "bold"); doc.setFontSize(6.6);
+  doc.text("OBSERVAÇÕES LEGAIS", leftX, ly, { charSpace: 0.6 });
+  ly += 4;
+  setColor(doc, PDF_COLORS.muted, "text");
+  doc.setFont("helvetica", "normal"); doc.setFontSize(7.6);
   const legal = doc.splitTextToSize(data.notes || DEFAULT_LEGAL_NOTES, leftW);
   doc.text(legal, leftX, ly);
-  ly += legal.length * 3.5;
+  ly += legal.length * 3.4;
 
-  // Right column: QR / link box
-  const qrBoxY = y - 3;
-  const qrBoxH = qrBoxSize + 22;
-  setColor(doc, PDF_COLORS.ink, "draw"); doc.setLineWidth(0.4);
-  doc.rect(boxRightX, qrBoxY, qrBoxSize, qrBoxH);
+  // --- Caixa QR (borda tracejada) ---
+  setColor(doc, PDF_COLORS.hairline, "draw"); doc.setLineWidth(0.4);
+  if (doc.setLineDashPattern) doc.setLineDashPattern([1.2, 1.2], 0);
+  doc.roundedRect(qrBoxX, qrBoxY, qrBoxW, qrBoxH, 2, 2);
+  if (doc.setLineDashPattern) doc.setLineDashPattern([], 0);
+
   setColor(doc, PDF_COLORS.muted, "text");
-  doc.setFont("helvetica", "bold"); doc.setFontSize(6.8);
-  doc.text("PAGAMENTO", boxRightX + 3, qrBoxY + 4, { charSpace: 0.6 });
+  doc.setFont("helvetica", "bold"); doc.setFontSize(6.6);
+  doc.text("PAGAMENTO", qrBoxX + qrBoxW / 2, qrBoxY + 5, { align: "center", charSpace: 0.6 });
 
-  const qrX = boxRightX + (qrBoxSize - qrDraw) / 2;
-  const qrY = qrBoxY + 6;
-
+  const qrSize = 34;
+  const qrX = qrBoxX + (qrBoxW - qrSize) / 2;
+  const qrY = qrBoxY + 8;
   const paymentPayload = data.payment_link?.trim();
   if (paymentPayload) {
-    const drewVectorQR = drawQRCodeVector(doc, paymentPayload, qrX, qrY, qrDraw);
+    const drewVectorQR = drawQRCodeVector(doc, paymentPayload, qrX, qrY, qrSize);
     if (!drewVectorQR) {
       const qrDataUrl = await makeQRCodeDataUrl(paymentPayload);
-      if (qrDataUrl) doc.addImage(qrDataUrl, "PNG", qrX, qrY, qrDraw, qrDraw);
+      if (qrDataUrl) doc.addImage(qrDataUrl, "PNG", qrX, qrY, qrSize, qrSize);
     }
-    setColor(doc, PDF_COLORS.muted, "text");
-    doc.setFont("helvetica", "normal"); doc.setFontSize(6.2);
-    doc.text("Aponte a câmera ou copie:", boxRightX + 3, qrY + qrDraw + 4);
-    setColor(doc, PDF_COLORS.accent, "text");
-    doc.setFont("helvetica", "bold"); doc.setFontSize(6.2);
-    const linkLines = doc.splitTextToSize(paymentPayload, qrBoxSize - 6);
-    doc.text(linkLines.slice(0, 2), boxRightX + 3, qrY + qrDraw + 8);
-    // clickable link overlay
+    setColor(doc, PDF_COLORS.graphite, "text");
+    doc.setFont("helvetica", "bold"); doc.setFontSize(5.8);
+    const linkLines = doc.splitTextToSize(paymentPayload, qrBoxW - 6);
+    doc.text(linkLines.slice(0, 3), qrBoxX + qrBoxW / 2, qrY + qrSize + 5, { align: "center" });
     if (/^https?:\/\//i.test(paymentPayload)) {
-      doc.link(qrX, qrY, qrDraw, qrDraw, { url: paymentPayload });
+      doc.link(qrX, qrY, qrSize, qrSize, { url: paymentPayload });
     }
   } else {
-    setColor(doc, PDF_COLORS.hairline, "draw"); doc.setLineWidth(0.2);
-    doc.rect(qrX, qrY, qrDraw, qrDraw);
     setColor(doc, PDF_COLORS.muted, "text");
     doc.setFont("helvetica", "italic"); doc.setFontSize(6.5);
-    doc.text("QR Code disponível\nquando o link de\npagamento for anexado.",
-      qrX + qrDraw / 2, qrY + qrDraw / 2 - 2, { align: "center" });
+    doc.text(
+      "Anexe um link de\npagamento para gerar\no QR Code.",
+      qrBoxX + qrBoxW / 2,
+      qrBoxY + qrBoxH / 2,
+      { align: "center" },
+    );
   }
 
-  // Extra payment instructions (optional, below both columns)
   y = Math.max(ly, qrBoxY + qrBoxH) + 4;
+
   if (data.payment_instructions) {
-    if (y > pageH - 30) { doc.addPage(); y = 48; }
-    drawSectionLabel(doc, y, "Instruções extras"); y += 6;
-    setColor(doc, PDF_COLORS.graphite, "text");
-    doc.setFont("helvetica", "normal"); doc.setFontSize(8.5);
-    const wrapped = doc.splitTextToSize(data.payment_instructions, contentW);
-    doc.text(wrapped, marginX, y);
+    if (y > pageH - 30) { doc.addPage(); y = 20; }
+    setColor(doc, PDF_COLORS.muted, "text");
+    doc.setFont("helvetica", "bold"); doc.setFontSize(6.6);
+    doc.text("INSTRUÇÕES EXTRAS", innerX, y, { charSpace: 0.6 });
+    y += 4;
+    setColor(doc, PDF_COLORS.ink, "text");
+    doc.setFont("helvetica", "normal"); doc.setFontSize(8);
+    const wrapped = doc.splitTextToSize(data.payment_instructions, innerW);
+    doc.text(wrapped, innerX, y);
   }
 
   drawIndustrialFooter(doc, {
@@ -460,3 +469,4 @@ export async function generateInvoicePDF(data: InvoicePDFData): Promise<jsPDF> {
 
   return doc;
 }
+
