@@ -841,7 +841,8 @@ function NewInvoiceWizard({
             {(() => {
               const clientObj = clients.find(c => c.id === payerClient);
               const clientParty = buildClientParty(clientObj);
-              const agencyParty = buildAgencyParty(organization);
+              const agencyParty = buildAgencyParty(organization) ?? { name: "Caritas Agência", legal_name: null, document: null, email: null, phone: null, address: null, website: null, bank_info: null };
+
               return (
                 <div className="rounded-lg border-2 border-primary/20 bg-card overflow-hidden">
                   <div className="bg-primary text-primary-foreground px-4 py-2 flex items-center justify-between">
