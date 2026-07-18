@@ -33,7 +33,6 @@ type Ev = {
   starts_at: string;
   ends_at: string | null;
   kind: EventKind | string;
-  location?: string | null;
 };
 
 const KIND_META: Record<string, { label: string; color: string; dot: string }> = {
