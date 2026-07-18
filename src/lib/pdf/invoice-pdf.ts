@@ -262,7 +262,7 @@ export async function generateInvoicePDF(data: InvoicePDFData): Promise<jsPDF> {
     if (line.reference_date) {
       setColor(doc, PDF_COLORS.muted, "text");
       doc.setFont("helvetica", "bold"); doc.setFontSize(6.4);
-      doc.text((line.reference_label ?? "Data").toUpperCase(), colDate, y, { charSpace: 0.4 });
+      doc.text("DATA", colDate, y, { charSpace: 0.4 });
       setColor(doc, PDF_COLORS.ink, "text");
       doc.setFont("helvetica", "normal"); doc.setFontSize(8.6);
       doc.text(formatDate(line.reference_date), colDate, y + 3.6);
