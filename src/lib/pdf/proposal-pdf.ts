@@ -30,6 +30,7 @@ export interface ProposalPDFData {
 
 export function generateProposalPDF(data: ProposalPDFData): jsPDF {
   const doc = new jsPDF({ unit: "mm", format: "a4", compress: true });
+  registerLiberationFonts(doc);
   const { marginX, pageW, pageH } = PDF_LAYOUT;
 
   // === CAPA ===
