@@ -236,7 +236,7 @@ export async function generateInvoicePDF(data: InvoicePDFData): Promise<jsPDF> {
     cy += titleLines.length * 4 + 1;
 
     const clean = rows.filter(r => r.value && String(r.value).trim().length);
-    setColor(doc, PDF_COLORS.muted, "text");
+    setColor(doc, PDF_COLORS.black, "text");
     doc.setFont("LiberationSans", "normal"); doc.setFontSize(7.8);
     for (const r of clean) {
       const wrapped = doc.splitTextToSize(`${r.label}: ${r.value}`, halfW - 2);
