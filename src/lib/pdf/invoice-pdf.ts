@@ -167,27 +167,30 @@ export async function generateInvoicePDF(data: InvoicePDFData): Promise<jsPDF> {
   doc.line(marginX + colW,     y + 3, marginX + colW,     y + boxH - 3);
   doc.line(marginX + colW * 2, y + 3, marginX + colW * 2, y + boxH - 3);
 
-  const cellTitle = (x: number, label: string) => {
+  const cellTitle = (x: number, label: string, align: "left" | "right" = "left") => {
     setColor(doc, PDF_COLORS.muted, "text");
     doc.setFont("helvetica", "bold"); doc.setFontSize(6.8);
-    doc.text(label, x + 4, y + 6, { charSpace: 0.6 });
+    const tx = align === "right" ? x + colW - 5 : x + 5;
+    doc.text(label, tx, y + 6, { charSpace: 0.6, align });
   };
   cellTitle(marginX,             "EMITIDA EM");
   cellTitle(marginX + colW,      "VENCIMENTO");
-  cellTitle(marginX + colW * 2,  "VALOR TOTAL");
+  cellTitle(marginX + colW * 2,  "VALOR TOTAL", "right");
 
   setColor(doc, PDF_COLORS.ink, "text");
   doc.setFont("helvetica", "bold"); doc.setFontSize(13);
-  doc.text(formatDate(data.issue_date), marginX + 4, y + 15);
-  doc.text(formatDate(data.due_date ?? null), marginX + colW + 4, y + 15);
-  doc.setFontSize(18);
-  doc.text(brl(total), marginX + colW * 2 + 4, y + 16);
+  doc.text(formatDate(data.issue_date), marginX + 5, y + 15);
+  doc.text(formatDate(data.due_date ?? null), marginX + colW + 5, y + 15);
+  // VALOR TOTAL destacado (à direita, azul acento)
+  setColor(doc, PDF_COLORS.accent, "text");
+  doc.setFont("helvetica", "bold"); doc.setFontSize(19);
+  doc.text(brl(total), marginX + contentW - 5, y + 16, { align: "right" });
 
   // texto pequeno abaixo dos totais
   setColor(doc, PDF_COLORS.muted, "text");
   doc.setFont("helvetica", "normal"); doc.setFontSize(7);
-  doc.text(`${data.lines.length} item(ns) · Fatura nº ${data.number}`, marginX + 4, y + 21);
-  if (data.competence) doc.text(`Competência ${data.competence}`, marginX + colW + 4, y + 21);
+  doc.text(`${data.lines.length} item(ns) · Fatura nº ${data.number}`, marginX + 5, y + 21);
+  if (data.competence) doc.text(`Competência ${data.competence}`, marginX + colW + 5, y + 21);
 
   y += boxH + 8;
 
