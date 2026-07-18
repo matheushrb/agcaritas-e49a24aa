@@ -40,6 +40,9 @@ export function SwipeableRow({
 
   const rightOpacity = useTransform(x, [0, -20, -rightWidth], [0, 0.4, 1]);
   const leftOpacity = useTransform(x, [0, 20, leftWidth], [0, 0.4, 1]);
+  const contentShift = useTransform(x, [-Math.max(rightWidth, 1), 0, Math.max(leftWidth, 1)], [-6, 0, 6]);
+  const rightReveal = useTransform(x, [-Math.max(rightWidth, 1), 0], [0, Math.max(rightWidth, 1)]);
+  const leftReveal = useTransform(x, [0, Math.max(leftWidth, 1)], [-Math.max(leftWidth, 1), 0]);
 
   const snap = (to: number) => {
     setIsOpen(to !== 0);
@@ -95,8 +98,8 @@ export function SwipeableRow({
       {/* Right actions layer */}
       {rightActions.length > 0 && (
         <motion.div
-          style={{ opacity: rightOpacity }}
-          className="absolute inset-y-0 right-0 flex items-stretch"
+          style={{ opacity: rightOpacity, x: rightReveal }}
+          className={cn("absolute inset-y-0 right-0 z-20 flex items-stretch", isOpen ? "pointer-events-auto" : "pointer-events-none")}
         >
           {rightActions.map(a => (
             <ActionButton key={a.id} action={a} width={actionWidth} onDone={() => snap(0)} />
@@ -105,8 +108,8 @@ export function SwipeableRow({
       )}
       {leftActions.length > 0 && (
         <motion.div
-          style={{ opacity: leftOpacity }}
-          className="absolute inset-y-0 left-0 flex items-stretch"
+          style={{ opacity: leftOpacity, x: leftReveal }}
+          className={cn("absolute inset-y-0 left-0 z-20 flex items-stretch", isOpen ? "pointer-events-auto" : "pointer-events-none")}
         >
           {leftActions.map(a => (
             <ActionButton key={a.id} action={a} width={actionWidth} onDone={() => snap(0)} />
@@ -115,7 +118,7 @@ export function SwipeableRow({
       )}
 
       <motion.div
-        style={{ x }}
+        style={{ x: contentShift }}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerEnd}
@@ -143,7 +146,7 @@ export function SwipeableRow({
             onClick();
           }
         }}
-        className="relative bg-card cursor-pointer active:cursor-grabbing select-none touch-pan-y will-change-transform"
+        className="relative z-10 bg-card cursor-pointer active:cursor-grabbing select-none touch-pan-y will-change-transform"
       >
         {children}
         {rightActions.length > 0 && (
