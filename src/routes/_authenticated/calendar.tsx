@@ -205,31 +205,48 @@ function CalendarPage() {
               const inRange = view === "week" ? true : d.getMonth() === cursor.getMonth();
               const evs = byDay[k] ?? [];
               const isToday = d.toDateString() === new Date().toDateString();
+              const block = myBlocksByDay.get(k);
               return (
                 <button
                   key={k}
                   onClick={() => setSelectedDate(k)}
                   onDoubleClick={() => openNew(k)}
                   className={cn(
-                    "group relative border rounded-xl p-2 text-left flex flex-col hover:bg-muted/50 transition",
+                    "group relative border rounded-xl p-2 text-left flex flex-col hover:bg-muted/50 transition overflow-hidden",
                     view === "month" ? "h-24" : "h-40",
                     !inRange && "opacity-40",
                     selectedDate === k && "border-primary ring-1 ring-primary",
                     isToday && "bg-primary/5",
+                    block && "bg-muted/70 border-dashed",
                   )}
+                  title={block ? `${BLOCK_META[block.kind].label}${block.reason ? " · " + block.reason : ""}` : undefined}
                 >
-                  <div className="flex items-center justify-between">
+                  {block && (
+                    <div
+                      aria-hidden
+                      className="pointer-events-none absolute inset-0 opacity-25"
+                      style={{ backgroundImage: "repeating-linear-gradient(45deg, currentColor 0 1px, transparent 1px 8px)" }}
+                    />
+                  )}
+                  <div className="flex items-center justify-between relative">
                     <span className={cn("text-xs font-medium", isToday && "text-primary")}>{d.getDate()}</span>
-                    <span
-                      role="button"
-                      onClick={(e) => { e.stopPropagation(); openNew(k); }}
-                      className="opacity-0 group-hover:opacity-100 transition grid h-5 w-5 place-items-center rounded-full bg-primary text-primary-foreground"
-                      title="Novo compromisso"
-                    >
-                      <Plus className="h-3 w-3" />
-                    </span>
+                    {block ? (
+                      <span className={cn("inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[9px] font-medium border", BLOCK_META[block.kind].color)}>
+                        {block.kind === "ferias" ? <Palmtree className="h-2.5 w-2.5" /> : <Lock className="h-2.5 w-2.5" />}
+                        {BLOCK_META[block.kind].label}
+                      </span>
+                    ) : (
+                      <span
+                        role="button"
+                        onClick={(e) => { e.stopPropagation(); openNew(k); }}
+                        className="opacity-0 group-hover:opacity-100 transition grid h-5 w-5 place-items-center rounded-full bg-primary text-primary-foreground"
+                        title="Novo compromisso"
+                      >
+                        <Plus className="h-3 w-3" />
+                      </span>
+                    )}
                   </div>
-                  <div className="flex-1 space-y-0.5 mt-1 overflow-hidden">
+                  <div className="flex-1 space-y-0.5 mt-1 overflow-hidden relative">
                     {evs.slice(0, view === "month" ? 3 : 6).map(e => (
                       <div key={e.id} className={cn("text-[10px] truncate rounded px-1 flex items-center gap-1", KIND_META[e.kind]?.color ?? "bg-muted")}>
                         <span className={cn("h-1.5 w-1.5 rounded-full shrink-0", KIND_META[e.kind]?.dot ?? "bg-slate-500")} />
