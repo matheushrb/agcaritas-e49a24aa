@@ -43,16 +43,16 @@ export function generateProposalPDF(data: ProposalPDFData): jsPDF {
 
   // Título editorial
   setColor(doc, PDF_COLORS.muted, "text");
-  doc.setFont("helvetica", "bold"); doc.setFontSize(8);
+  doc.setFont("LiberationSans", "bold"); doc.setFontSize(8);
   doc.text("PREPARADO PARA", marginX, y, { charSpace: 0.6 });
   y += 6;
   setColor(doc, PDF_COLORS.ink, "text");
-  doc.setFont("helvetica", "bold"); doc.setFontSize(24);
+  doc.setFont("LiberationSans", "bold"); doc.setFontSize(24);
   doc.text(data.client.company || data.client.name, marginX, y, { maxWidth: pageW - marginX * 2 });
   y += 10;
   if (data.client.company && data.client.name) {
     setColor(doc, PDF_COLORS.graphite, "text");
-    doc.setFont("helvetica", "normal"); doc.setFontSize(11);
+    doc.setFont("LiberationSans", "normal"); doc.setFontSize(11);
     doc.text(`A/C ${data.client.name}`, marginX, y);
     y += 8;
   }
@@ -61,7 +61,7 @@ export function generateProposalPDF(data: ProposalPDFData): jsPDF {
   if (data.headline) {
     y += 6;
     setColor(doc, PDF_COLORS.ink, "text");
-    doc.setFont("helvetica", "bold"); doc.setFontSize(32);
+    doc.setFont("LiberationSans", "bold"); doc.setFontSize(32);
     const hl = doc.splitTextToSize(data.headline, pageW - marginX * 2);
     doc.text(hl, marginX, y);
     y += hl.length * 12;
@@ -86,10 +86,10 @@ export function generateProposalPDF(data: ProposalPDFData): jsPDF {
   ];
   metas.forEach((m, i) => {
     setColor(doc, PDF_COLORS.muted, "text");
-    doc.setFont("helvetica", "bold"); doc.setFontSize(7.5);
+    doc.setFont("LiberationSans", "bold"); doc.setFontSize(7.5);
     doc.text(m.label, marginX + colW * i, y, { charSpace: 0.6 });
     setColor(doc, PDF_COLORS.ink, "text");
-    doc.setFont("helvetica", "bold"); doc.setFontSize(12);
+    doc.setFont("LiberationSans", "bold"); doc.setFontSize(12);
     doc.text(m.value, marginX + colW * i, y + 6);
   });
 
@@ -103,7 +103,7 @@ export function generateProposalPDF(data: ProposalPDFData): jsPDF {
   if (data.intro) {
     drawSectionLabel(doc, y, "Contexto"); y += 8;
     setColor(doc, PDF_COLORS.graphite, "text");
-    doc.setFont("helvetica", "normal"); doc.setFontSize(10.5);
+    doc.setFont("LiberationSans", "normal"); doc.setFontSize(10.5);
     const wrapped = doc.splitTextToSize(data.intro, pageW - marginX * 2);
     doc.text(wrapped, marginX, y, { lineHeightFactor: 1.5 });
     y += wrapped.length * 5.5 + 8;
@@ -112,14 +112,14 @@ export function generateProposalPDF(data: ProposalPDFData): jsPDF {
   if (data.deliverables?.length) {
     drawSectionLabel(doc, y, "O que entregamos"); y += 8;
     setColor(doc, PDF_COLORS.ink, "text");
-    doc.setFont("helvetica", "normal"); doc.setFontSize(10);
+    doc.setFont("LiberationSans", "normal"); doc.setFontSize(10);
     data.deliverables.forEach((d, i) => {
       const idx = String(i + 1).padStart(2, "0");
       setColor(doc, PDF_COLORS.muted, "text");
-      doc.setFont("helvetica", "bold"); doc.setFontSize(9);
+      doc.setFont("LiberationSans", "bold"); doc.setFontSize(9);
       doc.text(idx, marginX, y);
       setColor(doc, PDF_COLORS.ink, "text");
-      doc.setFont("helvetica", "normal"); doc.setFontSize(10);
+      doc.setFont("LiberationSans", "normal"); doc.setFontSize(10);
       const lines = doc.splitTextToSize(d, pageW - marginX * 2 - 10);
       doc.text(lines, marginX + 8, y);
       y += Math.max(6, lines.length * 4.6) + 2;
@@ -147,7 +147,7 @@ export function generateProposalPDF(data: ProposalPDFData): jsPDF {
   const colTotal = pageW - marginX;
 
   setColor(doc, PDF_COLORS.muted, "text");
-  doc.setFont("helvetica", "bold"); doc.setFontSize(7.5);
+  doc.setFont("LiberationSans", "bold"); doc.setFontSize(7.5);
   doc.text("ITEM", colDesc, y, { charSpace: 0.4 });
   doc.text("INVESTIMENTO", colTotal, y, { align: "right", charSpace: 0.4 });
   setColor(doc, PDF_COLORS.ink, "draw");
@@ -161,21 +161,21 @@ export function generateProposalPDF(data: ProposalPDFData): jsPDF {
     subtotal += amount;
 
     setColor(doc, PDF_COLORS.ink, "text");
-    doc.setFont("helvetica", "bold"); doc.setFontSize(10.5);
+    doc.setFont("LiberationSans", "bold"); doc.setFontSize(10.5);
     const titleLines = doc.splitTextToSize(item.title, pageW - marginX * 2 - 40);
     doc.text(titleLines, colDesc, y);
     let itemH = titleLines.length * 4.8;
 
     if (item.description) {
       setColor(doc, PDF_COLORS.graphite, "text");
-      doc.setFont("helvetica", "normal"); doc.setFontSize(9);
+      doc.setFont("LiberationSans", "normal"); doc.setFontSize(9);
       const descLines = doc.splitTextToSize(item.description, pageW - marginX * 2 - 40);
       doc.text(descLines, colDesc, y + itemH + 1);
       itemH += descLines.length * 4 + 2;
     }
 
     setColor(doc, PDF_COLORS.ink, "text");
-    doc.setFont("helvetica", "bold"); doc.setFontSize(11);
+    doc.setFont("LiberationSans", "bold"); doc.setFontSize(11);
     doc.text(brl(amount), colTotal, y, { align: "right" });
 
     y += Math.max(10, itemH) + 3;
@@ -197,12 +197,12 @@ export function generateProposalPDF(data: ProposalPDFData): jsPDF {
   setColor(doc, PDF_COLORS.ink, "fill");
   doc.rect(marginX, y, pageW - marginX * 2, 18, "F");
   setColor(doc, PDF_COLORS.white, "text");
-  doc.setFont("helvetica", "bold"); doc.setFontSize(9);
+  doc.setFont("LiberationSans", "bold"); doc.setFontSize(9);
   doc.text("INVESTIMENTO TOTAL", marginX + 5, y + 7, { charSpace: 0.6 });
   doc.setFontSize(18);
   doc.text(brl(subtotal), pageW - marginX - 5, y + 12, { align: "right" });
   if (data.billing_model_label) {
-    doc.setFont("helvetica", "normal"); doc.setFontSize(8);
+    doc.setFont("LiberationSans", "normal"); doc.setFontSize(8);
     setColor(doc, [200, 205, 215], "text");
     doc.text(data.billing_model_label, marginX + 5, y + 13);
   }
@@ -210,7 +210,7 @@ export function generateProposalPDF(data: ProposalPDFData): jsPDF {
 
   if (data.investment_note) {
     setColor(doc, PDF_COLORS.muted, "text");
-    doc.setFont("helvetica", "italic"); doc.setFontSize(9);
+    doc.setFont("LiberationSans", "italic"); doc.setFontSize(9);
     const wrapped = doc.splitTextToSize(data.investment_note, pageW - marginX * 2);
     doc.text(wrapped, marginX, y);
     y += wrapped.length * 4.5 + 6;
@@ -226,7 +226,7 @@ export function generateProposalPDF(data: ProposalPDFData): jsPDF {
 
   drawSectionLabel(doc, y, "Próximos passos"); y += 8;
   setColor(doc, PDF_COLORS.graphite, "text");
-  doc.setFont("helvetica", "normal"); doc.setFontSize(10);
+  doc.setFont("LiberationSans", "normal"); doc.setFontSize(10);
   const steps = data.next_steps ||
     "Aprovando esta proposta, iniciamos o alinhamento de kickoff em até 3 dias úteis, com abertura formal do projeto e cronograma detalhado.";
   const stepLines = doc.splitTextToSize(steps, pageW - marginX * 2);
@@ -237,9 +237,9 @@ export function generateProposalPDF(data: ProposalPDFData): jsPDF {
     setColor(doc, PDF_COLORS.accent, "fill");
     doc.rect(marginX, y, pageW - marginX * 2, 16, "F");
     setColor(doc, PDF_COLORS.white, "text");
-    doc.setFont("helvetica", "bold"); doc.setFontSize(10);
+    doc.setFont("LiberationSans", "bold"); doc.setFontSize(10);
     doc.text("APROVAR ONLINE", marginX + 5, y + 6, { charSpace: 0.6 });
-    doc.setFont("helvetica", "normal"); doc.setFontSize(9);
+    doc.setFont("LiberationSans", "normal"); doc.setFontSize(9);
     doc.textWithLink(data.public_url, marginX + 5, y + 12, { url: data.public_url });
   }
 
