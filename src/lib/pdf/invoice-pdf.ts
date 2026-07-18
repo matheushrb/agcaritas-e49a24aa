@@ -157,8 +157,8 @@ export async function generateInvoicePDF(data: InvoicePDFData): Promise<jsPDF> {
   const cardW = contentW;
   const cardY = 14;                       // topo do card
   const headerH = 12;                     // barra azul do topo
-  const bodyPadX = 6;
-  const bodyPadY = 6;
+  const bodyPadX = 9;
+  const bodyPadY = 7;
   const innerX = cardX + bodyPadX;
   const innerW = cardW - bodyPadX * 2;
 
@@ -174,16 +174,16 @@ export async function generateInvoicePDF(data: InvoicePDFData): Promise<jsPDF> {
 
   // logo mini (se houver)
   if (logoDataUrl) {
-    try { doc.addImage(logoDataUrl, "PNG", cardX + 4, cardY + 2, 8, 8); } catch { /* ignore */ }
+    try { doc.addImage(logoDataUrl, "PNG", cardX + 6, cardY + 2, 8, 8); } catch { /* ignore */ }
   }
   // título do header
   setColor(doc, PDF_COLORS.white, "text");
   doc.setFont("helvetica", "bold"); doc.setFontSize(9);
   const titleTxt = data.is_preview ? "PRÉVIA DA FATURA" : "FATURA";
-  doc.text(titleTxt, cardX + (logoDataUrl ? 14 : 4), cardY + 8, { charSpace: 0.8 });
+  doc.text(titleTxt, cardX + (logoDataUrl ? 18 : 8), cardY + 8, { charSpace: 0.8 });
   // número à direita (fonte mono-like)
   doc.setFont("courier", "bold"); doc.setFontSize(11);
-  doc.text(data.number, cardX + cardW - 4, cardY + 8, { align: "right" });
+  doc.text(data.number, cardX + cardW - 8, cardY + 8, { align: "right" });
 
   /* ---------- Bloco topo: Emitida em / Vencimento / Valor total ---------- */
   let y = cardY + headerH + bodyPadY + 2;
@@ -286,7 +286,7 @@ export async function generateInvoicePDF(data: InvoicePDFData): Promise<jsPDF> {
   const dateColW = 26;
   const totalColW = 26;
   const descColW = tableW - dateColW - totalColW;
-  const rowPadX = 3;
+  const rowPadX = 4;
 
   // Header row (fundo cinza claro azulado)
   const headerRowY = y;
@@ -356,18 +356,21 @@ export async function generateInvoicePDF(data: InvoicePDFData): Promise<jsPDF> {
     y += rowH;
   }
 
+  // Espaço entre a última linha de itens e o Total a pagar
+  y += 4;
+
   // Linha "Total a pagar" com tint azul-clarissimo
-  const totalRowH = 8;
+  const totalRowH = 9;
   setColor(doc, PDF_COLORS.paper, "fill");
   doc.rect(tableX, y, tableW, totalRowH, "F");
   setColor(doc, PDF_COLORS.hairline, "draw"); doc.setLineWidth(0.2);
   doc.rect(tableX, y, tableW, totalRowH);
   setColor(doc, PDF_COLORS.ink, "text");
   doc.setFont("helvetica", "bold"); doc.setFontSize(8);
-  doc.text("TOTAL A PAGAR", tableX + descColW - rowPadX, y + 5.4, { align: "right", charSpace: 0.6 });
+  doc.text("TOTAL A PAGAR", tableX + descColW - rowPadX, y + 5.8, { align: "right", charSpace: 0.6 });
   setColor(doc, PDF_COLORS.graphite, "text");
   doc.setFont("helvetica", "bold"); doc.setFontSize(10.5);
-  doc.text(brl(total), tableX + tableW - rowPadX, y + 5.6, { align: "right" });
+  doc.text(brl(total), tableX + tableW - rowPadX, y + 6, { align: "right" });
   y += totalRowH + 6;
 
   // Bordas externas da tabela (contorno cinza)
@@ -430,8 +433,8 @@ export async function generateInvoicePDF(data: InvoicePDFData): Promise<jsPDF> {
       const qrDataUrl = await makeQRCodeDataUrl(paymentPayload);
       if (qrDataUrl) doc.addImage(qrDataUrl, "PNG", qrX, qrY, qrSize, qrSize);
     }
-    setColor(doc, PDF_COLORS.graphite, "text");
-    doc.setFont("helvetica", "bold"); doc.setFontSize(5.8);
+    setColor(doc, PDF_COLORS.ink, "text");
+    doc.setFont("helvetica", "normal"); doc.setFontSize(5.8);
     const linkLines = doc.splitTextToSize(paymentPayload, qrBoxW - 6);
     doc.text(linkLines.slice(0, 3), qrBoxX + qrBoxW / 2, qrY + qrSize + 5, { align: "center" });
     if (/^https?:\/\//i.test(paymentPayload)) {
