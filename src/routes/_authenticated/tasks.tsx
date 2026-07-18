@@ -126,7 +126,7 @@ function TasksPage() {
   useEffect(() => {
     if (searchParams.open && searchParams.open !== selectedId) {
       setSelectedId(searchParams.open);
-      navigate({ search: (prev) => ({ ...prev, open: undefined }), replace: true });
+      navigate({ search: (prev: any) => ({ ...prev, open: undefined }), replace: true });
     }
   }, [searchParams.open]);
 
