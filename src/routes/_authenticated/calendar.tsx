@@ -242,12 +242,7 @@ function CalendarPage() {
                   {new Date(e.starts_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
                   {e.ends_at && ` – ${new Date(e.ends_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}`}
                 </div>
-                {e.location && (
-                  <div className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
-                    <MapPin className="h-3 w-3" /> {e.location}
-                  </div>
-                )}
-                {e.description && <p className="text-xs mt-1">{e.description}</p>}
+                {e.description && <p className="text-xs mt-1 whitespace-pre-line">{e.description}</p>}
               </div>
             ))}
           </div>
