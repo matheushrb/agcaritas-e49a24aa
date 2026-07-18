@@ -140,7 +140,7 @@ async function loadImageAsDataUrl(url: string): Promise<string | null> {
 }
 
 export async function generateInvoicePDF(data: InvoicePDFData): Promise<jsPDF> {
-  const doc = new jsPDF({ unit: "mm", format: "a4", compress: true });
+  const doc = new jsPDF({ unit: "mm", format: "a4", compress: false });
   const { marginX, pageW, pageH } = PDF_LAYOUT;
   const contentW = pageW - marginX * 2;
 
