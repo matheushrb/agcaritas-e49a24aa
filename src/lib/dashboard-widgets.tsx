@@ -561,24 +561,62 @@ export const WIDGETS: WidgetDef[] = [
   {
     id: "finance",
     title: "Financeiro",
-    description: "Faturamento, despesas, lucro, MRR, pipeline e conversão.",
+    description: "Faturamento, despesas, lucro, MRR, pipeline e conversão em um painel único.",
     category: "Financeiro",
     colSpan: 12,
-    render: ({ data }) => (
-      <div>
-        <SectionLabel action={<Link to="/finance" className="text-[11px] font-medium text-primary hover:underline">Ver módulo →</Link>}>
-          Financeiro
-        </SectionLabel>
-        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">
-          <FinanceCard label="Faturamento"  value={BRL(0)} hint="vs mês anterior" icon={TrendingUp}   tone="success"     delta={{ value: "0%", direction: "up" }} />
-          <FinanceCard label="Despesas"     value={BRL(0)} hint="vs mês anterior" icon={TrendingDown} tone="destructive" delta={{ value: "0%", direction: "up" }} />
-          <FinanceCard label="Lucro Líquido" value={BRL(0)} hint="Margem 0%"       icon={Wallet}       tone="primary"     delta={{ value: "0%", direction: "up" }} />
-          <FinanceCard label="MRR"          value={BRL(0)} hint="Recorrente mensal" icon={Activity}    tone="info" />
-          <FinanceCard label="Pipeline"     value={BRL(pipelineValue(data.proposals))} hint={`${data.proposals.length} deals`} icon={BarChart3} tone="accent" />
-          <FinanceCard label="Conversão"    value={`${proposalsRate(data.proposals)}%`} hint="Taxa de fechamento" icon={Target} tone="warning" />
-        </div>
-      </div>
-    ),
+    render: ({ data }) => {
+      const items: Array<{ label: string; value: string; hint?: string; icon: any; tone: StatTone; delta?: { value: string; direction: "up" | "down" } }> = [
+        { label: "Faturamento",   value: BRL(0), hint: "vs mês anterior",    icon: TrendingUp,   tone: "success",     delta: { value: "0%", direction: "up" } },
+        { label: "Despesas",      value: BRL(0), hint: "vs mês anterior",    icon: TrendingDown, tone: "destructive", delta: { value: "0%", direction: "up" } },
+        { label: "Lucro Líquido", value: BRL(0), hint: "Margem 0%",          icon: Wallet,       tone: "primary",     delta: { value: "0%", direction: "up" } },
+        { label: "MRR",           value: BRL(0), hint: "Recorrente mensal",  icon: Activity,     tone: "info" },
+        { label: "Pipeline",      value: BRL(pipelineValue(data.proposals)), hint: `${data.proposals.length} deals`, icon: BarChart3, tone: "accent" },
+        { label: "Conversão",     value: `${proposalsRate(data.proposals)}%`, hint: "Fechamento", icon: Target, tone: "warning" },
+      ];
+      const toneMap: Record<StatTone, string> = {
+        success:     "bg-success/10 text-success",
+        destructive: "bg-destructive/10 text-destructive",
+        primary:     "bg-primary/10 text-primary",
+        accent:      "bg-accent/20 text-accent-foreground",
+        warning:     "bg-warning/15 text-warning",
+        info:        "bg-info/15 text-info",
+      };
+      return (
+        <Card className="card-surface p-5">
+          <div className="mb-4 flex items-end justify-between">
+            <div>
+              <p className="text-[10px] font-semibold tracking-[0.18em] text-muted-foreground uppercase">Financeiro</p>
+              <h3 className="mt-1 font-display font-semibold text-lg">Panorama do mês</h3>
+            </div>
+            <Link to="/finance" className="text-[11px] font-medium text-primary hover:underline">Ver módulo →</Link>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 divide-y md:divide-y-0 md:divide-x divide-border">
+            {items.map((it, i) => (
+              <div key={i} className="px-4 py-3 md:py-2 first:pl-0 last:pr-0">
+                <div className="flex items-center gap-2">
+                  <span className={`grid h-7 w-7 place-items-center rounded-lg ${toneMap[it.tone]}`}>
+                    <it.icon className="h-3.5 w-3.5" />
+                  </span>
+                  <span className="text-[10px] font-semibold tracking-wider text-muted-foreground uppercase">
+                    {it.label}
+                  </span>
+                </div>
+                <p className="mt-2 font-display text-xl md:text-2xl font-bold leading-none">{it.value}</p>
+                <div className="mt-1.5 flex items-center gap-2 text-[11px] text-muted-foreground">
+                  <span className="truncate">{it.hint}</span>
+                  {it.delta && (
+                    <span className={`inline-flex items-center gap-0.5 text-[10px] font-medium ${it.delta.direction === "down" ? "text-destructive" : "text-success"}`}>
+                      {it.delta.direction === "down" ? <TrendingDown className="h-3 w-3" /> : <TrendingUp className="h-3 w-3" />}
+                      {it.delta.value}
+                    </span>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
+      );
+    },
   },
   {
     id: "operations",
