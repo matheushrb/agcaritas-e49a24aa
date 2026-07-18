@@ -918,9 +918,9 @@ function detectPresetKey(roleTitle: string | null | undefined): string {
 }
 
 // Widgets recém-introduzidos que devem entrar ativos mesmo em prefs salvas antigas.
-const AUTO_ENABLE_NEW: Record<string, string> = {
-  // insere "news" imediatamente após "next-meeting" (ou "finance", ou no início dos habilitados)
-  news: "next-meeting",
+const AUTO_ENABLE_NEW: Record<string, string[]> = {
+  // tenta inserir "news" logo após kpi-rings (espaço vazio ao lado do calendário); cai para outras âncoras se faltar
+  news: ["kpi-rings", "greeting", "next-meeting", "finance"],
 };
 
 export function reconcilePrefs(saved: UserPref[] | null | undefined, roleTitle: string | null | undefined): UserPref[] {
