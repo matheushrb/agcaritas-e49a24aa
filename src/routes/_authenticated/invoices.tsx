@@ -665,146 +665,178 @@ function NewInvoiceWizard({
 
         {step === 2 && (
           <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
-            <section>
-              <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1.5">Cobranças pendentes</h3>
-              {filteredCharges.length === 0 && <p className="text-xs text-muted-foreground py-2">Nenhuma cobrança pendente.</p>}
-              <div className="space-y-1">
-                {filteredCharges.map(c => (
-                  <label key={c.id} className="flex items-center gap-3 px-3 py-2 rounded-lg border hover:bg-muted/40 cursor-pointer">
-                    <Checkbox
-                      checked={selectedCharges.has(c.id)}
-                      onCheckedChange={(v) => {
-                        const next = new Set(selectedCharges);
-                        v ? next.add(c.id) : next.delete(c.id);
-                        setSelectedCharges(next);
-                      }}
-                    />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm truncate">{c.description}</p>
-                      <p className="text-[11px] text-muted-foreground">
-                        {c.client_id ? clients.find(cl => cl.id === c.client_id)?.name : "—"}
-                        {c.project_id && ` • ${projects.find(p => p.id === c.project_id)?.name ?? ""}`}
-                        {c.due_date && ` • ${fmtDate(c.due_date)}`}
-                      </p>
-                    </div>
-                    <div className="text-sm font-medium">{money(Number(c.amount ?? 0))}</div>
-                  </label>
-                ))}
-              </div>
-            </section>
+            {(() => {
+              const delivsByTask = new Map<string, BillableDeliverable[]>();
+              for (const d of billableDeliverables) {
+                if (!delivsByTask.has(d.taskId)) delivsByTask.set(d.taskId, []);
+                delivsByTask.get(d.taskId)!.push(d);
+              }
+              const shownTaskIds = new Set(filteredTasks.map(t => t.id));
+              const orphanDelivEntries = Array.from(delivsByTask.entries())
+                .filter(([taskId]) => !shownTaskIds.has(taskId));
 
-            <section>
-              <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1.5">Tarefas prontas para faturar</h3>
-              {filteredTasks.length === 0 && billableDeliverables.length === 0 && (
-                <p className="text-xs text-muted-foreground py-2">Nenhuma tarefa faturável sem cobrança principal. Ative "Faturamento" na tarefa e defina um valor.</p>
-              )}
-              <div className="space-y-2">
-                {(() => {
-                  const delivsByTask = new Map<string, BillableDeliverable[]>();
-                  for (const d of billableDeliverables) {
-                    if (!delivsByTask.has(d.taskId)) delivsByTask.set(d.taskId, []);
-                    delivsByTask.get(d.taskId)!.push(d);
-                  }
-                  const shownTaskIds = new Set(filteredTasks.map(t => t.id));
+              // Agrupamento por projeto
+              type ProjectGroup = {
+                projectId: string | "none";
+                projectName: string;
+                clientName: string;
+                charges: typeof filteredCharges;
+                tasks: typeof filteredTasks;
+                orphanDelivs: Array<[string, BillableDeliverable[]]>;
+              };
+              const groups = new Map<string, ProjectGroup>();
+              const ensureGroup = (pid: string | null, cid: string | null): ProjectGroup => {
+                const key = pid ?? "none";
+                if (!groups.has(key)) {
+                  const proj = pid ? projects.find(p => p.id === pid) : null;
+                  const client = cid ? clients.find(c => c.id === cid) : null;
+                  groups.set(key, {
+                    projectId: key as string | "none",
+                    projectName: proj?.name ?? "Sem projeto",
+                    clientName: client?.name ?? (proj?.client_id ? clients.find(c => c.id === proj.client_id)?.name ?? "" : ""),
+                    charges: [], tasks: [], orphanDelivs: [],
+                  });
+                }
+                return groups.get(key)!;
+              };
+              for (const c of filteredCharges) ensureGroup(c.project_id, c.client_id).charges.push(c);
+              for (const t of filteredTasks)  ensureGroup(t.project_id, t.client_id).tasks.push(t);
+              for (const entry of orphanDelivEntries) {
+                const first = entry[1][0];
+                ensureGroup(first.project_id, first.client_id).orphanDelivs.push(entry);
+              }
 
-                  const renderDelivs = (list: BillableDeliverable[]) => list.map(d => (
-                    <label key={d.key} className="flex items-center gap-3 px-3 py-1.5 rounded-md border border-dashed hover:bg-muted/40 cursor-pointer ml-6">
-                      <Checkbox
-                        checked={selectedDeliverables.has(d.key)}
-                        onCheckedChange={(v) => {
-                          const next = new Set(selectedDeliverables);
-                          v ? next.add(d.key) : next.delete(d.key);
-                          setSelectedDeliverables(next);
-                        }}
-                      />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm truncate flex items-center gap-2">
-                          <span className="text-muted-foreground">↳</span>
-                          {d.label.replace(/^Entregável:\s*[^—]+—?\s*/, "") || "Entregável"}
-                          <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium bg-emerald-500/15 text-emerald-600">Entregue</span>
-                        </p>
+              const groupList = Array.from(groups.values()).sort((a, b) => a.projectName.localeCompare(b.projectName, "pt-BR"));
+
+              if (groupList.length === 0) {
+                return <p className="text-sm text-muted-foreground py-6 text-center">Nada pendente com os filtros escolhidos.</p>;
+              }
+
+              const renderDelivs = (list: BillableDeliverable[]) => list.map(d => (
+                <label key={d.key} className="flex items-center gap-3 px-3 py-1.5 rounded-md border border-dashed hover:bg-muted/40 cursor-pointer ml-6">
+                  <Checkbox
+                    checked={selectedDeliverables.has(d.key)}
+                    onCheckedChange={(v) => {
+                      const next = new Set(selectedDeliverables);
+                      v ? next.add(d.key) : next.delete(d.key);
+                      setSelectedDeliverables(next);
+                    }}
+                  />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm truncate flex items-center gap-2">
+                      <span className="text-muted-foreground">↳</span>
+                      {d.label.replace(/^Entregável:\s*[^—]+—?\s*/, "") || "Entregável"}
+                      <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium bg-emerald-500/15 text-emerald-600">Entregue</span>
+                    </p>
+                  </div>
+                  <div className="text-sm font-medium">{money(d.amount)}</div>
+                </label>
+              ));
+
+              return groupList.map(g => {
+                const groupTotal =
+                  g.charges.reduce((s, c) => s + Number(c.amount ?? 0), 0) +
+                  g.tasks.reduce((s, t) => s + Number(t.billing_value ?? 0), 0) +
+                  g.orphanDelivs.reduce((s, [, l]) => s + l.reduce((ss, d) => ss + d.amount, 0), 0);
+                return (
+                  <section key={g.projectId} className="rounded-xl border bg-muted/10 p-3 space-y-2">
+                    <header className="flex items-center justify-between gap-2 pb-1 border-b">
+                      <div className="min-w-0">
+                        <div className="text-sm font-semibold truncate">{g.projectName}</div>
+                        {g.clientName && <div className="text-[11px] text-muted-foreground truncate">{g.clientName}</div>}
                       </div>
-                      <div className="text-sm font-medium">{money(d.amount)}</div>
-                    </label>
-                  ));
+                      <div className="text-xs text-muted-foreground">Faturável: <span className="text-foreground font-semibold">{money(groupTotal)}</span></div>
+                    </header>
 
-                  return (
-                    <>
-                      {filteredTasks.map(t => {
-                        const done = t.status === "done";
-                        const taskDelivs = delivsByTask.get(t.id) ?? [];
-                        return (
-                          <div key={t.id} className="space-y-1">
-                            <label className="flex items-center gap-3 px-3 py-2 rounded-lg border hover:bg-muted/40 cursor-pointer">
-                              <Checkbox
-                                checked={selectedTasks.has(t.id)}
-                                onCheckedChange={(v) => {
-                                  const next = new Set(selectedTasks);
-                                  const nextD = new Set(selectedDeliverables);
-                                  if (v) {
-                                    next.add(t.id);
-                                    taskDelivs.forEach(d => nextD.add(d.key));
-                                  } else {
-                                    next.delete(t.id);
-                                    taskDelivs.forEach(d => nextD.delete(d.key));
-                                  }
-                                  setSelectedTasks(next);
-                                  setSelectedDeliverables(nextD);
-                                }}
-                              />
-                              <div className="flex-1 min-w-0">
-                                <p className="text-sm truncate flex items-center gap-2">
-                                  Tarefa: {t.title}
-                                  <span className={cn(
-                                    "text-[10px] px-1.5 py-0.5 rounded-full font-medium",
-                                    done ? "bg-emerald-500/15 text-emerald-600" : "bg-amber-500/15 text-amber-600"
-                                  )}>
-                                    {done ? "Concluída" : "Em andamento"}
-                                  </span>
-                                  {taskDelivs.length > 0 && (
-                                    <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium bg-primary/10 text-primary">
-                                      +{taskDelivs.length} entregável{taskDelivs.length > 1 ? "eis" : ""}
+                    {g.charges.length > 0 && (
+                      <div className="space-y-1">
+                        <div className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Cobranças</div>
+                        {g.charges.map(c => (
+                          <label key={c.id} className="flex items-center gap-3 px-3 py-2 rounded-lg border hover:bg-muted/40 cursor-pointer bg-background">
+                            <Checkbox
+                              checked={selectedCharges.has(c.id)}
+                              onCheckedChange={(v) => {
+                                const next = new Set(selectedCharges);
+                                v ? next.add(c.id) : next.delete(c.id);
+                                setSelectedCharges(next);
+                              }}
+                            />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm truncate">{c.description}</p>
+                              <p className="text-[11px] text-muted-foreground">{c.due_date && `Prazo: ${fmtDate(c.due_date)}`}</p>
+                            </div>
+                            <div className="text-sm font-medium">{money(Number(c.amount ?? 0))}</div>
+                          </label>
+                        ))}
+                      </div>
+                    )}
+
+                    {(g.tasks.length > 0 || g.orphanDelivs.length > 0) && (
+                      <div className="space-y-1">
+                        <div className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Tarefas</div>
+                        {g.tasks.map(t => {
+                          const done = t.status === "done";
+                          const taskDelivs = delivsByTask.get(t.id) ?? [];
+                          return (
+                            <div key={t.id} className="space-y-1">
+                              <label className="flex items-center gap-3 px-3 py-2 rounded-lg border hover:bg-muted/40 cursor-pointer bg-background">
+                                <Checkbox
+                                  checked={selectedTasks.has(t.id)}
+                                  onCheckedChange={(v) => {
+                                    const next = new Set(selectedTasks);
+                                    const nextD = new Set(selectedDeliverables);
+                                    if (v) {
+                                      next.add(t.id);
+                                      taskDelivs.forEach(d => nextD.add(d.key));
+                                    } else {
+                                      next.delete(t.id);
+                                      taskDelivs.forEach(d => nextD.delete(d.key));
+                                    }
+                                    setSelectedTasks(next);
+                                    setSelectedDeliverables(nextD);
+                                  }}
+                                />
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-sm truncate flex items-center gap-2">
+                                    {t.title}
+                                    <span className={cn(
+                                      "text-[10px] px-1.5 py-0.5 rounded-full font-medium",
+                                      done ? "bg-emerald-500/15 text-emerald-600" : "bg-amber-500/15 text-amber-600"
+                                    )}>
+                                      {done ? "Concluída" : "Em andamento"}
                                     </span>
-                                  )}
-                                </p>
-                                <p className="text-[11px] text-muted-foreground">
-                                  {t.client_id ? clients.find(cl => cl.id === t.client_id)?.name : "—"}
-                                  {t.project_id && ` • ${projects.find(p => p.id === t.project_id)?.name ?? ""}`}
-                                </p>
-                              </div>
-                              <div className="text-sm font-medium">{money(Number(t.billing_value ?? 0))}</div>
-                            </label>
-                            {renderDelivs(taskDelivs)}
-                          </div>
-                        );
-                      })}
-
-                      {/* Entregáveis de tarefas cujo valor principal já foi faturado */}
-                      {Array.from(delivsByTask.entries())
-                        .filter(([taskId]) => !shownTaskIds.has(taskId))
-                        .map(([taskId, list]) => (
+                                    {taskDelivs.length > 0 && (
+                                      <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium bg-primary/10 text-primary">
+                                        +{taskDelivs.length} entregável{taskDelivs.length > 1 ? "eis" : ""}
+                                      </span>
+                                    )}
+                                  </p>
+                                </div>
+                                <div className="text-sm font-medium">{money(Number(t.billing_value ?? 0))}</div>
+                              </label>
+                              {renderDelivs(taskDelivs)}
+                            </div>
+                          );
+                        })}
+                        {g.orphanDelivs.map(([taskId, list]) => (
                           <div key={taskId} className="space-y-1">
                             <div className="flex items-center gap-3 px-3 py-2 rounded-lg border bg-muted/20">
                               <div className="flex-1 min-w-0">
                                 <p className="text-sm truncate flex items-center gap-2 text-muted-foreground">
-                                  Tarefa: {list[0].taskTitle}
+                                  {list[0].taskTitle}
                                   <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium bg-muted text-muted-foreground">Principal já faturado</span>
-                                </p>
-                                <p className="text-[11px] text-muted-foreground">
-                                  {list[0].client_id ? clients.find(cl => cl.id === list[0].client_id)?.name : "—"}
-                                  {list[0].project_id && ` • ${projects.find(p => p.id === list[0].project_id)?.name ?? ""}`}
                                 </p>
                               </div>
                             </div>
                             {renderDelivs(list)}
                           </div>
                         ))}
-                    </>
-                  );
-                })()}
-              </div>
-            </section>
-
+                      </div>
+                    )}
+                  </section>
+                );
+              });
+            })()}
 
             <div className="sticky bottom-0 bg-background pt-3 border-t flex items-center justify-between">
               <span className="text-xs text-muted-foreground">
@@ -814,6 +846,7 @@ function NewInvoiceWizard({
             </div>
           </div>
         )}
+
 
         {step === 3 && (
           <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,420px)_minmax(0,1fr)] gap-4 flex-1 min-h-0 overflow-hidden">
