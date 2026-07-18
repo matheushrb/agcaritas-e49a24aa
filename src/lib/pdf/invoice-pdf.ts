@@ -378,21 +378,23 @@ export async function generateInvoicePDF(data: InvoicePDFData): Promise<jsPDF> {
   }
 
   // Left column: payment terms + legal notes
-  const qrSize = 42;
-  const leftW  = contentW - qrSize - 10;
+  const qrBoxSize = 48;             // caixa externa (mantida)
+  const qrDraw    = qrBoxSize - 4;  // QR maior dentro da caixa (com pequena margem interna)
+  const leftW  = contentW - qrBoxSize - 8;
   const leftX  = marginX;
-  const rightX = pageW - marginX - qrSize;
+  const boxRightX = pageW - marginX - qrBoxSize; // canto sup-esq da caixa do QR
+  const leftMaxX  = boxRightX - 6;               // limite das linhas das seções da esquerda
 
   // Left content
   let ly = y;
-  drawSectionLabel(doc, ly, "Condições de pagamento"); ly += 6;
+  drawSectionLabel(doc, ly, "Condições de pagamento", leftMaxX); ly += 6;
   setColor(doc, PDF_COLORS.ink, "text");
   doc.setFont("helvetica", "normal"); doc.setFontSize(8.5);
   const terms = doc.splitTextToSize(data.payment_terms || DEFAULT_PAYMENT_TERMS, leftW);
   doc.text(terms, leftX, ly);
   ly += terms.length * 3.8 + 4;
 
-  drawSectionLabel(doc, ly, "Observações legais"); ly += 6;
+  drawSectionLabel(doc, ly, "Observações legais", leftMaxX); ly += 6;
   setColor(doc, PDF_COLORS.graphite, "text");
   doc.setFont("helvetica", "normal"); doc.setFontSize(7.8);
   const legal = doc.splitTextToSize(data.notes || DEFAULT_LEGAL_NOTES, leftW);
@@ -400,38 +402,42 @@ export async function generateInvoicePDF(data: InvoicePDFData): Promise<jsPDF> {
   ly += legal.length * 3.5;
 
   // Right column: QR / link box
-  const qrBoxY = y;
+  const qrBoxY = y - 3;
+  const qrBoxH = qrBoxSize + 22;
   setColor(doc, PDF_COLORS.ink, "draw"); doc.setLineWidth(0.4);
-  doc.rect(rightX - 3, qrBoxY - 3, qrSize + 6, qrSize + 24);
+  doc.rect(boxRightX, qrBoxY, qrBoxSize, qrBoxH);
   setColor(doc, PDF_COLORS.muted, "text");
   doc.setFont("helvetica", "bold"); doc.setFontSize(6.8);
-  doc.text("PAGAMENTO", rightX, qrBoxY + 1, { charSpace: 0.6 });
+  doc.text("PAGAMENTO", boxRightX + 3, qrBoxY + 4, { charSpace: 0.6 });
+
+  const qrX = boxRightX + (qrBoxSize - qrDraw) / 2;
+  const qrY = qrBoxY + 6;
 
   const paymentPayload = data.payment_link?.trim();
   if (paymentPayload) {
-    const drewVectorQR = drawQRCodeVector(doc, paymentPayload, rightX, qrBoxY + 4, qrSize);
+    const drewVectorQR = drawQRCodeVector(doc, paymentPayload, qrX, qrY, qrDraw);
     if (!drewVectorQR) {
       const qrDataUrl = await makeQRCodeDataUrl(paymentPayload);
-      if (qrDataUrl) doc.addImage(qrDataUrl, "PNG", rightX, qrBoxY + 4, qrSize, qrSize);
+      if (qrDataUrl) doc.addImage(qrDataUrl, "PNG", qrX, qrY, qrDraw, qrDraw);
     }
     setColor(doc, PDF_COLORS.muted, "text");
-    doc.setFont("helvetica", "normal"); doc.setFontSize(6.4);
-    doc.text("Aponte a câmera ou copie:", rightX, qrBoxY + qrSize + 9);
+    doc.setFont("helvetica", "normal"); doc.setFontSize(6.2);
+    doc.text("Aponte a câmera ou copie:", boxRightX + 3, qrY + qrDraw + 4);
     setColor(doc, PDF_COLORS.accent, "text");
-    doc.setFont("helvetica", "bold"); doc.setFontSize(6.4);
-    const linkLines = doc.splitTextToSize(paymentPayload, qrSize);
-    doc.text(linkLines.slice(0, 2), rightX, qrBoxY + qrSize + 13);
+    doc.setFont("helvetica", "bold"); doc.setFontSize(6.2);
+    const linkLines = doc.splitTextToSize(paymentPayload, qrBoxSize - 6);
+    doc.text(linkLines.slice(0, 2), boxRightX + 3, qrY + qrDraw + 8);
     // clickable link overlay
     if (/^https?:\/\//i.test(paymentPayload)) {
-      doc.link(rightX, qrBoxY + 4, qrSize, qrSize, { url: paymentPayload });
+      doc.link(qrX, qrY, qrDraw, qrDraw, { url: paymentPayload });
     }
   } else {
     setColor(doc, PDF_COLORS.hairline, "draw"); doc.setLineWidth(0.2);
-    doc.rect(rightX, qrBoxY + 3, qrSize, qrSize);
+    doc.rect(qrX, qrY, qrDraw, qrDraw);
     setColor(doc, PDF_COLORS.muted, "text");
     doc.setFont("helvetica", "italic"); doc.setFontSize(6.5);
     doc.text("QR Code disponível\nquando o link de\npagamento for anexado.",
-      rightX + qrSize / 2, qrBoxY + qrSize / 2 - 2, { align: "center" });
+      qrX + qrDraw / 2, qrY + qrDraw / 2 - 2, { align: "center" });
   }
 
   // Extra payment instructions (optional, below both columns)
