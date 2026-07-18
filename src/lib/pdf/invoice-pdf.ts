@@ -180,10 +180,10 @@ export async function generateInvoicePDF(data: InvoicePDFData): Promise<jsPDF> {
   setColor(doc, PDF_COLORS.white, "text");
   doc.setFont("helvetica", "bold"); doc.setFontSize(9);
   const titleTxt = data.is_preview ? "PRÉVIA DA FATURA" : "FATURA";
-  doc.text(titleTxt, cardX + (logoDataUrl ? 14 : 4), cardY + 8, { charSpace: 0.8 });
+  doc.text(titleTxt, cardX + (logoDataUrl ? 18 : 8), cardY + 8, { charSpace: 0.8 });
   // número à direita (fonte mono-like)
   doc.setFont("courier", "bold"); doc.setFontSize(11);
-  doc.text(data.number, cardX + cardW - 4, cardY + 8, { align: "right" });
+  doc.text(data.number, cardX + cardW - 8, cardY + 8, { align: "right" });
 
   /* ---------- Bloco topo: Emitida em / Vencimento / Valor total ---------- */
   let y = cardY + headerH + bodyPadY + 2;
