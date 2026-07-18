@@ -397,40 +397,78 @@ function NewInvoiceWizard({
     : !!payerClient && !!issueDate;
 
   const previewLines = useMemo(() => {
-    const lines: { title: string; detail?: string; amount: number; is_child?: boolean }[] = [];
+    const lines: Array<{
+      title: string; detail?: string; amount: number; is_child?: boolean;
+      reference_date?: string | null; reference_label?: string;
+    }> = [];
     for (const c of filteredCharges) if (selectedCharges.has(c.id)) {
-      lines.push({ title: c.description || "Cobrança", amount: Number(c.amount ?? 0) });
+      lines.push({
+        title: c.description || "Cobrança",
+        amount: Number(c.amount ?? 0),
+        reference_date: c.due_date ?? null,
+        reference_label: "Prazo",
+      });
     }
     for (const tk of filteredTasks) if (selectedTasks.has(tk.id)) {
-      lines.push({ title: tk.title, amount: Number(tk.billing_value ?? 0) });
-      // entregáveis selecionados desta tarefa (indentados)
+      const ref = taskReference(tk);
+      lines.push({
+        title: tk.title,
+        amount: Number(tk.billing_value ?? 0),
+        reference_date: ref.reference_date,
+        reference_label: ref.reference_label,
+      });
       for (const d of billableDeliverables) {
         if (d.taskId === tk.id && selectedDeliverables.has(d.key)) {
-          lines.push({ title: d.label, amount: d.amount, is_child: true });
+          lines.push({
+            title: d.label, amount: d.amount, is_child: true,
+            reference_date: d.reference_date ?? null,
+            reference_label: d.reference_label,
+          });
         }
       }
     }
-    // entregáveis órfãos (tarefa não selecionada, mas o entregável foi)
     const includedTaskIds = new Set(Array.from(selectedTasks));
     for (const d of billableDeliverables) {
       if (selectedDeliverables.has(d.key) && !includedTaskIds.has(d.taskId)) {
-        lines.push({ title: d.label, amount: d.amount });
+        lines.push({
+          title: d.label, amount: d.amount,
+          reference_date: d.reference_date ?? null,
+          reference_label: d.reference_label,
+        });
       }
     }
     return lines;
   }, [filteredCharges, filteredTasks, billableDeliverables, selectedCharges, selectedTasks, selectedDeliverables]);
 
+  async function computeNextInvoiceNumber(issue: string): Promise<string> {
+    const ym = issue.slice(0, 7).replace("-", ""); // AAAAMM
+    const { data } = await supabase
+      .from("invoices")
+      .select("number")
+      .like("number", `${ym}-%`);
+    let max = 0;
+    for (const r of (data ?? []) as Array<{ number: string | null }>) {
+      const n = parseInt(String(r.number ?? "").split("-")[1] ?? "0", 10);
+      if (!isNaN(n) && n > max) max = n;
+    }
+    return `${ym}-${String(max + 1).padStart(4, "0")}`;
+  }
+
   async function openPreviewPDF() {
     const client = clients.find(c => c.id === payerClient);
+    const issue = issueDate || new Date().toISOString().slice(0, 10);
+    const previewNumber = await computeNextInvoiceNumber(issue);
     const doc = await generateInvoicePDF({
-      number: "PRÉVIA",
-      issue_date: issueDate || new Date().toISOString().slice(0, 10),
+      number: previewNumber,
+      issue_date: issue,
       due_date: dueDate || null,
-      client: { name: client?.name ?? "—", document: client?.tax_id, email: client?.email },
+      client: buildClientParty(client),
+      agency: buildAgencyParty(organization),
       lines: previewLines,
       notes: notes || undefined,
       payment_terms: paymentTerms || undefined,
       payment_link: paymentLink || undefined,
+      is_preview: true,
     });
     const url = doc.output("bloburl") as unknown as string;
     window.open(url, "_blank", "noopener,noreferrer");
