@@ -174,7 +174,7 @@ export async function generateInvoicePDF(data: InvoicePDFData): Promise<jsPDF> {
 
   // logo mini (se houver)
   if (logoDataUrl) {
-    try { doc.addImage(logoDataUrl, "PNG", cardX + 4, cardY + 2, 8, 8); } catch { /* ignore */ }
+    try { doc.addImage(logoDataUrl, "PNG", cardX + 6, cardY + 2, 8, 8); } catch { /* ignore */ }
   }
   // título do header
   setColor(doc, PDF_COLORS.white, "text");
