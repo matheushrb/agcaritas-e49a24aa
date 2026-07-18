@@ -8,6 +8,7 @@ import {
   type UserPref,
 } from "@/lib/dashboard-widgets";
 import { DashboardPersonalize } from "@/components/dashboard-personalize";
+import { QuickCreateButton } from "@/components/quick-create-button";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({ meta: [{ title: "Dashboard · Caritas Agência" }] }),
