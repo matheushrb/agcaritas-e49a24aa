@@ -37,7 +37,9 @@ export const brl = (v: number | null | undefined) =>
 
 export const formatDate = (d: string | Date | null | undefined) => {
   if (!d) return "—";
-  const dt = typeof d === "string" ? new Date(d) : d;
+  const dt = typeof d === "string" && /^\d{4}-\d{2}-\d{2}$/.test(d)
+    ? new Date(`${d}T12:00:00`)
+    : typeof d === "string" ? new Date(d) : d;
   return dt.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" });
 };
 
