@@ -51,7 +51,7 @@ async function main() {
     ],
     payment_terms: "Pagamento em 5 dias úteis via PIX ou link.",
     notes: "NF emitida após confirmação do pagamento.",
-    payment_link: undefined,
+    payment_link: "https://pagamento.caritas.ag/inv_2025070001",
   });
 
   const out = "/tmp/invoice-test.pdf";
