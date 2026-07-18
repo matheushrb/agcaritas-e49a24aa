@@ -1184,25 +1184,46 @@ export type Database = {
       }
       organizations: {
         Row: {
+          address: string | null
           automation_settings: Json
+          bank_info: string | null
           created_at: string
+          email: string | null
           id: string
+          legal_name: string | null
           name: string
+          phone: string | null
           pricing_settings: Json
+          tax_id: string | null
+          website: string | null
         }
         Insert: {
+          address?: string | null
           automation_settings?: Json
+          bank_info?: string | null
           created_at?: string
+          email?: string | null
           id?: string
+          legal_name?: string | null
           name: string
+          phone?: string | null
           pricing_settings?: Json
+          tax_id?: string | null
+          website?: string | null
         }
         Update: {
+          address?: string | null
           automation_settings?: Json
+          bank_info?: string | null
           created_at?: string
+          email?: string | null
           id?: string
+          legal_name?: string | null
           name?: string
+          phone?: string | null
           pricing_settings?: Json
+          tax_id?: string | null
+          website?: string | null
         }
         Relationships: []
       }
