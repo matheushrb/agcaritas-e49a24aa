@@ -4,6 +4,7 @@ import {
   PDF_COLORS, PDF_LAYOUT, setColor, brl, formatDate,
   drawIndustrialHeader, drawIndustrialFooter, drawSectionLabel,
 } from "./theme";
+import { registerLiberationFonts } from "./fonts";
 
 export interface InvoiceLine {
   title: string;
