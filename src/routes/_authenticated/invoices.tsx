@@ -839,7 +839,7 @@ function NewInvoiceWizard({
 }
 
 /* ----------------------------------- Detail ------------------------------ */
-function InvoiceDetail({ id, clients, onClose }: { id: string; clients: Client[]; onClose: () => void }) {
+function InvoiceDetail({ id, clients, organization, onClose }: { id: string; clients: Client[]; organization: Organization | null; onClose: () => void }) {
   const qc = useQueryClient();
   const [editing, setEditing] = useState(false);
   const [editIssue, setEditIssue] = useState("");
