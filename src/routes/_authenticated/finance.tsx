@@ -86,6 +86,8 @@ function FinancePage() {
     const monthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
     let received = 0, pending = 0, overdue = 0, monthTotal = 0;
     for (const c of charges) {
+      // Rascunhos (fatura aguardando confirmação) e pending_invoice não são lançamentos ainda
+      if (c.status === "draft" || c.status === "pending_invoice") continue;
       const amt = Number(c.amount ?? 0);
       if (c.status === "paid") received += amt;
       if (c.status === "pending") pending += amt;
