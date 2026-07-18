@@ -45,24 +45,18 @@ function NewsCarousel() {
 
   return (
     <Card className="rounded-3xl overflow-hidden h-full flex flex-col border-border/60">
-      <div className="flex items-center justify-between px-5 pt-4 pb-3">
-        <div className="inline-flex items-center gap-2">
-          <span className="h-8 w-8 rounded-xl bg-primary/10 text-primary inline-flex items-center justify-center">
-            <Newspaper className="h-4 w-4" />
-          </span>
-          <div>
-            <div className="text-sm font-semibold leading-tight">Painel de notícias</div>
-            <div className="text-[11px] text-muted-foreground">Atualizações da agência</div>
+      {news.length === 0 && (
+        <div className="flex items-center justify-between px-5 pt-4 pb-3">
+          <div className="inline-flex items-center gap-2">
+            <span className="h-8 w-8 rounded-xl bg-primary/10 text-primary inline-flex items-center justify-center">
+              <Newspaper className="h-4 w-4" />
+            </span>
+            <div>
+              <div className="text-sm font-semibold leading-tight">Painel de notícias</div>
+            </div>
           </div>
         </div>
-        {news.length > 1 && (
-          <div className="flex items-center gap-1">
-            <button onClick={() => setIdx(i => (i - 1 + news.length) % news.length)} className="h-6 w-6 rounded-full hover:bg-muted inline-flex items-center justify-center text-muted-foreground"><ChevronLeft className="h-3.5 w-3.5" /></button>
-            <span className="text-[11px] text-muted-foreground tabular-nums">{idx + 1}/{news.length}</span>
-            <button onClick={() => setIdx(i => (i + 1) % news.length)} className="h-6 w-6 rounded-full hover:bg-muted inline-flex items-center justify-center text-muted-foreground"><ChevronRight className="h-3.5 w-3.5" /></button>
-          </div>
-        )}
-      </div>
+      )}
 
       {news.length === 0 ? (
         <div className="flex-1 flex flex-col items-center justify-center gap-2 px-6 pb-6 text-center">
@@ -79,6 +73,13 @@ function NewsCarousel() {
                 <div className="relative min-h-[210px] flex-1 w-full overflow-hidden bg-muted">
                   <img src={item.image_url} alt="" className="h-full w-full object-cover" />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/15 to-transparent" />
+                  {news.length > 1 && (
+                    <div className="absolute right-3 top-3 flex items-center gap-1 rounded-full bg-background/85 px-1.5 py-1 shadow-sm backdrop-blur">
+                      <button onClick={(e) => { e.preventDefault(); setIdx(i => (i - 1 + news.length) % news.length); }} className="h-6 w-6 rounded-full hover:bg-muted inline-flex items-center justify-center text-muted-foreground"><ChevronLeft className="h-3.5 w-3.5" /></button>
+                      <span className="text-[11px] text-muted-foreground tabular-nums">{idx + 1}/{news.length}</span>
+                      <button onClick={(e) => { e.preventDefault(); setIdx(i => (i + 1) % news.length); }} className="h-6 w-6 rounded-full hover:bg-muted inline-flex items-center justify-center text-muted-foreground"><ChevronRight className="h-3.5 w-3.5" /></button>
+                    </div>
+                  )}
                   <div className="absolute bottom-4 left-4 right-5 text-white font-semibold text-base leading-tight line-clamp-2 drop-shadow">
                     {item.title}
                   </div>
