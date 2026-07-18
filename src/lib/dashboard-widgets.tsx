@@ -929,11 +929,14 @@ export function reconcilePrefs(saved: UserPref[] | null | undefined, roleTitle: 
   const filtered = saved.filter(p => knownIds.has(p.id));
   const seen = new Set(filtered.map(p => p.id));
 
-  // injeta widgets novos ativados, próximos da âncora quando possível
-  for (const [id, anchor] of Object.entries(AUTO_ENABLE_NEW)) {
+  // injeta widgets novos ativados, próximos da primeira âncora encontrada
+  for (const [id, anchors] of Object.entries(AUTO_ENABLE_NEW)) {
     if (seen.has(id)) continue;
-    const anchorIdx = filtered.findIndex(p => p.id === anchor);
-    const insertAt = anchorIdx >= 0 ? anchorIdx + 1 : filtered.length;
+    let insertAt = filtered.length;
+    for (const a of anchors) {
+      const i = filtered.findIndex(p => p.id === a);
+      if (i >= 0) { insertAt = i + 1; break; }
+    }
     filtered.splice(insertAt, 0, { id, enabled: true });
     seen.add(id);
   }
