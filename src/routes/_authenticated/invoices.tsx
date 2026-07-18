@@ -329,6 +329,7 @@ function NewInvoiceWizard({
 
 
   const [selectedDeliverables, setSelectedDeliverables] = useState<Set<string>>(new Set());
+  const [lineDateOverrides, setLineDateOverrides] = useState<Record<string, string>>({});
 
   // Sincroniza o cliente pagador com o filtro (ou com o cliente do projeto filtrado)
   useEffect(() => {
@@ -439,30 +440,39 @@ function NewInvoiceWizard({
 
   const previewLines = useMemo(() => {
     const lines: Array<{
+      key: string;
       title: string; detail?: string; amount: number; is_child?: boolean;
       reference_date?: string | null; reference_label?: string;
     }> = [];
+    const withOverride = (key: string, fallback: string | null | undefined) =>
+      lineDateOverrides[key] ?? (fallback ?? null);
     for (const c of filteredCharges) if (selectedCharges.has(c.id)) {
+      const key = `charge:${c.id}`;
       lines.push({
+        key,
         title: c.description || "Cobrança",
         amount: Number(c.amount ?? 0),
-        reference_date: c.due_date ?? null,
+        reference_date: withOverride(key, c.due_date),
         reference_label: "Prazo",
       });
     }
     for (const tk of filteredTasks) if (selectedTasks.has(tk.id)) {
       const ref = taskReference(tk);
+      const key = `task:${tk.id}`;
       lines.push({
+        key,
         title: tk.title,
         amount: Number(tk.billing_value ?? 0),
-        reference_date: ref.reference_date,
+        reference_date: withOverride(key, ref.reference_date),
         reference_label: ref.reference_label,
       });
       for (const d of billableDeliverables) {
         if (d.taskId === tk.id && selectedDeliverables.has(d.key)) {
+          const dkey = `deliv:${d.key}`;
           lines.push({
+            key: dkey,
             title: d.label, amount: d.amount, is_child: true,
-            reference_date: d.reference_date ?? null,
+            reference_date: withOverride(dkey, d.reference_date),
             reference_label: d.reference_label,
           });
         }
@@ -471,15 +481,17 @@ function NewInvoiceWizard({
     const includedTaskIds = new Set(Array.from(selectedTasks));
     for (const d of billableDeliverables) {
       if (selectedDeliverables.has(d.key) && !includedTaskIds.has(d.taskId)) {
+        const dkey = `deliv:${d.key}`;
         lines.push({
+          key: dkey,
           title: d.label, amount: d.amount,
-          reference_date: d.reference_date ?? null,
+          reference_date: withOverride(dkey, d.reference_date),
           reference_label: d.reference_label,
         });
       }
     }
     return lines;
-  }, [filteredCharges, filteredTasks, billableDeliverables, selectedCharges, selectedTasks, selectedDeliverables]);
+  }, [filteredCharges, filteredTasks, billableDeliverables, selectedCharges, selectedTasks, selectedDeliverables, lineDateOverrides]);
 
   async function computeNextInvoiceNumber(issue: string): Promise<string> {
     const ym = issue.slice(0, 7).replace("-", ""); // AAAAMM
@@ -525,6 +537,9 @@ function NewInvoiceWizard({
       const newCharges: string[] = [];
       for (const tk of filteredTasks) {
         if (!selectedTasks.has(tk.id)) continue;
+        const overrideDate = lineDateOverrides[`task:${tk.id}`];
+        const ref = taskReference(tk);
+        const chargeDate = overrideDate || ref.reference_date || dueDate || issueDate;
         const { data: inserted, error } = await supabase.from("charges").insert({
           organization_id: profile.organization_id,
           project_id: tk.project_id,
@@ -533,7 +548,7 @@ function NewInvoiceWizard({
           description: `Tarefa: ${tk.title}`,
           amount: Number(tk.billing_value ?? 0),
           status: "pending_invoice",
-          due_date: dueDate || issueDate,
+          due_date: chargeDate,
           type: "income",
         }).select("id").single();
         if (error) throw error;
@@ -544,6 +559,8 @@ function NewInvoiceWizard({
       const deliverablesByTask = new Map<string, Set<string>>();
       for (const d of billableDeliverables) {
         if (!selectedDeliverables.has(d.key)) continue;
+        const overrideDate = lineDateOverrides[`deliv:${d.key}`];
+        const chargeDate = overrideDate || d.reference_date || dueDate || issueDate;
         const { data: inserted, error } = await supabase.from("charges").insert({
           organization_id: profile.organization_id,
           project_id: d.project_id,
@@ -553,13 +570,22 @@ function NewInvoiceWizard({
           description: d.label,
           amount: d.amount,
           status: "pending_invoice",
-          due_date: dueDate || issueDate,
+          due_date: chargeDate,
           type: "income",
         } as never).select("id").single();
         if (error) throw error;
         if (inserted) newCharges.push(inserted.id);
         if (!deliverablesByTask.has(d.taskId)) deliverablesByTask.set(d.taskId, new Set());
         deliverablesByTask.get(d.taskId)!.add(d.deliverableId);
+      }
+
+      // Atualiza a data das cobranças já existentes quando o usuário editou manualmente
+      for (const c of filteredCharges) {
+        if (!selectedCharges.has(c.id)) continue;
+        const ov = lineDateOverrides[`charge:${c.id}`];
+        if (ov && ov !== c.due_date) {
+          await supabase.from("charges").update({ due_date: ov }).eq("id", c.id);
+        }
       }
       // Marcar deliverables como invoiced na coluna JSONB da task
       for (const [taskId, delIds] of deliverablesByTask) {
@@ -916,25 +942,31 @@ function NewInvoiceWizard({
                     <div>
                       <div className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground mb-1">Itens ({previewLines.length})</div>
                       <div className="rounded border overflow-hidden">
-                        <div className="grid grid-cols-[1fr_80px_100px] gap-2 px-2 py-1 bg-muted/50 text-[9px] font-bold uppercase tracking-wider text-muted-foreground">
+                        <div className="grid grid-cols-[1fr_110px_100px] gap-2 px-3 py-1 bg-muted/50 text-[9px] font-bold uppercase tracking-wider text-muted-foreground">
                           <div>Descrição</div><div>Data</div><div className="text-right">Total</div>
                         </div>
                         {previewLines.length === 0 && (
                           <div className="px-2 py-3 text-center text-muted-foreground">Nenhum item selecionado.</div>
                         )}
                         {previewLines.map((l, i) => (
-                          <div key={i} className={cn(
-                            "grid grid-cols-[1fr_80px_100px] gap-2 px-2 py-1.5 border-t items-center",
+                          <div key={l.key} className={cn(
+                            "grid grid-cols-[1fr_110px_100px] gap-2 px-3 py-1.5 border-t items-center",
                             i % 2 === 1 && "bg-muted/20",
                           )}>
                             <div className={cn("truncate", l.is_child && "pl-4 text-muted-foreground")}>
                               {l.is_child && "↳ "}{l.title}
                             </div>
-                            <div className="text-[10px] text-muted-foreground">{l.reference_date ? fmtDate(l.reference_date) : "—"}</div>
+                            <input
+                              type="date"
+                              value={l.reference_date ?? ""}
+                              onChange={(e) => setLineDateOverrides(prev => ({ ...prev, [l.key]: e.target.value }))}
+                              className="h-6 px-1 text-[10px] rounded border bg-background text-foreground w-full"
+                              title="Data do item (editável)"
+                            />
                             <div className="text-right font-semibold">{money(l.amount)}</div>
                           </div>
                         ))}
-                        <div className="grid grid-cols-[1fr_80px_100px] gap-2 px-2 py-2 border-t bg-primary/5">
+                        <div className="grid grid-cols-[1fr_110px_100px] gap-2 px-3 py-2 border-t bg-primary/5">
                           <div className="col-span-2 text-right font-bold uppercase text-[10px] tracking-wider">Total a pagar</div>
                           <div className="text-right font-bold text-primary">{money(total)}</div>
                         </div>
