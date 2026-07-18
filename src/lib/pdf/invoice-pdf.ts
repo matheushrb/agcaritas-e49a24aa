@@ -286,7 +286,7 @@ export async function generateInvoicePDF(data: InvoicePDFData): Promise<jsPDF> {
   const dateColW = 26;
   const totalColW = 26;
   const descColW = tableW - dateColW - totalColW;
-  const rowPadX = 3;
+  const rowPadX = 4;
 
   // Header row (fundo cinza claro azulado)
   const headerRowY = y;
