@@ -198,26 +198,44 @@ function notificationChannel(n: any): { kind: "chat" | "email" | "system"; icon:
 export const WIDGETS: WidgetDef[] = [
   {
     id: "greeting",
-    title: "Saudação e atalhos",
-    description: "Cabeçalho com boas-vindas e botão Novo.",
+    title: "Saudação e resumo",
+    description: "Boas-vindas, resumo do dia e botão Novo.",
     category: "Saudação",
     colSpan: 8,
-    render: ({ firstName }) => (
-      <div className="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
-        <div className="min-w-0">
-          <h1 className="font-display text-3xl md:text-4xl font-bold leading-tight">
-            Olá, {firstName}!<br />
-            Quais são seus planos para hoje?
-          </h1>
-          <p className="mt-3 text-sm text-muted-foreground max-w-md">
-            O ERP da Caritas Agência: organize leads, propostas, projetos e faturamento em um único painel.
-          </p>
+    render: ({ firstName, data }) => {
+      const open = openTasks(data.allTasks);
+      const due = dueSoon(data.allTasks);
+      const nextEv = data.events[0];
+      return (
+        <div className="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
+          <div className="min-w-0">
+            <h1 className="font-display text-3xl md:text-4xl font-bold leading-tight">
+              Olá, {firstName}!<br />
+              Quais são seus planos para hoje?
+            </h1>
+            <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm">
+              <span className="inline-flex items-center gap-2 text-muted-foreground">
+                <CheckSquare className="h-4 w-4 text-primary" />
+                <b className="text-foreground">{open}</b> tarefas abertas
+              </span>
+              <span className="inline-flex items-center gap-2 text-muted-foreground">
+                <CalendarClock className="h-4 w-4 text-warning" />
+                <b className="text-foreground">{due}</b> vencem em 7 dias
+              </span>
+              <span className="inline-flex items-center gap-2 text-muted-foreground">
+                <Calendar className="h-4 w-4 text-info" />
+                {nextEv
+                  ? <>Próxima reunião <b className="text-foreground">{new Date(nextEv.starts_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</b></>
+                  : "Sem reuniões hoje"}
+              </span>
+            </div>
+          </div>
+          <div className="flex flex-wrap items-center gap-2 shrink-0">
+            <QuickCreateButton />
+          </div>
         </div>
-        <div className="flex flex-wrap items-center gap-2 shrink-0">
-          <QuickCreateButton />
-        </div>
-      </div>
-    ),
+      );
+    },
   },
   {
     id: "calendar",
@@ -312,36 +330,48 @@ export const WIDGETS: WidgetDef[] = [
   // Trocado de lugar: "Próxima reunião" agora ocupa o slot de 4 colunas
   {
     id: "next-meeting",
-    title: "Próxima reunião",
-    description: "Próximo evento agendado.",
+    title: "Próximas reuniões",
+    description: "Convites de reunião com confirmar/recusar por item.",
     category: "Agenda",
     colSpan: 4,
     render: ({ data }) => {
-      const ev = data.events[0];
+      const list = data.events.slice(0, 3);
       return (
         <Card className="card-surface p-5 h-full flex flex-col">
           <div className="flex items-start justify-between">
             <div className="min-w-0">
-              <h3 className="font-display font-semibold">Próxima reunião</h3>
-              <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
-                <span className="inline-block h-2 w-2 rounded-full bg-primary" />
-                {upcomingText(data.events)}
-              </div>
+              <h3 className="font-display font-semibold">Próximas reuniões</h3>
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                {list.length === 0 ? "Nenhuma reunião agendada." : `${list.length} convite${list.length > 1 ? "s" : ""} pendente${list.length > 1 ? "s" : ""}`}
+              </p>
             </div>
-            <Link to="/calendar" className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1">
-              <Pencil className="h-3.5 w-3.5" />
-            </Link>
+            <Link to="/calendar" className="text-xs text-muted-foreground hover:text-foreground">Ver agenda</Link>
           </div>
-          <div className="mt-4 flex-1">
-            <p className="text-sm line-clamp-3">
-              {ev?.description ?? ev?.title ?? "Nenhuma reunião agendada. Adicione um evento pela agenda."}
-            </p>
-          </div>
-          <div className="mt-4 flex gap-2">
-            <Link to="/calendar" className="flex-1">
-              <Button variant="outline" className="rounded-full w-full">Remarcar</Button>
-            </Link>
-            <Button className="rounded-full gap-2 flex-1"><Check className="h-4 w-4" /> Confirmar</Button>
+
+          <div className="mt-4 flex-1 space-y-3">
+            {list.length === 0 && (
+              <EmptyRow icon={Calendar} label="Adicione um evento pela agenda." />
+            )}
+            {list.map(ev => (
+              <div key={ev.id} className="rounded-2xl border border-border bg-muted/30 p-3">
+                <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
+                  <span className="inline-block h-1.5 w-1.5 rounded-full bg-primary" />
+                  {new Date(ev.starts_at).toLocaleDateString("pt-BR", { day: "2-digit", month: "short" })}
+                  {" · "}
+                  {new Date(ev.starts_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+                </div>
+                <p className="mt-1 text-sm font-medium line-clamp-1">{ev.title}</p>
+                {ev.description && <p className="text-xs text-muted-foreground line-clamp-2">{ev.description}</p>}
+                <div className="mt-3 flex gap-2">
+                  <Button size="sm" className="rounded-full gap-1 flex-1 h-8">
+                    <Check className="h-3.5 w-3.5" /> Confirmar
+                  </Button>
+                  <Button size="sm" variant="outline" className="rounded-full flex-1 h-8">
+                    Recusar
+                  </Button>
+                </div>
+              </div>
+            ))}
           </div>
         </Card>
       );
@@ -531,24 +561,62 @@ export const WIDGETS: WidgetDef[] = [
   {
     id: "finance",
     title: "Financeiro",
-    description: "Faturamento, despesas, lucro, MRR, pipeline e conversão.",
+    description: "Faturamento, despesas, lucro, MRR, pipeline e conversão em um painel único.",
     category: "Financeiro",
     colSpan: 12,
-    render: ({ data }) => (
-      <div>
-        <SectionLabel action={<Link to="/finance" className="text-[11px] font-medium text-primary hover:underline">Ver módulo →</Link>}>
-          Financeiro
-        </SectionLabel>
-        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">
-          <FinanceCard label="Faturamento"  value={BRL(0)} hint="vs mês anterior" icon={TrendingUp}   tone="success"     delta={{ value: "0%", direction: "up" }} />
-          <FinanceCard label="Despesas"     value={BRL(0)} hint="vs mês anterior" icon={TrendingDown} tone="destructive" delta={{ value: "0%", direction: "up" }} />
-          <FinanceCard label="Lucro Líquido" value={BRL(0)} hint="Margem 0%"       icon={Wallet}       tone="primary"     delta={{ value: "0%", direction: "up" }} />
-          <FinanceCard label="MRR"          value={BRL(0)} hint="Recorrente mensal" icon={Activity}    tone="info" />
-          <FinanceCard label="Pipeline"     value={BRL(pipelineValue(data.proposals))} hint={`${data.proposals.length} deals`} icon={BarChart3} tone="accent" />
-          <FinanceCard label="Conversão"    value={`${proposalsRate(data.proposals)}%`} hint="Taxa de fechamento" icon={Target} tone="warning" />
-        </div>
-      </div>
-    ),
+    render: ({ data }) => {
+      const items: Array<{ label: string; value: string; hint?: string; icon: any; tone: StatTone; delta?: { value: string; direction: "up" | "down" } }> = [
+        { label: "Faturamento",   value: BRL(0), hint: "vs mês anterior",    icon: TrendingUp,   tone: "success",     delta: { value: "0%", direction: "up" } },
+        { label: "Despesas",      value: BRL(0), hint: "vs mês anterior",    icon: TrendingDown, tone: "destructive", delta: { value: "0%", direction: "up" } },
+        { label: "Lucro Líquido", value: BRL(0), hint: "Margem 0%",          icon: Wallet,       tone: "primary",     delta: { value: "0%", direction: "up" } },
+        { label: "MRR",           value: BRL(0), hint: "Recorrente mensal",  icon: Activity,     tone: "info" },
+        { label: "Pipeline",      value: BRL(pipelineValue(data.proposals)), hint: `${data.proposals.length} deals`, icon: BarChart3, tone: "accent" },
+        { label: "Conversão",     value: `${proposalsRate(data.proposals)}%`, hint: "Fechamento", icon: Target, tone: "warning" },
+      ];
+      const toneMap: Record<StatTone, string> = {
+        success:     "bg-success/10 text-success",
+        destructive: "bg-destructive/10 text-destructive",
+        primary:     "bg-primary/10 text-primary",
+        accent:      "bg-accent/20 text-accent-foreground",
+        warning:     "bg-warning/15 text-warning",
+        info:        "bg-info/15 text-info",
+      };
+      return (
+        <Card className="card-surface p-5">
+          <div className="mb-4 flex items-end justify-between">
+            <div>
+              <p className="text-[10px] font-semibold tracking-[0.18em] text-muted-foreground uppercase">Financeiro</p>
+              <h3 className="mt-1 font-display font-semibold text-lg">Panorama do mês</h3>
+            </div>
+            <Link to="/finance" className="text-[11px] font-medium text-primary hover:underline">Ver módulo →</Link>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 divide-y md:divide-y-0 md:divide-x divide-border">
+            {items.map((it, i) => (
+              <div key={i} className="px-4 py-3 md:py-2 first:pl-0 last:pr-0">
+                <div className="flex items-center gap-2">
+                  <span className={`grid h-7 w-7 place-items-center rounded-lg ${toneMap[it.tone]}`}>
+                    <it.icon className="h-3.5 w-3.5" />
+                  </span>
+                  <span className="text-[10px] font-semibold tracking-wider text-muted-foreground uppercase">
+                    {it.label}
+                  </span>
+                </div>
+                <p className="mt-2 font-display text-xl md:text-2xl font-bold leading-none">{it.value}</p>
+                <div className="mt-1.5 flex items-center gap-2 text-[11px] text-muted-foreground">
+                  <span className="truncate">{it.hint}</span>
+                  {it.delta && (
+                    <span className={`inline-flex items-center gap-0.5 text-[10px] font-medium ${it.delta.direction === "down" ? "text-destructive" : "text-success"}`}>
+                      {it.delta.direction === "down" ? <TrendingDown className="h-3 w-3" /> : <TrendingUp className="h-3 w-3" />}
+                      {it.delta.value}
+                    </span>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
+      );
+    },
   },
   {
     id: "operations",
