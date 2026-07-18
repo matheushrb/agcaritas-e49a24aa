@@ -601,7 +601,7 @@ function NewInvoiceWizard({
 
   return (
     <Dialog open onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="max-w-4xl">
+      <DialogContent className={cn(step === 3 ? "max-w-[1200px]" : "max-w-4xl", "max-h-[92vh] flex flex-col")}>
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2"><Receipt className="h-5 w-5" />Nova fatura</DialogTitle>
         </DialogHeader>
