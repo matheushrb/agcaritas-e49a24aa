@@ -27,7 +27,7 @@ export function useCalendarBlocks() {
         .select("id,user_id,kind,start_date,end_date,reason,all_day")
         .order("start_date", { ascending: false });
       if (error) throw error;
-      return (data ?? []) as CalendarBlock[];
+      return ((data ?? []) as unknown) as CalendarBlock[];
     },
   });
 }
