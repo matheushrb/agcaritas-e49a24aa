@@ -10,11 +10,15 @@ import {
   Eye, UserPlus, UserMinus, Newspaper, ExternalLink,
 } from "lucide-react";
 import type { JSX } from "react";
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { SwipeableRow, type SwipeAction } from "@/components/swipeable-row";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
 
 function NewsCarousel() {
   const { data: news = [] } = useQuery({
@@ -107,6 +111,235 @@ function NewsCarousel() {
     </Card>
   );
 }
+
+
+// ---------- Tasks helper hooks/components ----------
+
+function useCurrentUserId() {
+  const { data } = useQuery({
+    queryKey: ["current-user-id"],
+    queryFn: async () => (await supabase.auth.getUser()).data.user?.id ?? null,
+    staleTime: 5 * 60_000,
+  });
+  return data ?? null;
+}
+
+const TASKS_ALERT_DAYS_KEY = "dashboard.tasks-today.alert-days";
+
+function useTasksAlertDays(): [number, (n: number) => void] {
+  const [days, setDays] = useState<number>(() => {
+    if (typeof window === "undefined") return 0;
+    const raw = window.localStorage.getItem(TASKS_ALERT_DAYS_KEY);
+    const n = raw ? parseInt(raw, 10) : NaN;
+    return Number.isFinite(n) ? n : 0;
+  });
+  const set = (n: number) => {
+    setDays(n);
+    try { window.localStorage.setItem(TASKS_ALERT_DAYS_KEY, String(n)); } catch {}
+  };
+  return [days, set];
+}
+
+function useTaskActions() {
+  const qc = useQueryClient();
+  const navigate = useNavigate();
+  const invalidate = () => {
+    qc.invalidateQueries({ queryKey: ["dashboard"] });
+    qc.invalidateQueries({ queryKey: ["tasks"] });
+  };
+
+  const open = (id: string) => navigate({ to: "/tasks", search: { open: id } as any });
+
+  const complete = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("tasks").update({ status: "done", progress: 100 }).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => { toast.success("Tarefa concluída"); invalidate(); },
+    onError: (e: any) => toast.error(e?.message ?? "Erro ao concluir"),
+  });
+
+  const unassign = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("tasks").update({ assignee_id: null }).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => { toast.success("Desatribuída"); invalidate(); },
+    onError: (e: any) => toast.error(e?.message ?? "Erro"),
+  });
+
+  const remove = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("tasks").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => { toast.success("Tarefa excluída"); invalidate(); },
+    onError: (e: any) => toast.error(e?.message ?? "Erro ao excluir"),
+  });
+
+  return { open, complete, unassign, remove };
+}
+
+function TaskRow({ t }: { t: any }) {
+  const overdue = t.due_date && new Date(t.due_date) < new Date(new Date().toDateString());
+  return (
+    <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-2xl bg-muted/40 px-3 py-2">
+      <div className="min-w-0">
+        <div className="flex flex-wrap items-center gap-2">
+          <p className="font-medium truncate text-sm">{t.title}</p>
+          {t.priority === "high" && (
+            <span className="rounded-full bg-destructive/10 text-destructive text-[10px] font-medium px-1.5 py-0.5">Alta</span>
+          )}
+          {overdue && (
+            <span className="rounded-full bg-destructive/15 text-destructive text-[10px] font-medium px-1.5 py-0.5">Atrasada</span>
+          )}
+          {t.platform && (
+            <span className="text-[10px] text-muted-foreground uppercase tracking-wide">{t.platform}</span>
+          )}
+        </div>
+        <div className="mt-1.5 flex items-center gap-3">
+          <Progress value={t.progress ?? 0} className="h-1 max-w-[180px]" />
+          <span className="text-[10px] text-muted-foreground shrink-0">{t.progress ?? 0}%</span>
+          <span className="text-[10px] text-muted-foreground shrink-0">· {t.estimated_hours ?? "—"}h</span>
+        </div>
+      </div>
+      <div className="flex items-center gap-3 text-[11px] text-muted-foreground shrink-0">
+        <span className="flex items-center gap-1"><MessageCircle className="h-3 w-3" />{t.comments_count ?? 0}</span>
+        <span className="flex items-center gap-1"><Paperclip className="h-3 w-3" />{t.attachments_count ?? 0}</span>
+        <span className="hidden md:inline">
+          {t.due_date ? new Date(t.due_date).toLocaleDateString("pt-BR", { day: "2-digit", month: "short" }) : "—"}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function AssignmentsWidget({ tasks }: { tasks: any[] }) {
+  const me = useCurrentUserId();
+  const { open, complete, unassign, remove } = useTaskActions();
+
+  const mine = useMemo(() => {
+    if (!me) return [] as any[];
+    return tasks
+      .filter(t => t.assignee_id === me && t.status !== "done" && t.status !== "completed" && t.status !== "cancelled")
+      .sort((a, b) => {
+        const rank = (p: string) => (p === "critical" ? 0 : p === "urgent" ? 1 : p === "high" ? 2 : p === "medium" ? 3 : 4);
+        const ra = rank(a.priority ?? "low"), rb = rank(b.priority ?? "low");
+        if (ra !== rb) return ra - rb;
+        const da = a.due_date ? new Date(a.due_date).getTime() : Infinity;
+        const db = b.due_date ? new Date(b.due_date).getTime() : Infinity;
+        return da - db;
+      })
+      .slice(0, 5);
+  }, [tasks, me]);
+
+  return (
+    <Card className="card-surface p-5 h-full flex flex-col">
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="font-display font-semibold">Minhas atribuições</h3>
+          <p className="text-[11px] text-muted-foreground">Tarefas atribuídas a você.</p>
+        </div>
+        <Link to="/tasks" className="text-xs text-muted-foreground hover:text-foreground">Ver todas</Link>
+      </div>
+
+      <div className="mt-4 flex-1 space-y-2">
+        {mine.length === 0 && <EmptyRow icon={ClipboardList} label="Nada atribuído a você." />}
+        {mine.map(t => (
+          <SwipeableRow
+            key={t.id}
+            onClick={() => open(t.id)}
+            rightActions={[
+              { id: "open",     label: "Abrir",     icon: Eye,        tone: "primary",     onClick: () => open(t.id) },
+              { id: "done",     label: "Concluir",  icon: Check,      tone: "success",     onClick: () => complete.mutate(t.id) },
+              { id: "unassign", label: "Sair",      icon: UserMinus,  tone: "muted",       onClick: () => unassign.mutate(t.id) },
+              { id: "delete",   label: "Excluir",   icon: Trash2,     tone: "destructive", onClick: () => remove.mutate(t.id) },
+            ]}
+          >
+            <TaskRow t={t} />
+          </SwipeableRow>
+        ))}
+      </div>
+
+      <Link
+        to="/tasks"
+        search={{ new: 1 } as any}
+        className="mt-3 flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-border py-2.5 text-xs text-muted-foreground hover:border-primary hover:text-primary"
+      >
+        <Plus className="h-3.5 w-3.5" /> Nova tarefa
+      </Link>
+    </Card>
+  );
+}
+
+function TasksTodayWidget({ tasks }: { tasks: any[] }) {
+  const { open, complete, unassign, remove } = useTaskActions();
+  const [alertDays, setAlertDays] = useTasksAlertDays();
+
+  const list = useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const limit = new Date(today);
+    limit.setDate(today.getDate() + alertDays);
+    return tasks
+      .filter(t => t.status !== "done" && t.status !== "completed" && t.status !== "cancelled")
+      .filter(t => {
+        if (!t.due_date) return false;
+        const d = new Date(t.due_date);
+        d.setHours(0, 0, 0, 0);
+        return d.getTime() <= limit.getTime();
+      })
+      .sort((a, b) => new Date(a.due_date).getTime() - new Date(b.due_date).getTime())
+      .slice(0, 6);
+  }, [tasks, alertDays]);
+
+  return (
+    <Card className="card-surface p-5 h-full">
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <div>
+          <h3 className="font-display font-semibold">Tarefas de hoje</h3>
+          <p className="text-[11px] text-muted-foreground">
+            {alertDays === 0 ? "Vencem hoje" : `Vencem em até ${alertDays} dia${alertDays > 1 ? "s" : ""}`}
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Select value={String(alertDays)} onValueChange={(v) => setAlertDays(parseInt(v, 10))}>
+            <SelectTrigger className="h-8 rounded-full text-xs w-[130px]"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="0">Só hoje</SelectItem>
+              <SelectItem value="1">+ 1 dia</SelectItem>
+              <SelectItem value="2">+ 2 dias</SelectItem>
+              <SelectItem value="3">+ 3 dias</SelectItem>
+              <SelectItem value="5">+ 5 dias</SelectItem>
+              <SelectItem value="7">+ 7 dias</SelectItem>
+            </SelectContent>
+          </Select>
+          <Link to="/tasks" className="text-xs text-muted-foreground hover:text-foreground">Ver todas</Link>
+        </div>
+      </div>
+      <div className="mt-4 space-y-2">
+        {list.length === 0 && <EmptyRow icon={ClipboardList} label="Nenhuma tarefa no prazo definido." />}
+        {list.map(t => (
+          <SwipeableRow
+            key={t.id}
+            onClick={() => open(t.id)}
+            rightActions={[
+              { id: "open",     label: "Abrir",     icon: Eye,        tone: "primary",     onClick: () => open(t.id) },
+              { id: "done",     label: "Concluir",  icon: Check,      tone: "success",     onClick: () => complete.mutate(t.id) },
+              { id: "unassign", label: "Sair",      icon: UserMinus,  tone: "muted",       onClick: () => unassign.mutate(t.id) },
+              { id: "delete",   label: "Excluir",   icon: Trash2,     tone: "destructive", onClick: () => remove.mutate(t.id) },
+            ]}
+          >
+            <TaskRow t={t} />
+          </SwipeableRow>
+        ))}
+      </div>
+    </Card>
+  );
+}
+
+
+
 
 
 export type WidgetCategory =
@@ -470,114 +703,19 @@ export const WIDGETS: WidgetDef[] = [
   },
   {
     id: "assignments",
-    title: "Atribuições",
-    description: "Tarefa de maior prioridade em destaque.",
+    title: "Minhas atribuições",
+    description: "Tarefas atribuídas a você — arraste para agir.",
     category: "Tarefas",
     colSpan: 4,
-    render: ({ data }) => {
-      const priority = data.tasks.find(t => t.priority === "high") ?? data.tasks[0];
-      return (
-        <Card className="card-surface p-5 h-full">
-          <div className="flex items-center justify-between">
-            <h3 className="font-display font-semibold">Atribuições</h3>
-          </div>
-          {!priority && <div className="mt-4"><EmptyRow icon={ClipboardList} label="Nenhuma atribuição em destaque." /></div>}
-          {priority && (
-            <SwipeableRow
-              className="mt-4"
-              rightActions={[
-                { id: "assign",   label: "Atribuir",   icon: UserPlus,   tone: "primary",     onClick: () => {} },
-                { id: "unassign", label: "Desatribuir", icon: UserMinus,  tone: "muted",       onClick: () => {} },
-                { id: "open",     label: "Abrir",      icon: Eye,        tone: "success",     onClick: () => {} },
-              ]}
-            >
-              <div className="rounded-2xl bg-muted/40 p-3 space-y-2">
-                <div className="flex items-center justify-between text-[11px] text-muted-foreground">
-                  <span className="rounded-full bg-primary/10 px-2 py-0.5 text-primary font-medium uppercase">{priority.platform ?? "Geral"}</span>
-                  <span>{priority.delivery_type ?? "Entrega"}</span>
-                </div>
-                <p className="font-display font-semibold text-sm">{priority.title}</p>
-                <div className="flex items-center justify-between">
-                  <span className="rounded-full bg-success/20 px-2.5 py-0.5 text-[11px] font-medium text-success-foreground">
-                    {priority.priority === "high" ? "Alta" : priority.priority === "medium" ? "Média" : "Baixa"}
-                  </span>
-                  <span className="text-[11px] text-muted-foreground">{priority.progress ?? 0}%</span>
-                </div>
-              </div>
-            </SwipeableRow>
-          )}
-          <Link
-            to="/tasks"
-            search={{ new: 1 } as any}
-            className="mt-3 flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-border py-2.5 text-xs text-muted-foreground hover:border-primary hover:text-primary"
-          >
-            <Plus className="h-3.5 w-3.5" /> Adicionar atribuição
-          </Link>
-        </Card>
-      );
-    },
+    render: ({ data }) => <AssignmentsWidget tasks={data.tasks} />,
   },
   {
     id: "tasks-today",
     title: "Tarefas de hoje",
-    description: "Até 5 tarefas prioritárias de hoje.",
+    description: "Tarefas cujo prazo vence hoje (ou nos próximos N dias).",
     category: "Tarefas",
     colSpan: 8,
-    render: ({ data }) => (
-      <Card className="card-surface p-5 h-full">
-        <div className="flex items-center justify-between flex-wrap gap-3">
-          <div className="flex items-center gap-3">
-            <h3 className="font-display font-semibold">Tarefas de hoje</h3>
-            <div className="flex -space-x-1">
-              <Avatar initials="AB" />
-              <Avatar initials="CD" />
-              <Avatar initials="EF" />
-              <div className="grid h-7 w-7 place-items-center rounded-full bg-primary text-primary-foreground text-[10px] font-bold border-2 border-card">+3</div>
-            </div>
-          </div>
-          <Link to="/tasks" className="text-xs text-muted-foreground hover:text-foreground">Ver todas</Link>
-        </div>
-        <div className="mt-4 space-y-2">
-          {data.tasks.length === 0 && <EmptyRow icon={ClipboardList} label="Nenhuma tarefa para hoje ainda." />}
-          {data.tasks.slice(0, 5).map(t => (
-            <SwipeableRow
-              key={t.id}
-              rightActions={[
-                { id: "open",     label: "Abrir",       icon: Eye,        tone: "primary", onClick: () => {} },
-                { id: "assign",   label: "Atribuir",    icon: UserPlus,   tone: "success", onClick: () => {} },
-                { id: "unassign", label: "Sair",        icon: UserMinus,  tone: "muted",   onClick: () => {} },
-              ]}
-            >
-              <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-2xl bg-muted/40 px-3 py-2">
-                <div className="min-w-0">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <p className="font-medium truncate text-sm">{t.title}</p>
-                    {t.priority === "high" && (
-                      <span className="rounded-full bg-destructive/10 text-destructive text-[10px] font-medium px-1.5 py-0.5">
-                        Alta
-                      </span>
-                    )}
-                    {t.platform && (
-                      <span className="text-[10px] text-muted-foreground uppercase tracking-wide">{t.platform}</span>
-                    )}
-                  </div>
-                  <div className="mt-1.5 flex items-center gap-3">
-                    <Progress value={t.progress ?? 0} className="h-1 max-w-[180px]" />
-                    <span className="text-[10px] text-muted-foreground shrink-0">{t.progress ?? 0}%</span>
-                    <span className="text-[10px] text-muted-foreground shrink-0">· {t.estimated_hours ?? "—"}h</span>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3 text-[11px] text-muted-foreground shrink-0">
-                  <span className="flex items-center gap-1"><MessageCircle className="h-3 w-3" />{t.comments_count ?? 0}</span>
-                  <span className="flex items-center gap-1"><Paperclip className="h-3 w-3" />{t.attachments_count ?? 0}</span>
-                  <span className="hidden md:inline">{t.due_date ? new Date(t.due_date).toLocaleDateString("pt-BR", { day: "2-digit", month: "short" }) : "—"}</span>
-                </div>
-              </div>
-            </SwipeableRow>
-          ))}
-        </div>
-      </Card>
-    ),
+    render: ({ data }) => <TasksTodayWidget tasks={data.tasks} />,
   },
   // Notifications agora no slot largo (8 col), com categorias chat/email/sistema e ações por swipe
   {
