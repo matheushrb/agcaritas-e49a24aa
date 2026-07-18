@@ -115,8 +115,9 @@ function DashboardContent() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-end">
+      <div className="flex items-center justify-end gap-2">
         <DashboardPersonalize value={prefs} onChange={setPrefs} roleTitle={roleTitle} />
+        <QuickCreateButton />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-5">
