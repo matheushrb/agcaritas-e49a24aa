@@ -225,7 +225,7 @@ function InvoicesPage() {
               onClick={() => setDetailId(inv.id)}
               className="w-full grid grid-cols-[110px_1fr_1fr_120px_120px_120px_80px] gap-3 px-4 py-3 text-sm items-center hover:bg-muted/40 border-b last:border-b-0 text-left"
             >
-              <div className="font-mono text-xs">{inv.number}</div>
+              <div className="font-mono text-xs">{inv.number?.trim() ? inv.number : <span className="text-muted-foreground italic">— rascunho</span>}</div>
               <div className="truncate">{inv.client_id ? clientById[inv.client_id]?.name ?? "—" : "—"}</div>
               <div className="truncate text-muted-foreground">{inv.project_id ? projectById[inv.project_id]?.name ?? "—" : "Múltiplos"}</div>
               <div className="text-xs text-muted-foreground">{fmtDate(inv.issue_date)}</div>
