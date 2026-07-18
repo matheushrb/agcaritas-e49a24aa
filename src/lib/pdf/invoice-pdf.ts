@@ -122,15 +122,35 @@ function drawQRCodeVector(doc: jsPDF, text: string, x: number, y: number, size: 
 }
 
 
+async function loadImageAsDataUrl(url: string): Promise<string | null> {
+  try {
+    if (url.startsWith("data:")) return url;
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const blob = await res.blob();
+    return await new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(typeof reader.result === "string" ? reader.result : null);
+      reader.onerror = () => resolve(null);
+      reader.readAsDataURL(blob);
+    });
+  } catch {
+    return null;
+  }
+}
+
 export async function generateInvoicePDF(data: InvoicePDFData): Promise<jsPDF> {
   const doc = new jsPDF({ unit: "mm", format: "a4", compress: true });
   const { marginX, pageW, pageH } = PDF_LAYOUT;
   const contentW = pageW - marginX * 2;
 
+  const logoDataUrl = data.agency?.logo_url ? await loadImageAsDataUrl(data.agency.logo_url) : null;
+
   drawIndustrialHeader(doc, {
     documentKind: data.is_preview ? "FATURA · PRÉVIA" : "FATURA",
     documentNumber: data.number,
     competence: data.competence ? `Competência ${data.competence}` : undefined,
+    logoDataUrl,
   });
 
   const subtotal = data.lines.reduce((a, l) => a + Number(l.amount || 0), 0);
