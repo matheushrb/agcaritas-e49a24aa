@@ -458,11 +458,11 @@ export async function generateInvoicePDF(data: InvoicePDFData): Promise<jsPDF> {
 
   if (data.payment_instructions) {
     if (y > pageH - 30) { doc.addPage(); y = 20; }
-    setColor(doc, PDF_COLORS.muted, "text");
+    setColor(doc, PDF_COLORS.graphite, "text");
     doc.setFont("helvetica", "bold"); doc.setFontSize(6.6);
     doc.text("INSTRUÇÕES EXTRAS", innerX, y, { charSpace: 0.6 });
     y += 4;
-    setColor(doc, PDF_COLORS.ink, "text");
+    setColor(doc, PDF_COLORS.black, "text");
     doc.setFont("helvetica", "normal"); doc.setFontSize(8);
     const wrapped = doc.splitTextToSize(data.payment_instructions, innerW);
     doc.text(wrapped, innerX, y);
