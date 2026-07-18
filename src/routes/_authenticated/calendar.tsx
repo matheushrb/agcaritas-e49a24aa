@@ -182,6 +182,7 @@ function CalendarPage() {
               className={cn("px-3 py-1 text-xs font-medium rounded-full", view === "week" ? "bg-primary text-primary-foreground" : "text-muted-foreground")}
             >Semana</button>
           </div>
+          <Button variant="outline" onClick={() => setBlockOpen(true)}><Lock className="size-4 mr-1" />Bloquear datas</Button>
           <Button onClick={() => openNew(selectedDate)}><Plus className="size-4 mr-1" />Novo compromisso</Button>
         </div>
       </div>
