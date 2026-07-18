@@ -928,7 +928,7 @@ function NewInvoiceWizard({
                     <div>
                       <div className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground mb-1">Itens ({previewLines.length})</div>
                       <div className="rounded border overflow-hidden">
-                        <div className="grid grid-cols-[1fr_80px_100px] gap-2 px-2 py-1 bg-muted/50 text-[9px] font-bold uppercase tracking-wider text-muted-foreground">
+                        <div className="grid grid-cols-[1fr_110px_100px] gap-2 px-3 py-1 bg-muted/50 text-[9px] font-bold uppercase tracking-wider text-muted-foreground">
                           <div>Descrição</div><div>Data</div><div className="text-right">Total</div>
                         </div>
                         {previewLines.length === 0 && (
