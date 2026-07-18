@@ -32,15 +32,22 @@ export function SwipeableRow({
   const x = useMotionValue(0);
   const pointerRef = useRef<{ id: number; startX: number; startY: number; startValue: number; dragging: boolean } | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
 
-  const actionWidth = 74;
+  const actionWidth = 58;
   const rightWidth = rightActions.length * actionWidth;
   const leftWidth = leftActions.length * actionWidth;
 
   const rightOpacity = useTransform(x, [0, -20, -rightWidth], [0, 0.4, 1]);
   const leftOpacity = useTransform(x, [0, 20, leftWidth], [0, 0.4, 1]);
+  const contentShift = useTransform(x, [-Math.max(rightWidth, 1), 0, Math.max(leftWidth, 1)], [0, 0, 0]);
+  const rightReveal = useTransform(x, [-Math.max(rightWidth, 1), 0], [0, Math.max(rightWidth, 1)]);
+  const leftReveal = useTransform(x, [0, Math.max(leftWidth, 1)], [-Math.max(leftWidth, 1), 0]);
 
-  const snap = (to: number) => animate(x, to, { type: "spring", stiffness: 520, damping: 42 });
+  const snap = (to: number) => {
+    setIsOpen(to !== 0);
+    return animate(x, to, { type: "spring", stiffness: 520, damping: 42 });
+  };
 
   const clamp = (value: number) => Math.max(-rightWidth, Math.min(leftWidth, value));
 
@@ -78,8 +85,8 @@ export function SwipeableRow({
     const velocityOpen = Math.abs(dx) > 80;
     const value = x.get();
 
-    if (value < -rightWidth * 0.28 || (velocityOpen && dx < 0)) snap(-rightWidth);
-    else if (value > leftWidth * 0.28 || (velocityOpen && dx > 0)) snap(leftWidth);
+    if (value < -rightWidth * 0.22 || (velocityOpen && dx < 0)) snap(-rightWidth);
+    else if (value > leftWidth * 0.22 || (velocityOpen && dx > 0)) snap(leftWidth);
     else snap(0);
 
     pointerRef.current = null;
@@ -91,8 +98,8 @@ export function SwipeableRow({
       {/* Right actions layer */}
       {rightActions.length > 0 && (
         <motion.div
-          style={{ opacity: rightOpacity }}
-          className="absolute inset-y-0 right-0 flex items-stretch"
+          style={{ opacity: rightOpacity, x: rightReveal }}
+          className={cn("absolute inset-y-0 right-0 z-20 flex items-stretch", isOpen ? "pointer-events-auto" : "pointer-events-none")}
         >
           {rightActions.map(a => (
             <ActionButton key={a.id} action={a} width={actionWidth} onDone={() => snap(0)} />
@@ -101,8 +108,8 @@ export function SwipeableRow({
       )}
       {leftActions.length > 0 && (
         <motion.div
-          style={{ opacity: leftOpacity }}
-          className="absolute inset-y-0 left-0 flex items-stretch"
+          style={{ opacity: leftOpacity, x: leftReveal }}
+          className={cn("absolute inset-y-0 left-0 z-20 flex items-stretch", isOpen ? "pointer-events-auto" : "pointer-events-none")}
         >
           {leftActions.map(a => (
             <ActionButton key={a.id} action={a} width={actionWidth} onDone={() => snap(0)} />
@@ -111,15 +118,27 @@ export function SwipeableRow({
       )}
 
       <motion.div
-        style={{ x }}
+        style={{ x: contentShift }}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerEnd}
         onPointerCancel={handlePointerEnd}
         onClick={(e) => {
-          if (isDragging || Math.abs(x.get()) >= 4) {
+          if (isDragging) {
             e.preventDefault();
             e.stopPropagation();
+            return;
+          }
+          if (Math.abs(x.get()) >= 4) {
+            e.preventDefault();
+            e.stopPropagation();
+            snap(0);
+            return;
+          }
+          if (rightActions.length > 0) {
+            e.preventDefault();
+            e.stopPropagation();
+            snap(isOpen ? 0 : -rightWidth);
             return;
           }
           if (onClick) {
@@ -127,7 +146,10 @@ export function SwipeableRow({
             onClick();
           }
         }}
-        className="relative bg-card cursor-grab active:cursor-grabbing select-none touch-pan-y will-change-transform"
+        className={cn(
+          "relative z-10 bg-card cursor-pointer active:cursor-grabbing select-none touch-pan-y will-change-transform transition-[filter]",
+          isOpen && "brightness-[0.98]",
+        )}
       >
         {children}
         {rightActions.length > 0 && (
@@ -142,11 +164,11 @@ export function SwipeableRow({
 
 function ActionButton({ action, width, onDone }: { action: SwipeAction; width: number; onDone: () => void }) {
   const toneMap: Record<string, string> = {
-    primary: "bg-primary text-primary-foreground",
-    success: "bg-success text-success-foreground",
-    warning: "bg-warning text-warning-foreground",
-    destructive: "bg-destructive text-destructive-foreground",
-    muted: "bg-muted text-muted-foreground",
+    primary: "text-primary",
+    success: "text-success",
+    warning: "text-warning",
+    destructive: "text-destructive",
+    muted: "text-muted-foreground",
   };
   const Icon = action.icon;
   return (
@@ -155,11 +177,10 @@ function ActionButton({ action, width, onDone }: { action: SwipeAction; width: n
       onClick={(e) => { e.stopPropagation(); action.onClick(); onDone(); }}
       style={{ width }}
       className={cn(
-        "flex flex-col items-center justify-center gap-1 text-[10px] font-medium",
-        toneMap[action.tone ?? "primary"],
+        "flex flex-col items-center justify-center gap-1 border-l border-border/70 bg-muted/70 text-[9px] font-medium text-muted-foreground transition-colors hover:bg-muted",
       )}
     >
-      <Icon className="h-4 w-4" />
+      <Icon className={cn("h-4 w-4", toneMap[action.tone ?? "primary"])} />
       {action.label}
     </button>
   );

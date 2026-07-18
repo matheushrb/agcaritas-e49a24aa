@@ -45,24 +45,18 @@ function NewsCarousel() {
 
   return (
     <Card className="rounded-3xl overflow-hidden h-full flex flex-col border-border/60">
-      <div className="flex items-center justify-between px-5 pt-4 pb-3">
-        <div className="inline-flex items-center gap-2">
-          <span className="h-8 w-8 rounded-xl bg-primary/10 text-primary inline-flex items-center justify-center">
-            <Newspaper className="h-4 w-4" />
-          </span>
-          <div>
-            <div className="text-sm font-semibold leading-tight">Painel de notícias</div>
-            <div className="text-[11px] text-muted-foreground">Atualizações da agência</div>
+      {news.length === 0 && (
+        <div className="flex items-center justify-between px-5 pt-4 pb-3">
+          <div className="inline-flex items-center gap-2">
+            <span className="h-8 w-8 rounded-xl bg-primary/10 text-primary inline-flex items-center justify-center">
+              <Newspaper className="h-4 w-4" />
+            </span>
+            <div>
+              <div className="text-sm font-semibold leading-tight">Painel de notícias</div>
+            </div>
           </div>
         </div>
-        {news.length > 1 && (
-          <div className="flex items-center gap-1">
-            <button onClick={() => setIdx(i => (i - 1 + news.length) % news.length)} className="h-6 w-6 rounded-full hover:bg-muted inline-flex items-center justify-center text-muted-foreground"><ChevronLeft className="h-3.5 w-3.5" /></button>
-            <span className="text-[11px] text-muted-foreground tabular-nums">{idx + 1}/{news.length}</span>
-            <button onClick={() => setIdx(i => (i + 1) % news.length)} className="h-6 w-6 rounded-full hover:bg-muted inline-flex items-center justify-center text-muted-foreground"><ChevronRight className="h-3.5 w-3.5" /></button>
-          </div>
-        )}
-      </div>
+      )}
 
       {news.length === 0 ? (
         <div className="flex-1 flex flex-col items-center justify-center gap-2 px-6 pb-6 text-center">
@@ -76,20 +70,24 @@ function NewsCarousel() {
           const content = (
             <>
               {item.image_url ? (
-                <div className="relative h-40 w-full overflow-hidden bg-muted">
+                <div className="relative min-h-[210px] flex-1 w-full overflow-hidden bg-muted">
                   <img src={item.image_url} alt="" className="h-full w-full object-cover" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-                  <div className="absolute bottom-2 left-3 right-3 text-white font-semibold text-sm line-clamp-2 drop-shadow">
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/15 to-transparent" />
+                  {news.length > 1 && (
+                    <div className="absolute right-3 top-3 flex items-center gap-1 rounded-full bg-background/85 px-1.5 py-1 shadow-sm backdrop-blur">
+                      <button onClick={(e) => { e.preventDefault(); setIdx(i => (i - 1 + news.length) % news.length); }} className="h-6 w-6 rounded-full hover:bg-muted inline-flex items-center justify-center text-muted-foreground"><ChevronLeft className="h-3.5 w-3.5" /></button>
+                      <span className="text-[11px] text-muted-foreground tabular-nums">{idx + 1}/{news.length}</span>
+                      <button onClick={(e) => { e.preventDefault(); setIdx(i => (i + 1) % news.length); }} className="h-6 w-6 rounded-full hover:bg-muted inline-flex items-center justify-center text-muted-foreground"><ChevronRight className="h-3.5 w-3.5" /></button>
+                    </div>
+                  )}
+                  <div className="absolute bottom-4 left-4 right-5 text-white font-semibold text-base leading-tight line-clamp-2 drop-shadow">
                     {item.title}
                   </div>
                 </div>
               ) : (
-                <div className="px-5 pt-1 pb-2 font-semibold text-sm">{item.title}</div>
+                <div className="flex-1 px-5 py-6 font-semibold text-base flex items-end">{item.title}</div>
               )}
-              <div className="px-5 py-3 flex-1 min-h-0">
-                {item.body && <p className="text-xs text-muted-foreground line-clamp-4">{item.body}</p>}
-              </div>
-              <div className="px-5 pb-4 flex items-center justify-between text-[11px] text-muted-foreground">
+              <div className="px-5 py-3 flex items-center justify-between text-[11px] text-muted-foreground">
                 <span>{new Date(item.published_at).toLocaleDateString("pt-BR", { day: "2-digit", month: "short" })}</span>
                 {item.link_url && (
                   <span className="inline-flex items-center gap-1 text-primary font-medium">
@@ -183,27 +181,27 @@ function useTaskActions() {
 function TaskRow({ t }: { t: any }) {
   const overdue = t.due_date && new Date(t.due_date) < new Date(new Date().toDateString());
   return (
-    <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-2xl bg-muted/40 px-3 py-2">
+    <div className="grid min-h-[64px] grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-2xl bg-muted/40 px-3 py-2">
       <div className="min-w-0">
-        <div className="flex flex-wrap items-center gap-2">
-          <p className="font-medium truncate text-sm">{t.title}</p>
+        <div className="flex min-w-0 items-center gap-2">
+          <p className="min-w-0 flex-1 truncate text-sm font-medium">{t.title}</p>
           {t.priority === "high" && (
-            <span className="rounded-full bg-destructive/10 text-destructive text-[10px] font-medium px-1.5 py-0.5">Alta</span>
+            <span className="shrink-0 rounded-full bg-destructive/10 text-destructive text-[10px] font-medium px-1.5 py-0.5">Alta</span>
           )}
           {overdue && (
-            <span className="rounded-full bg-destructive/15 text-destructive text-[10px] font-medium px-1.5 py-0.5">Atrasada</span>
+            <span className="shrink-0 rounded-full bg-destructive/15 text-destructive text-[10px] font-medium px-1.5 py-0.5">Atrasada</span>
           )}
           {t.platform && (
-            <span className="text-[10px] text-muted-foreground uppercase tracking-wide">{t.platform}</span>
+            <span className="hidden shrink-0 text-[10px] uppercase tracking-wide text-muted-foreground sm:inline">{t.platform}</span>
           )}
         </div>
         <div className="mt-1.5 flex items-center gap-3">
-          <Progress value={t.progress ?? 0} className="h-1 max-w-[180px]" />
+          <Progress value={t.progress ?? 0} className="h-1 w-full max-w-[180px]" />
           <span className="text-[10px] text-muted-foreground shrink-0">{t.progress ?? 0}%</span>
           <span className="text-[10px] text-muted-foreground shrink-0">· {t.estimated_hours ?? "—"}h</span>
         </div>
       </div>
-      <div className="flex items-center gap-3 text-[11px] text-muted-foreground shrink-0">
+      <div className="flex min-w-[74px] items-center justify-end gap-2 text-[11px] text-muted-foreground shrink-0">
         <span className="flex items-center gap-1"><MessageCircle className="h-3 w-3" />{t.comments_count ?? 0}</span>
         <span className="flex items-center gap-1"><Paperclip className="h-3 w-3" />{t.attachments_count ?? 0}</span>
         <span className="hidden md:inline">
