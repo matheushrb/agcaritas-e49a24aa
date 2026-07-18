@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
-  Building2, Wrench, Share2, Workflow, TrendingUp, UserCog, Plug, Zap, DollarSign, FolderKanban,
+  Building2, Wrench, Share2, Workflow, TrendingUp, UserCog, Plug, Zap, DollarSign, FolderKanban, Newspaper,
 } from "lucide-react";
 import { toast } from "sonner";
 import { TaskTypesEditor } from "@/components/settings/task-types-editor";
@@ -17,6 +17,7 @@ import { AutomationsTab } from "@/components/settings/automations-tab";
 import { AgencyPricingTab } from "@/components/settings/agency-pricing";
 import { CatalogEditor } from "@/components/settings/catalog-editor";
 import { ProjectTypesEditor } from "@/components/settings/project-types-editor";
+import { NewsEditor } from "@/components/settings/news-editor";
 
 
 export const Route = createFileRoute("/_authenticated/settings")({
