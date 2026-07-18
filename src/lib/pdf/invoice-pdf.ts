@@ -68,16 +68,19 @@ export const DEFAULT_LEGAL_NOTES =
 
 async function makeQRCodeDataUrl(text: string): Promise<string | null> {
   try {
-    return await QRCode.toDataURL(text, {
+    const url = await QRCode.toDataURL(text, {
       errorCorrectionLevel: "M",
       margin: 1,
       width: 400,
-      color: { dark: "#111827", light: "#ffffff" },
+      color: { dark: "#1E3A8A", light: "#ffffff" },
     });
-  } catch {
+    return url;
+  } catch (e) {
+    console.error("[invoice-pdf] QR generation failed", e);
     return null;
   }
 }
+
 
 export async function generateInvoicePDF(data: InvoicePDFData): Promise<jsPDF> {
   const doc = new jsPDF({ unit: "mm", format: "a4", compress: true });
