@@ -290,14 +290,6 @@ function NewInvoiceWizard({
   const previewNumber = "Aguardando emissão";
   const [submitting, setSubmitting] = useState(false);
 
-      for (const r of (data ?? []) as Array<{ number: string | null }>) {
-        const n = parseInt(String(r.number ?? "").split("-")[1] ?? "0", 10);
-        if (!isNaN(n) && n > max) max = n;
-      }
-      if (!cancelled) setPreviewNumber(`${ym}-${String(max + 1).padStart(4, "0")}`);
-    })();
-    return () => { cancelled = true; };
-  }, [issueDate]);
 
   useEffect(() => {
     let active = true;
