@@ -436,11 +436,11 @@ export async function generateInvoicePDF(data: InvoicePDFData): Promise<jsPDF> {
       const qrDataUrl = await makeQRCodeDataUrl(paymentPayload);
       if (qrDataUrl) doc.addImage(qrDataUrl, "PNG", qrX, qrY, qrSize, qrSize);
     }
-    setColor(doc, PDF_COLORS.ink, "text");
+    setColor(doc, PDF_COLORS.black, "text");
     doc.setFont("helvetica", "normal"); doc.setFontSize(5.8);
     const linkLines = doc.splitTextToSize(paymentPayload, qrBoxW - 6);
     doc.text(linkLines.slice(0, 3), qrBoxX + qrBoxW / 2, qrY + qrSize + 5, { align: "center" });
-    if (/^https?:\/\//i.test(paymentPayload)) {
+    if (/^https?:\/\/\//i.test(paymentPayload)) {
       doc.link(qrX, qrY, qrSize, qrSize, { url: paymentPayload });
     }
   } else {
