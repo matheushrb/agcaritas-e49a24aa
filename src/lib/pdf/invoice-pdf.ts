@@ -201,7 +201,7 @@ export async function generateInvoicePDF(data: InvoicePDFData): Promise<jsPDF> {
   smallLabel(innerX + col3W, "Vencimento");
   smallLabel(innerX + innerW - 1, "Valor total", "right");
 
-  setColor(doc, PDF_COLORS.ink, "text");
+  setColor(doc, PDF_COLORS.black, "text");
   doc.setFont("LiberationSans", "bold"); doc.setFontSize(11);
   doc.text(formatDate(data.issue_date), innerX, y + 5.5);
   doc.text(formatDate(data.due_date ?? null), innerX + col3W, y + 5.5);
