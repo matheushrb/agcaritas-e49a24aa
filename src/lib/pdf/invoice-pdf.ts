@@ -86,8 +86,8 @@ function drawQRCodeVector(doc: jsPDF, text: string, x: number, y: number, size: 
   if (!payload) return false;
 
   try {
-    const qr = QRCode.create(payload, { errorCorrectionLevel: "M" }) as {
-      modules: { size: number; data: boolean[]; get?: (row: number, col: number) => boolean };
+    const qr = QRCode.create(payload, { errorCorrectionLevel: "M" }) as unknown as {
+      modules: { size: number; data: ArrayLike<boolean | number>; get?: (row: number, col: number) => boolean };
     };
     const moduleCount = qr.modules.size;
     const quietZone = 4;
