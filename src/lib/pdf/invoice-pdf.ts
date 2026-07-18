@@ -97,7 +97,7 @@ function drawQRCodeVector(doc: jsPDF, text: string, x: number, y: number, size: 
 
     setColor(doc, PDF_COLORS.white, "fill");
     doc.rect(x, y, size, size, "F");
-    setColor(doc, PDF_COLORS.graphite, "fill");
+    setColor(doc, PDF_COLORS.black, "fill");
 
     for (let row = 0; row < moduleCount; row++) {
       for (let col = 0; col < moduleCount; col++) {
