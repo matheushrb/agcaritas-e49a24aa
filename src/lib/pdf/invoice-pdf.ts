@@ -441,7 +441,7 @@ export async function generateInvoicePDF(data: InvoicePDFData): Promise<jsPDF> {
   }
 
   // Extra payment instructions (optional, below both columns)
-  y = Math.max(ly, qrBoxY + qrSize + 24) + 4;
+  y = Math.max(ly, qrBoxY + qrBoxH) + 4;
   if (data.payment_instructions) {
     if (y > pageH - 30) { doc.addPage(); y = 48; }
     drawSectionLabel(doc, y, "Instruções extras"); y += 6;
