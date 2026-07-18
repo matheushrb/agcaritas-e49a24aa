@@ -703,114 +703,19 @@ export const WIDGETS: WidgetDef[] = [
   },
   {
     id: "assignments",
-    title: "Atribuições",
-    description: "Tarefa de maior prioridade em destaque.",
+    title: "Minhas atribuições",
+    description: "Tarefas atribuídas a você — arraste para agir.",
     category: "Tarefas",
     colSpan: 4,
-    render: ({ data }) => {
-      const priority = data.tasks.find(t => t.priority === "high") ?? data.tasks[0];
-      return (
-        <Card className="card-surface p-5 h-full">
-          <div className="flex items-center justify-between">
-            <h3 className="font-display font-semibold">Atribuições</h3>
-          </div>
-          {!priority && <div className="mt-4"><EmptyRow icon={ClipboardList} label="Nenhuma atribuição em destaque." /></div>}
-          {priority && (
-            <SwipeableRow
-              className="mt-4"
-              rightActions={[
-                { id: "assign",   label: "Atribuir",   icon: UserPlus,   tone: "primary",     onClick: () => {} },
-                { id: "unassign", label: "Desatribuir", icon: UserMinus,  tone: "muted",       onClick: () => {} },
-                { id: "open",     label: "Abrir",      icon: Eye,        tone: "success",     onClick: () => {} },
-              ]}
-            >
-              <div className="rounded-2xl bg-muted/40 p-3 space-y-2">
-                <div className="flex items-center justify-between text-[11px] text-muted-foreground">
-                  <span className="rounded-full bg-primary/10 px-2 py-0.5 text-primary font-medium uppercase">{priority.platform ?? "Geral"}</span>
-                  <span>{priority.delivery_type ?? "Entrega"}</span>
-                </div>
-                <p className="font-display font-semibold text-sm">{priority.title}</p>
-                <div className="flex items-center justify-between">
-                  <span className="rounded-full bg-success/20 px-2.5 py-0.5 text-[11px] font-medium text-success-foreground">
-                    {priority.priority === "high" ? "Alta" : priority.priority === "medium" ? "Média" : "Baixa"}
-                  </span>
-                  <span className="text-[11px] text-muted-foreground">{priority.progress ?? 0}%</span>
-                </div>
-              </div>
-            </SwipeableRow>
-          )}
-          <Link
-            to="/tasks"
-            search={{ new: 1 } as any}
-            className="mt-3 flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-border py-2.5 text-xs text-muted-foreground hover:border-primary hover:text-primary"
-          >
-            <Plus className="h-3.5 w-3.5" /> Adicionar atribuição
-          </Link>
-        </Card>
-      );
-    },
+    render: ({ data }) => <AssignmentsWidget tasks={data.tasks} />,
   },
   {
     id: "tasks-today",
     title: "Tarefas de hoje",
-    description: "Até 5 tarefas prioritárias de hoje.",
+    description: "Tarefas cujo prazo vence hoje (ou nos próximos N dias).",
     category: "Tarefas",
     colSpan: 8,
-    render: ({ data }) => (
-      <Card className="card-surface p-5 h-full">
-        <div className="flex items-center justify-between flex-wrap gap-3">
-          <div className="flex items-center gap-3">
-            <h3 className="font-display font-semibold">Tarefas de hoje</h3>
-            <div className="flex -space-x-1">
-              <Avatar initials="AB" />
-              <Avatar initials="CD" />
-              <Avatar initials="EF" />
-              <div className="grid h-7 w-7 place-items-center rounded-full bg-primary text-primary-foreground text-[10px] font-bold border-2 border-card">+3</div>
-            </div>
-          </div>
-          <Link to="/tasks" className="text-xs text-muted-foreground hover:text-foreground">Ver todas</Link>
-        </div>
-        <div className="mt-4 space-y-2">
-          {data.tasks.length === 0 && <EmptyRow icon={ClipboardList} label="Nenhuma tarefa para hoje ainda." />}
-          {data.tasks.slice(0, 5).map(t => (
-            <SwipeableRow
-              key={t.id}
-              rightActions={[
-                { id: "open",     label: "Abrir",       icon: Eye,        tone: "primary", onClick: () => {} },
-                { id: "assign",   label: "Atribuir",    icon: UserPlus,   tone: "success", onClick: () => {} },
-                { id: "unassign", label: "Sair",        icon: UserMinus,  tone: "muted",   onClick: () => {} },
-              ]}
-            >
-              <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-2xl bg-muted/40 px-3 py-2">
-                <div className="min-w-0">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <p className="font-medium truncate text-sm">{t.title}</p>
-                    {t.priority === "high" && (
-                      <span className="rounded-full bg-destructive/10 text-destructive text-[10px] font-medium px-1.5 py-0.5">
-                        Alta
-                      </span>
-                    )}
-                    {t.platform && (
-                      <span className="text-[10px] text-muted-foreground uppercase tracking-wide">{t.platform}</span>
-                    )}
-                  </div>
-                  <div className="mt-1.5 flex items-center gap-3">
-                    <Progress value={t.progress ?? 0} className="h-1 max-w-[180px]" />
-                    <span className="text-[10px] text-muted-foreground shrink-0">{t.progress ?? 0}%</span>
-                    <span className="text-[10px] text-muted-foreground shrink-0">· {t.estimated_hours ?? "—"}h</span>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3 text-[11px] text-muted-foreground shrink-0">
-                  <span className="flex items-center gap-1"><MessageCircle className="h-3 w-3" />{t.comments_count ?? 0}</span>
-                  <span className="flex items-center gap-1"><Paperclip className="h-3 w-3" />{t.attachments_count ?? 0}</span>
-                  <span className="hidden md:inline">{t.due_date ? new Date(t.due_date).toLocaleDateString("pt-BR", { day: "2-digit", month: "short" }) : "—"}</span>
-                </div>
-              </div>
-            </SwipeableRow>
-          ))}
-        </div>
-      </Card>
-    ),
+    render: ({ data }) => <TasksTodayWidget tasks={data.tasks} />,
   },
   // Notifications agora no slot largo (8 col), com categorias chat/email/sistema e ações por swipe
   {
