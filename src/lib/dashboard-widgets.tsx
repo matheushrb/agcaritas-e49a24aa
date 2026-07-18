@@ -7,12 +7,36 @@ import {
   Activity, BarChart3, Target, FolderOpen, CheckCircle2, CalendarClock,
   CheckSquare, ChevronLeft, ChevronRight, Sparkles, Cake, PieChart,
   Briefcase, Layers, HeartHandshake, Mail, MessagesSquare, Archive,
-  Eye, UserPlus, UserMinus,
+  Eye, UserPlus, UserMinus, RefreshCw, LayoutGrid, Share2,
 } from "lucide-react";
 import type { JSX } from "react";
 import { Link } from "@tanstack/react-router";
 import { SwipeableRow, type SwipeAction } from "@/components/swipeable-row";
 import { QuickCreateButton } from "@/components/quick-create-button";
+import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
+import { useState } from "react";
+
+function SyncButton() {
+  const qc = useQueryClient();
+  const [spinning, setSpinning] = useState(false);
+  return (
+    <Button
+      variant="ghost"
+      size="sm"
+      className="h-9 rounded-full gap-1.5 text-muted-foreground hover:text-foreground"
+      onClick={async () => {
+        setSpinning(true);
+        await qc.invalidateQueries();
+        toast.success("Dados atualizados");
+        setTimeout(() => setSpinning(false), 600);
+      }}
+    >
+      <RefreshCw className={`h-3.5 w-3.5 ${spinning ? "animate-spin" : ""}`} />
+      Sincronizar
+    </Button>
+  );
+}
 
 export type WidgetCategory =
   | "Saudação"
