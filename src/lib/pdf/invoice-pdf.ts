@@ -81,6 +81,45 @@ async function makeQRCodeDataUrl(text: string): Promise<string | null> {
   }
 }
 
+function drawQRCodeVector(doc: jsPDF, text: string, x: number, y: number, size: number): boolean {
+  const payload = text.trim();
+  if (!payload) return false;
+
+  try {
+    const qr = QRCode.create(payload, { errorCorrectionLevel: "M" }) as {
+      modules: { size: number; data: boolean[]; get?: (row: number, col: number) => boolean };
+    };
+    const moduleCount = qr.modules.size;
+    const quietZone = 4;
+    const cell = size / (moduleCount + quietZone * 2);
+
+    setColor(doc, PDF_COLORS.white, "fill");
+    doc.rect(x, y, size, size, "F");
+    setColor(doc, PDF_COLORS.graphite, "fill");
+
+    for (let row = 0; row < moduleCount; row++) {
+      for (let col = 0; col < moduleCount; col++) {
+        const isDark = qr.modules.get
+          ? qr.modules.get(row, col)
+          : qr.modules.data[row * moduleCount + col];
+        if (!isDark) continue;
+        doc.rect(
+          x + (col + quietZone) * cell,
+          y + (row + quietZone) * cell,
+          Math.ceil(cell * 1000) / 1000,
+          Math.ceil(cell * 1000) / 1000,
+          "F",
+        );
+      }
+    }
+
+    return true;
+  } catch (e) {
+    console.error("[invoice-pdf] QR vector generation failed", e);
+    return false;
+  }
+}
+
 
 export async function generateInvoicePDF(data: InvoicePDFData): Promise<jsPDF> {
   const doc = new jsPDF({ unit: "mm", format: "a4", compress: true });
@@ -307,7 +346,7 @@ export async function generateInvoicePDF(data: InvoicePDFData): Promise<jsPDF> {
   y += 6;
 
   /* ---------- Faixa inferior: Condições/Observações | QR ---------- */
-  const bottomBlockY = Math.max(y, pageH - 82);
+  const bottomBlockY = Math.max(y, pageH - 90);
   if (bottomBlockY + 65 > pageH - 20) {
     drawIndustrialFooter(doc, { pageLabel: `Página ${doc.getCurrentPageInfo().pageNumber}` });
     doc.addPage();
@@ -318,7 +357,7 @@ export async function generateInvoicePDF(data: InvoicePDFData): Promise<jsPDF> {
   }
 
   // Left column: payment terms + legal notes
-  const qrSize = 40;
+  const qrSize = 42;
   const leftW  = contentW - qrSize - 10;
   const leftX  = marginX;
   const rightX = pageW - marginX - qrSize;
@@ -342,25 +381,29 @@ export async function generateInvoicePDF(data: InvoicePDFData): Promise<jsPDF> {
   // Right column: QR / link box
   const qrBoxY = y;
   setColor(doc, PDF_COLORS.ink, "draw"); doc.setLineWidth(0.4);
-  doc.rect(rightX - 3, qrBoxY - 3, qrSize + 6, qrSize + 22);
+  doc.rect(rightX - 3, qrBoxY - 3, qrSize + 6, qrSize + 24);
   setColor(doc, PDF_COLORS.muted, "text");
   doc.setFont("helvetica", "bold"); doc.setFontSize(6.8);
   doc.text("PAGAMENTO", rightX, qrBoxY + 1, { charSpace: 0.6 });
 
-  if (data.payment_link) {
-    const qrDataUrl = await makeQRCodeDataUrl(data.payment_link);
-    if (qrDataUrl) {
-      doc.addImage(qrDataUrl, "PNG", rightX, qrBoxY + 3, qrSize, qrSize);
+  const paymentPayload = data.payment_link?.trim();
+  if (paymentPayload) {
+    const drewVectorQR = drawQRCodeVector(doc, paymentPayload, rightX, qrBoxY + 4, qrSize);
+    if (!drewVectorQR) {
+      const qrDataUrl = await makeQRCodeDataUrl(paymentPayload);
+      if (qrDataUrl) doc.addImage(qrDataUrl, "PNG", rightX, qrBoxY + 4, qrSize, qrSize);
     }
     setColor(doc, PDF_COLORS.muted, "text");
     doc.setFont("helvetica", "normal"); doc.setFontSize(6.4);
-    doc.text("Aponte a câmera ou acesse:", rightX, qrBoxY + qrSize + 7);
+    doc.text("Aponte a câmera ou copie:", rightX, qrBoxY + qrSize + 9);
     setColor(doc, PDF_COLORS.accent, "text");
     doc.setFont("helvetica", "bold"); doc.setFontSize(6.4);
-    const linkLines = doc.splitTextToSize(data.payment_link, qrSize);
-    doc.text(linkLines.slice(0, 2), rightX, qrBoxY + qrSize + 11);
+    const linkLines = doc.splitTextToSize(paymentPayload, qrSize);
+    doc.text(linkLines.slice(0, 2), rightX, qrBoxY + qrSize + 13);
     // clickable link overlay
-    doc.link(rightX, qrBoxY + 3, qrSize, qrSize, { url: data.payment_link });
+    if (/^https?:\/\//i.test(paymentPayload)) {
+      doc.link(rightX, qrBoxY + 4, qrSize, qrSize, { url: paymentPayload });
+    }
   } else {
     setColor(doc, PDF_COLORS.hairline, "draw"); doc.setLineWidth(0.2);
     doc.rect(rightX, qrBoxY + 3, qrSize, qrSize);
@@ -371,7 +414,7 @@ export async function generateInvoicePDF(data: InvoicePDFData): Promise<jsPDF> {
   }
 
   // Extra payment instructions (optional, below both columns)
-  y = Math.max(ly, qrBoxY + qrSize + 22) + 4;
+  y = Math.max(ly, qrBoxY + qrSize + 24) + 4;
   if (data.payment_instructions) {
     if (y > pageH - 30) { doc.addPage(); y = 48; }
     drawSectionLabel(doc, y, "Instruções extras"); y += 6;

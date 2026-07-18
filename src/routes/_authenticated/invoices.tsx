@@ -15,6 +15,7 @@ import { Receipt, Plus, Download, CheckCircle2, XCircle, ArrowLeft, ArrowRight, 
 import { toast } from "sonner";
 import { generateInvoicePDF, DEFAULT_PAYMENT_TERMS, DEFAULT_LEGAL_NOTES } from "@/lib/pdf/invoice-pdf";
 import { cn } from "@/lib/utils";
+import QRCode from "qrcode";
 
 export const Route = createFileRoute("/_authenticated/invoices")({
   component: InvoicesPage,
@@ -285,6 +286,7 @@ function NewInvoiceWizard({
   const [notes, setNotes] = useState(DEFAULT_LEGAL_NOTES);
   const [paymentTerms, setPaymentTerms] = useState(DEFAULT_PAYMENT_TERMS);
   const [paymentLink, setPaymentLink] = useState("");
+  const [paymentQrPreview, setPaymentQrPreview] = useState<string | null>(null);
   const [previewNumber, setPreviewNumber] = useState<string>("—");
   const [submitting, setSubmitting] = useState(false);
 
@@ -304,6 +306,26 @@ function NewInvoiceWizard({
     })();
     return () => { cancelled = true; };
   }, [issueDate]);
+
+  useEffect(() => {
+    let active = true;
+    const payload = paymentLink.trim();
+    if (!payload) {
+      setPaymentQrPreview(null);
+      return () => { active = false; };
+    }
+
+    QRCode.toDataURL(payload, {
+      errorCorrectionLevel: "M",
+      margin: 1,
+      width: 192,
+      color: { dark: "#1E3A8A", light: "#ffffff" },
+    })
+      .then((url) => { if (active) setPaymentQrPreview(url); })
+      .catch(() => { if (active) setPaymentQrPreview(null); });
+
+    return () => { active = false; };
+  }, [paymentLink]);
 
 
   const [selectedDeliverables, setSelectedDeliverables] = useState<Set<string>>(new Set());
@@ -486,7 +508,7 @@ function NewInvoiceWizard({
       lines: previewLines,
       notes: notes || undefined,
       payment_terms: paymentTerms || undefined,
-      payment_link: paymentLink || undefined,
+      payment_link: paymentLink.trim() || undefined,
       is_preview: true,
     });
     const url = doc.output("bloburl") as unknown as string;
@@ -579,7 +601,7 @@ function NewInvoiceWizard({
         status: "issued",
         notes: notes || null,
         payment_terms: paymentTerms || null,
-        payment_link: paymentLink || null,
+        payment_link: paymentLink.trim() || null,
       }).select("id").single();
       if (invErr) throw invErr;
 
@@ -832,11 +854,11 @@ function NewInvoiceWizard({
                 placeholder="Ex.: A NF será emitida após confirmação do pagamento. Multa e juros após vencimento." />
             </div>
             <div>
-              <label className="text-xs font-medium text-muted-foreground">Link de pagamento (gera QR Code)</label>
-              <Input type="url" value={paymentLink} onChange={e => setPaymentLink(e.target.value)}
-                placeholder="https://... (PIX copia-e-cola, checkout Stripe, boleto, etc.)" />
+              <label className="text-xs font-medium text-muted-foreground">Link, PIX copia e cola ou chave de pagamento (gera QR Code)</label>
+              <Input type="text" value={paymentLink} onChange={e => setPaymentLink(e.target.value)}
+                placeholder="Cole aqui o PIX copia e cola, link de checkout ou boleto" />
               <p className="text-[10px] text-muted-foreground mt-1">
-                Se preenchido, um QR Code é gerado no PDF apontando para este link.
+                Se preenchido, o QR Code é gerado no PDF aberto pelo botão de prévia.
               </p>
             </div>
            </div>
@@ -933,12 +955,16 @@ function NewInvoiceWizard({
                       </div>
                       <div className="rounded border border-dashed p-3 flex flex-col items-center justify-center text-center bg-muted/20">
                         <div className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground mb-1">Pagamento</div>
-                        {paymentLink ? (
+                        {paymentLink.trim() ? (
                           <>
-                            <div className="w-16 h-16 bg-primary/10 border rounded flex items-center justify-center mb-2">
-                              <span className="text-[8px] text-primary font-semibold">QR CODE</span>
+                            <div className="w-20 h-20 bg-background border rounded flex items-center justify-center mb-2 overflow-hidden">
+                              {paymentQrPreview ? (
+                                <img src={paymentQrPreview} alt="QR Code de pagamento" className="h-full w-full object-contain" />
+                              ) : (
+                                <span className="text-[8px] text-primary font-semibold">QR CODE</span>
+                              )}
                             </div>
-                            <div className="text-[10px] text-primary font-medium truncate max-w-full">{paymentLink}</div>
+                            <div className="text-[10px] text-primary font-medium truncate max-w-full">{paymentLink.trim()}</div>
                           </>
                         ) : (
                           <div className="text-[10px] text-muted-foreground italic">
