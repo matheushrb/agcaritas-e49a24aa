@@ -296,7 +296,7 @@ export const WIDGETS: WidgetDef[] = [
     title: "Saudação e resumo",
     description: "Boas-vindas e resumo do dia.",
     category: "Saudação",
-    colSpan: 8,
+    colSpan: 4,
     render: ({ firstName, data }) => {
       const open = openTasks(data.allTasks);
       const due = dueSoon(data.allTasks);
