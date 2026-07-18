@@ -839,8 +839,11 @@ function NewInvoiceWizard({
                 Se preenchido, um QR Code é gerado no PDF apontando para este link.
               </p>
             </div>
+           </div>
+           <div className="overflow-y-auto min-h-0 pr-1">
             {/* ------- Prévia da fatura ------- */}
             {(() => {
+
               const clientObj = clients.find(c => c.id === payerClient);
               const clientParty = buildClientParty(clientObj);
               const agencyParty = buildAgencyParty(organization) ?? { name: "Caritas Agência", legal_name: null, document: null, email: null, phone: null, address: null, website: null, bank_info: null };
