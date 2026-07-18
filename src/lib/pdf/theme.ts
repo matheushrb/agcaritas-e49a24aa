@@ -6,15 +6,16 @@ import type { jsPDF } from "jspdf";
 
 // Paleta industrial (RGB)
 export const PDF_COLORS = {
-  ink:       [17, 24, 39] as [number, number, number],    // #111827 - grafite quase preto
-  graphite:  [55, 65, 81] as [number, number, number],    // #374151 - grafite médio
-  muted:     [107, 114, 128] as [number, number, number], // #6B7280 - cinza
-  hairline:  [209, 213, 219] as [number, number, number], // #D1D5DB - linhas
-  paper:     [250, 250, 249] as [number, number, number], // #FAFAF9 - off-white
-  accent:    [30, 58, 138] as [number, number, number],   // #1E3A8A - azul marinho industrial
+  ink:       [23, 37, 84] as [number, number, number],    // #172554 - azul marinho profundo
+  graphite:  [30, 58, 138] as [number, number, number],   // #1E3A8A - azul marinho
+  muted:     [100, 116, 139] as [number, number, number], // #64748B - azul acinzentado
+  hairline:  [191, 219, 254] as [number, number, number], // #BFDBFE - azul claro (linhas)
+  paper:     [239, 246, 255] as [number, number, number], // #EFF6FF - azul-gelo
+  accent:    [37, 99, 235] as [number, number, number],   // #2563EB - azul royal
   black:     [0, 0, 0] as [number, number, number],
   white:     [255, 255, 255] as [number, number, number],
 };
+
 
 // Layout (mm) - A4 portrait
 export const PDF_LAYOUT = {

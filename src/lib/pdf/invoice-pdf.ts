@@ -68,16 +68,19 @@ export const DEFAULT_LEGAL_NOTES =
 
 async function makeQRCodeDataUrl(text: string): Promise<string | null> {
   try {
-    return await QRCode.toDataURL(text, {
+    const url = await QRCode.toDataURL(text, {
       errorCorrectionLevel: "M",
       margin: 1,
       width: 400,
-      color: { dark: "#111827", light: "#ffffff" },
+      color: { dark: "#1E3A8A", light: "#ffffff" },
     });
-  } catch {
+    return url;
+  } catch (e) {
+    console.error("[invoice-pdf] QR generation failed", e);
     return null;
   }
 }
+
 
 export async function generateInvoicePDF(data: InvoicePDFData): Promise<jsPDF> {
   const doc = new jsPDF({ unit: "mm", format: "a4", compress: true });
@@ -212,7 +215,7 @@ export async function generateInvoicePDF(data: InvoicePDFData): Promise<jsPDF> {
   setColor(doc, PDF_COLORS.white, "text");
   doc.setFont("helvetica", "bold"); doc.setFontSize(7);
   doc.text("DESCRIÇÃO",  colDesc + 2, y, { charSpace: 0.6 });
-  doc.text("REFERÊNCIA", colDate,     y, { charSpace: 0.6 });
+  doc.text("DATA", colDate,     y, { charSpace: 0.6 });
   doc.text("TOTAL",      colTotal - 2, y, { align: "right", charSpace: 0.6 });
   y += 6;
 
@@ -259,7 +262,7 @@ export async function generateInvoicePDF(data: InvoicePDFData): Promise<jsPDF> {
     if (line.reference_date) {
       setColor(doc, PDF_COLORS.muted, "text");
       doc.setFont("helvetica", "bold"); doc.setFontSize(6.4);
-      doc.text((line.reference_label ?? "Data").toUpperCase(), colDate, y, { charSpace: 0.4 });
+      doc.text("DATA", colDate, y, { charSpace: 0.4 });
       setColor(doc, PDF_COLORS.ink, "text");
       doc.setFont("helvetica", "normal"); doc.setFontSize(8.6);
       doc.text(formatDate(line.reference_date), colDate, y + 3.6);
