@@ -477,26 +477,11 @@ function NewInvoiceWizard({
     return lines;
   }, [filteredCharges, filteredTasks, billableDeliverables, selectedCharges, selectedTasks, selectedDeliverables, lineDateOverrides]);
 
-  async function computeNextInvoiceNumber(issue: string): Promise<string> {
-    const ym = issue.slice(0, 7).replace("-", ""); // AAAAMM
-    const { data } = await supabase
-      .from("invoices")
-      .select("number")
-      .like("number", `${ym}-%`);
-    let max = 0;
-    for (const r of (data ?? []) as Array<{ number: string | null }>) {
-      const n = parseInt(String(r.number ?? "").split("-")[1] ?? "0", 10);
-      if (!isNaN(n) && n > max) max = n;
-    }
-    return `${ym}-${String(max + 1).padStart(4, "0")}`;
-  }
-
   async function openPreviewPDF() {
     const client = clients.find(c => c.id === payerClient);
     const issue = issueDate || new Date().toISOString().slice(0, 10);
-    const previewNumber = await computeNextInvoiceNumber(issue);
     const doc = await generateInvoicePDF({
-      number: previewNumber,
+      number: "Aguardando emissão",
       issue_date: issue,
       due_date: dueDate || null,
       client: buildClientParty(client),
