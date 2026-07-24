@@ -758,14 +758,6 @@ export const WIDGETS: WidgetDef[] = [
     },
   },
   {
-    id: "news",
-    title: "Painel de notícias",
-    description: "Carrossel de comunicados e novidades publicadas pela agência.",
-    category: "Outros",
-    colSpan: 4,
-    render: () => <NewsCarousel />,
-  },
-  {
     id: "operations",
     title: "Operacional",
     description: "Projetos ativos, tarefas abertas, concluídas hoje e prazos.",
