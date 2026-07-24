@@ -13,6 +13,9 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/projects/")({
+  validateSearch: (s: Record<string, unknown>) => ({
+    new: s.new === 1 || s.new === "1" ? 1 : undefined,
+  }),
   component: ProjectsPage,
 });
 
