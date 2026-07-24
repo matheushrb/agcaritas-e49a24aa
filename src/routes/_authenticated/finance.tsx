@@ -17,6 +17,9 @@ import { cn } from "@/lib/utils";
 import { generateInvoicePDF } from "@/lib/pdf/invoice-pdf";
 
 export const Route = createFileRoute("/_authenticated/finance")({
+  validateSearch: (s: Record<string, unknown>) => ({
+    new: s.new === 1 || s.new === "1" ? 1 : undefined,
+  }),
   component: FinancePage,
 });
 
