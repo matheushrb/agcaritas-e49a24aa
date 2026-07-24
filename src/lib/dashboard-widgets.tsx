@@ -20,95 +20,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 
-function NewsCarousel() {
-  const { data: news = [] } = useQuery({
-    queryKey: ["dashboard-news-active"],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("dashboard_news" as any)
-        .select("id,title,body,image_url,link_url,published_at")
-        .eq("active", true)
-        .order("sort_order", { ascending: true })
-        .order("published_at", { ascending: false });
-      return (data as any[]) ?? [];
-    },
-    staleTime: 60_000,
-  });
-
-  const [idx, setIdx] = useState(0);
-  useEffect(() => { if (idx >= news.length && news.length) setIdx(0); }, [news.length, idx]);
-  useEffect(() => {
-    if (news.length < 2) return;
-    const t = setInterval(() => setIdx(i => (i + 1) % news.length), 6000);
-    return () => clearInterval(t);
-  }, [news.length]);
-
-  return (
-    <Card className="rounded-3xl overflow-hidden h-full flex flex-col border-border/60">
-      {news.length === 0 && (
-        <div className="flex items-center justify-between px-5 pt-4 pb-3">
-          <div className="inline-flex items-center gap-2">
-            <span className="h-8 w-8 rounded-xl bg-primary/10 text-primary inline-flex items-center justify-center">
-              <Newspaper className="h-4 w-4" />
-            </span>
-            <div>
-              <div className="text-sm font-semibold leading-tight">Painel de notícias</div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {news.length === 0 ? (
-        <div className="flex-1 flex flex-col items-center justify-center gap-2 px-6 pb-6 text-center">
-          <Newspaper className="h-8 w-8 text-muted-foreground/50" />
-          <div className="text-sm font-medium">Nenhuma notícia publicada</div>
-          <p className="text-xs text-muted-foreground max-w-[220px]">Vá em <b>Configurações → Painel de notícias</b> para publicar a primeira.</p>
-        </div>
-      ) : (
-        (() => {
-          const item = news[idx];
-          const content = (
-            <>
-              {item.image_url ? (
-                <div className="relative min-h-[210px] flex-1 w-full overflow-hidden bg-muted">
-                  <img src={item.image_url} alt="" className="h-full w-full object-cover" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/15 to-transparent" />
-                  {news.length > 1 && (
-                    <div className="absolute right-3 top-3 flex items-center gap-1 rounded-full bg-background/85 px-1.5 py-1 shadow-sm backdrop-blur">
-                      <button onClick={(e) => { e.preventDefault(); setIdx(i => (i - 1 + news.length) % news.length); }} className="h-6 w-6 rounded-full hover:bg-muted inline-flex items-center justify-center text-muted-foreground"><ChevronLeft className="h-3.5 w-3.5" /></button>
-                      <span className="text-[11px] text-muted-foreground tabular-nums">{idx + 1}/{news.length}</span>
-                      <button onClick={(e) => { e.preventDefault(); setIdx(i => (i + 1) % news.length); }} className="h-6 w-6 rounded-full hover:bg-muted inline-flex items-center justify-center text-muted-foreground"><ChevronRight className="h-3.5 w-3.5" /></button>
-                    </div>
-                  )}
-                  <div className="absolute bottom-4 left-4 right-5 text-white font-semibold text-base leading-tight line-clamp-2 drop-shadow">
-                    {item.title}
-                  </div>
-                </div>
-              ) : (
-                <div className="flex-1 px-5 py-6 font-semibold text-base flex items-end">{item.title}</div>
-              )}
-              <div className="px-5 py-3 flex items-center justify-between text-[11px] text-muted-foreground">
-                <span>{new Date(item.published_at).toLocaleDateString("pt-BR", { day: "2-digit", month: "short" })}</span>
-                {item.link_url && (
-                  <span className="inline-flex items-center gap-1 text-primary font-medium">
-                    Abrir <ExternalLink className="h-3 w-3" />
-                  </span>
-                )}
-              </div>
-            </>
-          );
-          return item.link_url ? (
-            <a href={item.link_url} target="_blank" rel="noreferrer" className="flex flex-col flex-1 min-h-0 hover:bg-muted/30 transition-colors">
-              {content}
-            </a>
-          ) : (
-            <div className="flex flex-col flex-1 min-h-0">{content}</div>
-          );
-        })()
-      )}
-    </Card>
-  );
-}
+// NewsCarousel removido a pedido — painel de notícias descontinuado.
 
 
 // ---------- Tasks helper hooks/components ----------
@@ -846,14 +758,6 @@ export const WIDGETS: WidgetDef[] = [
     },
   },
   {
-    id: "news",
-    title: "Painel de notícias",
-    description: "Carrossel de comunicados e novidades publicadas pela agência.",
-    category: "Outros",
-    colSpan: 4,
-    render: () => <NewsCarousel />,
-  },
-  {
     id: "operations",
     title: "Operacional",
     description: "Projetos ativos, tarefas abertas, concluídas hoje e prazos.",
@@ -1018,13 +922,13 @@ const ALL_IDS = WIDGETS.map(w => w.id);
 
 const PRESETS: Record<string, string[]> = {
   founder: ALL_IDS,
-  manager: ["greeting", "kpi-rings", "calendar", "next-meeting", "tasks-today", "assignments", "notifications", "finance", "news", "operations", "projects-active"],
-  traffic: ["greeting", "kpi-rings", "calendar", "next-meeting", "tasks-today", "finance", "news", "sales-pipeline"],
-  sales: ["greeting", "kpi-rings", "calendar", "next-meeting", "sales-pipeline", "finance", "news", "notifications"],
-  designer: ["greeting", "calendar", "next-meeting", "tasks-today", "assignments", "notifications", "news", "operations"],
-  copywriter: ["greeting", "calendar", "next-meeting", "tasks-today", "assignments", "notifications", "news", "operations"],
-  developer: ["greeting", "calendar", "next-meeting", "tasks-today", "assignments", "news", "operations", "projects-active"],
-  operations: ["greeting", "kpi-rings", "calendar", "next-meeting", "tasks-today", "notifications", "finance", "news", "operations", "hr-team"],
+  manager: ["greeting", "kpi-rings", "calendar", "next-meeting", "tasks-today", "assignments", "notifications", "finance", "operations", "projects-active"],
+  traffic: ["greeting", "kpi-rings", "calendar", "next-meeting", "tasks-today", "finance", "sales-pipeline"],
+  sales: ["greeting", "kpi-rings", "calendar", "next-meeting", "sales-pipeline", "finance", "notifications"],
+  designer: ["greeting", "calendar", "next-meeting", "tasks-today", "assignments", "notifications", "operations"],
+  copywriter: ["greeting", "calendar", "next-meeting", "tasks-today", "assignments", "notifications", "operations"],
+  developer: ["greeting", "calendar", "next-meeting", "tasks-today", "assignments", "operations", "projects-active"],
+  operations: ["greeting", "kpi-rings", "calendar", "next-meeting", "tasks-today", "notifications", "finance", "operations", "hr-team"],
 };
 
 const ROLE_KEYWORDS: Array<[RegExp, string]> = [
@@ -1053,34 +957,18 @@ function detectPresetKey(roleTitle: string | null | undefined): string {
   return "founder";
 }
 
-// Widgets recém-introduzidos que devem entrar ativos mesmo em prefs salvas antigas.
-const AUTO_ENABLE_NEW: Record<string, string[]> = {
-  // tenta inserir "news" logo após kpi-rings (espaço vazio ao lado do calendário); cai para outras âncoras se faltar
-  news: ["kpi-rings", "greeting", "next-meeting", "finance"],
-};
-
+// Respeita 100% o que o usuário salvou. Só remove ids desconhecidos e
+// acrescenta widgets ainda inexistentes como DESATIVADOS — nunca reativa
+// nada que o usuário tenha desligado.
 export function reconcilePrefs(saved: UserPref[] | null | undefined, roleTitle: string | null | undefined): UserPref[] {
   if (!saved || saved.length === 0) return getPresetForRole(roleTitle);
   const knownIds = new Set(ALL_IDS);
   const filtered = saved.filter(p => knownIds.has(p.id));
   const seen = new Set(filtered.map(p => p.id));
-
-  // injeta / reposiciona widgets novos, próximos da primeira âncora encontrada
-  for (const [id, anchors] of Object.entries(AUTO_ENABLE_NEW)) {
-    const existingIdx = filtered.findIndex(p => p.id === id);
-    if (existingIdx >= 0) filtered.splice(existingIdx, 1);
-    let insertAt = filtered.length;
-    for (const a of anchors) {
-      const i = filtered.findIndex(p => p.id === a);
-      if (i >= 0) { insertAt = i + 1; break; }
-    }
-    filtered.splice(insertAt, 0, { id, enabled: true });
-    seen.add(id);
-  }
-
   const missing = ALL_IDS.filter(id => !seen.has(id)).map(id => ({ id, enabled: false } as UserPref));
   return [...filtered, ...missing];
 }
+
 
 export function colSpanClass(w: WidgetDef): string {
   const map: Record<number, string> = {

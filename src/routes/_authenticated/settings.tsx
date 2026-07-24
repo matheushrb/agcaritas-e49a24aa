@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
-  Building2, Wrench, Share2, Workflow, TrendingUp, UserCog, Plug, Zap, DollarSign, FolderKanban, Newspaper,
+  Building2, Wrench, Share2, Workflow, TrendingUp, UserCog, Plug, Zap, DollarSign, FolderKanban,
 } from "lucide-react";
 import { toast } from "sonner";
 import { TaskTypesEditor } from "@/components/settings/task-types-editor";
@@ -17,7 +17,7 @@ import { AutomationsTab } from "@/components/settings/automations-tab";
 import { AgencyPricingTab } from "@/components/settings/agency-pricing";
 import { CatalogEditor } from "@/components/settings/catalog-editor";
 import { ProjectTypesEditor } from "@/components/settings/project-types-editor";
-import { NewsEditor } from "@/components/settings/news-editor";
+
 
 
 export const Route = createFileRoute("/_authenticated/settings")({
@@ -34,7 +34,7 @@ const TABS = [
   { value: "task-flows",   label: "Tipos de Tarefa",   icon: Workflow },
   { value: "automations",  label: "Automações",        icon: Zap },
   { value: "crm-funnel",   label: "Funil CRM",         icon: TrendingUp },
-  { value: "news",         label: "Painel de Notícias",icon: Newspaper },
+  
   { value: "users",        label: "Usuários",          icon: UserCog },
   { value: "integrations", label: "Integrações",       icon: Plug },
 ] as const;
@@ -75,7 +75,7 @@ function SettingsPage() {
         <TabsContent value="task-flows" className="mt-4"><TaskTypesEditor /></TabsContent>
         <TabsContent value="automations" className="mt-4"><AutomationsTab /></TabsContent>
         <TabsContent value="crm-funnel" className="mt-4"><ComingSoonCard title="Funil CRM" hint="Etapas do pipeline com probabilidade padrão, ordem e flags ganho/perdido." /></TabsContent>
-        <TabsContent value="news" className="mt-4"><NewsEditor /></TabsContent>
+        
         <TabsContent value="users" className="mt-4"><UsersTab /></TabsContent>
         <TabsContent value="integrations" className="mt-4"><ComingSoonCard title="Integrações" hint="Buffer (token + profile IDs), Google Calendar (OAuth) — configuração centralizada." /></TabsContent>
       </Tabs>
