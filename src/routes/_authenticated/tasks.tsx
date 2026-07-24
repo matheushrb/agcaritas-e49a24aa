@@ -130,6 +130,15 @@ function TasksPage() {
     }
   }, [searchParams.open]);
 
+  // Abrir nova tarefa via ?new=1
+  useEffect(() => {
+    if (searchParams.new) {
+      setSelectedId(null);
+      setDraftTask(createLocalTask());
+      navigate({ search: (prev: any) => ({ ...prev, new: undefined }), replace: true });
+    }
+  }, [searchParams.new]);
+
   const { data: automation } = useAutomationSettings();
   const settings = automation?.settings ?? DEFAULT_AUTOMATION_SETTINGS;
 

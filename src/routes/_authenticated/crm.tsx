@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   DndContext, DragOverlay, PointerSensor, useSensor, useSensors,
   type DragEndEvent, type DragStartEvent,
@@ -31,6 +31,9 @@ import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/crm")({
   head: () => ({ meta: [{ title: "CRM · Caritas Agência" }] }),
+  validateSearch: (s: Record<string, unknown>) => ({
+    new: s.new === 1 || s.new === "1" ? 1 : undefined,
+  }),
   component: CrmPage,
 });
 
@@ -108,6 +111,14 @@ function CrmPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [dragId, setDragId] = useState<string | null>(null);
   const [closedBanner, setClosedBanner] = useState<Lead | null>(null);
+  const searchParams = Route.useSearch();
+
+  useEffect(() => {
+    if (searchParams.new) {
+      setModalOpen(true);
+      navigate({ to: "/crm", search: {}, replace: true });
+    }
+  }, [searchParams.new, navigate]);
 
   const segments = useMemo(
     () => Array.from(new Set(leads.map(l => l.segment).filter(Boolean) as string[])).sort(),

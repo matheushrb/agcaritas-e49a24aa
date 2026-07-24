@@ -28,6 +28,7 @@ import { generateProposalPDF } from "@/lib/pdf/proposal-pdf";
 const searchSchema = z.object({
   leadId: z.string().optional(),
   clientId: z.string().optional(),
+  new: z.union([z.literal(1), z.literal("1")]).optional(),
 }).partial();
 
 export const Route = createFileRoute("/_authenticated/proposals")({
@@ -137,10 +138,10 @@ function ProposalsPage() {
   const [open, setOpen] = useState<Proposal | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
 
-  // Auto-open create modal if arriving from CRM with ?leadId=
+  // Auto-open create modal if arriving from CRM with ?leadId= or from +Novo com ?new=1
   useEffect(() => {
-    if (search.leadId || search.clientId) setModalOpen(true);
-  }, [search.leadId, search.clientId]);
+    if (search.leadId || search.clientId || search.new) setModalOpen(true);
+  }, [search.leadId, search.clientId, search.new]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();

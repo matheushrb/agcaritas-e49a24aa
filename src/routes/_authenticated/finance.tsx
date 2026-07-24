@@ -1,5 +1,5 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -17,6 +17,9 @@ import { cn } from "@/lib/utils";
 import { generateInvoicePDF } from "@/lib/pdf/invoice-pdf";
 
 export const Route = createFileRoute("/_authenticated/finance")({
+  validateSearch: (s: Record<string, unknown>) => ({
+    new: s.new === 1 || s.new === "1" ? 1 : undefined,
+  }),
   component: FinancePage,
 });
 
@@ -51,8 +54,17 @@ function money(n: number) {
 
 function FinancePage() {
   const qc = useQueryClient();
+  const navigate = useNavigate();
+  const searchParams = Route.useSearch();
   const [tab, setTab] = useState("overview");
   const [newOpen, setNewOpen] = useState(false);
+
+  useEffect(() => {
+    if (searchParams.new) {
+      setNewOpen(true);
+      navigate({ to: "/finance", search: {}, replace: true });
+    }
+  }, [searchParams.new, navigate]);
 
   const { data: charges = [] } = useQuery<Charge[]>({
     queryKey: ["charges"],

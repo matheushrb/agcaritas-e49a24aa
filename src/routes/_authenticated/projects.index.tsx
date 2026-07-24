@@ -1,5 +1,5 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -13,6 +13,9 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/projects/")({
+  validateSearch: (s: Record<string, unknown>) => ({
+    new: s.new === 1 || s.new === "1" ? 1 : undefined,
+  }),
   component: ProjectsPage,
 });
 
@@ -41,9 +44,18 @@ const STATUS_META: Record<ProjectStatus, { label: string; color: string }> = {
 
 function ProjectsPage() {
   const qc = useQueryClient();
+  const navigate = useNavigate();
+  const searchParams = Route.useSearch();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [newOpen, setNewOpen] = useState(false);
+
+  useEffect(() => {
+    if (searchParams.new) {
+      setNewOpen(true);
+      navigate({ to: "/projects", search: {}, replace: true });
+    }
+  }, [searchParams.new, navigate]);
 
   const { data: projects = [], isLoading } = useQuery<Project[]>({
     queryKey: ["projects"],
