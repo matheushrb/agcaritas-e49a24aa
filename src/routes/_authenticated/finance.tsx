@@ -54,8 +54,17 @@ function money(n: number) {
 
 function FinancePage() {
   const qc = useQueryClient();
+  const navigate = useNavigate();
+  const searchParams = Route.useSearch();
   const [tab, setTab] = useState("overview");
   const [newOpen, setNewOpen] = useState(false);
+
+  useEffect(() => {
+    if (searchParams.new) {
+      setNewOpen(true);
+      navigate({ to: "/finance", search: {}, replace: true });
+    }
+  }, [searchParams.new, navigate]);
 
   const { data: charges = [] } = useQuery<Charge[]>({
     queryKey: ["charges"],
