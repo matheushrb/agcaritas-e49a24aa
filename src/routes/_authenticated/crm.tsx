@@ -31,6 +31,9 @@ import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/crm")({
   head: () => ({ meta: [{ title: "CRM · Caritas Agência" }] }),
+  validateSearch: (s: Record<string, unknown>) => ({
+    new: s.new === 1 || s.new === "1" ? 1 : undefined,
+  }),
   component: CrmPage,
 });
 
