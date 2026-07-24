@@ -922,13 +922,13 @@ const ALL_IDS = WIDGETS.map(w => w.id);
 
 const PRESETS: Record<string, string[]> = {
   founder: ALL_IDS,
-  manager: ["greeting", "kpi-rings", "calendar", "next-meeting", "tasks-today", "assignments", "notifications", "finance", "news", "operations", "projects-active"],
-  traffic: ["greeting", "kpi-rings", "calendar", "next-meeting", "tasks-today", "finance", "news", "sales-pipeline"],
-  sales: ["greeting", "kpi-rings", "calendar", "next-meeting", "sales-pipeline", "finance", "news", "notifications"],
-  designer: ["greeting", "calendar", "next-meeting", "tasks-today", "assignments", "notifications", "news", "operations"],
-  copywriter: ["greeting", "calendar", "next-meeting", "tasks-today", "assignments", "notifications", "news", "operations"],
-  developer: ["greeting", "calendar", "next-meeting", "tasks-today", "assignments", "news", "operations", "projects-active"],
-  operations: ["greeting", "kpi-rings", "calendar", "next-meeting", "tasks-today", "notifications", "finance", "news", "operations", "hr-team"],
+  manager: ["greeting", "kpi-rings", "calendar", "next-meeting", "tasks-today", "assignments", "notifications", "finance", "operations", "projects-active"],
+  traffic: ["greeting", "kpi-rings", "calendar", "next-meeting", "tasks-today", "finance", "sales-pipeline"],
+  sales: ["greeting", "kpi-rings", "calendar", "next-meeting", "sales-pipeline", "finance", "notifications"],
+  designer: ["greeting", "calendar", "next-meeting", "tasks-today", "assignments", "notifications", "operations"],
+  copywriter: ["greeting", "calendar", "next-meeting", "tasks-today", "assignments", "notifications", "operations"],
+  developer: ["greeting", "calendar", "next-meeting", "tasks-today", "assignments", "operations", "projects-active"],
+  operations: ["greeting", "kpi-rings", "calendar", "next-meeting", "tasks-today", "notifications", "finance", "operations", "hr-team"],
 };
 
 const ROLE_KEYWORDS: Array<[RegExp, string]> = [
@@ -957,34 +957,18 @@ function detectPresetKey(roleTitle: string | null | undefined): string {
   return "founder";
 }
 
-// Widgets recém-introduzidos que devem entrar ativos mesmo em prefs salvas antigas.
-const AUTO_ENABLE_NEW: Record<string, string[]> = {
-  // tenta inserir "news" logo após kpi-rings (espaço vazio ao lado do calendário); cai para outras âncoras se faltar
-  news: ["kpi-rings", "greeting", "next-meeting", "finance"],
-};
-
+// Respeita 100% o que o usuário salvou. Só remove ids desconhecidos e
+// acrescenta widgets ainda inexistentes como DESATIVADOS — nunca reativa
+// nada que o usuário tenha desligado.
 export function reconcilePrefs(saved: UserPref[] | null | undefined, roleTitle: string | null | undefined): UserPref[] {
   if (!saved || saved.length === 0) return getPresetForRole(roleTitle);
   const knownIds = new Set(ALL_IDS);
   const filtered = saved.filter(p => knownIds.has(p.id));
   const seen = new Set(filtered.map(p => p.id));
-
-  // injeta / reposiciona widgets novos, próximos da primeira âncora encontrada
-  for (const [id, anchors] of Object.entries(AUTO_ENABLE_NEW)) {
-    const existingIdx = filtered.findIndex(p => p.id === id);
-    if (existingIdx >= 0) filtered.splice(existingIdx, 1);
-    let insertAt = filtered.length;
-    for (const a of anchors) {
-      const i = filtered.findIndex(p => p.id === a);
-      if (i >= 0) { insertAt = i + 1; break; }
-    }
-    filtered.splice(insertAt, 0, { id, enabled: true });
-    seen.add(id);
-  }
-
   const missing = ALL_IDS.filter(id => !seen.has(id)).map(id => ({ id, enabled: false } as UserPref));
   return [...filtered, ...missing];
 }
+
 
 export function colSpanClass(w: WidgetDef): string {
   const map: Record<number, string> = {
