@@ -28,6 +28,7 @@ import { generateProposalPDF } from "@/lib/pdf/proposal-pdf";
 const searchSchema = z.object({
   leadId: z.string().optional(),
   clientId: z.string().optional(),
+  new: z.union([z.literal(1), z.literal("1")]).optional(),
 }).partial();
 
 export const Route = createFileRoute("/_authenticated/proposals")({
