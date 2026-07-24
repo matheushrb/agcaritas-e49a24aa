@@ -44,9 +44,18 @@ const STATUS_META: Record<ProjectStatus, { label: string; color: string }> = {
 
 function ProjectsPage() {
   const qc = useQueryClient();
+  const navigate = useNavigate();
+  const searchParams = Route.useSearch();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [newOpen, setNewOpen] = useState(false);
+
+  useEffect(() => {
+    if (searchParams.new) {
+      setNewOpen(true);
+      navigate({ to: "/projects", search: {}, replace: true });
+    }
+  }, [searchParams.new, navigate]);
 
   const { data: projects = [], isLoading } = useQuery<Project[]>({
     queryKey: ["projects"],
