@@ -111,6 +111,14 @@ function CrmPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [dragId, setDragId] = useState<string | null>(null);
   const [closedBanner, setClosedBanner] = useState<Lead | null>(null);
+  const searchParams = Route.useSearch();
+
+  useEffect(() => {
+    if (searchParams.new) {
+      setModalOpen(true);
+      navigate({ to: "/crm", search: {}, replace: true });
+    }
+  }, [searchParams.new, navigate]);
 
   const segments = useMemo(
     () => Array.from(new Set(leads.map(l => l.segment).filter(Boolean) as string[])).sort(),
