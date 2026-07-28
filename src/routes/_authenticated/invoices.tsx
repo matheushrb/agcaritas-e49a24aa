@@ -1083,6 +1083,23 @@ function InvoiceDetail({ id, clients, organization, onClose }: { id: string; cli
     },
   });
 
+  // Agrupa entregáveis logo abaixo da tarefa-pai correspondente
+  const orderedCharges = useMemo(() => {
+    const parents = charges.filter(c => !c.deliverable_id);
+    const children = charges.filter(c => !!c.deliverable_id);
+    const out: Array<PendingCharge & { isChild?: boolean }> = [];
+    const used = new Set<string>();
+    for (const p of parents) {
+      out.push(p);
+      for (const c of children) {
+        if (c.task_id && c.task_id === p.task_id) { out.push({ ...c, isChild: true }); used.add(c.id); }
+      }
+    }
+    for (const c of children) if (!used.has(c.id)) out.push(c);
+    return out;
+  }, [charges]);
+
+
   useEffect(() => {
     if (invoice && !editing) {
       setEditIssue(invoice.issue_date ?? "");
