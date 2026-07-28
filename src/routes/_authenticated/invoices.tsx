@@ -408,14 +408,15 @@ function NewInvoiceWizard({
         if (amount <= 0) continue;
         if (d.invoiced) continue;
         if (invoicedDeliverableIds.has(d.id)) continue;
-        const parts = [d.platform, d.channel, d.type].filter(Boolean).join(" • ");
+        const parts = String(d.platform ?? "").trim();
         const ref = deliverableReference(t, d);
         out.push({
           key: `${t.id}::${d.id}`,
           taskId: t.id,
           deliverableId: d.id,
           taskTitle: t.title,
-          label: `Entregável: ${t.title}${parts ? ` — ${parts}` : ""}`,
+          label: parts ? `Entregável ${parts}` : "Entregável",
+
           amount,
           client_id: t.client_id,
           project_id: t.project_id,
