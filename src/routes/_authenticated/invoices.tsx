@@ -500,7 +500,7 @@ function NewInvoiceWizard({
     const client = clients.find(c => c.id === payerClient);
     const issue = issueDate || new Date().toISOString().slice(0, 10);
     const doc = await generateInvoicePDF({
-      number: "Aguardando emissão",
+      number: previewNumber,
       issue_date: issue,
       due_date: dueDate || null,
       client: buildClientParty(client),
