@@ -287,7 +287,7 @@ function NewInvoiceWizard({
   const [paymentTerms, setPaymentTerms] = useState(DEFAULT_PAYMENT_TERMS);
   const [paymentLink, setPaymentLink] = useState("");
   const [paymentQrPreview, setPaymentQrPreview] = useState<string | null>(null);
-  const previewNumber = "Aguardando emissão";
+  const [previewNumber, setPreviewNumber] = useState("—");
   const [submitting, setSubmitting] = useState(false);
 
 
