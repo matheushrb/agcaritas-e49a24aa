@@ -1310,9 +1310,9 @@ function InvoiceDetail({ id, clients, organization, onClose }: { id: string; cli
 
         <Card className="p-0 overflow-hidden">
           <div className="max-h-[45vh] overflow-y-auto">
-            {charges.map(c => (
+            {orderedCharges.map(c => (
               <div key={c.id} className="flex items-center justify-between px-4 py-2 border-b last:border-b-0 text-sm gap-2">
-                <div className="flex-1 min-w-0 truncate">{c.description}</div>
+                <div className={cn("flex-1 min-w-0 truncate", c.isChild && "pl-5 text-muted-foreground")}>{c.isChild && "↳ "}{c.description}</div>
                 <div className="font-medium">{money(Number(c.amount ?? 0))}</div>
                 {editing && !isLocked && (
                   <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-red-600"
