@@ -46,6 +46,7 @@ type Project = { id: string; name: string; client_id: string | null };
 type PendingCharge = {
   id: string; description: string; amount: number; due_date: string;
   client_id: string | null; project_id: string | null; task_id: string | null;
+  deliverable_id?: string | null;
 };
 type Deliverable = {
   id: string; platform?: string | null; type?: string | null; channel?: string | null;
@@ -287,8 +288,26 @@ function NewInvoiceWizard({
   const [paymentTerms, setPaymentTerms] = useState(DEFAULT_PAYMENT_TERMS);
   const [paymentLink, setPaymentLink] = useState("");
   const [paymentQrPreview, setPaymentQrPreview] = useState<string | null>(null);
-  const previewNumber = "Aguardando emissão";
+  const [previewNumber, setPreviewNumber] = useState("—");
   const [submitting, setSubmitting] = useState(false);
+
+  // Número previsto da fatura (mesma regra do banco: AAAAMM-####)
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      const base = issueDate || new Date().toISOString().slice(0, 10);
+      const ym = base.slice(0, 7).replace("-", "");
+      const { data } = await supabase.from("invoices").select("number").like("number", `${ym}-%`);
+      const max = (data ?? []).reduce((m: number, r: { number: string | null }) => {
+        const seq = parseInt(String(r.number ?? "").split("-")[1] ?? "0", 10);
+        return Number.isFinite(seq) && seq > m ? seq : m;
+      }, 0);
+      if (active) setPreviewNumber(`${ym}-${String(max + 1).padStart(4, "0")}`);
+    })();
+    return () => { active = false; };
+  }, [issueDate]);
+
+
 
 
   useEffect(() => {
@@ -390,14 +409,15 @@ function NewInvoiceWizard({
         if (amount <= 0) continue;
         if (d.invoiced) continue;
         if (invoicedDeliverableIds.has(d.id)) continue;
-        const parts = [d.platform, d.channel, d.type].filter(Boolean).join(" • ");
+        const parts = String(d.platform ?? "").trim();
         const ref = deliverableReference(t, d);
         out.push({
           key: `${t.id}::${d.id}`,
           taskId: t.id,
           deliverableId: d.id,
           taskTitle: t.title,
-          label: `Entregável: ${t.title}${parts ? ` — ${parts}` : ""}`,
+          label: parts ? `Entregável ${parts}` : "Entregável",
+
           amount,
           client_id: t.client_id,
           project_id: t.project_id,
@@ -481,7 +501,7 @@ function NewInvoiceWizard({
     const client = clients.find(c => c.id === payerClient);
     const issue = issueDate || new Date().toISOString().slice(0, 10);
     const doc = await generateInvoicePDF({
-      number: "Aguardando emissão",
+      number: previewNumber,
       issue_date: issue,
       due_date: dueDate || null,
       client: buildClientParty(client),
@@ -725,7 +745,7 @@ function NewInvoiceWizard({
                   <div className="flex-1 min-w-0">
                     <p className="text-sm truncate flex items-center gap-2">
                       <span className="text-muted-foreground">↳</span>
-                      {d.label.replace(/^Entregável:\s*[^—]+—?\s*/, "") || "Entregável"}
+                      {d.label}
                       <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium bg-emerald-500/15 text-emerald-600">Entregue</span>
                     </p>
                   </div>
@@ -1057,11 +1077,28 @@ function InvoiceDetail({ id, clients, organization, onClose }: { id: string; cli
     queryKey: ["invoice-charges", id],
     queryFn: async () => {
       const { data } = await supabase.from("charges")
-        .select("id,description,amount,due_date,client_id,project_id,task_id")
+        .select("id,description,amount,due_date,client_id,project_id,task_id,deliverable_id")
         .eq("invoice_id", id);
       return (data ?? []) as unknown as PendingCharge[];
     },
   });
+
+  // Agrupa entregáveis logo abaixo da tarefa-pai correspondente
+  const orderedCharges = useMemo(() => {
+    const parents = charges.filter(c => !c.deliverable_id);
+    const children = charges.filter(c => !!c.deliverable_id);
+    const out: Array<PendingCharge & { isChild?: boolean }> = [];
+    const used = new Set<string>();
+    for (const p of parents) {
+      out.push(p);
+      for (const c of children) {
+        if (c.task_id && c.task_id === p.task_id) { out.push({ ...c, isChild: true }); used.add(c.id); }
+      }
+    }
+    for (const c of children) if (!used.has(c.id)) out.push(c);
+    return out;
+  }, [charges]);
+
 
   useEffect(() => {
     if (invoice && !editing) {
@@ -1215,9 +1252,10 @@ function InvoiceDetail({ id, clients, organization, onClose }: { id: string; cli
       due_date: invoice.due_date,
       client: buildClientParty(client),
       agency: buildAgencyParty(organization),
-      lines: charges.map(c => ({
+      lines: orderedCharges.map(c => ({
         title: c.description,
         amount: Number(c.amount ?? 0),
+        is_child: !!c.isChild,
         reference_date: c.due_date ?? null,
         reference_label: "Prazo",
       })),
@@ -1272,9 +1310,9 @@ function InvoiceDetail({ id, clients, organization, onClose }: { id: string; cli
 
         <Card className="p-0 overflow-hidden">
           <div className="max-h-[45vh] overflow-y-auto">
-            {charges.map(c => (
+            {orderedCharges.map(c => (
               <div key={c.id} className="flex items-center justify-between px-4 py-2 border-b last:border-b-0 text-sm gap-2">
-                <div className="flex-1 min-w-0 truncate">{c.description}</div>
+                <div className={cn("flex-1 min-w-0 truncate", c.isChild && "pl-5 text-muted-foreground")}>{c.isChild && "↳ "}{c.description}</div>
                 <div className="font-medium">{money(Number(c.amount ?? 0))}</div>
                 {editing && !isLocked && (
                   <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-red-600"
