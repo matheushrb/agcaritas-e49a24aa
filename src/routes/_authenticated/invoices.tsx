@@ -1077,7 +1077,7 @@ function InvoiceDetail({ id, clients, organization, onClose }: { id: string; cli
     queryKey: ["invoice-charges", id],
     queryFn: async () => {
       const { data } = await supabase.from("charges")
-        .select("id,description,amount,due_date,client_id,project_id,task_id")
+        .select("id,description,amount,due_date,client_id,project_id,task_id,deliverable_id")
         .eq("invoice_id", id);
       return (data ?? []) as unknown as PendingCharge[];
     },
