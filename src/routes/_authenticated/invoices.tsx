@@ -744,7 +744,7 @@ function NewInvoiceWizard({
                   <div className="flex-1 min-w-0">
                     <p className="text-sm truncate flex items-center gap-2">
                       <span className="text-muted-foreground">↳</span>
-                      {d.label.replace(/^Entregável:\s*[^—]+—?\s*/, "") || "Entregável"}
+                      {d.label}
                       <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium bg-emerald-500/15 text-emerald-600">Entregue</span>
                     </p>
                   </div>
