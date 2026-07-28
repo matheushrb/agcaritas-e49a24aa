@@ -1252,9 +1252,10 @@ function InvoiceDetail({ id, clients, organization, onClose }: { id: string; cli
       due_date: invoice.due_date,
       client: buildClientParty(client),
       agency: buildAgencyParty(organization),
-      lines: charges.map(c => ({
+      lines: orderedCharges.map(c => ({
         title: c.description,
         amount: Number(c.amount ?? 0),
+        is_child: !!c.isChild,
         reference_date: c.due_date ?? null,
         reference_label: "Prazo",
       })),
