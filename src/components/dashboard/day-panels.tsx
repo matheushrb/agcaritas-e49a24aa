@@ -649,7 +649,7 @@ export function ActiveClientsPanel() {
 
 export function KpiColumnPanel({ data }: { data: any }) {
   return (
-    <div className="flex h-full flex-col gap-4">
+    <div className="grid h-full grid-cols-1 gap-4 md:grid-cols-3">
       <RevenueMonthPanel />
       <ActiveProjectsPanel data={data} />
       <ActiveClientsPanel />
