@@ -18,7 +18,7 @@ import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
   DayCenterPanel, PrioritiesPanel, AgendaTodayPanel,
-  RevenueMonthPanel, ActiveProjectsPanel, ActiveClientsPanel,
+  KpiColumnPanel, DayQuickStatsPanel,
 } from "@/components/dashboard/day-panels";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
@@ -283,7 +283,7 @@ export interface WidgetDef {
   title: string;
   description: string;
   category: WidgetCategory;
-  colSpan: 3 | 4 | 5 | 6 | 8 | 12;
+  colSpan: 2 | 3 | 4 | 5 | 6 | 8 | 12;
   rowSpan?: 1 | 2;
   render: (ctx: DashboardCtx) => JSX.Element;
 }
@@ -444,55 +444,37 @@ export const WIDGETS: WidgetDef[] = [
     description: "Boas-vindas e resumo do dia.",
     category: "Saudação",
     colSpan: 12,
-    render: ({ firstName, data }) => {
-      const open = openTasks(data.allTasks);
-      const due = dueSoon(data.allTasks);
+    render: ({ firstName }) => {
       const hour = new Date().getHours();
       const period = hour < 12 ? "Bom dia" : hour < 18 ? "Boa tarde" : "Boa noite";
-      const pending = data.proposals
-        .filter((p: any) => p.status !== "approved" && p.status !== "rejected")
-        .reduce((sum: number, p: any) => sum + (Number(p.total_value) || 0), 0);
-      const approvals = data.proposals.filter((p: any) => p.status === "sent" || p.status === "pending").length;
 
-      const pills = [
-        { icon: CheckSquare,   label: "tarefas abertas",   value: String(open),  tone: "bg-primary/10 text-primary" },
-        { icon: CalendarClock, label: "vencem em 7 dias",  value: String(due),   tone: "bg-warning/15 text-warning" },
-        { icon: Calendar,      label: "reuniões hoje",     value: String(data.events.length), tone: "bg-info/15 text-info" },
-        { icon: Wallet,        label: "em negociação",     value: BRL(pending),  tone: "bg-success/10 text-success" },
-        { icon: Target,        label: "aprovações",        value: String(approvals), tone: "bg-accent/20 text-accent-foreground" },
-      ];
+
 
       return (
         <div className="min-w-0">
           <h1 className="font-display text-2xl font-bold leading-tight md:text-3xl">
             {period}, {firstName}! 👋
           </h1>
-          <p className="mt-1 text-sm text-muted-foreground">Aqui está o panorama do seu dia.</p>
-
-          <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-5">
-            {pills.map((p, i) => (
-              <div key={i} className="flex items-center gap-2.5 rounded-2xl border border-border bg-card px-3 py-2.5">
-                <span className={`grid h-8 w-8 shrink-0 place-items-center rounded-xl ${p.tone}`}>
-                  <p.icon className="h-4 w-4" />
-                </span>
-                <span className="min-w-0">
-                  <span className="block truncate font-display text-base font-bold leading-none">{p.value}</span>
-                  <span className="block truncate text-[10px] uppercase tracking-wide text-muted-foreground">{p.label}</span>
-                </span>
-              </div>
-            ))}
-          </div>
+          <p className="mt-1 text-sm text-muted-foreground">Aqui está o seu workspace diário.</p>
         </div>
       );
     },
 
   },
   {
+    id: "day-quickstats",
+    title: "Resumo rápido do dia",
+    description: "Pills com tarefas, reuniões, pendências financeiras e aprovações.",
+    category: "Saudação",
+    colSpan: 12,
+    render: ({ data }) => <DayQuickStatsPanel data={data} />,
+  },
+  {
     id: "day-center",
     title: "Central do dia",
     description: "Timeline unificada: tarefas, reuniões, financeiro e aprovações.",
     category: "Outros",
-    colSpan: 5,
+    colSpan: 4,
     render: ({ data }) => <DayCenterPanel data={data} />,
   },
   {
@@ -500,41 +482,26 @@ export const WIDGETS: WidgetDef[] = [
     title: "Prioridades do dia",
     description: "As tarefas mais urgentes ordenadas por prioridade e prazo.",
     category: "Tarefas",
-    colSpan: 4,
+    colSpan: 2,
     render: ({ data }) => <PrioritiesPanel data={data} />,
   },
   {
     id: "agenda-today",
     title: "Agenda de hoje",
-    description: "Compromissos do dia em lista compacta.",
+    description: "Compromissos do dia em linha do tempo por hora.",
     category: "Agenda",
     colSpan: 3,
     render: ({ data }) => <AgendaTodayPanel data={data} />,
   },
   {
-    id: "revenue-month",
-    title: "Receita do mês",
-    description: "Faturamento do mês com histórico de 6 meses.",
+    id: "kpi-column",
+    title: "Coluna de KPIs",
+    description: "Receita do mês, projetos ativos e clientes ativos.",
     category: "Financeiro",
-    colSpan: 4,
-    render: () => <RevenueMonthPanel />,
+    colSpan: 3,
+    render: ({ data }) => <KpiColumnPanel data={data} />,
   },
-  {
-    id: "projects-ring",
-    title: "Projetos ativos (anel)",
-    description: "Proporção de projetos ativos na carteira.",
-    category: "Projetos",
-    colSpan: 4,
-    render: ({ data }) => <ActiveProjectsPanel data={data} />,
-  },
-  {
-    id: "clients-active",
-    title: "Clientes ativos",
-    description: "Total de clientes ativos e os mais recentes.",
-    category: "Comercial",
-    colSpan: 4,
-    render: () => <ActiveClientsPanel />,
-  },
+
   {
     id: "calendar",
     title: "Mini calendário",
@@ -986,13 +953,13 @@ const ALL_IDS = WIDGETS.map(w => w.id);
 
 const PRESETS: Record<string, string[]> = {
   founder: ALL_IDS,
-  manager: ["greeting", "day-center", "priorities", "agenda-today", "revenue-month", "projects-ring", "clients-active", "kpi-rings", "calendar", "next-meeting", "tasks-today", "assignments", "notifications", "finance", "operations", "projects-active"],
-  traffic: ["greeting", "day-center", "priorities", "agenda-today", "revenue-month", "projects-ring", "clients-active", "kpi-rings", "calendar", "next-meeting", "tasks-today", "finance", "sales-pipeline"],
-  sales: ["greeting", "day-center", "priorities", "agenda-today", "revenue-month", "projects-ring", "clients-active", "kpi-rings", "calendar", "next-meeting", "sales-pipeline", "finance", "notifications"],
-  designer: ["greeting", "day-center", "priorities", "agenda-today", "revenue-month", "projects-ring", "clients-active", "calendar", "next-meeting", "tasks-today", "assignments", "notifications", "operations"],
-  copywriter: ["greeting", "day-center", "priorities", "agenda-today", "revenue-month", "projects-ring", "clients-active", "calendar", "next-meeting", "tasks-today", "assignments", "notifications", "operations"],
-  developer: ["greeting", "day-center", "priorities", "agenda-today", "revenue-month", "projects-ring", "clients-active", "calendar", "next-meeting", "tasks-today", "assignments", "operations", "projects-active"],
-  operations: ["greeting", "day-center", "priorities", "agenda-today", "revenue-month", "projects-ring", "clients-active", "kpi-rings", "calendar", "next-meeting", "tasks-today", "notifications", "finance", "operations", "hr-team"],
+  manager: ["greeting", "day-quickstats", "day-center", "priorities", "agenda-today", "kpi-column", "kpi-rings", "calendar", "next-meeting", "tasks-today", "assignments", "notifications", "finance", "operations", "projects-active"],
+  traffic: ["greeting", "day-quickstats", "day-center", "priorities", "agenda-today", "kpi-column", "kpi-rings", "calendar", "next-meeting", "tasks-today", "finance", "sales-pipeline"],
+  sales: ["greeting", "day-quickstats", "day-center", "priorities", "agenda-today", "kpi-column", "kpi-rings", "calendar", "next-meeting", "sales-pipeline", "finance", "notifications"],
+  designer: ["greeting", "day-quickstats", "day-center", "priorities", "agenda-today", "kpi-column", "calendar", "next-meeting", "tasks-today", "assignments", "notifications", "operations"],
+  copywriter: ["greeting", "day-quickstats", "day-center", "priorities", "agenda-today", "kpi-column", "calendar", "next-meeting", "tasks-today", "assignments", "notifications", "operations"],
+  developer: ["greeting", "day-quickstats", "day-center", "priorities", "agenda-today", "kpi-column", "calendar", "next-meeting", "tasks-today", "assignments", "operations", "projects-active"],
+  operations: ["greeting", "day-quickstats", "day-center", "priorities", "agenda-today", "kpi-column", "kpi-rings", "calendar", "next-meeting", "tasks-today", "notifications", "finance", "operations", "hr-team"],
 };
 
 const ROLE_KEYWORDS: Array<[RegExp, string]> = [
@@ -1027,7 +994,7 @@ function detectPresetKey(roleTitle: string | null | undefined): string {
 // Widgets do redesign do dashboard: entram habilitados uma única vez,
 // mesmo em contas antigas (o restante continua respeitando o que o usuário salvou).
 const NEW_LAYOUT_IDS = new Set([
-  "day-center", "priorities", "agenda-today", "revenue-month", "projects-ring", "clients-active",
+  "day-quickstats", "day-center", "priorities", "agenda-today", "kpi-column",
 ]);
 
 export function reconcilePrefs(saved: UserPref[] | null | undefined, roleTitle: string | null | undefined): UserPref[] {
@@ -1039,20 +1006,26 @@ export function reconcilePrefs(saved: UserPref[] | null | undefined, roleTitle: 
   const greetIdx = filtered.findIndex(p => p.id === "greeting");
   const head = missing.filter(m => NEW_LAYOUT_IDS.has(m.id));
   const tail = missing.filter(m => !NEW_LAYOUT_IDS.has(m.id));
-  if (greetIdx >= 0) {
-    return [
-      ...filtered.slice(0, greetIdx + 1),
-      ...head,
-      ...filtered.slice(greetIdx + 1),
-      ...tail,
-    ];
-  }
-  return [...head, ...filtered, ...tail];
+  const merged = greetIdx >= 0
+    ? [...filtered.slice(0, greetIdx + 1), ...head, ...filtered.slice(greetIdx + 1), ...tail]
+    : [...head, ...filtered, ...tail];
+
+  // Mantém os widgets do novo layout na ordem canônica da referência
+  // (resumo → central do dia → prioridades → agenda → KPIs).
+  const canonical = ALL_IDS.filter(id => NEW_LAYOUT_IDS.has(id));
+  const slots: number[] = [];
+  merged.forEach((p, i) => { if (NEW_LAYOUT_IDS.has(p.id)) slots.push(i); });
+  const byId = new Map(merged.map(p => [p.id, p]));
+  const ordered = canonical.map(id => byId.get(id)).filter(Boolean) as UserPref[];
+  slots.forEach((slot, i) => { if (ordered[i]) merged[slot] = ordered[i]; });
+  return merged;
 }
+
 
 
 export function colSpanClass(w: WidgetDef): string {
   const map: Record<number, string> = {
+    2: "lg:col-span-2",
     3: "lg:col-span-3",
     4: "lg:col-span-4",
     5: "lg:col-span-5",
