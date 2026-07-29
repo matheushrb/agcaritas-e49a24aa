@@ -1319,7 +1319,7 @@ function InvoiceDetail({ id, clients, organization, onClose }: { id: string; cli
             <Badge variant="secondary" className={cn("text-[10px]", meta.className)}>{meta.label}</Badge>
           </DialogTitle>
           <DialogDescription className="text-xs">
-            Número gerado automaticamente no formato <span className="font-mono">AAAAMM-####</span> (sequencial por mês).
+            Número gerado automaticamente no formato <span className="font-mono">AAAAMM + sequencial</span> (ex.: 202605140).
           </DialogDescription>
         </DialogHeader>
 
