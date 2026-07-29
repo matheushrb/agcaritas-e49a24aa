@@ -444,21 +444,11 @@ export const WIDGETS: WidgetDef[] = [
     description: "Boas-vindas e resumo do dia.",
     category: "Saudação",
     colSpan: 12,
-    render: ({ firstName, data }) => {
+    render: ({ firstName }) => {
       const hour = new Date().getHours();
       const period = hour < 12 ? "Bom dia" : hour < 18 ? "Boa tarde" : "Boa noite";
-      const pending = data.proposals
-        .filter((p: any) => p.status !== "approved" && p.status !== "rejected")
-        .reduce((sum: number, p: any) => sum + (Number(p.total_value) || 0), 0);
-      const approvals = data.proposals.filter((p: any) => p.status === "sent" || p.status === "pending").length;
 
-      const pills = [
-        { icon: CheckSquare,   label: "tarefas abertas",   value: String(open),  tone: "bg-primary/10 text-primary" },
-        { icon: CalendarClock, label: "vencem em 7 dias",  value: String(due),   tone: "bg-warning/15 text-warning" },
-        { icon: Calendar,      label: "reuniões hoje",     value: String(data.events.length), tone: "bg-info/15 text-info" },
-        { icon: Wallet,        label: "em negociação",     value: BRL(pending),  tone: "bg-success/10 text-success" },
-        { icon: Target,        label: "aprovações",        value: String(approvals), tone: "bg-accent/20 text-accent-foreground" },
-      ];
+
 
       return (
         <div className="min-w-0">
