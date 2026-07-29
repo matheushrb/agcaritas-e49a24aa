@@ -449,9 +449,12 @@ function NewInvoiceWizard({
       key: string;
       title: string; detail?: string; amount: number; is_child?: boolean;
       reference_date?: string | null; reference_label?: string;
+      group?: string | null; service?: string | null;
     }> = [];
     const withOverride = (key: string, fallback: string | null | undefined) =>
       lineDateOverrides[key] ?? (fallback ?? null);
+    const groupOf = (projectId: string | null | undefined) =>
+      (projectId ? projects.find(p => p.id === projectId)?.name ?? null : null);
     for (const c of filteredCharges) if (selectedCharges.has(c.id)) {
       const key = `charge:${c.id}`;
       lines.push({
@@ -460,6 +463,8 @@ function NewInvoiceWizard({
         amount: Number(c.amount ?? 0),
         reference_date: withOverride(key, c.due_date),
         reference_label: "Prazo",
+        group: groupOf(c.project_id),
+        service: "Serviço",
       });
     }
     for (const tk of filteredTasks) if (selectedTasks.has(tk.id)) {
@@ -471,6 +476,8 @@ function NewInvoiceWizard({
         amount: Number(tk.billing_value ?? 0),
         reference_date: withOverride(key, ref.reference_date),
         reference_label: ref.reference_label,
+        group: groupOf(tk.project_id),
+        service: ref.reference_label,
       });
       for (const d of billableDeliverables) {
         if (d.taskId === tk.id && selectedDeliverables.has(d.key)) {
@@ -480,6 +487,8 @@ function NewInvoiceWizard({
             title: d.label, amount: d.amount, is_child: true,
             reference_date: withOverride(dkey, d.reference_date),
             reference_label: d.reference_label,
+            group: groupOf(d.project_id),
+            service: d.reference_label,
           });
         }
       }
@@ -493,11 +502,21 @@ function NewInvoiceWizard({
           title: d.label, amount: d.amount,
           reference_date: withOverride(dkey, d.reference_date),
           reference_label: d.reference_label,
+          group: groupOf(d.project_id),
+          service: d.reference_label,
         });
       }
     }
-    return lines;
-  }, [filteredCharges, filteredTasks, billableDeliverables, selectedCharges, selectedTasks, selectedDeliverables, lineDateOverrides]);
+    // agrupa por projeto mantendo a ordem de aparição (pais + entregáveis juntos)
+    const order: string[] = [];
+    const buckets = new Map<string, typeof lines>();
+    for (const l of lines) {
+      const g = l.group ?? "";
+      if (!buckets.has(g)) { buckets.set(g, []); order.push(g); }
+      buckets.get(g)!.push(l);
+    }
+    return order.flatMap(g => buckets.get(g)!);
+  }, [filteredCharges, filteredTasks, billableDeliverables, selectedCharges, selectedTasks, selectedDeliverables, lineDateOverrides, projects]);
 
   async function openPreviewPDF() {
     const client = clients.find(c => c.id === payerClient);
