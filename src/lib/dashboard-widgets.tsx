@@ -1006,16 +1006,21 @@ export function reconcilePrefs(saved: UserPref[] | null | undefined, roleTitle: 
   const greetIdx = filtered.findIndex(p => p.id === "greeting");
   const head = missing.filter(m => NEW_LAYOUT_IDS.has(m.id));
   const tail = missing.filter(m => !NEW_LAYOUT_IDS.has(m.id));
-  if (greetIdx >= 0) {
-    return [
-      ...filtered.slice(0, greetIdx + 1),
-      ...head,
-      ...filtered.slice(greetIdx + 1),
-      ...tail,
-    ];
-  }
-  return [...head, ...filtered, ...tail];
+  const merged = greetIdx >= 0
+    ? [...filtered.slice(0, greetIdx + 1), ...head, ...filtered.slice(greetIdx + 1), ...tail]
+    : [...head, ...filtered, ...tail];
+
+  // Mantém os widgets do novo layout na ordem canônica da referência
+  // (resumo → central do dia → prioridades → agenda → KPIs).
+  const canonical = ALL_IDS.filter(id => NEW_LAYOUT_IDS.has(id));
+  const slots: number[] = [];
+  merged.forEach((p, i) => { if (NEW_LAYOUT_IDS.has(p.id)) slots.push(i); });
+  const byId = new Map(merged.map(p => [p.id, p]));
+  const ordered = canonical.map(id => byId.get(id)).filter(Boolean) as UserPref[];
+  slots.forEach((slot, i) => { if (ordered[i]) merged[slot] = ordered[i]; });
+  return merged;
 }
+
 
 
 export function colSpanClass(w: WidgetDef): string {
