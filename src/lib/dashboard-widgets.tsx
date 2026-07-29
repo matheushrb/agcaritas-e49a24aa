@@ -17,6 +17,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
+  DayCenterPanel, PrioritiesPanel, AgendaTodayPanel,
+  RevenueMonthPanel, ActiveProjectsPanel, ActiveClientsPanel,
+} from "@/components/dashboard/day-panels";
+import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 
@@ -279,7 +283,7 @@ export interface WidgetDef {
   title: string;
   description: string;
   category: WidgetCategory;
-  colSpan: 4 | 6 | 8 | 12;
+  colSpan: 3 | 4 | 5 | 6 | 8 | 12;
   rowSpan?: 1 | 2;
   render: (ctx: DashboardCtx) => JSX.Element;
 }
@@ -439,37 +443,97 @@ export const WIDGETS: WidgetDef[] = [
     title: "Saudação e resumo",
     description: "Boas-vindas e resumo do dia.",
     category: "Saudação",
-    colSpan: 8,
+    colSpan: 12,
     render: ({ firstName, data }) => {
       const open = openTasks(data.allTasks);
       const due = dueSoon(data.allTasks);
-      const nextEv = data.events[0];
+      const hour = new Date().getHours();
+      const period = hour < 12 ? "Bom dia" : hour < 18 ? "Boa tarde" : "Boa noite";
+      const pending = data.proposals
+        .filter((p: any) => p.status !== "approved" && p.status !== "rejected")
+        .reduce((sum: number, p: any) => sum + (Number(p.total_value) || 0), 0);
+      const approvals = data.proposals.filter((p: any) => p.status === "sent" || p.status === "pending").length;
+
+      const pills = [
+        { icon: CheckSquare,   label: "tarefas abertas",   value: String(open),  tone: "bg-primary/10 text-primary" },
+        { icon: CalendarClock, label: "vencem em 7 dias",  value: String(due),   tone: "bg-warning/15 text-warning" },
+        { icon: Calendar,      label: "reuniões hoje",     value: String(data.events.length), tone: "bg-info/15 text-info" },
+        { icon: Wallet,        label: "em negociação",     value: BRL(pending),  tone: "bg-success/10 text-success" },
+        { icon: Target,        label: "aprovações",        value: String(approvals), tone: "bg-accent/20 text-accent-foreground" },
+      ];
+
       return (
         <div className="min-w-0">
-          <h1 className="font-display text-3xl md:text-4xl font-bold leading-tight">
-            Olá, {firstName}!<br />
-            Quais são seus planos para hoje?
+          <h1 className="font-display text-2xl font-bold leading-tight md:text-3xl">
+            {period}, {firstName}! 👋
           </h1>
-          <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm">
-            <span className="inline-flex items-center gap-2 text-muted-foreground">
-              <CheckSquare className="h-4 w-4 text-primary" />
-              <b className="text-foreground">{open}</b> tarefas abertas
-            </span>
-            <span className="inline-flex items-center gap-2 text-muted-foreground">
-              <CalendarClock className="h-4 w-4 text-warning" />
-              <b className="text-foreground">{due}</b> vencem em 7 dias
-            </span>
-            <span className="inline-flex items-center gap-2 text-muted-foreground">
-              <Calendar className="h-4 w-4 text-info" />
-              {nextEv
-                ? <>Próxima reunião <b className="text-foreground">{new Date(nextEv.starts_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</b></>
-                : "Sem reuniões hoje"}
-            </span>
+          <p className="mt-1 text-sm text-muted-foreground">Aqui está o panorama do seu dia.</p>
+
+          <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-5">
+            {pills.map((p, i) => (
+              <div key={i} className="flex items-center gap-2.5 rounded-2xl border border-border bg-card px-3 py-2.5">
+                <span className={`grid h-8 w-8 shrink-0 place-items-center rounded-xl ${p.tone}`}>
+                  <p.icon className="h-4 w-4" />
+                </span>
+                <span className="min-w-0">
+                  <span className="block truncate font-display text-base font-bold leading-none">{p.value}</span>
+                  <span className="block truncate text-[10px] uppercase tracking-wide text-muted-foreground">{p.label}</span>
+                </span>
+              </div>
+            ))}
           </div>
         </div>
       );
     },
 
+  },
+  {
+    id: "day-center",
+    title: "Central do dia",
+    description: "Timeline unificada: tarefas, reuniões, financeiro e aprovações.",
+    category: "Outros",
+    colSpan: 5,
+    render: ({ data }) => <DayCenterPanel data={data} />,
+  },
+  {
+    id: "priorities",
+    title: "Prioridades do dia",
+    description: "As tarefas mais urgentes ordenadas por prioridade e prazo.",
+    category: "Tarefas",
+    colSpan: 4,
+    render: ({ data }) => <PrioritiesPanel data={data} />,
+  },
+  {
+    id: "agenda-today",
+    title: "Agenda de hoje",
+    description: "Compromissos do dia em lista compacta.",
+    category: "Agenda",
+    colSpan: 3,
+    render: ({ data }) => <AgendaTodayPanel data={data} />,
+  },
+  {
+    id: "revenue-month",
+    title: "Receita do mês",
+    description: "Faturamento do mês com histórico de 6 meses.",
+    category: "Financeiro",
+    colSpan: 4,
+    render: () => <RevenueMonthPanel />,
+  },
+  {
+    id: "projects-ring",
+    title: "Projetos ativos (anel)",
+    description: "Proporção de projetos ativos na carteira.",
+    category: "Projetos",
+    colSpan: 4,
+    render: ({ data }) => <ActiveProjectsPanel data={data} />,
+  },
+  {
+    id: "clients-active",
+    title: "Clientes ativos",
+    description: "Total de clientes ativos e os mais recentes.",
+    category: "Comercial",
+    colSpan: 4,
+    render: () => <ActiveClientsPanel />,
   },
   {
     id: "calendar",
@@ -922,13 +986,13 @@ const ALL_IDS = WIDGETS.map(w => w.id);
 
 const PRESETS: Record<string, string[]> = {
   founder: ALL_IDS,
-  manager: ["greeting", "kpi-rings", "calendar", "next-meeting", "tasks-today", "assignments", "notifications", "finance", "operations", "projects-active"],
-  traffic: ["greeting", "kpi-rings", "calendar", "next-meeting", "tasks-today", "finance", "sales-pipeline"],
-  sales: ["greeting", "kpi-rings", "calendar", "next-meeting", "sales-pipeline", "finance", "notifications"],
-  designer: ["greeting", "calendar", "next-meeting", "tasks-today", "assignments", "notifications", "operations"],
-  copywriter: ["greeting", "calendar", "next-meeting", "tasks-today", "assignments", "notifications", "operations"],
-  developer: ["greeting", "calendar", "next-meeting", "tasks-today", "assignments", "operations", "projects-active"],
-  operations: ["greeting", "kpi-rings", "calendar", "next-meeting", "tasks-today", "notifications", "finance", "operations", "hr-team"],
+  manager: ["greeting", "day-center", "priorities", "agenda-today", "revenue-month", "projects-ring", "clients-active", "kpi-rings", "calendar", "next-meeting", "tasks-today", "assignments", "notifications", "finance", "operations", "projects-active"],
+  traffic: ["greeting", "day-center", "priorities", "agenda-today", "revenue-month", "projects-ring", "clients-active", "kpi-rings", "calendar", "next-meeting", "tasks-today", "finance", "sales-pipeline"],
+  sales: ["greeting", "day-center", "priorities", "agenda-today", "revenue-month", "projects-ring", "clients-active", "kpi-rings", "calendar", "next-meeting", "sales-pipeline", "finance", "notifications"],
+  designer: ["greeting", "day-center", "priorities", "agenda-today", "revenue-month", "projects-ring", "clients-active", "calendar", "next-meeting", "tasks-today", "assignments", "notifications", "operations"],
+  copywriter: ["greeting", "day-center", "priorities", "agenda-today", "revenue-month", "projects-ring", "clients-active", "calendar", "next-meeting", "tasks-today", "assignments", "notifications", "operations"],
+  developer: ["greeting", "day-center", "priorities", "agenda-today", "revenue-month", "projects-ring", "clients-active", "calendar", "next-meeting", "tasks-today", "assignments", "operations", "projects-active"],
+  operations: ["greeting", "day-center", "priorities", "agenda-today", "revenue-month", "projects-ring", "clients-active", "kpi-rings", "calendar", "next-meeting", "tasks-today", "notifications", "finance", "operations", "hr-team"],
 };
 
 const ROLE_KEYWORDS: Array<[RegExp, string]> = [
@@ -960,19 +1024,38 @@ function detectPresetKey(roleTitle: string | null | undefined): string {
 // Respeita 100% o que o usuário salvou. Só remove ids desconhecidos e
 // acrescenta widgets ainda inexistentes como DESATIVADOS — nunca reativa
 // nada que o usuário tenha desligado.
+// Widgets do redesign do dashboard: entram habilitados uma única vez,
+// mesmo em contas antigas (o restante continua respeitando o que o usuário salvou).
+const NEW_LAYOUT_IDS = new Set([
+  "day-center", "priorities", "agenda-today", "revenue-month", "projects-ring", "clients-active",
+]);
+
 export function reconcilePrefs(saved: UserPref[] | null | undefined, roleTitle: string | null | undefined): UserPref[] {
   if (!saved || saved.length === 0) return getPresetForRole(roleTitle);
   const knownIds = new Set(ALL_IDS);
   const filtered = saved.filter(p => knownIds.has(p.id));
   const seen = new Set(filtered.map(p => p.id));
-  const missing = ALL_IDS.filter(id => !seen.has(id)).map(id => ({ id, enabled: false } as UserPref));
-  return [...filtered, ...missing];
+  const missing = ALL_IDS.filter(id => !seen.has(id)).map(id => ({ id, enabled: NEW_LAYOUT_IDS.has(id) } as UserPref));
+  const greetIdx = filtered.findIndex(p => p.id === "greeting");
+  const head = missing.filter(m => NEW_LAYOUT_IDS.has(m.id));
+  const tail = missing.filter(m => !NEW_LAYOUT_IDS.has(m.id));
+  if (greetIdx >= 0) {
+    return [
+      ...filtered.slice(0, greetIdx + 1),
+      ...head,
+      ...filtered.slice(greetIdx + 1),
+      ...tail,
+    ];
+  }
+  return [...head, ...filtered, ...tail];
 }
 
 
 export function colSpanClass(w: WidgetDef): string {
   const map: Record<number, string> = {
+    3: "lg:col-span-3",
     4: "lg:col-span-4",
+    5: "lg:col-span-5",
     6: "lg:col-span-6",
     8: "lg:col-span-8",
     12: "lg:col-span-12",
