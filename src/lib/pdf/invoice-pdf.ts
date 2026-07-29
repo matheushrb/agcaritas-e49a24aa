@@ -149,7 +149,9 @@ const longDate = (d: string | Date | null | undefined) => {
   const dt = typeof d === "string" && /^\d{4}-\d{2}-\d{2}$/.test(d)
     ? new Date(`${d}T12:00:00`)
     : typeof d === "string" ? new Date(d) : d;
-  return dt.toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric" }).replace(".", "");
+  const day = String(dt.getDate()).padStart(2, "0");
+  const mon = dt.toLocaleDateString("pt-BR", { month: "short" }).replace(".", "");
+  return `${day}/${mon}/${dt.getFullYear()}`;
 };
 
 export async function generateInvoicePDF(data: InvoicePDFData): Promise<jsPDF> {
