@@ -291,18 +291,20 @@ function NewInvoiceWizard({
   const [previewNumber, setPreviewNumber] = useState("—");
   const [submitting, setSubmitting] = useState(false);
 
-  // Número previsto da fatura (mesma regra do banco: AAAAMM-####)
+  // Número previsto da fatura (mesma regra do banco: AAAAMM + sequencial contínuo)
   useEffect(() => {
     let active = true;
     (async () => {
       const base = issueDate || new Date().toISOString().slice(0, 10);
       const ym = base.slice(0, 7).replace("-", "");
-      const { data } = await supabase.from("invoices").select("number").like("number", `${ym}-%`);
+      const { data } = await supabase.from("invoices").select("number");
       const max = (data ?? []).reduce((m: number, r: { number: string | null }) => {
-        const seq = parseInt(String(r.number ?? "").split("-")[1] ?? "0", 10);
+        const raw = String(r.number ?? "").trim();
+        if (!/^\d{9,}$/.test(raw)) return m;
+        const seq = parseInt(raw.slice(6), 10);
         return Number.isFinite(seq) && seq > m ? seq : m;
-      }, 0);
-      if (active) setPreviewNumber(`${ym}-${String(max + 1).padStart(4, "0")}`);
+      }, 139);
+      if (active) setPreviewNumber(`${ym}${String(max + 1).padStart(3, "0")}`);
     })();
     return () => { active = false; };
   }, [issueDate]);
