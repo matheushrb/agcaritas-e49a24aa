@@ -482,7 +482,7 @@ export const WIDGETS: WidgetDef[] = [
     title: "Prioridades do dia",
     description: "As tarefas mais urgentes ordenadas por prioridade e prazo.",
     category: "Tarefas",
-    colSpan: 2,
+    colSpan: 4,
     render: ({ data }) => <PrioritiesPanel data={data} />,
   },
   {
@@ -490,15 +490,16 @@ export const WIDGETS: WidgetDef[] = [
     title: "Agenda de hoje",
     description: "Compromissos do dia em linha do tempo por hora.",
     category: "Agenda",
-    colSpan: 3,
+    colSpan: 4,
+    rowSpan: 2,
     render: ({ data }) => <AgendaTodayPanel data={data} />,
   },
   {
     id: "kpi-column",
-    title: "Coluna de KPIs",
+    title: "Financeiro e indicadores",
     description: "Receita do mês, projetos ativos e clientes ativos.",
     category: "Financeiro",
-    colSpan: 3,
+    colSpan: 8,
     render: ({ data }) => <KpiColumnPanel data={data} />,
   },
 
