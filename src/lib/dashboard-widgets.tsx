@@ -467,32 +467,26 @@ export const WIDGETS: WidgetDef[] = [
           <h1 className="font-display text-2xl font-bold leading-tight md:text-3xl">
             {period}, {firstName}! 👋
           </h1>
-          <p className="mt-1 text-sm text-muted-foreground">Aqui está o panorama do seu dia.</p>
-
-          <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-5">
-            {pills.map((p, i) => (
-              <div key={i} className="flex items-center gap-2.5 rounded-2xl border border-border bg-card px-3 py-2.5">
-                <span className={`grid h-8 w-8 shrink-0 place-items-center rounded-xl ${p.tone}`}>
-                  <p.icon className="h-4 w-4" />
-                </span>
-                <span className="min-w-0">
-                  <span className="block truncate font-display text-base font-bold leading-none">{p.value}</span>
-                  <span className="block truncate text-[10px] uppercase tracking-wide text-muted-foreground">{p.label}</span>
-                </span>
-              </div>
-            ))}
-          </div>
+          <p className="mt-1 text-sm text-muted-foreground">Aqui está o seu workspace diário.</p>
         </div>
       );
     },
 
   },
   {
+    id: "day-quickstats",
+    title: "Resumo rápido do dia",
+    description: "Pills com tarefas, reuniões, pendências financeiras e aprovações.",
+    category: "Saudação",
+    colSpan: 12,
+    render: ({ data }) => <DayQuickStatsPanel data={data} />,
+  },
+  {
     id: "day-center",
     title: "Central do dia",
     description: "Timeline unificada: tarefas, reuniões, financeiro e aprovações.",
     category: "Outros",
-    colSpan: 5,
+    colSpan: 4,
     render: ({ data }) => <DayCenterPanel data={data} />,
   },
   {
@@ -500,41 +494,26 @@ export const WIDGETS: WidgetDef[] = [
     title: "Prioridades do dia",
     description: "As tarefas mais urgentes ordenadas por prioridade e prazo.",
     category: "Tarefas",
-    colSpan: 4,
+    colSpan: 2,
     render: ({ data }) => <PrioritiesPanel data={data} />,
   },
   {
     id: "agenda-today",
     title: "Agenda de hoje",
-    description: "Compromissos do dia em lista compacta.",
+    description: "Compromissos do dia em linha do tempo por hora.",
     category: "Agenda",
     colSpan: 3,
     render: ({ data }) => <AgendaTodayPanel data={data} />,
   },
   {
-    id: "revenue-month",
-    title: "Receita do mês",
-    description: "Faturamento do mês com histórico de 6 meses.",
+    id: "kpi-column",
+    title: "Coluna de KPIs",
+    description: "Receita do mês, projetos ativos e clientes ativos.",
     category: "Financeiro",
-    colSpan: 4,
-    render: () => <RevenueMonthPanel />,
+    colSpan: 3,
+    render: ({ data }) => <KpiColumnPanel data={data} />,
   },
-  {
-    id: "projects-ring",
-    title: "Projetos ativos (anel)",
-    description: "Proporção de projetos ativos na carteira.",
-    category: "Projetos",
-    colSpan: 4,
-    render: ({ data }) => <ActiveProjectsPanel data={data} />,
-  },
-  {
-    id: "clients-active",
-    title: "Clientes ativos",
-    description: "Total de clientes ativos e os mais recentes.",
-    category: "Comercial",
-    colSpan: 4,
-    render: () => <ActiveClientsPanel />,
-  },
+
   {
     id: "calendar",
     title: "Mini calendário",
