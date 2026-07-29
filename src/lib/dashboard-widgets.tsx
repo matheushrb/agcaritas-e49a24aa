@@ -283,7 +283,7 @@ export interface WidgetDef {
   title: string;
   description: string;
   category: WidgetCategory;
-  colSpan: 3 | 4 | 5 | 6 | 8 | 12;
+  colSpan: 2 | 3 | 4 | 5 | 6 | 8 | 12;
   rowSpan?: 1 | 2;
   render: (ctx: DashboardCtx) => JSX.Element;
 }
@@ -445,8 +445,6 @@ export const WIDGETS: WidgetDef[] = [
     category: "Saudação",
     colSpan: 12,
     render: ({ firstName, data }) => {
-      const open = openTasks(data.allTasks);
-      const due = dueSoon(data.allTasks);
       const hour = new Date().getHours();
       const period = hour < 12 ? "Bom dia" : hour < 18 ? "Boa tarde" : "Boa noite";
       const pending = data.proposals
@@ -965,13 +963,13 @@ const ALL_IDS = WIDGETS.map(w => w.id);
 
 const PRESETS: Record<string, string[]> = {
   founder: ALL_IDS,
-  manager: ["greeting", "day-center", "priorities", "agenda-today", "revenue-month", "projects-ring", "clients-active", "kpi-rings", "calendar", "next-meeting", "tasks-today", "assignments", "notifications", "finance", "operations", "projects-active"],
-  traffic: ["greeting", "day-center", "priorities", "agenda-today", "revenue-month", "projects-ring", "clients-active", "kpi-rings", "calendar", "next-meeting", "tasks-today", "finance", "sales-pipeline"],
-  sales: ["greeting", "day-center", "priorities", "agenda-today", "revenue-month", "projects-ring", "clients-active", "kpi-rings", "calendar", "next-meeting", "sales-pipeline", "finance", "notifications"],
-  designer: ["greeting", "day-center", "priorities", "agenda-today", "revenue-month", "projects-ring", "clients-active", "calendar", "next-meeting", "tasks-today", "assignments", "notifications", "operations"],
-  copywriter: ["greeting", "day-center", "priorities", "agenda-today", "revenue-month", "projects-ring", "clients-active", "calendar", "next-meeting", "tasks-today", "assignments", "notifications", "operations"],
-  developer: ["greeting", "day-center", "priorities", "agenda-today", "revenue-month", "projects-ring", "clients-active", "calendar", "next-meeting", "tasks-today", "assignments", "operations", "projects-active"],
-  operations: ["greeting", "day-center", "priorities", "agenda-today", "revenue-month", "projects-ring", "clients-active", "kpi-rings", "calendar", "next-meeting", "tasks-today", "notifications", "finance", "operations", "hr-team"],
+  manager: ["greeting", "day-quickstats", "day-center", "priorities", "agenda-today", "kpi-column", "kpi-rings", "calendar", "next-meeting", "tasks-today", "assignments", "notifications", "finance", "operations", "projects-active"],
+  traffic: ["greeting", "day-quickstats", "day-center", "priorities", "agenda-today", "kpi-column", "kpi-rings", "calendar", "next-meeting", "tasks-today", "finance", "sales-pipeline"],
+  sales: ["greeting", "day-quickstats", "day-center", "priorities", "agenda-today", "kpi-column", "kpi-rings", "calendar", "next-meeting", "sales-pipeline", "finance", "notifications"],
+  designer: ["greeting", "day-quickstats", "day-center", "priorities", "agenda-today", "kpi-column", "calendar", "next-meeting", "tasks-today", "assignments", "notifications", "operations"],
+  copywriter: ["greeting", "day-quickstats", "day-center", "priorities", "agenda-today", "kpi-column", "calendar", "next-meeting", "tasks-today", "assignments", "notifications", "operations"],
+  developer: ["greeting", "day-quickstats", "day-center", "priorities", "agenda-today", "kpi-column", "calendar", "next-meeting", "tasks-today", "assignments", "operations", "projects-active"],
+  operations: ["greeting", "day-quickstats", "day-center", "priorities", "agenda-today", "kpi-column", "kpi-rings", "calendar", "next-meeting", "tasks-today", "notifications", "finance", "operations", "hr-team"],
 };
 
 const ROLE_KEYWORDS: Array<[RegExp, string]> = [
@@ -1006,7 +1004,7 @@ function detectPresetKey(roleTitle: string | null | undefined): string {
 // Widgets do redesign do dashboard: entram habilitados uma única vez,
 // mesmo em contas antigas (o restante continua respeitando o que o usuário salvou).
 const NEW_LAYOUT_IDS = new Set([
-  "day-center", "priorities", "agenda-today", "revenue-month", "projects-ring", "clients-active",
+  "day-quickstats", "day-center", "priorities", "agenda-today", "kpi-column",
 ]);
 
 export function reconcilePrefs(saved: UserPref[] | null | undefined, roleTitle: string | null | undefined): UserPref[] {
@@ -1032,6 +1030,7 @@ export function reconcilePrefs(saved: UserPref[] | null | undefined, roleTitle: 
 
 export function colSpanClass(w: WidgetDef): string {
   const map: Record<number, string> = {
+    2: "lg:col-span-2",
     3: "lg:col-span-3",
     4: "lg:col-span-4",
     5: "lg:col-span-5",
