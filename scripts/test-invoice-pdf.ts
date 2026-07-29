@@ -3,7 +3,7 @@ import fs from "fs";
 
 async function main() {
   const doc = await generateInvoicePDF({
-    number: "202507-0001",
+    number: "202507140",
     issue_date: "2025-07-18",
     due_date: "2025-07-25",
     client: {

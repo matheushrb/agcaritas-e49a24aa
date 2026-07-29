@@ -291,18 +291,20 @@ function NewInvoiceWizard({
   const [previewNumber, setPreviewNumber] = useState("—");
   const [submitting, setSubmitting] = useState(false);
 
-  // Número previsto da fatura (mesma regra do banco: AAAAMM-####)
+  // Número previsto da fatura (mesma regra do banco: AAAAMM + sequencial contínuo)
   useEffect(() => {
     let active = true;
     (async () => {
       const base = issueDate || new Date().toISOString().slice(0, 10);
       const ym = base.slice(0, 7).replace("-", "");
-      const { data } = await supabase.from("invoices").select("number").like("number", `${ym}-%`);
+      const { data } = await supabase.from("invoices").select("number");
       const max = (data ?? []).reduce((m: number, r: { number: string | null }) => {
-        const seq = parseInt(String(r.number ?? "").split("-")[1] ?? "0", 10);
+        const raw = String(r.number ?? "").trim();
+        if (!/^\d{9,}$/.test(raw)) return m;
+        const seq = parseInt(raw.slice(6), 10);
         return Number.isFinite(seq) && seq > m ? seq : m;
-      }, 0);
-      if (active) setPreviewNumber(`${ym}-${String(max + 1).padStart(4, "0")}`);
+      }, 139);
+      if (active) setPreviewNumber(`${ym}${String(max + 1).padStart(3, "0")}`);
     })();
     return () => { active = false; };
   }, [issueDate]);
@@ -447,9 +449,12 @@ function NewInvoiceWizard({
       key: string;
       title: string; detail?: string; amount: number; is_child?: boolean;
       reference_date?: string | null; reference_label?: string;
+      group?: string | null; service?: string | null;
     }> = [];
     const withOverride = (key: string, fallback: string | null | undefined) =>
       lineDateOverrides[key] ?? (fallback ?? null);
+    const groupOf = (projectId: string | null | undefined) =>
+      (projectId ? projects.find(p => p.id === projectId)?.name ?? null : null);
     for (const c of filteredCharges) if (selectedCharges.has(c.id)) {
       const key = `charge:${c.id}`;
       lines.push({
@@ -458,6 +463,8 @@ function NewInvoiceWizard({
         amount: Number(c.amount ?? 0),
         reference_date: withOverride(key, c.due_date),
         reference_label: "Prazo",
+        group: groupOf(c.project_id),
+        service: "Serviço",
       });
     }
     for (const tk of filteredTasks) if (selectedTasks.has(tk.id)) {
@@ -469,6 +476,8 @@ function NewInvoiceWizard({
         amount: Number(tk.billing_value ?? 0),
         reference_date: withOverride(key, ref.reference_date),
         reference_label: ref.reference_label,
+        group: groupOf(tk.project_id),
+        service: ref.reference_label,
       });
       for (const d of billableDeliverables) {
         if (d.taskId === tk.id && selectedDeliverables.has(d.key)) {
@@ -478,6 +487,8 @@ function NewInvoiceWizard({
             title: d.label, amount: d.amount, is_child: true,
             reference_date: withOverride(dkey, d.reference_date),
             reference_label: d.reference_label,
+            group: groupOf(d.project_id),
+            service: d.reference_label,
           });
         }
       }
@@ -491,11 +502,21 @@ function NewInvoiceWizard({
           title: d.label, amount: d.amount,
           reference_date: withOverride(dkey, d.reference_date),
           reference_label: d.reference_label,
+          group: groupOf(d.project_id),
+          service: d.reference_label,
         });
       }
     }
-    return lines;
-  }, [filteredCharges, filteredTasks, billableDeliverables, selectedCharges, selectedTasks, selectedDeliverables, lineDateOverrides]);
+    // agrupa por projeto mantendo a ordem de aparição (pais + entregáveis juntos)
+    const order: string[] = [];
+    const buckets = new Map<string, typeof lines>();
+    for (const l of lines) {
+      const g = l.group ?? "";
+      if (!buckets.has(g)) { buckets.set(g, []); order.push(g); }
+      buckets.get(g)!.push(l);
+    }
+    return order.flatMap(g => buckets.get(g)!);
+  }, [filteredCharges, filteredTasks, billableDeliverables, selectedCharges, selectedTasks, selectedDeliverables, lineDateOverrides, projects]);
 
   async function openPreviewPDF() {
     const client = clients.find(c => c.id === payerClient);
@@ -1246,18 +1267,35 @@ function InvoiceDetail({ id, clients, organization, onClose }: { id: string; cli
   async function downloadPDF() {
     if (!invoice) return;
     const client = clients.find(c => c.id === invoice.client_id);
+    const projectIds = Array.from(new Set(orderedCharges.map(c => c.project_id).filter(Boolean))) as string[];
+    const nameById = new Map<string, string>();
+    if (projectIds.length) {
+      const { data: projs } = await supabase.from("projects").select("id,name").in("id", projectIds);
+      for (const p of projs ?? []) nameById.set(p.id as string, p.name as string);
+    }
+    // agrupa as linhas por projeto mantendo a ordem
+    const order: string[] = [];
+    const buckets = new Map<string, typeof orderedCharges>();
+    for (const c of orderedCharges) {
+      const g = c.project_id ? nameById.get(c.project_id) ?? "" : "";
+      if (!buckets.has(g)) { buckets.set(g, []); order.push(g); }
+      buckets.get(g)!.push(c);
+    }
+    const grouped = order.flatMap(g => buckets.get(g)!.map(c => ({ ...c, groupName: g })));
+
     const doc = await generateInvoicePDF({
       number: invoice.number,
       issue_date: invoice.issue_date,
       due_date: invoice.due_date,
       client: buildClientParty(client),
       agency: buildAgencyParty(organization),
-      lines: orderedCharges.map(c => ({
+      lines: grouped.map(c => ({
         title: c.description,
         amount: Number(c.amount ?? 0),
         is_child: !!c.isChild,
         reference_date: c.due_date ?? null,
         reference_label: "Prazo",
+        group: c.groupName || null,
       })),
       notes: invoice.notes ?? undefined,
       payment_terms: invoice.payment_terms ?? undefined,
@@ -1281,7 +1319,7 @@ function InvoiceDetail({ id, clients, organization, onClose }: { id: string; cli
             <Badge variant="secondary" className={cn("text-[10px]", meta.className)}>{meta.label}</Badge>
           </DialogTitle>
           <DialogDescription className="text-xs">
-            Número gerado automaticamente no formato <span className="font-mono">AAAAMM-####</span> (sequencial por mês).
+            Número gerado automaticamente no formato <span className="font-mono">AAAAMM + sequencial</span> (ex.: 202605140).
           </DialogDescription>
         </DialogHeader>
 
