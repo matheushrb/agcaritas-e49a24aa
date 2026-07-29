@@ -18,7 +18,7 @@ import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
   DayCenterPanel, PrioritiesPanel, AgendaTodayPanel,
-  RevenueMonthPanel, ActiveProjectsPanel, ActiveClientsPanel,
+  KpiColumnPanel, DayQuickStatsPanel,
 } from "@/components/dashboard/day-panels";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
