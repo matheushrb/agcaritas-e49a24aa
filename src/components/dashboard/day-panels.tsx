@@ -294,7 +294,7 @@ export function PrioritiesPanel({ data }: { data: any }) {
     <Card className="card-surface flex h-full flex-col p-5">
       <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-2">
         <div className="min-w-0">
-          <h3 className="font-display text-lg font-semibold">Prioridades do dia</h3>
+          <h3 className="font-display text-base font-semibold">Prioridades do dia</h3>
           <p className="text-[11px] text-muted-foreground">Foque nestas primeiro.</p>
         </div>
         <Link to="/tasks" className="shrink-0 text-[11px] text-primary hover:underline">Editar</Link>
