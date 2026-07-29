@@ -1267,18 +1267,35 @@ function InvoiceDetail({ id, clients, organization, onClose }: { id: string; cli
   async function downloadPDF() {
     if (!invoice) return;
     const client = clients.find(c => c.id === invoice.client_id);
+    const projectIds = Array.from(new Set(orderedCharges.map(c => c.project_id).filter(Boolean))) as string[];
+    const nameById = new Map<string, string>();
+    if (projectIds.length) {
+      const { data: projs } = await supabase.from("projects").select("id,name").in("id", projectIds);
+      for (const p of projs ?? []) nameById.set(p.id as string, p.name as string);
+    }
+    // agrupa as linhas por projeto mantendo a ordem
+    const order: string[] = [];
+    const buckets = new Map<string, typeof orderedCharges>();
+    for (const c of orderedCharges) {
+      const g = c.project_id ? nameById.get(c.project_id) ?? "" : "";
+      if (!buckets.has(g)) { buckets.set(g, []); order.push(g); }
+      buckets.get(g)!.push(c);
+    }
+    const grouped = order.flatMap(g => buckets.get(g)!.map(c => ({ ...c, groupName: g })));
+
     const doc = await generateInvoicePDF({
       number: invoice.number,
       issue_date: invoice.issue_date,
       due_date: invoice.due_date,
       client: buildClientParty(client),
       agency: buildAgencyParty(organization),
-      lines: orderedCharges.map(c => ({
+      lines: grouped.map(c => ({
         title: c.description,
         amount: Number(c.amount ?? 0),
         is_child: !!c.isChild,
         reference_date: c.due_date ?? null,
         reference_label: "Prazo",
+        group: c.groupName || null,
       })),
       notes: invoice.notes ?? undefined,
       payment_terms: invoice.payment_terms ?? undefined,
