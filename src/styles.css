@@ -175,10 +175,8 @@
   .dash-approved > div:first-child { min-height: 46px; align-items: flex-start; }
   .dash-approved > .grid { grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 10px; }
   .dash-approved .caritas-kpi { min-height: 104px; padding: 14px; }
-  .dash-approved .caritas-kpi > div:first-child > div:first-child > div:first-child { font-size: 9px; }
-  .dash-approved .caritas-kpi > div:first-child > div:first-child > div:nth-child(2) { margin-top: 12px; font-size: 20px; line-height: 22px; letter-spacing: 0; }
-  .dash-approved .caritas-kpi > div:first-child > div:first-child > div:nth-child(3) { margin-top: 8px; font-size: 8px; }
-  .dash-approved .caritas-kpi svg { width: 14px; height: 14px; }
+  .dash-approved .caritas-kpi svg:not(.spark) { width: 14px; height: 14px; }
+
   .dash-approved .dash-side { border-radius: 7px; }
   .dash-approved section.caritas-panel { border-radius: 7px; }
   .dash-approved .grid.grid-cols-12 > section { padding: 13px; }
