@@ -110,7 +110,29 @@ function DashboardPage() {
             <div className="grid grid-cols-2 gap-4"><div><div className="text-[10px] text-muted-foreground">Receita</div><div className="text-[16px] font-semibold">{money(revenue)}</div><div className="text-[10px] text-green-600">▲ 18,7%</div></div><div><div className="text-[10px] text-muted-foreground">Despesas</div><div className="text-[16px] font-semibold">{money(expenses)}</div><div className="text-[10px] text-green-600">▲ 7,7%</div></div></div>
             <div className="mt-3 h-[145px] grid grid-cols-[1.5fr_1fr] gap-3"><ResponsiveContainer><BarChart data={financeBars}><XAxis dataKey="n" hide/><YAxis hide/><Tooltip/><Bar dataKey="receita" fill="#1268f3" radius={[2,2,0,0]}/><Bar dataKey="despesa" fill="#23b981" radius={[2,2,0,0]}/></BarChart></ResponsiveContainer><ResponsiveContainer><PieChart><Pie data={costPie} dataKey="value" innerRadius={32} outerRadius={48} paddingAngle={1}>{costPie.map((x,i)=><Cell key={i} fill={x.color}/>)}</Pie></PieChart></ResponsiveContainer></div>
           </Panel>
-          <Panel title="Comercial / Pipeline" link="Ver pipeline →"><div className="text-[10px] text-muted-foreground">Valor total</div><div className="text-[16px] font-semibold">{money(pipeline)}</div><div className="mt-3 space-y-1.5">{pipelineData.map((x,i)=><div key={x.stage} className="flex items-center gap-2"><div className="h-6 rounded-sm" style={{width:`${x.v}%`,background:["#1268f3","#16b5a2","#6d4fd7","#f4a315","#4fb86d"][i]}}/><span className="text-[9px] text-muted-foreground whitespace-nowrap">{x.stage}</span></div>)}</div></Panel>
+          <Panel title="Comercial / Pipeline" link="Ver pipeline →">
+            <div className="text-[10px] text-muted-foreground">Valor total</div>
+            <div className="text-[16px] font-semibold">{money(pipeline)}</div>
+            <div className="text-[9px] text-muted-foreground">{data.proposals.length} propostas</div>
+            <div className="mt-3 grid grid-cols-[1fr_1fr] items-center gap-3">
+              <div className="flex flex-col items-center gap-[3px]">
+                {pipelineData.map((x, i) => (
+                  <div key={x.stage} className="h-[18px] rounded-[2px]" style={{ width: `${100 - i * 16}%`, background: ["#1268f3", "#16b5a2", "#6d4fd7", "#f4a315", "#4fb86d"][i] }} />
+                ))}
+              </div>
+              <div className="space-y-[7px]">
+                {pipelineData.map((x, i) => (
+                  <div key={x.stage} className="flex items-center gap-2 text-[9px]">
+                    <span className="h-1.5 w-1.5 rounded-full" style={{ background: ["#1268f3", "#16b5a2", "#6d4fd7", "#f4a315", "#4fb86d"][i] }} />
+                    <span className="flex-1 text-muted-foreground">{x.stage}</span>
+                    <span className="font-medium">{money(((x as any).value ?? (pipeline * x.v) / 100) || 0)}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="mt-3 border-t pt-2 text-[9px] text-muted-foreground">Conversão estimada: 24,6% · Ciclo médio: 37 dias</div>
+          </Panel>
+
           <Panel title="Minha operação / Tarefas do dia" link="Ver minhas tarefas →"><div className="grid grid-cols-4 divide-x text-center"><MiniStat l="A fazer" v={data.tasks.filter((t:any)=>t.status==='todo').length}/><MiniStat l="Em andamento" v={data.tasks.filter((t:any)=>t.status==='in_progress').length}/><MiniStat l="Em revisão" v={approvals}/><MiniStat l="Concluídas (hoje)" v={doneToday}/></div><div className="mt-4 space-y-2">{(data.tasks as any[]).filter((t:any)=>t.status!=="done").slice(0,4).map((t:any,i)=><div key={t.id} className="flex items-center gap-2 text-[11px]"><Circle className={i===0?"h-3.5 w-3.5 text-emerald-500 fill-emerald-500":"h-3.5 w-3.5 text-muted-foreground"}/><span className="flex-1 truncate">{t.title}</span><span className="text-[10px] text-muted-foreground">{i<2?"Hoje":"Amanhã"}</span></div>)}</div></Panel>
         </div>
       </div>
