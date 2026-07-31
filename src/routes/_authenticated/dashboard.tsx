@@ -82,12 +82,13 @@ function DashboardPage() {
 
       <div className="grid grid-cols-12 gap-3">
         <div className="col-span-12 xl:col-span-10 grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">
-          <Kpi title="Receita do mês" value={money(revenue)} trend="▲ 18,7%" icon={<CircleDollarSign/>} chart="blue" />
-          <Kpi title="Margem" value={`${margin.toFixed(1).replace('.',',')}%`} trend="▲ 4,2 p.p." icon={<Target/>} chart="green" />
-          <Kpi title="Clientes ativos" value={String(data.clients.length)} sub="+2 novos" icon={<Users/>} />
-          <Kpi title="Projetos ativos" value={String(activeProjects)} sub="2 iniciados" icon={<FolderKanban/>} />
-          <Kpi title="Projetos em risco" value={String(riskProjects)} sub="▲ 2 vs. semana" icon={<AlertTriangle className="text-red-500"/>} />
-          <Kpi title="Pipeline comercial" value={money(pipeline)} sub={`${data.proposals.length} propostas`} icon={<Target className="text-violet-500"/>} />
+          <Kpi title="Receita do mês" value={money(revenue)} trend="▲ 18,7%" trendSub="vs. mês anterior" chart="blue" />
+          <Kpi title="Margem" value={`${margin.toFixed(1).replace('.',',')}%`} trend="▲ 4,2 p.p." trendSub="vs. mês anterior" chart="green" />
+          <Kpi title="Clientes ativos" value={String(data.clients.length)} sub="▲ 2 novos" subGreen icon={<Users/>} />
+          <Kpi title="Projetos ativos" value={String(activeProjects)} sub="▲ 2 iniciados" subGreen icon={<FolderKanban/>} />
+          <Kpi title="Projetos em risco" value={String(riskProjects)} sub="▲ 2 vs. semana" subRed icon={<AlertTriangle className="text-[#E5484D]"/>} />
+          <Kpi title="Pipeline comercial" value={money(pipeline)} sub={`${data.proposals.length} propostas`} icon={<Clock3 className="text-primary"/>} />
+
         </div>
 
         <aside className="dash-side col-span-12 xl:col-span-2 row-span-3 caritas-panel overflow-hidden">
