@@ -156,6 +156,22 @@
   box-shadow: var(--shadow-card);
 }
 
+@utility caritas-panel {
+  background-color: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: 14px;
+  box-shadow: var(--shadow-card);
+}
+
+@utility caritas-kpi {
+  background-color: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: 13px;
+  box-shadow: 0 1px 2px rgb(15 23 42 / .025);
+}
+
+
+
 @utility no-scrollbar {
   scrollbar-width: none;
   &::-webkit-scrollbar { display: none; }
