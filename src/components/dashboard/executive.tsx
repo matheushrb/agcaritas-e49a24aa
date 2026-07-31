@@ -188,10 +188,10 @@ function Panel({ children, className = "" }: { children: React.ReactNode; classN
 
 function PanelHead({ title, action, to }: { title: string; action?: string; to?: string }) {
   return (
-    <div className="flex items-center justify-between border-b border-border px-4 py-2.5">
-      <h2 className="text-[14px] font-semibold">{title}</h2>
+    <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-2.5">
+      <h2 className="min-w-0 truncate text-[14px] font-semibold">{title}</h2>
       {action && to && (
-        <Link to={to} className="flex items-center gap-1 text-[12px] font-medium text-primary hover:underline">
+        <Link to={to} className="flex shrink-0 items-center gap-1 whitespace-nowrap text-[12px] font-medium text-primary hover:underline">
           {action} <ArrowRight className="h-3 w-3" />
         </Link>
       )}
@@ -234,10 +234,10 @@ function KpiCard({
 }) {
   return (
     <div className="rounded-lg border border-border bg-card px-3.5 py-3">
-      <div className="flex items-center gap-1.5 text-[12px] text-muted-foreground">
-        {Icon ? <Icon className={`h-3.5 w-3.5 ${tone === "danger" ? "text-destructive" : ""}`} /> : null}
-        <span className="truncate">{title}</span>
-        {!Icon && <Info className="h-3 w-3 opacity-50" />}
+      <div className="flex min-h-[32px] items-start gap-1.5 text-[12px] leading-tight text-muted-foreground">
+        {Icon ? <Icon className={`mt-px h-3.5 w-3.5 shrink-0 ${tone === "danger" ? "text-destructive" : ""}`} /> : null}
+        <span className="line-clamp-2">{title}</span>
+        {!Icon && <Info className="mt-px h-3 w-3 shrink-0 opacity-50" />}
       </div>
       <div className="mt-1.5 flex items-end justify-between gap-2">
         <span className="font-display text-[22px] font-semibold tabular-nums leading-none">{value}</span>
@@ -469,7 +469,7 @@ function MyOperationPanel({ m }: { m: Metrics }) {
   ];
   return (
     <Panel>
-      <PanelHead title="Minha operação / Tarefas do dia" action="Ver minhas tarefas" to="/tasks" />
+      <PanelHead title="Minha operação / Tarefas do dia" action="Ver tarefas" to="/tasks" />
       <div className="p-4">
         <div className="grid grid-cols-4 divide-x divide-border">
           {cols.map(c => (
