@@ -1,102 +1,114 @@
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
 import {
   LayoutGrid, Users, FileText, Briefcase, DollarSign, Calendar, UsersRound,
-  Search, Settings, Moon, Sun, Sparkles, LogOut, Bell, CheckSquare,
-  Target, Truck, Lightbulb, Megaphone, Grid3x3, Building2, Receipt,
+  Settings, Moon, Sun, LogOut, Bell, CheckSquare, Target, Truck, Lightbulb,
+  Megaphone, Building2, Receipt, PanelLeftOpen, PanelLeftClose, HelpCircle,
+  Inbox, MessageSquare, FileSignature, Check, Trash2,
 } from "lucide-react";
-import type { ReactNode } from "react";
-import { Input } from "@/components/ui/input";
+import { useState, type ReactNode } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useTheme } from "@/components/theme-provider";
+import { GlobalSearch } from "@/components/global-search";
 import { supabase } from "@/integrations/supabase/client";
 
-const extraModules = [
-  { to: "/clients",   icon: Building2, label: "Clientes",      desc: "Cadastro fiscal e comercial" },
-  { to: "/goals",     icon: Target,    label: "Metas",         desc: "Objetivos e progresso" },
-  { to: "/suppliers", icon: Truck,     label: "Fornecedores",  desc: "Freelas, softwares e parceiros" },
-  { to: "/ideas",     icon: Lightbulb, label: "Banco de Ideias", desc: "Pautas e conteúdos futuros" },
-  { to: "/campaigns", icon: Megaphone, label: "Campanhas Internas", desc: "Marketing próprio da agência" },
-] as const;
+type NavItem = { to: string; icon: typeof LayoutGrid; label: string };
 
+const primaryNav: NavItem[] = [
+  { to: "/dashboard", icon: LayoutGrid, label: "Dashboard" },
+  { to: "/projects", icon: Briefcase, label: "Projetos" },
+  { to: "/tasks", icon: CheckSquare, label: "Tarefas" },
+  { to: "/crm", icon: Users, label: "CRM" },
+  { to: "/proposals", icon: FileText, label: "Propostas" },
+  { to: "/finance", icon: DollarSign, label: "Financeiro" },
+  { to: "/invoices", icon: Receipt, label: "Faturas" },
+  { to: "/calendar", icon: Calendar, label: "Agenda" },
+  { to: "/team", icon: UsersRound, label: "RH" },
+];
 
-// Sidebar principal — 7 ícones conforme documento Pixie v2 (Dashboard, CRM,
-// Propostas, Projetos, Financeiro, Agenda, RH). Configurações no rodapé.
-const sideIcons = [
-  { to: "/dashboard",  icon: LayoutGrid,  label: "Dashboard" },
-  { to: "/projects",   icon: Briefcase,   label: "Projetos" },
-  { to: "/tasks",      icon: CheckSquare, label: "Tarefas" },
-  { to: "/crm",        icon: Users,       label: "CRM" },
-  { to: "/proposals",  icon: FileText,    label: "Propostas" },
-  { to: "/finance",    icon: DollarSign,  label: "Financeiro" },
-  { to: "/invoices",   icon: Receipt,     label: "Faturas" },
-  { to: "/calendar",   icon: Calendar,    label: "Agenda" },
-  { to: "/team",       icon: UsersRound,  label: "RH" },
-] as const;
+const secondaryNav: NavItem[] = [
+  { to: "/clients", icon: Building2, label: "Clientes" },
+  { to: "/goals", icon: Target, label: "Metas" },
+  { to: "/suppliers", icon: Truck, label: "Fornecedores" },
+  { to: "/ideas", icon: Lightbulb, label: "Banco de Ideias" },
+  { to: "/campaigns", icon: Megaphone, label: "Campanhas Internas" },
+  { to: "/contracts", icon: FileSignature, label: "Contratos" },
+  { to: "/inbox", icon: Inbox, label: "Caixa de Entrada" },
+  { to: "/messages", icon: MessageSquare, label: "Mensagens" },
+  { to: "/notifications", icon: Bell, label: "Notificações" },
+];
 
 export function AppShell({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
   const { theme, setTheme } = useTheme();
   const pathname = useRouterState({ select: s => s.location.pathname });
+  const [expanded, setExpanded] = useState(false);
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
     navigate({ to: "/auth", replace: true });
   };
 
+  const railItem = (item: NavItem) => {
+    const active = pathname.startsWith(item.to);
+    const Icon = item.icon;
+    return (
+      <Link
+        key={item.to}
+        to={item.to}
+        title={expanded ? undefined : item.label}
+        className={`flex h-10 items-center gap-3 rounded-lg px-2.5 text-[13px] font-medium transition-colors ${
+          active
+            ? "bg-[var(--sidebar-active)] text-primary"
+            : "text-[var(--sidebar-foreground)] hover:bg-white/12 hover:text-white"
+        }`}
+      >
+        <Icon className="h-[18px] w-[18px] shrink-0" />
+        {expanded && <span className="truncate">{item.label}</span>}
+      </Link>
+    );
+  };
+
   return (
     <div className="min-h-screen w-full bg-background text-foreground">
-      {/* Floating sidebar — branca com selector primário no item ativo */}
-      <aside className="fixed left-3 top-24 bottom-6 z-30 hidden md:flex flex-col items-center gap-1 py-3 w-16 rounded-4xl bg-card shadow-[var(--shadow-elevated)] border border-border">
-        {sideIcons.map(item => {
-          const active = pathname.startsWith(item.to);
-          const Icon = item.icon;
-          return (
-            <Link
-              key={item.to}
-              to={item.to}
-              title={item.label}
-              className={`group relative grid h-11 w-11 place-items-center rounded-2xl transition-colors ${
-                active
-                  ? "bg-primary text-primary-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground hover:bg-muted"
-              }`}
-            >
-              <Icon className="h-5 w-5" />
-            </Link>
-          );
-        })}
-        <div className="mt-auto flex flex-col items-center gap-1">
-          <Link
-            to="/settings"
-            title="Configurações"
-            className={`grid h-11 w-11 place-items-center rounded-2xl transition-colors ${
-              pathname.startsWith("/settings")
-                ? "bg-primary text-primary-foreground shadow-sm"
-                : "text-muted-foreground hover:text-foreground hover:bg-muted"
-            }`}
-          >
-            <Settings className="h-5 w-5" />
-          </Link>
+      {/* Sidebar cobalto flutuante, inteiriça do topo à base */}
+      <aside
+        className={`fixed left-3 top-3 bottom-3 z-40 hidden md:flex flex-col gap-1 rounded-xl bg-[var(--sidebar)] p-2 transition-[width] duration-200 ${
+          expanded ? "w-56" : "w-14"
+        }`}
+      >
+        <button
+          onClick={() => setExpanded(v => !v)}
+          className="flex h-10 items-center gap-3 rounded-lg px-2.5 text-[var(--sidebar-foreground)] hover:bg-white/12 hover:text-white"
+          title={expanded ? "Recolher menu" : "Expandir menu"}
+        >
+          {expanded ? <PanelLeftClose className="h-[18px] w-[18px]" /> : <PanelLeftOpen className="h-[18px] w-[18px]" />}
+          {expanded && <span className="text-[13px] font-semibold text-white">Caritas</span>}
+        </button>
+
+        <div className="flex-1 overflow-y-auto no-scrollbar flex flex-col gap-1 pt-1">
+          {primaryNav.map(railItem)}
+          <div className="my-1 h-px bg-white/12" />
+          {secondaryNav.map(railItem)}
+          <div className="my-1 h-px bg-white/12" />
+          {railItem({ to: "/settings", icon: Settings, label: "Configurações" })}
           <button
             onClick={handleSignOut}
-            className="grid h-11 w-11 place-items-center rounded-2xl text-muted-foreground hover:text-foreground hover:bg-muted"
-            title="Sair"
+            title={expanded ? undefined : "Sair"}
+            className="flex h-10 items-center gap-3 rounded-lg px-2.5 text-[13px] font-medium text-[var(--sidebar-foreground)] hover:bg-white/12 hover:text-white"
           >
-            <LogOut className="h-5 w-5" />
+            <LogOut className="h-[18px] w-[18px] shrink-0" />
+            {expanded && <span>Sair</span>}
           </button>
         </div>
       </aside>
 
-      {/* Main content, padded left to make room for floating sidebar.
-          paddingRight reserva espaço para janelas encaixadas (dock) via --dock-offset. */}
       <div
-        className="pl-4 sm:pl-6 md:pl-24 lg:pl-28 py-6 transition-[padding] duration-200"
+        className={`pl-4 sm:pl-6 py-5 transition-[padding] duration-200 ${expanded ? "md:pl-[15.5rem]" : "md:pl-[4.75rem]"}`}
         style={{ paddingRight: "max(1rem, calc(var(--dock-offset, 0px) + 1rem))" }}
       >
         <TopBar theme={theme} onToggleTheme={setTheme} pathname={pathname} />
-        <main className="mt-6">
-          {children}
-        </main>
+        <main className="mt-5">{children}</main>
       </div>
     </div>
   );
@@ -106,68 +118,133 @@ function TopBar({
   theme, onToggleTheme, pathname,
 }: { theme: "light" | "dark"; onToggleTheme: (t: "light" | "dark") => void; pathname: string }) {
   return (
-    <header className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 lg:flex lg:flex-wrap lg:justify-between">
-      <div className="flex min-w-0 items-center gap-6">
-        <Link to="/dashboard" className="flex items-center gap-2 shrink-0">
-          <div className="grid h-9 w-9 place-items-center rounded-xl bg-primary text-primary-foreground">
-            <Sparkles className="h-4 w-4" />
-          </div>
-          <span className="font-display text-lg font-bold hidden sm:inline">Caritas</span>
+    <header className="flex flex-wrap items-center justify-between gap-3">
+      <div className="flex min-w-0 flex-1 items-center gap-4">
+        <Link to="/dashboard" className="flex shrink-0 items-center gap-2">
+          <div className="grid h-8 w-8 place-items-center rounded-lg bg-primary text-primary-foreground text-[13px] font-bold">C</div>
+          <span className="hidden font-display text-[15px] font-semibold sm:inline">Caritas Gestão</span>
         </Link>
-        <div className="relative hidden md:block min-w-0 flex-1 max-w-sm">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input placeholder="Buscar tarefas, clientes, projetos, propostas..." className="pl-9 bg-card border-border rounded-full" />
+        <div className="min-w-0 flex-1 max-w-sm">
+          <GlobalSearch />
         </div>
       </div>
 
-      <div className="flex items-center gap-2 shrink-0">
-        <div className="hidden sm:flex items-center rounded-full bg-card border border-border p-1">
-          <button
-            onClick={() => onToggleTheme("light")}
-            className={`flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium ${theme === "light" ? "bg-primary/10 text-primary" : "text-muted-foreground"}`}
-          >
-            <Sun className="h-3.5 w-3.5" /> Claro
-          </button>
-          <button
-            onClick={() => onToggleTheme("dark")}
-            className={`flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium ${theme === "dark" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}
-          >
-            <Moon className="h-3.5 w-3.5" /> Escuro
-          </button>
-        </div>
-        <Popover>
-          <PopoverTrigger className="grid h-9 w-9 place-items-center rounded-full text-muted-foreground hover:text-foreground" title="Mais módulos">
-            <Grid3x3 className="h-4 w-4" />
-          </PopoverTrigger>
-          <PopoverContent align="end" className="w-72 p-2 rounded-2xl">
-            <div className="text-[11px] uppercase tracking-wider font-medium text-muted-foreground px-2 pt-1 pb-2">Mais módulos</div>
-            {extraModules.map(m => {
-              const Icon = m.icon;
-              const active = pathname.startsWith(m.to);
-              return (
-                <Link key={m.to} to={m.to}
-                  className={`flex items-center gap-3 px-2 py-2 rounded-xl hover:bg-muted ${active ? "bg-primary/10" : ""}`}>
-                  <div className={`grid h-9 w-9 place-items-center rounded-xl ${active ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}>
-                    <Icon className="h-4 w-4" />
-                  </div>
-                  <div className="min-w-0">
-                    <div className="text-sm font-medium">{m.label}</div>
-                    <div className="text-[11px] text-muted-foreground">{m.desc}</div>
-                  </div>
-                </Link>
-              );
-            })}
-          </PopoverContent>
-        </Popover>
-        <Link to="/notifications" title="Notificações"
-          className={`grid h-9 w-9 place-items-center rounded-full ${pathname.startsWith("/notifications") ? "bg-primary/10 text-primary" : "text-muted-foreground hover:text-foreground"}`}>
-          <Bell className="h-4 w-4" />
-        </Link>
-        <Link to="/settings" title="Configurações"
-          className={`grid h-9 w-9 place-items-center rounded-full ${pathname.startsWith("/settings") ? "bg-primary/10 text-primary" : "text-muted-foreground hover:text-foreground"}`}>
+      <div className="flex shrink-0 items-center gap-1">
+        <button
+          onClick={() => onToggleTheme(theme === "dark" ? "light" : "dark")}
+          className="grid h-9 w-9 place-items-center rounded-lg border border-border bg-card text-muted-foreground hover:text-foreground"
+          title={theme === "dark" ? "Modo claro" : "Modo escuro"}
+        >
+          {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+        </button>
+        <NotificationsBell />
+        <a
+          href="https://docs.lovable.dev"
+          target="_blank"
+          rel="noreferrer"
+          title="Ajuda"
+          className="grid h-9 w-9 place-items-center rounded-lg border border-border bg-card text-muted-foreground hover:text-foreground"
+        >
+          <HelpCircle className="h-4 w-4" />
+        </a>
+        <Link
+          to="/settings"
+          title="Configurações"
+          className={`grid h-9 w-9 place-items-center rounded-lg border border-border bg-card ${
+            pathname.startsWith("/settings") ? "text-primary" : "text-muted-foreground hover:text-foreground"
+          }`}
+        >
           <Settings className="h-4 w-4" />
         </Link>
       </div>
     </header>
+  );
+}
+
+function NotificationsBell() {
+  const qc = useQueryClient();
+  const { data = [] } = useQuery({
+    queryKey: ["notifications-bell"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("notifications")
+        .select("id,title,body,read,created_at")
+        .order("created_at", { ascending: false })
+        .limit(12);
+      return data ?? [];
+    },
+  });
+
+  const unread = data.filter(n => !n.read).length;
+  const refresh = () => qc.invalidateQueries({ queryKey: ["notifications-bell"] });
+
+  const markRead = async (id: string) => {
+    await supabase.from("notifications").update({ read: true }).eq("id", id);
+    refresh();
+  };
+  const markAllRead = async () => {
+    await supabase.from("notifications").update({ read: true }).eq("read", false);
+    refresh();
+  };
+  const remove = async (id: string) => {
+    await supabase.from("notifications").delete().eq("id", id);
+    refresh();
+  };
+
+  return (
+    <Popover>
+      <PopoverTrigger
+        title="Notificações"
+        className="relative grid h-9 w-9 place-items-center rounded-lg border border-border bg-card text-muted-foreground hover:text-foreground"
+      >
+        <Bell className="h-4 w-4" />
+        {unread > 0 && (
+          <span className="absolute -right-1 -top-1 grid h-4 min-w-4 place-items-center rounded-full bg-destructive px-1 text-[10px] font-semibold text-destructive-foreground">
+            {unread}
+          </span>
+        )}
+      </PopoverTrigger>
+      <PopoverContent align="end" className="w-80 rounded-xl p-0">
+        <div className="flex items-center justify-between border-b border-border px-3 py-2">
+          <span className="text-[13px] font-semibold">Notificações</span>
+          {unread > 0 && (
+            <button onClick={markAllRead} className="text-[11px] font-medium text-primary hover:underline">
+              Marcar todas como lidas
+            </button>
+          )}
+        </div>
+        <div className="max-h-80 overflow-y-auto">
+          {data.length === 0 && (
+            <p className="px-3 py-6 text-center text-[12px] text-muted-foreground">Nenhuma notificação.</p>
+          )}
+          {data.map(n => (
+            <div key={n.id} className={`group flex gap-2 border-b border-border px-3 py-2.5 last:border-0 ${n.read ? "" : "bg-secondary/60"}`}>
+              <div className="min-w-0 flex-1">
+                <div className="truncate text-[13px] font-medium">{n.title}</div>
+                {n.body && <div className="line-clamp-2 text-[11px] text-muted-foreground">{n.body}</div>}
+                <div className="mt-0.5 text-[10px] text-muted-foreground">
+                  {new Date(n.created_at).toLocaleString("pt-BR", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}
+                </div>
+              </div>
+              <div className="flex shrink-0 flex-col gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                {!n.read && (
+                  <button onClick={() => markRead(n.id)} title="Marcar como lida" className="grid h-6 w-6 place-items-center rounded text-success hover:bg-muted">
+                    <Check className="h-3.5 w-3.5" />
+                  </button>
+                )}
+                <button onClick={() => remove(n.id)} title="Excluir" className="grid h-6 w-6 place-items-center rounded text-destructive hover:bg-muted">
+                  <Trash2 className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="border-t border-border px-3 py-2">
+          <Link to="/notifications" className="text-[12px] font-medium text-primary hover:underline">
+            Ver todas
+          </Link>
+        </div>
+      </PopoverContent>
+    </Popover>
   );
 }
