@@ -117,25 +117,51 @@ export function AppShell({ children }: { children: ReactNode }) {
 function TopBar({
   theme, onToggleTheme, pathname,
 }: { theme: "light" | "dark"; onToggleTheme: (t: "light" | "dark") => void; pathname: string }) {
+  const { data: me } = useQuery({
+    queryKey: ["topbar-profile"],
+    queryFn: async () => {
+      const { data: userRes } = await supabase.auth.getUser();
+      if (!userRes.user) return null;
+      const { data } = await supabase
+        .from("profiles")
+        .select("full_name, display_name, role_title")
+        .eq("id", userRes.user.id)
+        .maybeSingle();
+      return { email: userRes.user.email ?? "", profile: data as any };
+    },
+  });
+
+  const name =
+    me?.profile?.display_name?.trim() ||
+    me?.profile?.full_name?.trim() ||
+    me?.email?.split("@")[0] ||
+    "";
+  const roleTitle = me?.profile?.role_title ?? "Equipe";
+  const initials = name
+    ? name.split(" ").filter(Boolean).slice(0, 2).map((p: string) => p[0]!.toUpperCase()).join("")
+    : "C";
+
   return (
     <header className="flex flex-wrap items-center justify-between gap-3">
       <div className="flex min-w-0 flex-1 items-center gap-4">
         <Link to="/dashboard" className="flex shrink-0 items-center gap-2">
-          <div className="grid h-8 w-8 place-items-center rounded-lg bg-primary text-primary-foreground text-[13px] font-bold">C</div>
-          <span className="hidden font-display text-[15px] font-semibold sm:inline">Caritas Gestão</span>
+          <Asterisk className="h-6 w-6 text-primary" strokeWidth={2.5} />
+          <span className="hidden font-display text-[18px] font-bold tracking-tight sm:inline">Caritas</span>
         </Link>
-        <div className="min-w-0 flex-1 max-w-sm">
+        <div className="min-w-0 flex-1 max-w-xl">
           <GlobalSearch />
         </div>
       </div>
 
-      <div className="flex shrink-0 items-center gap-1">
+      <div className="flex shrink-0 items-center gap-1.5">
         <button
           onClick={() => onToggleTheme(theme === "dark" ? "light" : "dark")}
-          className="grid h-9 w-9 place-items-center rounded-lg border border-border bg-card text-muted-foreground hover:text-foreground"
-          title={theme === "dark" ? "Modo claro" : "Modo escuro"}
+          className="flex h-9 items-center gap-2 rounded-lg border border-border bg-card px-3 text-[13px] font-medium text-foreground hover:bg-muted"
+          title={theme === "dark" ? "Mudar para modo claro" : "Mudar para modo escuro"}
         >
-          {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+          {theme === "dark" ? <Moon className="h-4 w-4 text-muted-foreground" /> : <Sun className="h-4 w-4 text-muted-foreground" />}
+          <span>{theme === "dark" ? "Escuro" : "Claro"}</span>
+          <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
         </button>
         <NotificationsBell />
         <a
@@ -155,6 +181,20 @@ function TopBar({
           }`}
         >
           <Settings className="h-4 w-4" />
+        </Link>
+        <Link
+          to="/settings"
+          className="ml-1 flex h-9 items-center gap-2 rounded-lg pl-1 pr-2 hover:bg-muted"
+          title="Meu perfil"
+        >
+          <span className="grid h-8 w-8 place-items-center rounded-full bg-primary text-[12px] font-semibold text-primary-foreground">
+            {initials}
+          </span>
+          <span className="hidden min-w-0 flex-col leading-tight lg:flex">
+            <span className="truncate text-[13px] font-semibold">{name}</span>
+            <span className="truncate text-[11px] text-muted-foreground">{roleTitle}</span>
+          </span>
+          <ChevronDown className="hidden h-3.5 w-3.5 text-muted-foreground lg:block" />
         </Link>
       </div>
     </header>
