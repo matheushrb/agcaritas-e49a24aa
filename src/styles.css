@@ -57,7 +57,7 @@
   --radius: 0.5rem;
 
   /* Neutrals */
-  --background: #F5F6F7;
+  --background: #F9FBFC;
   --foreground: #1C2026;
   --surface: #FFFFFF;
   --card: #FFFFFF;
@@ -66,8 +66,8 @@
   --popover-foreground: #1C2026;
 
   /* Cobalto */
-  --primary: #3659E3;
-  --primary-glow: #5A78EC;
+  --primary: #1268F3;
+  --primary-glow: #2477FD;
   --primary-foreground: #FFFFFF;
 
   --secondary: #E9EDFC;
@@ -89,11 +89,11 @@
 
   --border: #DDE1E6;
   --input: #DDE1E6;
-  --ring: #3659E3;
+  --ring: #1268F3;
 
   /* Sidebar cobalto */
-  --sidebar: #3659E3;
-  --sidebar-foreground: #D6DEFA;
+  --sidebar: #1268F3;
+  --sidebar-foreground: #DDEBFF;
   --sidebar-active: #FFFFFF;
 }
 
@@ -171,10 +171,20 @@
 }
 
 @layer components {
+  .caritas-rail {
+    inset: 15px auto 24px 12px;
+    width: 76px;
+    padding: 11px 14px;
+    border-radius: 20px;
+  }
+  .caritas-main { margin-top: 30px; }
+  @media (min-width: 768px) {
+    .caritas-shell-content { padding-left: 123px; }
+  }
   .dash-approved { letter-spacing: 0; }
   .dash-approved > div:first-child { min-height: 46px; align-items: flex-start; }
   .dash-approved > .grid { grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 10px; }
-  .dash-approved .caritas-kpi { min-height: 104px; padding: 14px; }
+  .dash-approved .caritas-kpi { min-height: 86px; padding: 12px 13px; }
   .dash-approved .caritas-kpi svg:not(.spark) { width: 14px; height: 14px; }
 
   .dash-approved .dash-side { border-radius: 7px; }
@@ -193,11 +203,11 @@
 }
 
 @media (min-width: 1280px) {
-  .dash-approved > .grid { grid-template-rows: 104px 246px 222px; }
-  .dash-approved > .grid > div:first-child { height: 104px; }
-  .dash-approved > .grid > section { height: 246px; overflow: hidden; }
+  .dash-approved > .grid { grid-template-rows: 86px 288px 222px; }
+  .dash-approved > .grid > div:first-child { height: 86px; }
+  .dash-approved > .grid > section { height: 288px; overflow: hidden; }
   .dash-approved > .grid > div:last-of-type { height: 222px; }
-  .dash-approved .dash-side { height: 592px; }
+  .dash-approved .dash-side { height: 616px; }
 }
 
 
