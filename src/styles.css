@@ -172,7 +172,7 @@
 
 @layer components {
   .dash-approved { letter-spacing: 0; }
-  .dash-approved > div:first-child { min-height: 25px; align-items: flex-start; }
+  .dash-approved > div:first-child { min-height: 46px; align-items: flex-start; }
   .dash-approved > .grid { grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 10px; }
   .dash-approved .caritas-kpi { min-height: 86px; padding: 12px 13px; }
   .dash-approved .caritas-kpi svg:not(.spark) { width: 14px; height: 14px; }

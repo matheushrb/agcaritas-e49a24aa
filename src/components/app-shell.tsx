@@ -57,7 +57,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         key={item.to}
         to={item.to}
         title={item.label}
-        className={`flex h-10 items-center gap-3 rounded-xl text-[13px] font-medium transition-colors ${
+        className={`flex h-12 items-center gap-3 rounded-xl text-[13px] font-medium transition-colors ${
           expanded ? "px-2.5" : "justify-center px-0"
         } ${
           active
@@ -75,13 +75,13 @@ export function AppShell({ children }: { children: ReactNode }) {
     <div className="min-h-screen w-full bg-background text-foreground">
       {/* Trilho fixo da referência aprovada DASH-01. */}
       <aside
-        className="fixed bottom-[18px] left-[10px] top-[12px] z-40 hidden w-[62px] flex-col rounded-[16px] bg-[var(--sidebar)] px-[10px] py-[9px] shadow-lg md:flex"
+        className="fixed bottom-[24px] left-[12px] top-[15px] z-40 hidden w-[76px] flex-col rounded-[20px] bg-[var(--sidebar)] px-[14px] py-[11px] shadow-lg md:flex"
       >
         <div className="flex h-[43px] items-center justify-center text-primary-foreground">
           <Asterisk className="h-[25px] w-[25px]" strokeWidth={2.4} />
         </div>
 
-        <div className="mt-[11px] flex flex-1 flex-col gap-[5px] overflow-hidden">
+        <div className="mt-[11px] flex flex-1 flex-col gap-[7px] overflow-hidden">
           {primaryNav.map(railItem)}
         </div>
 
@@ -90,7 +90,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           <button
             onClick={handleSignOut}
             title="Sair"
-            className={`flex h-10 items-center gap-3 rounded-xl text-[13px] font-medium text-[var(--sidebar-foreground)] hover:bg-white/12 hover:text-white ${
+            className={`flex h-12 items-center gap-3 rounded-xl text-[13px] font-medium text-[var(--sidebar-foreground)] hover:bg-white/12 hover:text-white ${
               expanded ? "px-2.5" : "justify-center"
             }`}
           >
@@ -100,9 +100,9 @@ export function AppShell({ children }: { children: ReactNode }) {
         </div>
       </aside>
 
-      <div className="px-4 pb-3 pt-3 md:pl-[103px] md:pr-[28px]" style={{ paddingRight: "max(1rem, calc(var(--dock-offset, 0px) + 1.75rem))" }}>
+      <div className="px-4 pb-3 pt-3 md:pl-[123px] md:pr-[28px]" style={{ paddingRight: "max(1rem, calc(var(--dock-offset, 0px) + 1.75rem))" }}>
         <TopBar theme={theme} onToggleTheme={setTheme} pathname={pathname} />
-        <main className="mt-[6px]">{children}</main>
+        <main className="mt-[30px]">{children}</main>
       </div>
     </div>
   );
