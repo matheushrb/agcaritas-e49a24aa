@@ -63,8 +63,9 @@ export function DashboardPersonalize({ value, onChange, roleTitle }: Props) {
 
         <div className="mt-4 flex justify-end">
           <Button variant="ghost" size="sm" onClick={resetPreset} className="gap-2 text-xs">
-            <RotateCcw className="h-3.5 w-3.5" /> Restaurar preset da minha função
+            <RotateCcw className="h-3.5 w-3.5" /> Limpar widgets extras
           </Button>
+
         </div>
 
         <div className="mt-2 space-y-6">

@@ -2,7 +2,7 @@ import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
 import {
   LayoutGrid, Users, FileText, Briefcase, DollarSign, Calendar, UsersRound,
   Settings, Moon, Sun, LogOut, Bell, CheckSquare, Target, Truck, Lightbulb,
-  Megaphone, Building2, Receipt, PanelLeftOpen, PanelLeftClose, HelpCircle,
+  Megaphone, Building2, Receipt, HelpCircle,
   Inbox, MessageSquare, FileSignature, Check, Trash2, Asterisk, ChevronDown,
 } from "lucide-react";
 import { useState, type ReactNode } from "react";
@@ -56,10 +56,12 @@ export function AppShell({ children }: { children: ReactNode }) {
       <Link
         key={item.to}
         to={item.to}
-        title={expanded ? undefined : item.label}
-        className={`flex h-10 items-center gap-3 rounded-lg px-2.5 text-[13px] font-medium transition-colors ${
+        title={item.label}
+        className={`flex h-10 items-center gap-3 rounded-xl text-[13px] font-medium transition-colors ${
+          expanded ? "px-2.5" : "justify-center px-0"
+        } ${
           active
-            ? "bg-[var(--sidebar-active)] text-primary"
+            ? "bg-[var(--sidebar-active)] text-primary shadow-sm"
             : "text-[var(--sidebar-foreground)] hover:bg-white/12 hover:text-white"
         }`}
       >
@@ -73,29 +75,33 @@ export function AppShell({ children }: { children: ReactNode }) {
     <div className="min-h-screen w-full bg-background text-foreground">
       {/* Sidebar cobalto flutuante, inteiriça do topo à base */}
       <aside
-        className={`fixed left-3 top-3 bottom-3 z-40 hidden md:flex flex-col gap-1 rounded-xl bg-[var(--sidebar)] p-2 transition-[width] duration-200 ${
-          expanded ? "w-56" : "w-14"
+        className={`fixed left-3 top-3 bottom-3 z-40 hidden md:flex flex-col rounded-2xl bg-[var(--sidebar)] p-2 transition-[width] duration-200 ${
+          expanded ? "w-56" : "w-[60px]"
         }`}
       >
         <button
           onClick={() => setExpanded(v => !v)}
-          className="flex h-10 items-center gap-3 rounded-lg px-2.5 text-[var(--sidebar-foreground)] hover:bg-white/12 hover:text-white"
           title={expanded ? "Recolher menu" : "Expandir menu"}
+          className={`flex h-11 items-center gap-2 rounded-xl text-white/90 hover:text-white ${expanded ? "px-2.5" : "justify-center"}`}
         >
-          {expanded ? <PanelLeftClose className="h-[18px] w-[18px]" /> : <PanelLeftOpen className="h-[18px] w-[18px]" />}
-          {expanded && <span className="text-[13px] font-semibold text-white">Caritas</span>}
+          <Asterisk className="h-6 w-6 shrink-0" strokeWidth={2.5} />
+          {expanded && <span className="font-display text-[15px] font-bold tracking-tight">Caritas</span>}
         </button>
 
-        <div className="flex-1 overflow-y-auto no-scrollbar flex flex-col gap-1 pt-1">
+        <div className="mt-2 flex flex-1 flex-col gap-1 overflow-y-auto no-scrollbar">
           {primaryNav.map(railItem)}
-          <div className="my-1 h-px bg-white/12" />
+          <div className="my-1.5 h-px bg-white/15" />
           {secondaryNav.map(railItem)}
-          <div className="my-1 h-px bg-white/12" />
+        </div>
+
+        <div className="mt-2 flex flex-col gap-1 border-t border-white/15 pt-2">
           {railItem({ to: "/settings", icon: Settings, label: "Configurações" })}
           <button
             onClick={handleSignOut}
-            title={expanded ? undefined : "Sair"}
-            className="flex h-10 items-center gap-3 rounded-lg px-2.5 text-[13px] font-medium text-[var(--sidebar-foreground)] hover:bg-white/12 hover:text-white"
+            title="Sair"
+            className={`flex h-10 items-center gap-3 rounded-xl text-[13px] font-medium text-[var(--sidebar-foreground)] hover:bg-white/12 hover:text-white ${
+              expanded ? "px-2.5" : "justify-center"
+            }`}
           >
             <LogOut className="h-[18px] w-[18px] shrink-0" />
             {expanded && <span>Sair</span>}
@@ -104,15 +110,19 @@ export function AppShell({ children }: { children: ReactNode }) {
       </aside>
 
       <div
-        className={`pl-4 sm:pl-6 py-5 transition-[padding] duration-200 ${expanded ? "md:pl-[15.5rem]" : "md:pl-[4.75rem]"}`}
+        className={`pl-4 sm:pl-6 py-5 transition-[padding] duration-200 ${expanded ? "md:pl-[15.5rem]" : "md:pl-[5rem]"}`}
         style={{ paddingRight: "max(1rem, calc(var(--dock-offset, 0px) + 1rem))" }}
       >
         <TopBar theme={theme} onToggleTheme={setTheme} pathname={pathname} />
         <main className="mt-5">{children}</main>
+        <footer className="mt-8 pb-1 text-center text-[11px] text-muted-foreground">
+          Caritas Gestão · Todos os direitos reservados
+        </footer>
       </div>
     </div>
   );
 }
+
 
 function TopBar({
   theme, onToggleTheme, pathname,
