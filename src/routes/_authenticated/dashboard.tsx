@@ -204,10 +204,10 @@ function DashboardPage() {
               </div>
               <h3>Próximas tarefas</h3>
               <div className="cv-task-list">
-                {((data.tasks as any[]).filter((t: any) => t.status !== "done").slice(0, 5).map((t: any, i: number) => ({
+                {((data.tasks as any[]).filter((t: any) => t.status !== "done").slice(0, 4).map((t: any, i: number) => ({
                   id: t.id, title: t.title, when: i < 2 ? "Hoje" : i === 2 ? "Amanhã" : "03/08", done: i === 0,
                 })).length
-                  ? (data.tasks as any[]).filter((t: any) => t.status !== "done").slice(0, 5).map((t: any, i: number) => ({
+                  ? (data.tasks as any[]).filter((t: any) => t.status !== "done").slice(0, 4).map((t: any, i: number) => ({
                       id: t.id, title: t.title, when: i < 2 ? "Hoje" : i === 2 ? "Amanhã" : "03/08", done: i === 0,
                     }))
                   : [
@@ -234,7 +234,7 @@ function DashboardPage() {
           <section className="cv-card cv-rail">
             <div className="cv-rail-head">
               <h2 style={{ textTransform: "capitalize" }}>
-                {new Intl.DateTimeFormat("pt-BR", { month: "long", year: "numeric" }).format(now)}
+                {`${new Intl.DateTimeFormat("pt-BR", { month: "long" }).format(now)} ${now.getFullYear()}`}
               </h2>
               <div><button>‹</button><button>›</button></div>
             </div>

@@ -208,7 +208,10 @@
 /* ATENÇÃO */
 .cv-attention { padding: 13px; margin-bottom: 10px; }
 .cv-section-head { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 11px; }
-.cv-section-head.compact { align-items: center; }
+.cv-section-head.compact { align-items: center; gap: 8px; }
+.cv-panel .cv-section-head h2 { font-size: 13px; white-space: nowrap; }
+.cv-panel .cv-link { white-space: nowrap; }
+.cv-panel .cv-task-list { flex: 1; overflow: hidden; }
 .cv-section-head h2,
 .cv-rail-head h2 { font-size: 15px; margin: 0; font-weight: 600; }
 .cv-section-head p { margin: 3px 0 0; color: var(--muted); font-size: 10px; }
@@ -373,7 +376,7 @@
   grid-template-columns: 17px 1fr 43px;
   gap: 4px;
   align-items: center;
-  min-height: 25px;
+  min-height: 23px;
   font-size: 9px;
 }
 .cv-task-list i {
