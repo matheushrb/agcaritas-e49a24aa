@@ -1,15 +1,14 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { DashboardPersonalize } from "@/components/dashboard-personalize";
 import { QuickCreateButton } from "@/components/quick-create-button";
 import { useState } from "react";
 import { reconcilePrefs, type UserPref } from "@/lib/dashboard-widgets";
 import {
-  AlertTriangle, CalendarDays, Check, CircleDollarSign, Clock3, FolderKanban,
-  Plus, Target, Users, ArrowUpRight, SlidersHorizontal, CheckCircle2, Circle, Info,
+  AlertTriangle, CalendarDays, Check, Clock3, FolderKanban,
+  Users, CheckCircle2, Circle, Info,
 } from "lucide-react";
 import { Bar, BarChart, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
@@ -74,9 +73,9 @@ function DashboardPage() {
   const pipelineData = [100,80,64,47,31].map((v,i)=>({stage:["Novo","Qualificação","Proposta","Negociação","Fechadas"][i],v}));
 
   return (
-    <div className="dash-approved mx-auto max-w-[1535px] space-y-3.5">
+    <div className="dash-approved mx-auto max-w-[1535px] space-y-[10px]">
       <div className="flex items-end justify-between gap-4">
-        <div><h1 className="text-[22px] font-semibold">Olá, Matheus Bunds!</h1><p className="mt-1 text-[10px] text-muted-foreground">Aqui está o panorama da Caritas para hoje, {new Intl.DateTimeFormat("pt-BR", {day:"2-digit",month:"long",year:"numeric"}).format(now)}.</p></div>
+        <div><h1 className="text-[22px] font-semibold leading-[26px]">Olá, Matheus Bunds!</h1><p className="mt-0.5 text-[10px] text-muted-foreground">Aqui está o panorama da Caritas para hoje, {new Intl.DateTimeFormat("pt-BR", {day:"2-digit",month:"long",year:"numeric"}).format(now)}.</p></div>
         <div className="flex gap-2"><DashboardPersonalize value={prefs} onChange={setPrefs} roleTitle="Direção / Proprietário" /><QuickCreateButton /></div>
       </div>
 
@@ -92,9 +91,9 @@ function DashboardPage() {
         </div>
 
         <aside className="dash-side col-span-12 xl:col-span-2 row-span-3 caritas-panel overflow-hidden">
-          <div className="p-4 border-b"><div className="font-semibold capitalize">{monthLabel}</div><MiniCalendar /></div>
-          <div className="p-4 border-b"><div className="flex items-center justify-between"><h3 className="font-semibold text-[13px]">Agenda do dia</h3><Link to="/calendar" className="text-[10px] text-primary">Ver agenda completa →</Link></div><div className="mt-3 space-y-3">{(data.events as any[]).length ? (data.events as any[]).slice(0,4).map((e:any,i)=><AgendaRow key={e.id} time={new Date(e.starts_at).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})} title={e.title} color={["#1672ff","#f59e0b","#7c3aed","#14b8a6"][i%4]} />) : <AgendaRow time="09:30" title="Daily de Projetos" color="#1672ff"/>}</div></div>
-          <div className="p-4"><div className="flex items-center justify-between"><h3 className="font-semibold text-[13px]">Próximas reuniões</h3><span className="text-[10px] text-primary">Ver todas →</span></div><div className="mt-4 space-y-4"><Meeting day="01" title="Kickoff EcoPro"/><Meeting day="03" title="Apresentação proposta"/></div></div>
+          <div className="border-b p-[14px]"><div className="font-semibold capitalize">{monthLabel}</div><MiniCalendar /></div>
+          <div className="border-b p-[14px]"><div className="flex items-center justify-between"><h3 className="font-semibold text-[13px]">Agenda do dia</h3><Link to="/calendar" className="text-[9px] text-primary">Ver agenda completa →</Link></div><div className="mt-3 space-y-[11px]">{(data.events as any[]).length ? (data.events as any[]).slice(0,4).map((e:any,i)=><AgendaRow key={e.id} time={new Date(e.starts_at).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})} title={e.title} color={["var(--primary)","var(--warning)","#7c3aed","#14b8a6"][i%4]} />) : <><AgendaRow time="09:30" title="Daily de Projetos" color="var(--primary)"/><AgendaRow time="11:00" title="Revisão campanha Verão 2026" color="var(--warning)"/><AgendaRow time="14:00" title="Aprovação com cliente" color="#7c3aed"/><AgendaRow time="16:30" title="Alinhamento de SEO" color="#14b8a6"/></>}</div></div>
+          <div className="p-[14px]"><div className="flex items-center justify-between"><h3 className="font-semibold text-[13px]">Próximas reuniões</h3><span className="text-[9px] text-primary">Ver todas →</span></div><div className="mt-4 space-y-4"><Meeting day="01" title="Kickoff EcoPro"/><Meeting day="03" title="Apresentação proposta"/></div></div>
         </aside>
 
         <section className="col-span-12 xl:col-span-10 caritas-panel p-4">
@@ -102,7 +101,7 @@ function DashboardPage() {
           <div className="mt-3 grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-2.5">
             <Attention title="Tarefas vencidas" value={overdue} sub="críticas" icon={<Clock3/>}/><Attention title="Entregas de hoje" value={todayTasks} sub="projetos" icon={<CalendarDays/>}/><Attention title="Projetos em risco" value={riskProjects} sub="críticos" icon={<AlertTriangle/>}/><Attention title="Aprovações pendentes" value={approvals} sub="urgentes" icon={<Clock3/>}/><Attention title="Entregas concluídas hoje" value={doneToday} sub="Excelente!" icon={<Check/>}/><Attention title="Projetos no prazo" value={`${onTime}%`} sub="Dentro do prazo" icon={<CheckCircle2/>}/>
           </div>
-          <div className="mt-4"><div className="grid grid-cols-[1.6fr_1.1fr_.65fr_.65fr_28px] px-1 pb-2 text-[10px] font-medium text-muted-foreground"><span>Pendências críticas</span><span>Cliente / Projeto</span><span>Vencimento</span><span>Prioridade</span><span/></div>{(data.tasks as any[]).filter((t:any)=>t.status!=="done").slice(0,3).map((t:any,i)=><div key={t.id} className="grid grid-cols-[1.6fr_1.1fr_.65fr_.65fr_28px] items-center border-t py-2 text-[11px]"><span className="font-medium flex items-center gap-2"><AlertTriangle className="h-3.5 w-3.5 text-red-500"/>{t.title}</span><span className="text-muted-foreground">Projeto ativo</span><span className={i<2?"text-red-500":"text-muted-foreground"}>{i<2?"Vence hoje":"Vence amanhã"}</span><span><span className="rounded-full bg-red-50 px-2 py-1 text-[9px] text-red-600 dark:bg-red-950/30">{i===0?"Crítica":"Alta"}</span></span><span>⋮</span></div>)}</div>
+           <CriticalRows tasks={(data.tasks as any[]).filter((t:any)=>t.status!=="done").slice(0,3)} />
         </section>
 
         <div className="col-span-12 xl:col-span-10 grid grid-cols-1 lg:grid-cols-3 gap-3">
@@ -146,7 +145,7 @@ function Spark({color}:{color:string}) {
 }
 function Kpi({title,value,trend,trendSub,sub,subGreen,subRed,icon,chart}:{title:string;value:string;trend?:string;trendSub?:string;sub?:string;subGreen?:boolean;subRed?:boolean;icon?:React.ReactNode;chart?:"blue"|"green"}) {
   return (
-    <Card className="caritas-kpi min-h-[108px] p-4">
+    <Card className="caritas-kpi">
       <div className="flex items-start justify-between gap-2">
         <div className="flex items-center gap-1.5 text-[11px] font-medium">
           {icon && <span className="text-muted-foreground [&>svg]:h-[15px] [&>svg]:w-[15px]">{icon}</span>}
@@ -155,8 +154,8 @@ function Kpi({title,value,trend,trendSub,sub,subGreen,subRed,icon,chart}:{title:
         </div>
         {chart && <Spark color={chart === "green" ? "#16A34A" : "var(--primary)"} />}
       </div>
-      <div className="mt-3 text-[22px] font-semibold tracking-tight">{value}</div>
-      <div className="mt-1 flex items-center gap-1 text-[9px]">
+       <div className="mt-2 text-[20px] font-semibold leading-none">{value}</div>
+       <div className="mt-1.5 flex items-center gap-1 text-[8px]">
         <span className={trend || subGreen ? "text-[#16A34A]" : subRed ? "text-[#E5484D]" : "text-muted-foreground"}>{trend || sub}</span>
         {trendSub && <span className="text-muted-foreground">{trendSub}</span>}
       </div>

@@ -102,7 +102,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
       <div className="px-4 pb-3 pt-3 md:pl-[103px] md:pr-[28px]" style={{ paddingRight: "max(1rem, calc(var(--dock-offset, 0px) + 1.75rem))" }}>
         <TopBar theme={theme} onToggleTheme={setTheme} pathname={pathname} />
-        <main className="mt-[14px]">{children}</main>
+        <main className="mt-[6px]">{children}</main>
       </div>
     </div>
   );
@@ -143,7 +143,7 @@ function TopBar({
           <Asterisk className="h-[26px] w-[26px] text-primary" strokeWidth={2.5} />
           <span className="hidden font-display text-[19px] font-bold sm:inline">Caritas</span>
         </Link>
-        <div className="min-w-0 max-w-[412px] flex-1">
+        <div className="w-[412px] min-w-0 max-w-[412px] flex-none">
           <GlobalSearch />
         </div>
       </div>
