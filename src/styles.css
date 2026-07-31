@@ -171,6 +171,16 @@
 }
 
 @layer components {
+  .caritas-rail {
+    inset: 15px auto 24px 12px;
+    width: 76px;
+    padding: 11px 14px;
+    border-radius: 20px;
+  }
+  .caritas-main { margin-top: 30px; }
+  @media (min-width: 768px) {
+    .caritas-shell-content { padding-left: 123px; }
+  }
   .dash-approved { letter-spacing: 0; }
   .dash-approved > div:first-child { min-height: 46px; align-items: flex-start; }
   .dash-approved > .grid { grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 10px; }

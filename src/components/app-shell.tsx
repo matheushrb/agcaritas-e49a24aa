@@ -75,7 +75,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     <div className="min-h-screen w-full bg-background text-foreground">
       {/* Trilho fixo da referência aprovada DASH-01. */}
       <aside
-        className="fixed bottom-[24px] left-[12px] top-[15px] z-40 hidden w-[76px] flex-col rounded-[20px] bg-[var(--sidebar)] px-[14px] py-[11px] shadow-lg md:flex"
+        className="caritas-rail fixed z-40 hidden flex-col bg-[var(--sidebar)] shadow-lg md:flex"
       >
         <div className="flex h-[43px] items-center justify-center text-primary-foreground">
           <Asterisk className="h-[25px] w-[25px]" strokeWidth={2.4} />
@@ -100,9 +100,9 @@ export function AppShell({ children }: { children: ReactNode }) {
         </div>
       </aside>
 
-      <div className="px-4 pb-3 pt-3 md:pl-[123px] md:pr-[28px]" style={{ paddingRight: "max(1rem, calc(var(--dock-offset, 0px) + 1.75rem))" }}>
+      <div className="caritas-shell-content px-4 pb-3 pt-3 md:pr-[28px]" style={{ paddingRight: "max(1rem, calc(var(--dock-offset, 0px) + 1.75rem))" }}>
         <TopBar theme={theme} onToggleTheme={setTheme} pathname={pathname} />
-        <main className="mt-[30px]">{children}</main>
+        <main className="caritas-main">{children}</main>
       </div>
     </div>
   );
