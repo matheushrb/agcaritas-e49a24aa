@@ -1,6 +1,6 @@
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
 import {
-  LayoutGrid, Users, FileText, Briefcase, DollarSign, Calendar, UsersRound,
+  LayoutGrid, Home, ClipboardList, Users, FileText, Briefcase, DollarSign, Calendar, UsersRound,
   Settings, Moon, Sun, LogOut, Bell, CheckSquare, Target, Truck, Lightbulb,
   Megaphone, Building2, Receipt, HelpCircle,
   Inbox, MessageSquare, FileSignature, Check, Trash2, Asterisk, ChevronDown,
@@ -15,8 +15,8 @@ import { supabase } from "@/integrations/supabase/client";
 type NavItem = { to: string; icon: typeof LayoutGrid; label: string };
 
 const primaryNav: NavItem[] = [
-  { to: "/dashboard", icon: LayoutGrid, label: "Dashboard" },
-  { to: "/projects", icon: Briefcase, label: "Projetos" },
+  { to: "/dashboard", icon: Home, label: "Dashboard" },
+  { to: "/projects", icon: ClipboardList, label: "Projetos" },
   { to: "/tasks", icon: CheckSquare, label: "Tarefas" },
   { to: "/crm", icon: Users, label: "CRM" },
   { to: "/proposals", icon: FileText, label: "Propostas" },
@@ -90,8 +90,12 @@ export function AppShell({ children }: { children: ReactNode }) {
 
         <div className="mt-2 flex flex-1 flex-col gap-1 overflow-y-auto no-scrollbar">
           {primaryNav.map(railItem)}
-          <div className="my-1.5 h-px bg-white/15" />
-          {secondaryNav.map(railItem)}
+          {expanded && (
+            <>
+              <div className="my-1.5 h-px bg-white/15" />
+              {secondaryNav.map(railItem)}
+            </>
+          )}
         </div>
 
         <div className="mt-2 flex flex-col gap-1 border-t border-white/15 pt-2">
