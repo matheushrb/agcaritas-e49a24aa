@@ -13,7 +13,19 @@ import {
 } from "lucide-react";
 import { Bar, BarChart, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
-export const Route = createFileRoute("/_authenticated/dashboard")({ component: DashboardPage });
+export const Route = createFileRoute("/_authenticated/dashboard")({
+  head: () => ({
+    meta: [
+      { title: "Dashboard | Caritas Gestão" },
+      { name: "description", content: "Panorama executivo da operação da Caritas Gestão." },
+      { property: "og:title", content: "Dashboard | Caritas Gestão" },
+      { property: "og:description", content: "Panorama executivo da operação da Caritas Gestão." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
+  component: DashboardPage,
+});
 
 const money = (n: number) => `R$ ${Math.round(n).toLocaleString("pt-BR")}`;
 const monthLabel = new Intl.DateTimeFormat("pt-BR", { month: "long", year: "numeric" }).format(new Date());
@@ -62,9 +74,9 @@ function DashboardPage() {
   const pipelineData = [100,80,64,47,31].map((v,i)=>({stage:["Novo","Qualificação","Proposta","Negociação","Fechadas"][i],v}));
 
   return (
-    <div className="mx-auto max-w-[1535px] space-y-3.5">
+    <div className="dash-approved mx-auto max-w-[1535px] space-y-3.5">
       <div className="flex items-end justify-between gap-4">
-        <div><h1 className="text-[28px] font-semibold tracking-[-.035em]">Olá, Matheus Bunds!</h1><p className="mt-1 text-[12px] text-muted-foreground">Aqui está o panorama da Caritas para hoje, {new Intl.DateTimeFormat("pt-BR", {day:"2-digit",month:"long",year:"numeric"}).format(now)}.</p></div>
+        <div><h1 className="text-[22px] font-semibold">Olá, Matheus Bunds!</h1><p className="mt-1 text-[10px] text-muted-foreground">Aqui está o panorama da Caritas para hoje, {new Intl.DateTimeFormat("pt-BR", {day:"2-digit",month:"long",year:"numeric"}).format(now)}.</p></div>
         <div className="flex gap-2"><DashboardPersonalize value={prefs} onChange={setPrefs} roleTitle="Direção / Proprietário" /><QuickCreateButton /></div>
       </div>
 
@@ -78,7 +90,7 @@ function DashboardPage() {
           <Kpi title="Pipeline comercial" value={money(pipeline)} sub={`${data.proposals.length} propostas`} icon={<Target className="text-violet-500"/>} />
         </div>
 
-        <aside className="col-span-12 xl:col-span-2 row-span-3 caritas-panel overflow-hidden">
+        <aside className="dash-side col-span-12 xl:col-span-2 row-span-3 caritas-panel overflow-hidden">
           <div className="p-4 border-b"><div className="font-semibold capitalize">{monthLabel}</div><MiniCalendar /></div>
           <div className="p-4 border-b"><div className="flex items-center justify-between"><h3 className="font-semibold text-[13px]">Agenda do dia</h3><Link to="/calendar" className="text-[10px] text-primary">Ver agenda completa →</Link></div><div className="mt-3 space-y-3">{(data.events as any[]).length ? (data.events as any[]).slice(0,4).map((e:any,i)=><AgendaRow key={e.id} time={new Date(e.starts_at).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})} title={e.title} color={["#1672ff","#f59e0b","#7c3aed","#14b8a6"][i%4]} />) : <AgendaRow time="09:30" title="Daily de Projetos" color="#1672ff"/>}</div></div>
           <div className="p-4"><div className="flex items-center justify-between"><h3 className="font-semibold text-[13px]">Próximas reuniões</h3><span className="text-[10px] text-primary">Ver todas →</span></div><div className="mt-4 space-y-4"><Meeting day="01" title="Kickoff EcoPro"/><Meeting day="03" title="Apresentação proposta"/></div></div>
