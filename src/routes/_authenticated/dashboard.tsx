@@ -94,13 +94,14 @@ function DashboardPage() {
       <div className="cv-dashboard-grid">
         <div className="cv-content">
           <div className="cv-kpi-grid">
-            <Kpi label="Receita do mês" value={money(revenue)} delta="▲ 18,7%" note="vs. mês anterior" spark="blue" />
-            <Kpi label="Margem" value={`${margin.toFixed(1).replace(".", ",")}%`} delta="▲ 4,2 p.p." note="vs. mês anterior" spark="green" />
+            <Kpi label="Receita do mês" info value={money(revenue)} delta="▲ 18,7%" note="vs. mês anterior" spark="blue" />
+            <Kpi label="Margem" info value={`${margin.toFixed(1).replace(".", ",")}%`} delta="▲ 4,2 p.p." note="vs. mês anterior" spark="green" />
             <Kpi label="Clientes ativos" value={String(data.clients.length)} delta="▲ 2 novos" icon={<Users className="h-4 w-4" style={{ color: "var(--muted)" }} />} />
             <Kpi label="Projetos ativos" value={String(activeProjects)} delta="▲ 2 iniciados" icon={<FolderKanban className="h-4 w-4" style={{ color: "var(--muted)" }} />} />
             <Kpi label="Projetos em risco" value={String(riskProjects)} delta="▲ 2 vs. semana" danger icon={<AlertTriangle className="h-4 w-4" style={{ color: "var(--danger)" }} />} />
             <Kpi label="Pipeline comercial" value={money(pipeline)} note={`${data.proposals.length} propostas`} icon={<Clock3 className="h-4 w-4" style={{ color: "var(--primary)" }} />} />
           </div>
+
 
           <section className="cv-card cv-attention">
             <div className="cv-section-head">
