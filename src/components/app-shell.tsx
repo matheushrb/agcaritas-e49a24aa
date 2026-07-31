@@ -1,6 +1,6 @@
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
 import {
-  LayoutGrid, Users, FileText, Briefcase, DollarSign, Calendar, UsersRound,
+  LayoutGrid, Home, ClipboardList, Users, FileText, Briefcase, DollarSign, Calendar, UsersRound,
   Settings, Moon, Sun, LogOut, Bell, CheckSquare, Target, Truck, Lightbulb,
   Megaphone, Building2, Receipt, HelpCircle,
   Inbox, MessageSquare, FileSignature, Check, Trash2, Asterisk, ChevronDown,
@@ -15,8 +15,8 @@ import { supabase } from "@/integrations/supabase/client";
 type NavItem = { to: string; icon: typeof LayoutGrid; label: string };
 
 const primaryNav: NavItem[] = [
-  { to: "/dashboard", icon: LayoutGrid, label: "Dashboard" },
-  { to: "/projects", icon: Briefcase, label: "Projetos" },
+  { to: "/dashboard", icon: Home, label: "Dashboard" },
+  { to: "/projects", icon: ClipboardList, label: "Projetos" },
   { to: "/tasks", icon: CheckSquare, label: "Tarefas" },
   { to: "/crm", icon: Users, label: "CRM" },
   { to: "/proposals", icon: FileText, label: "Propostas" },
