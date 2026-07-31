@@ -20,7 +20,9 @@
   min-height: 100vh;
   background: var(--bg);
   color: var(--text);
-  font-family: "IBM Plex Sans", system-ui, sans-serif;
+  font-family: "IBM Plex Sans Variable", "IBM Plex Sans", system-ui, sans-serif;
+  font-optical-sizing: auto;
+  font-synthesis: none;
 }
 
 /* DASH-03 */
@@ -39,6 +41,10 @@
 
 .caritas-ui * { box-sizing: border-box; }
 .caritas-ui button { font: inherit; }
+.caritas-ui h1,
+.caritas-ui h2,
+.caritas-ui h3,
+.caritas-ui h4 { font-family: inherit; letter-spacing: 0; }
 
 /* SIDEBAR */
 .cv-sidebar {
@@ -459,4 +465,30 @@
   .cv-top-actions { display: none; }
   .cv-lower-grid { grid-template-columns: 1fr; }
   .cv-panel { height: auto; min-height: 230px; }
+}
+
+/*
+ * A referência DASH-01 foi desenhada em 1672×941. Em monitores amplos a
+ * interface cresce como um sistema inteiro (tipo, ícones, raios, espaços e
+ * painéis), em vez de somente alargar as colunas.
+ */
+@media (min-width: 1800px) and (min-height: 820px) {
+  .caritas-ui {
+    zoom: 1.1;
+    min-height: calc(100vh / 1.1);
+  }
+}
+
+@media (min-width: 2200px) and (min-height: 1050px) {
+  .caritas-ui {
+    zoom: 1.2;
+    min-height: calc(100vh / 1.2);
+  }
+}
+
+@media (min-width: 2800px) and (min-height: 1250px) {
+  .caritas-ui {
+    zoom: 1.32;
+    min-height: calc(100vh / 1.32);
+  }
 }
