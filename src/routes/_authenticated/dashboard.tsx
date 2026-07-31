@@ -148,16 +148,22 @@ function DashboardPage() {
                 <div><span>Despesas</span><strong>{money(expenses)}</strong><small className="is-positive">▲ 7,7%</small></div>
               </div>
               <div className="cv-finance-viz">
-                <div className="cv-bars">
-                  {bars.map((h, i) => <i key={i} className={i % 2 ? "alt" : ""} style={{ height: `${h}%` }} />)}
+                <div className="cv-chart">
+                  <div className="cv-axis-y"><span>400k</span><span>300k</span><span>200k</span><span>100k</span></div>
+                  <div className="cv-chart-body">
+                    <div className="cv-bars">
+                      {bars.map((h, i) => <i key={i} className={i % 2 ? "alt" : ""} style={{ height: `${h}%` }} />)}
+                    </div>
+                    <div className="cv-axis-x"><span>1</span><span>6</span><span>11</span><span>16</span><span>21</span><span>26</span><span>31</span></div>
+                  </div>
                 </div>
                 <div className="cv-donut-wrap">
-                  <div className="cv-donut"><span>100%</span></div>
+                  <div className="cv-donut"><span>{margin > 0 ? `${margin.toFixed(1).replace(".", ",")}%` : "67,7%"}</span></div>
                   <ul>
-                    <li>Pessoal <b>45%</b></li>
-                    <li>Fornecedores <b>28%</b></li>
-                    <li>Marketing <b>12%</b></li>
-                    <li>Outros <b>15%</b></li>
+                    <li><em className="dot" style={{ background: "var(--primary)" }} />Pessoal <b>45%</b></li>
+                    <li><em className="dot" style={{ background: "var(--teal)" }} />Fornecedores <b>28%</b></li>
+                    <li><em className="dot" style={{ background: "var(--warning)" }} />Marketing <b>12%</b></li>
+                    <li><em className="dot" style={{ background: "var(--purple)" }} />Outros <b>15%</b></li>
                   </ul>
                 </div>
               </div>
@@ -174,8 +180,11 @@ function DashboardPage() {
               <div className="cv-pipeline">
                 <div className="cv-funnel">{pipelineStages.map(s => <i key={s.label} />)}</div>
                 <ul>
-                  {pipelineStages.map(s => (
-                    <li key={s.label}>{s.label} <b>{money((pipeline * s.v) / 100)}</b></li>
+                  {pipelineStages.map((s, i) => (
+                    <li key={s.label}>
+                      <em className="dot" style={{ background: ["var(--primary)", "var(--teal)", "var(--purple)", "var(--warning)", "var(--success)"][i] }} />
+                      {s.label} <b>{money((pipeline * s.v) / 100)}</b>
+                    </li>
                   ))}
                 </ul>
               </div>
@@ -193,17 +202,31 @@ function DashboardPage() {
                 <div><span>Em revisão</span><b>{approvals}</b></div>
                 <div><span>Concluídas (hoje)</span><b>{doneToday}</b></div>
               </div>
-              <h3>Prioridades de hoje</h3>
+              <h3>Próximas tarefas</h3>
               <div className="cv-task-list">
-                {(data.tasks as any[]).filter((t: any) => t.status !== "done").slice(0, 4).map((t: any, i: number) => (
+                {((data.tasks as any[]).filter((t: any) => t.status !== "done").slice(0, 5).map((t: any, i: number) => ({
+                  id: t.id, title: t.title, when: i < 2 ? "Hoje" : i === 2 ? "Amanhã" : "03/08", done: i === 0,
+                })).length
+                  ? (data.tasks as any[]).filter((t: any) => t.status !== "done").slice(0, 5).map((t: any, i: number) => ({
+                      id: t.id, title: t.title, when: i < 2 ? "Hoje" : i === 2 ? "Amanhã" : "03/08", done: i === 0,
+                    }))
+                  : [
+                      { id: "t1", title: "Finalizar KV – Campanha Verão 2026", when: "Hoje", done: true },
+                      { id: "t2", title: "Layout Landing page – EcoBeleza", when: "Hoje", done: false },
+                      { id: "t3", title: "Ajustes de copy anúncio – Rebranding Viva+", when: "Amanhã", done: false },
+                      { id: "t4", title: "Social posts – Lançamento Produto X", when: "03/08", done: false },
+                    ]
+                ).map((t) => (
                   <div key={t.id}>
-                    <i className={i === 0 ? "done" : ""}>{i === 0 ? "✓" : ""}</i>
+                    <i className={t.done ? "done" : ""}>{t.done ? "✓" : ""}</i>
                     <span>{t.title}</span>
-                    <small>{i < 2 ? "Hoje" : "Amanhã"}</small>
+                    <small>{t.when}</small>
                   </div>
                 ))}
               </div>
+              <Link to="/tasks" className="cv-link">Ver todas as tarefas <ChevronRight className="h-3 w-3" /></Link>
             </section>
+
           </div>
         </div>
 
