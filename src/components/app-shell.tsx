@@ -42,7 +42,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
   const { theme, setTheme } = useTheme();
   const pathname = useRouterState({ select: s => s.location.pathname });
-  const [expanded, setExpanded] = useState(false);
+  const [expanded] = useState(false);
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
@@ -73,29 +73,16 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="min-h-screen w-full bg-background text-foreground">
-      {/* Sidebar cobalto flutuante, inteiriça do topo à base */}
+      {/* Trilho fixo da referência aprovada DASH-01. */}
       <aside
-        className={`fixed left-3 top-3 bottom-3 z-40 hidden md:flex flex-col rounded-2xl bg-[var(--sidebar)] p-2 transition-[width] duration-200 ${
-          expanded ? "w-56" : "w-[60px]"
-        }`}
+        className="fixed bottom-[18px] left-[10px] top-[12px] z-40 hidden w-[62px] flex-col rounded-[16px] bg-[var(--sidebar)] px-[10px] py-[9px] shadow-lg md:flex"
       >
-        <button
-          onClick={() => setExpanded(v => !v)}
-          title={expanded ? "Recolher menu" : "Expandir menu"}
-          className={`flex h-11 items-center gap-2 rounded-xl text-white/90 hover:text-white ${expanded ? "px-2.5" : "justify-center"}`}
-        >
-          <Asterisk className="h-6 w-6 shrink-0" strokeWidth={2.5} />
-          {expanded && <span className="font-display text-[15px] font-bold tracking-tight">Caritas</span>}
-        </button>
+        <div className="flex h-[43px] items-center justify-center text-primary-foreground">
+          <Asterisk className="h-[25px] w-[25px]" strokeWidth={2.4} />
+        </div>
 
-        <div className="mt-2 flex flex-1 flex-col gap-1 overflow-y-auto no-scrollbar">
+        <div className="mt-[11px] flex flex-1 flex-col gap-[5px] overflow-hidden">
           {primaryNav.map(railItem)}
-          {expanded && (
-            <>
-              <div className="my-1.5 h-px bg-white/15" />
-              {secondaryNav.map(railItem)}
-            </>
-          )}
         </div>
 
         <div className="mt-2 flex flex-col gap-1 border-t border-white/15 pt-2">
@@ -113,12 +100,9 @@ export function AppShell({ children }: { children: ReactNode }) {
         </div>
       </aside>
 
-      <div
-        className={`pl-4 sm:pl-6 py-5 transition-[padding] duration-200 ${expanded ? "md:pl-[15.5rem]" : "md:pl-[5rem]"}`}
-        style={{ paddingRight: "max(1rem, calc(var(--dock-offset, 0px) + 1rem))" }}
-      >
+      <div className="px-4 pb-3 pt-3 md:pl-[103px] md:pr-[28px]" style={{ paddingRight: "max(1rem, calc(var(--dock-offset, 0px) + 1.75rem))" }}>
         <TopBar theme={theme} onToggleTheme={setTheme} pathname={pathname} />
-        <main className="mt-5">{children}</main>
+        <main className="mt-[14px]">{children}</main>
       </div>
     </div>
   );
@@ -153,21 +137,21 @@ function TopBar({
     : "C";
 
   return (
-    <header className="flex flex-wrap items-center justify-between gap-3">
+    <header className="flex h-[42px] items-center justify-between gap-3">
       <div className="flex min-w-0 flex-1 items-center gap-4">
-        <Link to="/dashboard" className="flex shrink-0 items-center gap-2">
-          <Asterisk className="h-6 w-6 text-primary" strokeWidth={2.5} />
-          <span className="hidden font-display text-[18px] font-bold tracking-tight sm:inline">Caritas</span>
+        <Link to="/dashboard" className="flex w-[146px] shrink-0 items-center gap-2">
+          <Asterisk className="h-[26px] w-[26px] text-primary" strokeWidth={2.5} />
+          <span className="hidden font-display text-[19px] font-bold sm:inline">Caritas</span>
         </Link>
-        <div className="min-w-0 flex-1 max-w-xl">
+        <div className="min-w-0 max-w-[412px] flex-1">
           <GlobalSearch />
         </div>
       </div>
 
-      <div className="flex shrink-0 items-center gap-1.5">
+      <div className="flex shrink-0 items-center gap-[9px]">
         <button
           onClick={() => onToggleTheme(theme === "dark" ? "light" : "dark")}
-          className="flex h-9 items-center gap-2 rounded-lg border border-border bg-card px-3 text-[13px] font-medium text-foreground hover:bg-muted"
+          className="flex h-[36px] min-w-[90px] items-center justify-center gap-2 rounded-md border border-border bg-card px-3 text-[12px] font-medium text-foreground hover:bg-muted"
           title={theme === "dark" ? "Mudar para modo claro" : "Mudar para modo escuro"}
         >
           {theme === "dark" ? <Moon className="h-4 w-4 text-muted-foreground" /> : <Sun className="h-4 w-4 text-muted-foreground" />}
@@ -180,14 +164,14 @@ function TopBar({
           target="_blank"
           rel="noreferrer"
           title="Ajuda"
-          className="grid h-9 w-9 place-items-center rounded-lg border border-border bg-card text-muted-foreground hover:text-foreground"
+          className="grid h-9 w-7 place-items-center text-muted-foreground hover:text-foreground"
         >
           <HelpCircle className="h-4 w-4" />
         </a>
         <Link
           to="/settings"
           title="Configurações"
-          className={`grid h-9 w-9 place-items-center rounded-lg border border-border bg-card ${
+          className={`grid h-9 w-7 place-items-center ${
             pathname.startsWith("/settings") ? "text-primary" : "text-muted-foreground hover:text-foreground"
           }`}
         >
@@ -195,10 +179,10 @@ function TopBar({
         </Link>
         <Link
           to="/settings"
-          className="ml-1 flex h-9 items-center gap-2 rounded-lg pl-1 pr-2 hover:bg-muted"
+          className="ml-1 flex h-10 min-w-[154px] items-center gap-2 rounded-md pl-1 pr-0 hover:bg-muted"
           title="Meu perfil"
         >
-          <span className="grid h-8 w-8 place-items-center rounded-full bg-primary text-[12px] font-semibold text-primary-foreground">
+          <span className="grid h-[34px] w-[34px] place-items-center rounded-full bg-primary text-[11px] font-semibold text-primary-foreground">
             {initials}
           </span>
           <span className="hidden min-w-0 flex-col leading-tight lg:flex">
