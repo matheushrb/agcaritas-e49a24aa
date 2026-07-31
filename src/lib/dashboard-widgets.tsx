@@ -952,27 +952,8 @@ export type UserPref = { id: string; enabled: boolean };
 
 const ALL_IDS = WIDGETS.map(w => w.id);
 
-const PRESETS: Record<string, string[]> = {
-  founder: ALL_IDS,
-  manager: ["greeting", "day-quickstats", "day-center", "priorities", "agenda-today", "kpi-column", "kpi-rings", "calendar", "next-meeting", "tasks-today", "assignments", "notifications", "finance", "operations", "projects-active"],
-  traffic: ["greeting", "day-quickstats", "day-center", "priorities", "agenda-today", "kpi-column", "kpi-rings", "calendar", "next-meeting", "tasks-today", "finance", "sales-pipeline"],
-  sales: ["greeting", "day-quickstats", "day-center", "priorities", "agenda-today", "kpi-column", "kpi-rings", "calendar", "next-meeting", "sales-pipeline", "finance", "notifications"],
-  designer: ["greeting", "day-quickstats", "day-center", "priorities", "agenda-today", "kpi-column", "calendar", "next-meeting", "tasks-today", "assignments", "notifications", "operations"],
-  copywriter: ["greeting", "day-quickstats", "day-center", "priorities", "agenda-today", "kpi-column", "calendar", "next-meeting", "tasks-today", "assignments", "notifications", "operations"],
-  developer: ["greeting", "day-quickstats", "day-center", "priorities", "agenda-today", "kpi-column", "calendar", "next-meeting", "tasks-today", "assignments", "operations", "projects-active"],
-  operations: ["greeting", "day-quickstats", "day-center", "priorities", "agenda-today", "kpi-column", "kpi-rings", "calendar", "next-meeting", "tasks-today", "notifications", "finance", "operations", "hr-team"],
-};
 
-const ROLE_KEYWORDS: Array<[RegExp, string]> = [
-  [/fund|ceo|dono|diretor/i, "founder"],
-  [/gestor.*projet|project|pm\b|scrum/i, "manager"],
-  [/tráfeg|trafego|traffic|m[íi]dia|ads|paid/i, "traffic"],
-  [/comerc|vend|sales|closer|sdr/i, "sales"],
-  [/design|ui|ux|arte/i, "designer"],
-  [/copy|redator|conteúdo|conteudo/i, "copywriter"],
-  [/dev|tech|program|engenh/i, "developer"],
-  [/opera|financ|admin|rh/i, "operations"],
-];
+
 
 /** Marcador do reset visual: a base do dashboard passou a ser a DASH-01.
  *  Widgets extras nascem TODOS desligados; o usuário liga o que quiser. */
