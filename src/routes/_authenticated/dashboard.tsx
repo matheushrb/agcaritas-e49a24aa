@@ -272,12 +272,18 @@ function DashboardPage() {
               <h2 style={{ fontSize: 13 }}>Próximas reuniões</h2>
               <Link to="/calendar" className="cv-link">Ver todas <ChevronRight className="h-3 w-3" /></Link>
             </div>
-            <div className="cv-meeting"><time><b>01</b><span>AGO</span></time><div><b>Kickoff EcoPro</b><span>Sex · 10:00 · Sala 1</span></div></div>
-            <div className="cv-meeting"><time><b>03</b><span>AGO</span></time><div><b>Apresentação proposta</b><span>Seg · 15:00 · Online</span></div></div>
+            <div className="cv-meeting"><time><b>01</b><span>AGO</span></time><div><b>Kickoff EcoPro</b><span>Sex · 10:00 · Sala 1 · 60 min</span></div></div>
+            <div className="cv-meeting"><time><b>03</b><span>AGO</span></time><div><b>Apresentação proposta</b><span>Dom · 11:00 · Google Meet · 45 min</span></div></div>
+            <Link to="/calendar" className="cv-rail-cta">Ver todas as reuniões</Link>
           </section>
         </aside>
       </div>
+
+      <footer className="cv-footer">
+        Caritas Gestão · Todos os direitos reservados · v 2.3.0
+      </footer>
     </>
+
   );
 }
 
