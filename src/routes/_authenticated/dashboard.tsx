@@ -7,8 +7,9 @@ import { useState } from "react";
 import { reconcilePrefs, type UserPref } from "@/lib/dashboard-widgets";
 import {
   AlertTriangle, CalendarDays, Check, Clock3, FolderKanban,
-  Users, CheckCircle2, ChevronRight,
+  Users, CheckCircle2, ChevronRight, Info,
 } from "lucide-react";
+
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({
@@ -94,13 +95,14 @@ function DashboardPage() {
       <div className="cv-dashboard-grid">
         <div className="cv-content">
           <div className="cv-kpi-grid">
-            <Kpi label="Receita do mês" value={money(revenue)} delta="▲ 18,7%" note="vs. mês anterior" spark="blue" />
-            <Kpi label="Margem" value={`${margin.toFixed(1).replace(".", ",")}%`} delta="▲ 4,2 p.p." note="vs. mês anterior" spark="green" />
+            <Kpi label="Receita do mês" info value={money(revenue)} delta="▲ 18,7%" note="vs. mês anterior" spark="blue" />
+            <Kpi label="Margem" info value={`${margin.toFixed(1).replace(".", ",")}%`} delta="▲ 4,2 p.p." note="vs. mês anterior" spark="green" />
             <Kpi label="Clientes ativos" value={String(data.clients.length)} delta="▲ 2 novos" icon={<Users className="h-4 w-4" style={{ color: "var(--muted)" }} />} />
             <Kpi label="Projetos ativos" value={String(activeProjects)} delta="▲ 2 iniciados" icon={<FolderKanban className="h-4 w-4" style={{ color: "var(--muted)" }} />} />
             <Kpi label="Projetos em risco" value={String(riskProjects)} delta="▲ 2 vs. semana" danger icon={<AlertTriangle className="h-4 w-4" style={{ color: "var(--danger)" }} />} />
             <Kpi label="Pipeline comercial" value={money(pipeline)} note={`${data.proposals.length} propostas`} icon={<Clock3 className="h-4 w-4" style={{ color: "var(--primary)" }} />} />
           </div>
+
 
           <section className="cv-card cv-attention">
             <div className="cv-section-head">
@@ -146,16 +148,22 @@ function DashboardPage() {
                 <div><span>Despesas</span><strong>{money(expenses)}</strong><small className="is-positive">▲ 7,7%</small></div>
               </div>
               <div className="cv-finance-viz">
-                <div className="cv-bars">
-                  {bars.map((h, i) => <i key={i} className={i % 2 ? "alt" : ""} style={{ height: `${h}%` }} />)}
+                <div className="cv-chart">
+                  <div className="cv-axis-y"><span>400k</span><span>300k</span><span>200k</span><span>100k</span></div>
+                  <div className="cv-chart-body">
+                    <div className="cv-bars">
+                      {bars.map((h, i) => <i key={i} className={i % 2 ? "alt" : ""} style={{ height: `${h}%` }} />)}
+                    </div>
+                    <div className="cv-axis-x"><span>1</span><span>6</span><span>11</span><span>16</span><span>21</span><span>26</span><span>31</span></div>
+                  </div>
                 </div>
                 <div className="cv-donut-wrap">
-                  <div className="cv-donut"><span>100%</span></div>
+                  <div className="cv-donut"><span>{margin > 0 ? `${margin.toFixed(1).replace(".", ",")}%` : "67,7%"}</span></div>
                   <ul>
-                    <li>Pessoal <b>45%</b></li>
-                    <li>Fornecedores <b>28%</b></li>
-                    <li>Marketing <b>12%</b></li>
-                    <li>Outros <b>15%</b></li>
+                    <li><em className="dot" style={{ background: "var(--primary)" }} />Pessoal <b>45%</b></li>
+                    <li><em className="dot" style={{ background: "var(--teal)" }} />Fornecedores <b>28%</b></li>
+                    <li><em className="dot" style={{ background: "var(--warning)" }} />Marketing <b>12%</b></li>
+                    <li><em className="dot" style={{ background: "var(--purple)" }} />Outros <b>15%</b></li>
                   </ul>
                 </div>
               </div>
@@ -172,8 +180,11 @@ function DashboardPage() {
               <div className="cv-pipeline">
                 <div className="cv-funnel">{pipelineStages.map(s => <i key={s.label} />)}</div>
                 <ul>
-                  {pipelineStages.map(s => (
-                    <li key={s.label}>{s.label} <b>{money((pipeline * s.v) / 100)}</b></li>
+                  {pipelineStages.map((s, i) => (
+                    <li key={s.label}>
+                      <em className="dot" style={{ background: ["var(--primary)", "var(--teal)", "var(--purple)", "var(--warning)", "var(--success)"][i] }} />
+                      {s.label} <b>{money((pipeline * s.v) / 100)}</b>
+                    </li>
                   ))}
                 </ul>
               </div>
@@ -191,17 +202,31 @@ function DashboardPage() {
                 <div><span>Em revisão</span><b>{approvals}</b></div>
                 <div><span>Concluídas (hoje)</span><b>{doneToday}</b></div>
               </div>
-              <h3>Prioridades de hoje</h3>
+              <h3>Próximas tarefas</h3>
               <div className="cv-task-list">
-                {(data.tasks as any[]).filter((t: any) => t.status !== "done").slice(0, 4).map((t: any, i: number) => (
+                {((data.tasks as any[]).filter((t: any) => t.status !== "done").slice(0, 4).map((t: any, i: number) => ({
+                  id: t.id, title: t.title, when: i < 2 ? "Hoje" : i === 2 ? "Amanhã" : "03/08", done: i === 0,
+                })).length
+                  ? (data.tasks as any[]).filter((t: any) => t.status !== "done").slice(0, 4).map((t: any, i: number) => ({
+                      id: t.id, title: t.title, when: i < 2 ? "Hoje" : i === 2 ? "Amanhã" : "03/08", done: i === 0,
+                    }))
+                  : [
+                      { id: "t1", title: "Finalizar KV – Campanha Verão 2026", when: "Hoje", done: true },
+                      { id: "t2", title: "Layout Landing page – EcoBeleza", when: "Hoje", done: false },
+                      { id: "t3", title: "Ajustes de copy anúncio – Rebranding Viva+", when: "Amanhã", done: false },
+                      { id: "t4", title: "Social posts – Lançamento Produto X", when: "03/08", done: false },
+                    ]
+                ).map((t) => (
                   <div key={t.id}>
-                    <i className={i === 0 ? "done" : ""}>{i === 0 ? "✓" : ""}</i>
+                    <i className={t.done ? "done" : ""}>{t.done ? "✓" : ""}</i>
                     <span>{t.title}</span>
-                    <small>{i < 2 ? "Hoje" : "Amanhã"}</small>
+                    <small>{t.when}</small>
                   </div>
                 ))}
               </div>
+              <Link to="/tasks" className="cv-link">Ver todas as tarefas <ChevronRight className="h-3 w-3" /></Link>
             </section>
+
           </div>
         </div>
 
@@ -209,7 +234,7 @@ function DashboardPage() {
           <section className="cv-card cv-rail">
             <div className="cv-rail-head">
               <h2 style={{ textTransform: "capitalize" }}>
-                {new Intl.DateTimeFormat("pt-BR", { month: "long", year: "numeric" }).format(now)}
+                {`${new Intl.DateTimeFormat("pt-BR", { month: "long" }).format(now)} ${now.getFullYear()}`}
               </h2>
               <div><button>‹</button><button>›</button></div>
             </div>
@@ -247,12 +272,18 @@ function DashboardPage() {
               <h2 style={{ fontSize: 13 }}>Próximas reuniões</h2>
               <Link to="/calendar" className="cv-link">Ver todas <ChevronRight className="h-3 w-3" /></Link>
             </div>
-            <div className="cv-meeting"><time><b>01</b><span>AGO</span></time><div><b>Kickoff EcoPro</b><span>Sex · 10:00 · Sala 1</span></div></div>
-            <div className="cv-meeting"><time><b>03</b><span>AGO</span></time><div><b>Apresentação proposta</b><span>Seg · 15:00 · Online</span></div></div>
+            <div className="cv-meeting"><time><b>01</b><span>AGO</span></time><div><b>Kickoff EcoPro</b><span>Sex · 10:00 · Sala 1 · 60 min</span></div></div>
+            <div className="cv-meeting"><time><b>03</b><span>AGO</span></time><div><b>Apresentação proposta</b><span>Dom · 11:00 · Google Meet · 45 min</span></div></div>
+            <Link to="/calendar" className="cv-rail-cta">Ver todas as reuniões</Link>
           </section>
         </aside>
       </div>
+
+      <footer className="cv-footer">
+        Caritas Gestão · Todos os direitos reservados · v 2.3.0
+      </footer>
     </>
+
   );
 }
 
@@ -265,14 +296,15 @@ function Spark({ tone }: { tone: "blue" | "green" }) {
   );
 }
 
-function Kpi({ label, value, delta, note, spark, icon, danger }: {
+function Kpi({ label, value, delta, note, spark, icon, danger, info }: {
   label: string; value: string; delta?: string; note?: string;
-  spark?: "blue" | "green"; icon?: React.ReactNode; danger?: boolean;
+  spark?: "blue" | "green"; icon?: React.ReactNode; danger?: boolean; info?: boolean;
 }) {
   return (
     <article className="cv-card cv-kpi">
       <span className="cv-kpi-label" style={{ display: "flex", alignItems: "center", gap: 6 }}>
         {icon}{label}
+        {info && <Info className="h-3 w-3" style={{ color: "var(--muted)", opacity: 0.7 }} />}
       </span>
       <div className="cv-kpi-main">
         <strong>{value}</strong>
@@ -286,6 +318,7 @@ function Kpi({ label, value, delta, note, spark, icon, danger }: {
     </article>
   );
 }
+
 
 function Focus({ title, value, sub, icon }: { title: string; value: string | number; sub: string; icon: React.ReactNode }) {
   return (
