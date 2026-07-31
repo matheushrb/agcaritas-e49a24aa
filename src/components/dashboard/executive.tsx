@@ -234,10 +234,10 @@ function KpiCard({
 }) {
   return (
     <div className="rounded-lg border border-border bg-card px-3.5 py-3">
-      <div className="flex items-center gap-1.5 text-[12px] text-muted-foreground">
-        {Icon ? <Icon className={`h-3.5 w-3.5 ${tone === "danger" ? "text-destructive" : ""}`} /> : null}
-        <span className="truncate">{title}</span>
-        {!Icon && <Info className="h-3 w-3 opacity-50" />}
+      <div className="flex min-h-[32px] items-start gap-1.5 text-[12px] leading-tight text-muted-foreground">
+        {Icon ? <Icon className={`mt-px h-3.5 w-3.5 shrink-0 ${tone === "danger" ? "text-destructive" : ""}`} /> : null}
+        <span className="line-clamp-2">{title}</span>
+        {!Icon && <Info className="mt-px h-3 w-3 shrink-0 opacity-50" />}
       </div>
       <div className="mt-1.5 flex items-end justify-between gap-2">
         <span className="font-display text-[22px] font-semibold tabular-nums leading-none">{value}</span>
