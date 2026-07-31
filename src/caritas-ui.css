@@ -200,7 +200,7 @@
 
 /* KPI */
 .cv-kpi-grid { display: grid; grid-template-columns: 1.42fr 1.34fr repeat(4, 1fr); gap: 10px; margin-bottom: 10px; }
-.cv-kpi { height: 104px; padding: 14px 16px; display: flex; flex-direction: column; justify-content: space-between; overflow: hidden; }
+.cv-kpi { height: 116px; padding: 14px 16px; display: flex; flex-direction: column; justify-content: space-between; overflow: hidden; }
 .cv-kpi-label { display: block; font-weight: 600; font-size: 12px; }
 .cv-kpi-main { display: flex; align-items: flex-end; justify-content: space-between; margin: 6px 0 4px; }
 .cv-kpi-main strong { font-size: 22px; letter-spacing: 0; }
@@ -212,7 +212,7 @@
 .is-danger { color: var(--danger) !important; }
 
 /* ATENÇÃO */
-.cv-attention { height: 247px; padding: 14px 15px 10px; margin-bottom: 10px; overflow: hidden; }
+.cv-attention { height: 262px; padding: 14px 15px 10px; margin-bottom: 10px; overflow: hidden; }
 .cv-section-head { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 11px; }
 .cv-section-head.compact { align-items: center; gap: 8px; }
 .cv-panel .cv-section-head h2 { font-size: 14px; white-space: nowrap; }
@@ -240,7 +240,7 @@
 .cv-focus-card {
   border: 1px solid var(--border);
   border-radius: 7px;
-  min-height: 63px;
+  min-height: 70px;
   padding: 9px;
   display: flex;
   gap: 8px;
@@ -273,7 +273,7 @@
 
 /* LOWER GRID */
 .cv-lower-grid { display: grid; grid-template-columns: 1.24fr 1.06fr 1.11fr; gap: 10px; }
-.cv-panel { height: 224px; padding: 14px 15px; overflow: hidden; display: flex; flex-direction: column; }
+.cv-panel { height: 244px; padding: 14px 15px; overflow: hidden; display: flex; flex-direction: column; }
 
 /* FINANCE */
 .cv-finance-values { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 8px; }
