@@ -119,7 +119,29 @@ function DashboardPage() {
   );
 }
 
-function Kpi({title,value,trend,sub,icon,chart}:{title:string;value:string;trend?:string;sub?:string;icon:React.ReactNode;chart?:"blue"|"green"}) { return <Card className="caritas-kpi min-h-[108px] p-4"><div className="flex justify-between gap-2"><div><div className="text-[11px] font-medium">{title}</div><div className="mt-3 text-[22px] font-semibold tracking-tight">{value}</div><div className={`mt-1 text-[9px] ${trend?'text-green-600':'text-muted-foreground'}`}>{trend||sub}</div></div><div className="h-5 w-5 text-primary [&>svg]:h-5 [&>svg]:w-5">{icon}</div></div>{chart&&<div className={`ml-auto mt-[-24px] h-8 w-20 border-b border-l ${chart==='green'?'border-green-500':'border-primary'} skew-y-[-10deg] opacity-70`}/>}</Card> }
+function Spark({color}:{color:string}) {
+  return <svg viewBox="0 0 96 34" className="h-[34px] w-[96px]" preserveAspectRatio="none"><polyline fill="none" stroke={color} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" points="0,28 10,24 20,26 30,18 40,21 50,12 60,16 70,9 80,13 96,4"/></svg>;
+}
+function Kpi({title,value,trend,trendSub,sub,subGreen,subRed,icon,chart}:{title:string;value:string;trend?:string;trendSub?:string;sub?:string;subGreen?:boolean;subRed?:boolean;icon?:React.ReactNode;chart?:"blue"|"green"}) {
+  return (
+    <Card className="caritas-kpi min-h-[108px] p-4">
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex items-center gap-1.5 text-[11px] font-medium">
+          {icon && <span className="text-muted-foreground [&>svg]:h-[15px] [&>svg]:w-[15px]">{icon}</span>}
+          <span>{title}</span>
+          {chart && <Info className="h-3 w-3 text-muted-foreground/60" />}
+        </div>
+        {chart && <Spark color={chart === "green" ? "#16A34A" : "var(--primary)"} />}
+      </div>
+      <div className="mt-3 text-[22px] font-semibold tracking-tight">{value}</div>
+      <div className="mt-1 flex items-center gap-1 text-[9px]">
+        <span className={trend || subGreen ? "text-[#16A34A]" : subRed ? "text-[#E5484D]" : "text-muted-foreground"}>{trend || sub}</span>
+        {trendSub && <span className="text-muted-foreground">{trendSub}</span>}
+      </div>
+    </Card>
+  );
+}
+
 function Attention({title,value,sub,icon}:{title:string;value:string|number;sub:string;icon:React.ReactNode}) { return <div className="rounded-[11px] border bg-card px-3 py-3"><div className="flex gap-2"><div className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-muted text-muted-foreground [&>svg]:h-4 [&>svg]:w-4">{icon}</div><div><div className="text-[10px] font-medium">{title}</div><div className="mt-0.5 text-[17px] font-semibold leading-none">{value}</div><div className="mt-1 text-[9px] text-muted-foreground">{sub}</div></div></div></div> }
 function Panel({title,link,children}:{title:string;link:string;children:React.ReactNode}) { return <section className="caritas-panel p-4 min-h-[260px]"><div className="mb-4 flex items-center justify-between"><h3 className="text-[13px] font-semibold">{title}</h3><span className="text-[10px] text-primary">{link}</span></div>{children}</section> }
 function MiniStat({l,v}:{l:string;v:number}){return <div className="px-2"><div className="text-[8px] text-muted-foreground">{l}</div><div className="mt-1 text-[15px] font-semibold">{v}</div></div>}
