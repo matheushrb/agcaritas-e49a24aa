@@ -205,13 +205,13 @@ function NotificationsBell() {
     <Popover>
       <PopoverTrigger
         title="Notificações"
-        className="relative grid h-9 w-9 place-items-center rounded-lg border border-border bg-card text-muted-foreground hover:text-foreground"
+        className="cv-icon-button cv-bell"
       >
         <Bell className="h-4 w-4" />
         {unread > 0 && (
-          <span className="absolute -right-1 -top-1 grid h-4 min-w-4 place-items-center rounded-full bg-destructive px-1 text-[10px] font-semibold text-destructive-foreground">
+          <b>
             {unread}
-          </span>
+          </b>
         )}
       </PopoverTrigger>
       <PopoverContent align="end" className="w-80 rounded-xl p-0">

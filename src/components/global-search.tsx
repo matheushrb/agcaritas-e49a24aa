@@ -65,11 +65,11 @@ export function GlobalSearch() {
     <>
       <button
         onClick={() => setOpen(true)}
-        className="hidden md:flex w-full max-w-sm items-center gap-2 rounded-lg border border-border bg-card px-3 py-2 text-left text-[13px] text-muted-foreground hover:border-primary/40 transition-colors"
+        className="cv-search hidden w-full md:flex"
       >
         <Search className="h-4 w-4 shrink-0" />
         <span className="truncate">Buscar tarefas, clientes, projetos...</span>
-        <kbd className="ml-auto rounded border border-border px-1.5 py-0.5 text-[10px] font-medium">⌘K</kbd>
+        <kbd className="ml-auto">⌘ K</kbd>
       </button>
 
       <CommandDialog open={open} onOpenChange={setOpen}>
