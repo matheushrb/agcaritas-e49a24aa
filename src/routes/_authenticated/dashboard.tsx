@@ -266,14 +266,15 @@ function Spark({ tone }: { tone: "blue" | "green" }) {
   );
 }
 
-function Kpi({ label, value, delta, note, spark, icon, danger }: {
+function Kpi({ label, value, delta, note, spark, icon, danger, info }: {
   label: string; value: string; delta?: string; note?: string;
-  spark?: "blue" | "green"; icon?: React.ReactNode; danger?: boolean;
+  spark?: "blue" | "green"; icon?: React.ReactNode; danger?: boolean; info?: boolean;
 }) {
   return (
     <article className="cv-card cv-kpi">
       <span className="cv-kpi-label" style={{ display: "flex", alignItems: "center", gap: 6 }}>
         {icon}{label}
+        {info && <Info className="h-3 w-3" style={{ color: "var(--muted)", opacity: 0.7 }} />}
       </span>
       <div className="cv-kpi-main">
         <strong>{value}</strong>
@@ -287,6 +288,7 @@ function Kpi({ label, value, delta, note, spark, icon, danger }: {
     </article>
   );
 }
+
 
 function Focus({ title, value, sub, icon }: { title: string; value: string | number; sub: string; icon: React.ReactNode }) {
   return (
