@@ -9,6 +9,8 @@ import {
 } from "@/lib/dashboard-widgets";
 import { DashboardPersonalize } from "@/components/dashboard-personalize";
 import { QuickCreateButton } from "@/components/quick-create-button";
+import { ExecutiveDashboard, executiveQuery } from "@/components/dashboard/executive";
+
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({ meta: [{ title: "Dashboard · Caritas Agência" }] }),
@@ -112,30 +114,55 @@ function DashboardContent() {
   }, [prefs, qc]);
 
   const ctx = { data, firstName };
+  const { data: exec } = useSuspenseQuery(executiveQuery);
+
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? "Bom dia" : hour < 18 ? "Boa tarde" : "Boa noite";
+  const fullName = profile?.display_name?.trim() || profile?.full_name?.trim() || firstName;
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-end gap-2">
-        <DashboardPersonalize value={prefs} onChange={setPrefs} roleTitle={roleTitle} />
-        <QuickCreateButton />
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h1 className="font-display text-[26px] font-bold leading-tight">{greeting}, {fullName}!</h1>
+          <p className="text-[13px] text-muted-foreground">
+            Aqui está o panorama da Caritas para hoje,{" "}
+            {new Date().toLocaleDateString("pt-BR", { day: "numeric", month: "long", year: "numeric" })}.
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <DashboardPersonalize value={prefs} onChange={setPrefs} roleTitle={roleTitle} />
+          <QuickCreateButton />
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-5">
-        {prefs
-          .filter(p => p.enabled)
-          .map(p => {
-            const w = getWidget(p.id);
-            if (!w) return null;
-            return (
-              <section key={w.id} className={colSpanClass(w)}>
-                {w.render(ctx)}
-              </section>
-            );
-          })}
-      </div>
+      <ExecutiveDashboard data={exec} />
+
+      {prefs.some(p => p.enabled) && (
+        <details className="rounded-lg border border-border bg-card">
+          <summary className="cursor-pointer px-4 py-3 text-[13px] font-semibold">
+            Meus widgets personalizados
+          </summary>
+          <div className="grid grid-cols-1 gap-4 border-t border-border p-4 lg:grid-cols-12 lg:gap-5">
+            {prefs
+              .filter(p => p.enabled)
+              .map(p => {
+                const w = getWidget(p.id);
+                if (!w) return null;
+                return (
+                  <section key={w.id} className={colSpanClass(w)}>
+                    {w.render(ctx)}
+                  </section>
+                );
+              })}
+          </div>
+        </details>
+      )}
+
     </div>
   );
 }
+
 
 function DashboardSkeleton() {
   return (
