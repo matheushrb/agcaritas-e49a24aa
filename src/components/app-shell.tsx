@@ -115,9 +115,6 @@ export function AppShell({ children }: { children: ReactNode }) {
       >
         <TopBar theme={theme} onToggleTheme={setTheme} pathname={pathname} />
         <main className="mt-5">{children}</main>
-        <footer className="mt-8 pb-1 text-center text-[11px] text-muted-foreground">
-          Caritas Gestão · Todos os direitos reservados
-        </footer>
       </div>
     </div>
   );
