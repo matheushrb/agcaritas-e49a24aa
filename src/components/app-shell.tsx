@@ -57,52 +57,36 @@ export function AppShell({ children }: { children: ReactNode }) {
         key={item.to}
         to={item.to}
         title={item.label}
-        className={`flex h-10 items-center gap-3 rounded-xl text-[13px] font-medium transition-colors ${
-          expanded ? "px-2.5" : "justify-center px-0"
-        } ${
-          active
-            ? "bg-[var(--sidebar-active)] text-primary shadow-sm"
-            : "text-[var(--sidebar-foreground)] hover:bg-white/12 hover:text-white"
-        }`}
+        className={`cv-nav-item${active ? " is-active" : ""}`}
       >
         <Icon className="h-[18px] w-[18px] shrink-0" />
-        {expanded && <span className="truncate">{item.label}</span>}
       </Link>
     );
   };
 
   return (
-    <div className="min-h-screen w-full bg-background text-foreground">
-      {/* Trilho fixo da referência aprovada DASH-01. */}
-      <aside
-        className="fixed bottom-[18px] left-[10px] top-[12px] z-40 hidden w-[62px] flex-col rounded-[16px] bg-[var(--sidebar)] px-[10px] py-[9px] shadow-lg md:flex"
-      >
-        <div className="flex h-[43px] items-center justify-center text-primary-foreground">
-          <Asterisk className="h-[25px] w-[25px]" strokeWidth={2.4} />
+    <div className="caritas-ui" data-theme={theme}>
+      <aside className="cv-sidebar">
+        <div className="cv-sidebar-logo">
+          <Asterisk className="h-[28px] w-[28px]" strokeWidth={2.4} />
         </div>
 
-        <div className="mt-[11px] flex flex-1 flex-col gap-[5px] overflow-hidden">
+        <nav className="cv-sidebar-nav">
           {primaryNav.map(railItem)}
-        </div>
+          {expanded && secondaryNav.map(railItem)}
+        </nav>
 
-        <div className="mt-2 flex flex-col gap-1 border-t border-white/15 pt-2">
+        <div className="cv-sidebar-bottom">
           {railItem({ to: "/settings", icon: Settings, label: "Configurações" })}
-          <button
-            onClick={handleSignOut}
-            title="Sair"
-            className={`flex h-10 items-center gap-3 rounded-xl text-[13px] font-medium text-[var(--sidebar-foreground)] hover:bg-white/12 hover:text-white ${
-              expanded ? "px-2.5" : "justify-center"
-            }`}
-          >
-            <LogOut className="h-[18px] w-[18px] shrink-0" />
-            {expanded && <span>Sair</span>}
+          <button onClick={handleSignOut} title="Sair" className="cv-nav-item">
+            <LogOut className="h-[18px] w-[18px]" />
           </button>
         </div>
       </aside>
 
-      <div className="px-4 pb-3 pt-3 md:pl-[103px] md:pr-[28px]" style={{ paddingRight: "max(1rem, calc(var(--dock-offset, 0px) + 1.75rem))" }}>
+      <div className="cv-shell">
         <TopBar theme={theme} onToggleTheme={setTheme} pathname={pathname} />
-        <main className="mt-[6px]">{children}</main>
+        <main className="cv-main">{children}</main>
       </div>
     </div>
   );
@@ -137,26 +121,23 @@ function TopBar({
     : "C";
 
   return (
-    <header className="flex h-[42px] items-center justify-between gap-3">
-      <div className="flex min-w-0 flex-1 items-center gap-4">
-        <Link to="/dashboard" className="flex w-[146px] shrink-0 items-center gap-2">
-          <Asterisk className="h-[26px] w-[26px] text-primary" strokeWidth={2.5} />
-          <span className="hidden font-display text-[19px] font-bold sm:inline">Caritas</span>
-        </Link>
-        <div className="w-[412px] min-w-0 max-w-[412px] flex-none">
-          <GlobalSearch />
-        </div>
-      </div>
+    <header className="cv-topbar">
+      <Link to="/dashboard" className="cv-brand" style={{ textDecoration: "none", color: "inherit" }}>
+        <span><Asterisk className="h-[30px] w-[30px]" strokeWidth={2.5} /></span>
+        <strong style={{ fontWeight: 600 }}>Caritas</strong>
+      </Link>
 
-      <div className="flex shrink-0 items-center gap-[9px]">
+      <GlobalSearch />
+
+      <div className="cv-top-actions">
         <button
           onClick={() => onToggleTheme(theme === "dark" ? "light" : "dark")}
-          className="flex h-[36px] min-w-[90px] items-center justify-center gap-2 rounded-md border border-border bg-card px-3 text-[12px] font-medium text-foreground hover:bg-muted"
+          className="cv-theme"
           title={theme === "dark" ? "Mudar para modo claro" : "Mudar para modo escuro"}
         >
-          {theme === "dark" ? <Moon className="h-4 w-4 text-muted-foreground" /> : <Sun className="h-4 w-4 text-muted-foreground" />}
-          <span>{theme === "dark" ? "Escuro" : "Claro"}</span>
-          <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+          {theme === "dark" ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
+          <span style={{ fontSize: 12 }}>{theme === "dark" ? "Escuro" : "Claro"}</span>
+          <ChevronDown className="h-3.5 w-3.5" />
         </button>
         <NotificationsBell />
         <a
@@ -164,37 +145,31 @@ function TopBar({
           target="_blank"
           rel="noreferrer"
           title="Ajuda"
-          className="grid h-9 w-7 place-items-center text-muted-foreground hover:text-foreground"
+          className="cv-icon-button"
         >
           <HelpCircle className="h-4 w-4" />
         </a>
         <Link
           to="/settings"
           title="Configurações"
-          className={`grid h-9 w-7 place-items-center ${
-            pathname.startsWith("/settings") ? "text-primary" : "text-muted-foreground hover:text-foreground"
-          }`}
+          className="cv-icon-button"
+          style={pathname.startsWith("/settings") ? { color: "var(--primary)" } : undefined}
         >
           <Settings className="h-4 w-4" />
         </Link>
-        <Link
-          to="/settings"
-          className="ml-1 flex h-10 min-w-[154px] items-center gap-2 rounded-md pl-1 pr-0 hover:bg-muted"
-          title="Meu perfil"
-        >
-          <span className="grid h-[34px] w-[34px] place-items-center rounded-full bg-primary text-[11px] font-semibold text-primary-foreground">
-            {initials}
-          </span>
-          <span className="hidden min-w-0 flex-col leading-tight lg:flex">
-            <span className="truncate text-[13px] font-semibold">{name}</span>
-            <span className="truncate text-[11px] text-muted-foreground">{roleTitle}</span>
-          </span>
-          <ChevronDown className="hidden h-3.5 w-3.5 text-muted-foreground lg:block" />
+        <Link to="/settings" className="cv-profile" title="Meu perfil" style={{ textDecoration: "none", color: "inherit" }}>
+          <span className="cv-avatar">{initials}</span>
+          <div>
+            <strong>{name}</strong>
+            <span>{roleTitle}</span>
+          </div>
+          <ChevronDown className="h-3.5 w-3.5" style={{ color: "var(--muted)" }} />
         </Link>
       </div>
     </header>
   );
 }
+
 
 function NotificationsBell() {
   const qc = useQueryClient();
