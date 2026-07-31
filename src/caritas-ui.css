@@ -194,12 +194,12 @@
 
 /* KPI */
 .cv-kpi-grid { display: grid; grid-template-columns: 1.3fr 1.2fr repeat(4, 1fr); gap: 8px; margin-bottom: 10px; }
-.cv-kpi { height: 116px; padding: 16px; }
+.cv-kpi { height: 112px; padding: 14px 16px; display: flex; flex-direction: column; justify-content: space-between; overflow: hidden; }
 .cv-kpi-label { display: block; font-weight: 600; font-size: 11px; }
-.cv-kpi-main { display: flex; align-items: flex-end; justify-content: space-between; margin: 17px 0 8px; }
+.cv-kpi-main { display: flex; align-items: flex-end; justify-content: space-between; margin: 6px 0 4px; }
 .cv-kpi-main strong { font-size: 22px; letter-spacing: -0.02em; }
 .cv-kpi small { font-size: 9.5px; color: var(--muted); }
-.spark { width: 78px; height: 35px; }
+.spark { width: 78px; height: 28px; }
 .spark-blue { color: var(--primary); }
 .spark-green { color: var(--success); }
 .is-positive { color: var(--success) !important; }
@@ -264,7 +264,7 @@
 
 /* LOWER GRID */
 .cv-lower-grid { display: grid; grid-template-columns: 1.18fr 0.98fr 1.08fr; gap: 9px; }
-.cv-panel { height: 235px; padding: 14px; overflow: hidden; }
+.cv-panel { height: 258px; padding: 14px; overflow: hidden; display: flex; flex-direction: column; }
 
 /* FINANCE */
 .cv-finance-values { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 8px; }
