@@ -49,7 +49,7 @@ export function DashboardPersonalize({ value, onChange, roleTitle }: Props) {
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
-        <Button variant="outline" className="rounded-full gap-2" size="sm">
+        <Button variant="outline" className="cv-button cv-secondary" size="sm">
           <Settings2 className="h-4 w-4" /> Personalizar
         </Button>
       </SheetTrigger>
