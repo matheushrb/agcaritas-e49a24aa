@@ -9,7 +9,7 @@ import { useState } from "react";
 import { reconcilePrefs, type UserPref } from "@/lib/dashboard-widgets";
 import {
   AlertTriangle, CalendarDays, Check, CircleDollarSign, Clock3, FolderKanban,
-  Plus, Target, Users, ArrowUpRight, SlidersHorizontal, CheckCircle2, Circle,
+  Plus, Target, Users, ArrowUpRight, SlidersHorizontal, CheckCircle2, Circle, Info,
 } from "lucide-react";
 import { Bar, BarChart, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
