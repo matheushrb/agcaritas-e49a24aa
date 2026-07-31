@@ -474,21 +474,21 @@
  */
 @media (min-width: 1800px) and (min-height: 820px) {
   .caritas-ui {
-    zoom: 1.1;
-    min-height: calc(100vh / 1.1);
+    zoom: 1.18;
+    min-height: calc(100vh / 1.18);
   }
 }
 
 @media (min-width: 2200px) and (min-height: 1050px) {
   .caritas-ui {
-    zoom: 1.2;
-    min-height: calc(100vh / 1.2);
+    zoom: 1.28;
+    min-height: calc(100vh / 1.28);
   }
 }
 
 @media (min-width: 2800px) and (min-height: 1250px) {
   .caritas-ui {
-    zoom: 1.32;
-    min-height: calc(100vh / 1.32);
+    zoom: 1.4;
+    min-height: calc(100vh / 1.4);
   }
 }
