@@ -7,8 +7,9 @@ import { useState } from "react";
 import { reconcilePrefs, type UserPref } from "@/lib/dashboard-widgets";
 import {
   AlertTriangle, CalendarDays, Check, Clock3, FolderKanban,
-  Users, CheckCircle2, ChevronRight,
+  Users, CheckCircle2, ChevronRight, Info,
 } from "lucide-react";
+
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({
