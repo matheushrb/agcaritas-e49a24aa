@@ -188,10 +188,10 @@ function Panel({ children, className = "" }: { children: React.ReactNode; classN
 
 function PanelHead({ title, action, to }: { title: string; action?: string; to?: string }) {
   return (
-    <div className="flex items-center justify-between border-b border-border px-4 py-2.5">
-      <h2 className="text-[14px] font-semibold">{title}</h2>
+    <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-2.5">
+      <h2 className="whitespace-nowrap text-[14px] font-semibold">{title}</h2>
       {action && to && (
-        <Link to={to} className="flex items-center gap-1 text-[12px] font-medium text-primary hover:underline">
+        <Link to={to} className="flex shrink-0 items-center gap-1 whitespace-nowrap text-[12px] font-medium text-primary hover:underline">
           {action} <ArrowRight className="h-3 w-3" />
         </Link>
       )}
