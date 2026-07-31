@@ -974,53 +974,31 @@ const ROLE_KEYWORDS: Array<[RegExp, string]> = [
   [/opera|financ|admin|rh/i, "operations"],
 ];
 
-export function getPresetForRole(roleTitle: string | null | undefined): UserPref[] {
-  const key = detectPresetKey(roleTitle);
-  const ids = PRESETS[key] ?? ALL_IDS;
-  const enabledSet = new Set(ids);
-  const orderedEnabled = ids.map(id => ({ id, enabled: true } as UserPref));
-  const rest = ALL_IDS.filter(id => !enabledSet.has(id)).map(id => ({ id, enabled: false } as UserPref));
-  return [...orderedEnabled, ...rest];
+/** Marcador do reset visual: a base do dashboard passou a ser a DASH-01.
+ *  Widgets extras nascem TODOS desligados; o usuário liga o que quiser. */
+export const RESET_SENTINEL = "__dash01_reset";
+
+export function getPresetForRole(_roleTitle?: string | null): UserPref[] {
+  return [
+    { id: RESET_SENTINEL, enabled: false },
+    ...ALL_IDS.map(id => ({ id, enabled: false } as UserPref)),
+  ];
 }
 
-function detectPresetKey(roleTitle: string | null | undefined): string {
-  if (!roleTitle) return "founder";
-  for (const [re, key] of ROLE_KEYWORDS) if (re.test(roleTitle)) return key;
-  return "founder";
-}
-
-// Respeita 100% o que o usuário salvou. Só remove ids desconhecidos e
-// acrescenta widgets ainda inexistentes como DESATIVADOS — nunca reativa
-// nada que o usuário tenha desligado.
-// Widgets do redesign do dashboard: entram habilitados uma única vez,
-// mesmo em contas antigas (o restante continua respeitando o que o usuário salvou).
-const NEW_LAYOUT_IDS = new Set([
-  "day-quickstats", "day-center", "priorities", "agenda-today", "kpi-column",
-]);
-
+// Respeita 100% o que o usuário salvou depois do reset. Só remove ids
+// desconhecidos e acrescenta widgets novos como DESATIVADOS.
 export function reconcilePrefs(saved: UserPref[] | null | undefined, roleTitle: string | null | undefined): UserPref[] {
   if (!saved || saved.length === 0) return getPresetForRole(roleTitle);
+  // Preferências anteriores ao reset visual são descartadas uma única vez.
+  if (!saved.some(p => p.id === RESET_SENTINEL)) return getPresetForRole(roleTitle);
+
   const knownIds = new Set(ALL_IDS);
   const filtered = saved.filter(p => knownIds.has(p.id));
   const seen = new Set(filtered.map(p => p.id));
-  const missing = ALL_IDS.filter(id => !seen.has(id)).map(id => ({ id, enabled: NEW_LAYOUT_IDS.has(id) } as UserPref));
-  const greetIdx = filtered.findIndex(p => p.id === "greeting");
-  const head = missing.filter(m => NEW_LAYOUT_IDS.has(m.id));
-  const tail = missing.filter(m => !NEW_LAYOUT_IDS.has(m.id));
-  const merged = greetIdx >= 0
-    ? [...filtered.slice(0, greetIdx + 1), ...head, ...filtered.slice(greetIdx + 1), ...tail]
-    : [...head, ...filtered, ...tail];
-
-  // Mantém os widgets do novo layout na ordem canônica da referência
-  // (resumo → central do dia → prioridades → agenda → KPIs).
-  const canonical = ALL_IDS.filter(id => NEW_LAYOUT_IDS.has(id));
-  const slots: number[] = [];
-  merged.forEach((p, i) => { if (NEW_LAYOUT_IDS.has(p.id)) slots.push(i); });
-  const byId = new Map(merged.map(p => [p.id, p]));
-  const ordered = canonical.map(id => byId.get(id)).filter(Boolean) as UserPref[];
-  slots.forEach((slot, i) => { if (ordered[i]) merged[slot] = ordered[i]; });
-  return merged;
+  const missing = ALL_IDS.filter(id => !seen.has(id)).map(id => ({ id, enabled: false } as UserPref));
+  return [{ id: RESET_SENTINEL, enabled: false }, ...filtered, ...missing];
 }
+
 
 
 
