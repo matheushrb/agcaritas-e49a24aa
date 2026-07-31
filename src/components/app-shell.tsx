@@ -3,7 +3,7 @@ import {
   LayoutGrid, Users, FileText, Briefcase, DollarSign, Calendar, UsersRound,
   Settings, Moon, Sun, LogOut, Bell, CheckSquare, Target, Truck, Lightbulb,
   Megaphone, Building2, Receipt, PanelLeftOpen, PanelLeftClose, HelpCircle,
-  Inbox, MessageSquare, FileSignature, Check, Trash2,
+  Inbox, MessageSquare, FileSignature, Check, Trash2, Asterisk, ChevronDown,
 } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
