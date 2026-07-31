@@ -2,7 +2,7 @@ import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
 import {
   LayoutGrid, Users, FileText, Briefcase, DollarSign, Calendar, UsersRound,
   Settings, Moon, Sun, LogOut, Bell, CheckSquare, Target, Truck, Lightbulb,
-  Megaphone, Building2, Receipt, PanelLeftOpen, PanelLeftClose, HelpCircle,
+  Megaphone, Building2, Receipt, HelpCircle,
   Inbox, MessageSquare, FileSignature, Check, Trash2, Asterisk, ChevronDown,
 } from "lucide-react";
 import { useState, type ReactNode } from "react";
