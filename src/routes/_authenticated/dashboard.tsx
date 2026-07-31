@@ -118,7 +118,7 @@ function DashboardContent() {
 
   const hour = new Date().getHours();
   const greeting = hour < 12 ? "Bom dia" : hour < 18 ? "Boa tarde" : "Boa noite";
-  const fullName = profile?.full_name?.trim() || firstName;
+  const fullName = profile?.display_name?.trim() || profile?.full_name?.trim() || firstName;
 
   return (
     <div className="space-y-4">
@@ -139,20 +139,26 @@ function DashboardContent() {
       <ExecutiveDashboard data={exec} />
 
       {prefs.some(p => p.enabled) && (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-5">
-          {prefs
-            .filter(p => p.enabled)
-            .map(p => {
-              const w = getWidget(p.id);
-              if (!w) return null;
-              return (
-                <section key={w.id} className={colSpanClass(w)}>
-                  {w.render(ctx)}
-                </section>
-              );
-            })}
-        </div>
+        <details className="rounded-lg border border-border bg-card">
+          <summary className="cursor-pointer px-4 py-3 text-[13px] font-semibold">
+            Meus widgets personalizados
+          </summary>
+          <div className="grid grid-cols-1 gap-4 border-t border-border p-4 lg:grid-cols-12 lg:gap-5">
+            {prefs
+              .filter(p => p.enabled)
+              .map(p => {
+                const w = getWidget(p.id);
+                if (!w) return null;
+                return (
+                  <section key={w.id} className={colSpanClass(w)}>
+                    {w.render(ctx)}
+                  </section>
+                );
+              })}
+          </div>
+        </details>
       )}
+
     </div>
   );
 }
