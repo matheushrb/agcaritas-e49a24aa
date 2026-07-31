@@ -142,7 +142,7 @@ function DashboardPage() {
 }
 
 function Spark({color}:{color:string}) {
-  return <svg viewBox="0 0 96 34" className="h-[34px] w-[96px]" preserveAspectRatio="none"><polyline fill="none" stroke={color} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" points="0,28 10,24 20,26 30,18 40,21 50,12 60,16 70,9 80,13 96,4"/></svg>;
+  return <svg viewBox="0 0 96 34" className="spark h-[30px] w-[78px] shrink-0" preserveAspectRatio="none"><polyline fill="none" stroke={color} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" points="0,28 10,24 20,26 30,18 40,21 50,12 60,16 70,9 80,13 96,4"/></svg>;
 }
 function Kpi({title,value,trend,trendSub,sub,subGreen,subRed,icon,chart}:{title:string;value:string;trend?:string;trendSub?:string;sub?:string;subGreen?:boolean;subRed?:boolean;icon?:React.ReactNode;chart?:"blue"|"green"}) {
   return (
@@ -150,7 +150,7 @@ function Kpi({title,value,trend,trendSub,sub,subGreen,subRed,icon,chart}:{title:
       <div className="flex items-start justify-between gap-2">
         <div className="flex items-center gap-1.5 text-[11px] font-medium">
           {icon && <span className="text-muted-foreground [&>svg]:h-[15px] [&>svg]:w-[15px]">{icon}</span>}
-          <span>{title}</span>
+          <span className="whitespace-nowrap">{title}</span>
           {chart && <Info className="h-3 w-3 text-muted-foreground/60" />}
         </div>
         {chart && <Spark color={chart === "green" ? "#16A34A" : "var(--primary)"} />}
