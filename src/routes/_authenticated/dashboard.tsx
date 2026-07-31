@@ -1,16 +1,14 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Card } from "@/components/ui/card";
 import { DashboardPersonalize } from "@/components/dashboard-personalize";
 import { QuickCreateButton } from "@/components/quick-create-button";
 import { useState } from "react";
 import { reconcilePrefs, type UserPref } from "@/lib/dashboard-widgets";
 import {
   AlertTriangle, CalendarDays, Check, Clock3, FolderKanban,
-  Users, CheckCircle2, Circle, Info,
+  Users, CheckCircle2, ChevronRight,
 } from "lucide-react";
-import { Bar, BarChart, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({
@@ -27,7 +25,6 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
 });
 
 const money = (n: number) => `R$ ${Math.round(n).toLocaleString("pt-BR")}`;
-const monthLabel = new Intl.DateTimeFormat("pt-BR", { month: "long", year: "numeric" }).format(new Date());
 
 function DashboardPage() {
   const { data = { tasks: [], projects: [], proposals: [], clients: [], charges: [], events: [] } } = useQuery({
@@ -35,7 +32,7 @@ function DashboardPage() {
     queryFn: async () => {
       const now = new Date();
       const dayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
-      const dayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate()+1).toISOString();
+      const dayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1).toISOString();
       const [tasks, projects, proposals, clients, charges, events] = await Promise.all([
         supabase.from("tasks").select("id,title,status,priority,due_date,progress,project_id").limit(250),
         supabase.from("projects").select("id,name,status,end_date,fixed_value,monthly_value").limit(200),
@@ -52,129 +49,270 @@ function DashboardPage() {
   const month = now.getMonth();
   const year = now.getFullYear();
   const inMonth = (s?: string | null) => !!s && new Date(s).getMonth() === month && new Date(s).getFullYear() === year;
-  const revenue = data.charges.filter((c:any)=>c.nature !== "expense" && c.type !== "expense" && inMonth(c.paid_at || c.due_date)).reduce((s:number,c:any)=>s+Number(c.amount||0),0);
-  const expenses = data.charges.filter((c:any)=>c.nature === "expense" || c.type === "expense" || c.type === "despesa").filter((c:any)=>inMonth(c.paid_at || c.due_date)).reduce((s:number,c:any)=>s+Math.abs(Number(c.amount||0)),0);
-  const margin = revenue > 0 ? Math.max(0, ((revenue-expenses)/revenue)*100) : 0;
-  const activeProjects = data.projects.filter((p:any)=>["active","review","planning"].includes(p.status)).length;
-  const riskProjects = data.projects.filter((p:any)=>p.end_date && new Date(p.end_date)<now && p.status!=="done").length;
-  const pipeline = data.proposals.filter((p:any)=>!["accepted","rejected"].includes(p.status)).reduce((s:number,p:any)=>s+Number(p.total_value||0),0);
-  const overdue = data.tasks.filter((t:any)=>t.due_date && new Date(t.due_date)<now && t.status!=="done").length;
-  const todayTasks = data.tasks.filter((t:any)=>t.due_date && new Date(t.due_date).toDateString()===now.toDateString() && t.status!=="done").length;
-  const doneToday = data.tasks.filter((t:any)=>t.status==="done").slice(0,20).length;
-  const approvals = data.tasks.filter((t:any)=>t.status==="review").length;
-  const onTime = data.tasks.length ? Math.round(100*(data.tasks.filter((t:any)=>t.status==="done" || !t.due_date || new Date(t.due_date)>=now).length/data.tasks.length)) : 100;
+  const revenue = data.charges.filter((c: any) => c.nature !== "expense" && c.type !== "expense" && inMonth(c.paid_at || c.due_date)).reduce((s: number, c: any) => s + Number(c.amount || 0), 0);
+  const expenses = data.charges.filter((c: any) => c.nature === "expense" || c.type === "expense" || c.type === "despesa").filter((c: any) => inMonth(c.paid_at || c.due_date)).reduce((s: number, c: any) => s + Math.abs(Number(c.amount || 0)), 0);
+  const margin = revenue > 0 ? Math.max(0, ((revenue - expenses) / revenue) * 100) : 0;
+  const activeProjects = data.projects.filter((p: any) => ["active", "review", "planning"].includes(p.status)).length;
+  const riskProjects = data.projects.filter((p: any) => p.end_date && new Date(p.end_date) < now && p.status !== "done").length;
+  const pipeline = data.proposals.filter((p: any) => !["accepted", "rejected"].includes(p.status)).reduce((s: number, p: any) => s + Number(p.total_value || 0), 0);
+  const overdue = data.tasks.filter((t: any) => t.due_date && new Date(t.due_date) < now && t.status !== "done").length;
+  const todayTasks = data.tasks.filter((t: any) => t.due_date && new Date(t.due_date).toDateString() === now.toDateString() && t.status !== "done").length;
+  const doneToday = data.tasks.filter((t: any) => t.status === "done").slice(0, 20).length;
+  const approvals = data.tasks.filter((t: any) => t.status === "review").length;
+  const onTime = data.tasks.length ? Math.round(100 * (data.tasks.filter((t: any) => t.status === "done" || !t.due_date || new Date(t.due_date) >= now).length / data.tasks.length)) : 100;
 
   const [prefs, setPrefs] = useState<UserPref[]>(reconcilePrefs(null, "Direção / Proprietário"));
-  const financeBars = [18,24,15,31,19,38,22,42,35,46,40,52].map((v,i)=>({n:i+1, receita:v*1000, despesa:Math.round(v*.64)*1000}));
-  const costPie = [
-    { name:"Pessoal", value:45, color:"#1268f3" }, { name:"Fornecedores", value:28, color:"#18b98d" },
-    { name:"Marketing", value:12, color:"#f59e0b" }, { name:"Outros", value:15, color:"#7c4ee4" },
+
+  const bars = [38, 52, 44, 61, 47, 70, 55, 78, 66, 84, 72, 92];
+  const pipelineStages = [
+    { label: "Novo", v: 100 }, { label: "Qualificação", v: 80 }, { label: "Proposta", v: 64 },
+    { label: "Negociação", v: 47 }, { label: "Fechadas", v: 31 },
   ];
-  const pipelineData = [100,80,64,47,31].map((v,i)=>({stage:["Novo","Qualificação","Proposta","Negociação","Fechadas"][i],v}));
+  const critical = (data.tasks as any[]).filter((t: any) => t.status !== "done").slice(0, 3);
+  const criticalRows = critical.length ? critical.map((t: any, i: number) => ({
+    id: t.id, title: t.title, project: "Projeto ativo", client: "Cliente",
+    due: i < 2 ? "Vence hoje" : "Vence amanhã", priority: i === 0 ? "Crítica" : "Alta",
+  })) : [
+    { id: "r1", title: "Aprovação final de KV e variações", project: "Campanha Verão 2026", client: "Doodles", due: "Vence hoje", priority: "Crítica" },
+    { id: "r2", title: "Entrega de peças para mídia digital", project: "Lançamento EcoBeleza", client: "EcoBeleza", due: "Vence hoje", priority: "Alta" },
+    { id: "r3", title: "Revisão de identidade visual", project: "Branding Viva+", client: "Viva+", due: "Vence amanhã", priority: "Alta" },
+  ];
 
   return (
-    <div className="dash-approved mx-auto max-w-[1535px] space-y-[10px]">
-      <div className="flex items-end justify-between gap-4">
-        <div><h1 className="text-[22px] font-semibold leading-[26px]">Olá, Matheus Bunds!</h1><p className="mt-0.5 text-[10px] text-muted-foreground">Aqui está o panorama da Caritas para hoje, {new Intl.DateTimeFormat("pt-BR", {day:"2-digit",month:"long",year:"numeric"}).format(now)}.</p></div>
-        <div className="flex gap-2"><DashboardPersonalize value={prefs} onChange={setPrefs} roleTitle="Direção / Proprietário" /><QuickCreateButton /></div>
+    <>
+      <div className="cv-page-head">
+        <div>
+          <h1>Olá, Matheus Bunds!</h1>
+          <p>Aqui está o panorama da Caritas para hoje, {new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "long", year: "numeric" }).format(now)}.</p>
+        </div>
+        <div className="cv-page-actions">
+          <DashboardPersonalize value={prefs} onChange={setPrefs} roleTitle="Direção / Proprietário" />
+          <QuickCreateButton />
+        </div>
       </div>
 
-      <div className="grid grid-cols-12 gap-3">
-        <div className="col-span-12 xl:col-span-10 grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">
-          <Kpi title="Receita do mês" value={money(revenue)} trend="▲ 18,7%" trendSub="vs. mês anterior" chart="blue" />
-          <Kpi title="Margem" value={`${margin.toFixed(1).replace('.',',')}%`} trend="▲ 4,2 p.p." trendSub="vs. mês anterior" chart="green" />
-          <Kpi title="Clientes ativos" value={String(data.clients.length)} sub="▲ 2 novos" subGreen icon={<Users/>} />
-          <Kpi title="Projetos ativos" value={String(activeProjects)} sub="▲ 2 iniciados" subGreen icon={<FolderKanban/>} />
-          <Kpi title="Projetos em risco" value={String(riskProjects)} sub="▲ 2 vs. semana" subRed icon={<AlertTriangle className="text-[#E5484D]"/>} />
-          <Kpi title="Pipeline comercial" value={money(pipeline)} sub={`${data.proposals.length} propostas`} icon={<Clock3 className="text-primary"/>} />
-
-        </div>
-
-        <aside className="dash-side col-span-12 xl:col-span-2 row-span-3 caritas-panel overflow-hidden">
-          <div className="border-b p-[14px]"><div className="font-semibold capitalize">{monthLabel}</div><MiniCalendar /></div>
-          <div className="border-b p-[14px]"><div className="flex items-center justify-between"><h3 className="font-semibold text-[13px]">Agenda do dia</h3><Link to="/calendar" className="text-[9px] text-primary">Ver agenda completa →</Link></div><div className="mt-3 space-y-[11px]">{(data.events as any[]).length ? (data.events as any[]).slice(0,4).map((e:any,i)=><AgendaRow key={e.id} time={new Date(e.starts_at).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})} title={e.title} color={["var(--primary)","var(--warning)","#7c3aed","#14b8a6"][i%4]} />) : <><AgendaRow time="09:30" title="Daily de Projetos" color="var(--primary)"/><AgendaRow time="11:00" title="Revisão campanha Verão 2026" color="var(--warning)"/><AgendaRow time="14:00" title="Aprovação com cliente" color="#7c3aed"/><AgendaRow time="16:30" title="Alinhamento de SEO" color="#14b8a6"/></>}</div></div>
-          <div className="p-[14px]"><div className="flex items-center justify-between"><h3 className="font-semibold text-[13px]">Próximas reuniões</h3><span className="text-[9px] text-primary">Ver todas →</span></div><div className="mt-4 space-y-4"><Meeting day="01" title="Kickoff EcoPro"/><Meeting day="03" title="Apresentação proposta"/></div></div>
-        </aside>
-
-        <section className="col-span-12 xl:col-span-10 caritas-panel p-4">
-          <div className="flex items-center justify-between"><div><h2 className="text-[15px] font-semibold">Atenção da Agência</h2><p className="mt-0.5 text-[11px] text-muted-foreground">O que precisa do seu foco agora.</p></div><Link to="/tasks" className="text-[11px] text-primary">Ver tudo →</Link></div>
-          <div className="mt-3 grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-2.5">
-            <Attention title="Tarefas vencidas" value={overdue} sub="críticas" icon={<Clock3/>}/><Attention title="Entregas de hoje" value={todayTasks} sub="projetos" icon={<CalendarDays/>}/><Attention title="Projetos em risco" value={riskProjects} sub="críticos" icon={<AlertTriangle/>}/><Attention title="Aprovações pendentes" value={approvals} sub="urgentes" icon={<Clock3/>}/><Attention title="Entregas concluídas hoje" value={doneToday} sub="Excelente!" icon={<Check/>}/><Attention title="Projetos no prazo" value={`${onTime}%`} sub="Dentro do prazo" icon={<CheckCircle2/>}/>
+      <div className="cv-dashboard-grid">
+        <div className="cv-content">
+          <div className="cv-kpi-grid">
+            <Kpi label="Receita do mês" value={money(revenue)} delta="▲ 18,7%" note="vs. mês anterior" spark="blue" />
+            <Kpi label="Margem" value={`${margin.toFixed(1).replace(".", ",")}%`} delta="▲ 4,2 p.p." note="vs. mês anterior" spark="green" />
+            <Kpi label="Clientes ativos" value={String(data.clients.length)} delta="▲ 2 novos" icon={<Users className="h-4 w-4" style={{ color: "var(--muted)" }} />} />
+            <Kpi label="Projetos ativos" value={String(activeProjects)} delta="▲ 2 iniciados" icon={<FolderKanban className="h-4 w-4" style={{ color: "var(--muted)" }} />} />
+            <Kpi label="Projetos em risco" value={String(riskProjects)} delta="▲ 2 vs. semana" danger icon={<AlertTriangle className="h-4 w-4" style={{ color: "var(--danger)" }} />} />
+            <Kpi label="Pipeline comercial" value={money(pipeline)} note={`${data.proposals.length} propostas`} icon={<Clock3 className="h-4 w-4" style={{ color: "var(--primary)" }} />} />
           </div>
-           <CriticalRows tasks={(data.tasks as any[]).filter((t:any)=>t.status!=="done").slice(0,3)} />
-        </section>
 
-        <div className="col-span-12 xl:col-span-10 grid grid-cols-1 lg:grid-cols-3 gap-3">
-          <Panel title="Financeiro / Panorama do mês" link="Ver relatório →">
-            <div className="grid grid-cols-2 gap-4"><div><div className="text-[10px] text-muted-foreground">Receita</div><div className="text-[16px] font-semibold">{money(revenue)}</div><div className="text-[10px] text-green-600">▲ 18,7%</div></div><div><div className="text-[10px] text-muted-foreground">Despesas</div><div className="text-[16px] font-semibold">{money(expenses)}</div><div className="text-[10px] text-green-600">▲ 7,7%</div></div></div>
-            <div className="mt-3 h-[145px] grid grid-cols-[1.5fr_1fr] gap-3"><ResponsiveContainer><BarChart data={financeBars}><XAxis dataKey="n" hide/><YAxis hide/><Tooltip/><Bar dataKey="receita" fill="#1268f3" radius={[2,2,0,0]}/><Bar dataKey="despesa" fill="#23b981" radius={[2,2,0,0]}/></BarChart></ResponsiveContainer><ResponsiveContainer><PieChart><Pie data={costPie} dataKey="value" innerRadius={32} outerRadius={48} paddingAngle={1}>{costPie.map((x,i)=><Cell key={i} fill={x.color}/>)}</Pie></PieChart></ResponsiveContainer></div>
-          </Panel>
-          <Panel title="Comercial / Pipeline" link="Ver pipeline →">
-            <div className="text-[10px] text-muted-foreground">Valor total</div>
-            <div className="text-[16px] font-semibold">{money(pipeline)}</div>
-            <div className="text-[9px] text-muted-foreground">{data.proposals.length} propostas</div>
-            <div className="mt-3 grid grid-cols-[1fr_1fr] items-center gap-3">
-              <div className="flex flex-col items-center gap-[3px]">
-                {pipelineData.map((x, i) => (
-                  <div key={x.stage} className="h-[18px] rounded-[2px]" style={{ width: `${100 - i * 16}%`, background: ["#1268f3", "#16b5a2", "#6d4fd7", "#f4a315", "#4fb86d"][i] }} />
-                ))}
+          <section className="cv-card cv-attention">
+            <div className="cv-section-head">
+              <div>
+                <h2>Atenção da Agência</h2>
+                <p>O que precisa do seu foco agora.</p>
               </div>
-              <div className="space-y-[7px]">
-                {pipelineData.map((x, i) => (
-                  <div key={x.stage} className="flex items-center gap-2 text-[9px]">
-                    <span className="h-1.5 w-1.5 rounded-full" style={{ background: ["#1268f3", "#16b5a2", "#6d4fd7", "#f4a315", "#4fb86d"][i] }} />
-                    <span className="flex-1 text-muted-foreground">{x.stage}</span>
-                    <span className="font-medium">{money(((x as any).value ?? (pipeline * x.v) / 100) || 0)}</span>
+              <Link to="/tasks" className="cv-link">Ver tudo <ChevronRight className="h-3 w-3" /></Link>
+            </div>
+
+            <div className="cv-focus-grid">
+              <Focus title="Tarefas vencidas" value={overdue} sub="críticas" icon={<Clock3 className="h-4 w-4" style={{ color: "var(--danger)" }} />} />
+              <Focus title="Entregas de hoje" value={todayTasks} sub="projetos" icon={<CalendarDays className="h-4 w-4" style={{ color: "var(--primary)" }} />} />
+              <Focus title="Projetos em risco" value={riskProjects} sub="críticos" icon={<AlertTriangle className="h-4 w-4" style={{ color: "var(--warning)" }} />} />
+              <Focus title="Aprovações pendentes" value={approvals} sub="urgentes" icon={<Clock3 className="h-4 w-4" style={{ color: "var(--purple)" }} />} />
+              <Focus title="Entregas concluídas hoje" value={doneToday} sub="Excelente!" icon={<Check className="h-4 w-4" style={{ color: "var(--success)" }} />} />
+              <Focus title="Projetos no prazo" value={`${onTime}%`} sub="Dentro do prazo" icon={<CheckCircle2 className="h-4 w-4" style={{ color: "var(--teal)" }} />} />
+            </div>
+
+            <div className="cv-table">
+              <div className="cv-table-row cv-table-head">
+                <span>Pendências críticas</span><span>Cliente / Projeto</span><span>Vencimento</span><span>Prioridade</span>
+              </div>
+              {criticalRows.map((row, i) => (
+                <div className="cv-table-row" key={row.id}>
+                  <span className="cv-issue"><AlertTriangle className="h-3 w-3" />{row.title}</span>
+                  <span><b>{row.project}</b><small>Cliente: {row.client}</small></span>
+                  <span style={i < 2 ? { color: "var(--danger)" } : { color: "var(--muted)" }}>{row.due}</span>
+                  <span><i className={`cv-badge ${row.priority === "Crítica" ? "critical" : "high"}`}>{row.priority}</i></span>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          <div className="cv-lower-grid">
+            <section className="cv-card cv-panel">
+              <div className="cv-section-head compact">
+                <h2>Financeiro / Panorama do mês</h2>
+                <Link to="/finance" className="cv-link">Ver relatório <ChevronRight className="h-3 w-3" /></Link>
+              </div>
+              <div className="cv-finance-values">
+                <div><span>Receita</span><strong>{money(revenue)}</strong><small className="is-positive">▲ 18,7%</small></div>
+                <div><span>Despesas</span><strong>{money(expenses)}</strong><small className="is-positive">▲ 7,7%</small></div>
+              </div>
+              <div className="cv-finance-viz">
+                <div className="cv-bars">
+                  {bars.map((h, i) => <i key={i} className={i % 2 ? "alt" : ""} style={{ height: `${h}%` }} />)}
+                </div>
+                <div className="cv-donut-wrap">
+                  <div className="cv-donut"><span>100%</span></div>
+                  <ul>
+                    <li>Pessoal <b>45%</b></li>
+                    <li>Fornecedores <b>28%</b></li>
+                    <li>Marketing <b>12%</b></li>
+                    <li>Outros <b>15%</b></li>
+                  </ul>
+                </div>
+              </div>
+            </section>
+
+            <section className="cv-card cv-panel">
+              <div className="cv-section-head compact">
+                <h2>Comercial / Pipeline</h2>
+                <Link to="/crm" className="cv-link">Ver pipeline <ChevronRight className="h-3 w-3" /></Link>
+              </div>
+              <span className="cv-micro cv-block">Valor total</span>
+              <strong className="cv-big-value">{money(pipeline)}</strong>
+              <span className="cv-micro cv-block">{data.proposals.length} propostas</span>
+              <div className="cv-pipeline">
+                <div className="cv-funnel">{pipelineStages.map(s => <i key={s.label} />)}</div>
+                <ul>
+                  {pipelineStages.map(s => (
+                    <li key={s.label}>{s.label} <b>{money((pipeline * s.v) / 100)}</b></li>
+                  ))}
+                </ul>
+              </div>
+              <div className="cv-footnote">Conversão estimada: 24,6% · Ciclo médio: 37 dias</div>
+            </section>
+
+            <section className="cv-card cv-panel">
+              <div className="cv-section-head compact">
+                <h2>Minha operação / Tarefas do dia</h2>
+                <Link to="/tasks" className="cv-link">Ver minhas tarefas <ChevronRight className="h-3 w-3" /></Link>
+              </div>
+              <div className="cv-task-stats">
+                <div><span>A fazer</span><b>{data.tasks.filter((t: any) => t.status === "todo").length}</b></div>
+                <div><span>Em andamento</span><b>{data.tasks.filter((t: any) => t.status === "in_progress").length}</b></div>
+                <div><span>Em revisão</span><b>{approvals}</b></div>
+                <div><span>Concluídas (hoje)</span><b>{doneToday}</b></div>
+              </div>
+              <h3>Prioridades de hoje</h3>
+              <div className="cv-task-list">
+                {(data.tasks as any[]).filter((t: any) => t.status !== "done").slice(0, 4).map((t: any, i: number) => (
+                  <div key={t.id}>
+                    <i className={i === 0 ? "done" : ""}>{i === 0 ? "✓" : ""}</i>
+                    <span>{t.title}</span>
+                    <small>{i < 2 ? "Hoje" : "Amanhã"}</small>
                   </div>
                 ))}
               </div>
-            </div>
-            <div className="mt-3 border-t pt-2 text-[9px] text-muted-foreground">Conversão estimada: 24,6% · Ciclo médio: 37 dias</div>
-          </Panel>
-
-          <Panel title="Minha operação / Tarefas do dia" link="Ver minhas tarefas →"><div className="grid grid-cols-4 divide-x text-center"><MiniStat l="A fazer" v={data.tasks.filter((t:any)=>t.status==='todo').length}/><MiniStat l="Em andamento" v={data.tasks.filter((t:any)=>t.status==='in_progress').length}/><MiniStat l="Em revisão" v={approvals}/><MiniStat l="Concluídas (hoje)" v={doneToday}/></div><div className="mt-4 space-y-2">{(data.tasks as any[]).filter((t:any)=>t.status!=="done").slice(0,4).map((t:any,i)=><div key={t.id} className="flex items-center gap-2 text-[11px]"><Circle className={i===0?"h-3.5 w-3.5 text-emerald-500 fill-emerald-500":"h-3.5 w-3.5 text-muted-foreground"}/><span className="flex-1 truncate">{t.title}</span><span className="text-[10px] text-muted-foreground">{i<2?"Hoje":"Amanhã"}</span></div>)}</div></Panel>
+            </section>
+          </div>
         </div>
+
+        <aside className="cv-right-rail">
+          <section className="cv-card cv-rail">
+            <div className="cv-rail-head">
+              <h2 style={{ textTransform: "capitalize" }}>
+                {new Intl.DateTimeFormat("pt-BR", { month: "long", year: "numeric" }).format(now)}
+              </h2>
+              <div><button>‹</button><button>›</button></div>
+            </div>
+            <MiniCalendar now={now} />
+          </section>
+
+          <section className="cv-card cv-rail">
+            <div className="cv-rail-head">
+              <h2 style={{ fontSize: 13 }}>Agenda do dia</h2>
+              <Link to="/calendar" className="cv-link">Ver agenda <ChevronRight className="h-3 w-3" /></Link>
+            </div>
+            <div className="cv-agenda">
+              {((data.events as any[]).length
+                ? (data.events as any[]).slice(0, 4).map((e: any, i: number) => ({
+                    time: new Date(e.starts_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }),
+                    title: e.title, tone: ["", "amber", "purple", "teal"][i % 4],
+                  }))
+                : [
+                    { time: "09:30", title: "Daily de Projetos", tone: "" },
+                    { time: "11:00", title: "Revisão campanha Verão 2026", tone: "amber" },
+                    { time: "14:00", title: "Aprovação com cliente", tone: "purple" },
+                    { time: "16:30", title: "Alinhamento de SEO", tone: "teal" },
+                  ]
+              ).map((e, i) => (
+                <div className={`cv-agenda-item ${e.tone}`} key={i}>
+                  <strong>{e.time}</strong>
+                  <div><b>{e.title}</b><span>Sala Caritas · 30 min</span></div>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          <section className="cv-card cv-rail">
+            <div className="cv-rail-head">
+              <h2 style={{ fontSize: 13 }}>Próximas reuniões</h2>
+              <Link to="/calendar" className="cv-link">Ver todas <ChevronRight className="h-3 w-3" /></Link>
+            </div>
+            <div className="cv-meeting"><time><b>01</b><span>AGO</span></time><div><b>Kickoff EcoPro</b><span>Sex · 10:00 · Sala 1</span></div></div>
+            <div className="cv-meeting"><time><b>03</b><span>AGO</span></time><div><b>Apresentação proposta</b><span>Seg · 15:00 · Online</span></div></div>
+          </section>
+        </aside>
       </div>
-      <div className="text-center text-[9px] text-muted-foreground">Caritas Gestão · Todos os direitos reservados · v2.3.0</div>
+    </>
+  );
+}
+
+function Spark({ tone }: { tone: "blue" | "green" }) {
+  return (
+    <svg viewBox="0 0 96 34" className={`spark spark-${tone}`} preserveAspectRatio="none">
+      <polyline fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"
+        points="0,28 10,24 20,26 30,18 40,21 50,12 60,16 70,9 80,13 96,4" />
+    </svg>
+  );
+}
+
+function Kpi({ label, value, delta, note, spark, icon, danger }: {
+  label: string; value: string; delta?: string; note?: string;
+  spark?: "blue" | "green"; icon?: React.ReactNode; danger?: boolean;
+}) {
+  return (
+    <article className="cv-card cv-kpi">
+      <span className="cv-kpi-label" style={{ display: "flex", alignItems: "center", gap: 6 }}>
+        {icon}{label}
+      </span>
+      <div className="cv-kpi-main">
+        <strong>{value}</strong>
+        {spark && <Spark tone={spark} />}
+      </div>
+      <small>
+        {delta && <b className={danger ? "is-danger" : "is-positive"} style={{ fontWeight: 600 }}>{delta}</b>}
+        {delta && note ? " " : ""}
+        {note}
+      </small>
+    </article>
+  );
+}
+
+function Focus({ title, value, sub, icon }: { title: string; value: string | number; sub: string; icon: React.ReactNode }) {
+  return (
+    <div className="cv-focus-card">
+      {icon}
+      <div><span>{title}</span><strong>{value}</strong><small>{sub}</small></div>
     </div>
   );
 }
 
-function Spark({color}:{color:string}) {
-  return <svg viewBox="0 0 96 34" className="spark h-[30px] w-[78px] shrink-0" preserveAspectRatio="none"><polyline fill="none" stroke={color} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" points="0,28 10,24 20,26 30,18 40,21 50,12 60,16 70,9 80,13 96,4"/></svg>;
-}
-function Kpi({title,value,trend,trendSub,sub,subGreen,subRed,icon,chart}:{title:string;value:string;trend?:string;trendSub?:string;sub?:string;subGreen?:boolean;subRed?:boolean;icon?:React.ReactNode;chart?:"blue"|"green"}) {
+function MiniCalendar({ now }: { now: Date }) {
+  const first = new Date(now.getFullYear(), now.getMonth(), 1);
+  const offset = (first.getDay() + 6) % 7;
+  const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+  const prevDays = new Date(now.getFullYear(), now.getMonth(), 0).getDate();
+  const cells: { n: number; muted: boolean }[] = [];
+  for (let i = offset - 1; i >= 0; i--) cells.push({ n: prevDays - i, muted: true });
+  for (let d = 1; d <= daysInMonth; d++) cells.push({ n: d, muted: false });
+  while (cells.length % 7 !== 0) cells.push({ n: cells.length - offset - daysInMonth + 1, muted: true });
   return (
-    <Card className="caritas-kpi">
-      <div className="flex items-start justify-between gap-2">
-        <div className="flex items-center gap-1.5 text-[11px] font-medium">
-          {icon && <span className="text-muted-foreground [&>svg]:h-[15px] [&>svg]:w-[15px]">{icon}</span>}
-          <span className="whitespace-nowrap">{title}</span>
-          {chart && <Info className="h-3 w-3 text-muted-foreground/60" />}
-        </div>
-        {chart && <Spark color={chart === "green" ? "#16A34A" : "var(--primary)"} />}
+    <>
+      <div className="cv-week">{["SEG", "TER", "QUA", "QUI", "SEX", "SÁB", "DOM"].map(d => <span key={d}>{d}</span>)}</div>
+      <div className="cv-days">
+        {cells.map((c, i) => (
+          <span key={i} className={c.muted ? "muted" : !c.muted && c.n === now.getDate() ? "selected" : ""}>{c.n}</span>
+        ))}
       </div>
-       <div className="mt-2 text-[20px] font-semibold leading-none">{value}</div>
-       <div className="mt-1.5 flex items-center gap-1 text-[8px]">
-        <span className={trend || subGreen ? "text-[#16A34A]" : subRed ? "text-[#E5484D]" : "text-muted-foreground"}>{trend || sub}</span>
-        {trendSub && <span className="text-muted-foreground">{trendSub}</span>}
-      </div>
-    </Card>
+    </>
   );
 }
-
-function Attention({title,value,sub,icon}:{title:string;value:string|number;sub:string;icon:React.ReactNode}) { return <div className="rounded-[11px] border bg-card px-3 py-3"><div className="flex gap-2"><div className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-muted text-muted-foreground [&>svg]:h-4 [&>svg]:w-4">{icon}</div><div><div className="text-[10px] font-medium">{title}</div><div className="mt-0.5 text-[17px] font-semibold leading-none">{value}</div><div className="mt-1 text-[9px] text-muted-foreground">{sub}</div></div></div></div> }
-function CriticalRows({tasks}:{tasks:any[]}) {
-  const fallback = [
-    { id:"ref-1", title:"Aprovação final de KV e variações", project:"Campanha Verão 2026", client:"Doodles", due:"Vence hoje", priority:"Crítica" },
-    { id:"ref-2", title:"Entrega de peças para mídia digital", project:"Lançamento EcoBeleza", client:"EcoBeleza", due:"Vence hoje", priority:"Alta" },
-    { id:"ref-3", title:"Revisão de identidade visual", project:"Branding Viva+", client:"Viva+", due:"Vence amanhã", priority:"Alta" },
-  ];
-  const rows = tasks.length ? tasks.map((task, index) => ({ id:task.id, title:task.title, project:"Projeto ativo", client:"Cliente", due:index < 2 ? "Vence hoje" : "Vence amanhã", priority:index === 0 ? "Crítica" : "Alta" })) : fallback;
-  return <div className="mt-3"><div className="grid grid-cols-[1.6fr_1.1fr_.65fr_.65fr_28px] px-1 pb-1.5 text-[9px] font-medium text-muted-foreground"><span>Pendências críticas</span><span>Cliente / Projeto</span><span>Vencimento</span><span>Prioridade</span><span/></div>{rows.slice(0,3).map((row, index)=><div key={row.id} className="grid grid-cols-[1.6fr_1.1fr_.65fr_.65fr_28px] items-center border-t py-[6px] text-[9px]"><span className="flex items-center gap-2 font-medium"><AlertTriangle className="h-3 w-3 text-destructive"/>{row.title}</span><span><b className="block font-medium">{row.project}</b><small className="text-[8px] text-muted-foreground">Cliente: {row.client}</small></span><span className={index<2?"text-destructive":"text-muted-foreground"}>{row.due}</span><span><span className={row.priority === "Crítica" ? "rounded-full bg-destructive/10 px-2 py-0.5 text-[8px] text-destructive" : "rounded-full bg-warning/10 px-2 py-0.5 text-[8px] text-warning"}>{row.priority}</span></span><span>⋮</span></div>)}</div>;
-}
-function Panel({title,link,children}:{title:string;link:string;children:React.ReactNode}) { return <section className="caritas-panel p-4 min-h-[260px]"><div className="mb-4 flex items-center justify-between"><h3 className="text-[13px] font-semibold">{title}</h3><span className="text-[10px] text-primary">{link}</span></div>{children}</section> }
-function MiniStat({l,v}:{l:string;v:number}){return <div className="px-2"><div className="text-[8px] text-muted-foreground">{l}</div><div className="mt-1 text-[15px] font-semibold">{v}</div></div>}
-function AgendaRow({time,title,color}:{time:string;title:string;color:string}){return <div className="flex gap-2"><span className="w-10 text-[10px] font-medium">{time}</span><div className="border-l-2 pl-2" style={{borderColor:color}}><div className="text-[10px] font-medium">{title}</div><div className="text-[9px] text-muted-foreground">Sala Caritas · 30 min</div></div></div>}
-function Meeting({day,title}:{day:string;title:string}){return <div className="flex gap-3"><div className="text-center"><div className="text-[15px] font-semibold leading-none">{day}</div><div className="mt-1 text-[8px] text-muted-foreground">AGO</div></div><div><div className="text-[10px] font-medium">{title}</div><div className="mt-1 text-[9px] text-muted-foreground">Sex · 10:00 · Sala 1</div></div></div>}
-function MiniCalendar(){const nums=[29,30,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,1,2];return <div className="mt-3 grid grid-cols-7 gap-y-2 text-center text-[9px]"><>{["SEG","TER","QUA","QUI","SEX","SÁB","DOM"].map(x=><span className="text-[7px] text-muted-foreground" key={x}>{x}</span>)}</>{nums.map((n,i)=><span key={i} className={n===31?"mx-auto grid h-6 w-6 place-items-center rounded-full bg-primary text-white":"text-foreground"}>{n}</span>)}</div>}
