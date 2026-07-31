@@ -178,7 +178,15 @@ function DashboardPage() {
               <strong className="cv-big-value">{money(pipeline)}</strong>
               <span className="cv-micro cv-block">{data.proposals.length} propostas</span>
               <div className="cv-pipeline">
-                <div className="cv-funnel">{pipelineStages.map(s => <i key={s.label} />)}</div>
+                <div className="cv-funnel" aria-label="Funil comercial">
+                  <svg viewBox="0 0 180 110" role="img">
+                    <polygon points="2,2 178,2 164,23 16,23" fill="var(--primary)" />
+                    <polygon points="17,25 163,25 150,46 30,46" fill="var(--teal)" />
+                    <polygon points="31,48 149,48 136,69 44,69" fill="var(--purple)" />
+                    <polygon points="45,71 135,71 122,92 58,92" fill="var(--warning)" />
+                    <polygon points="59,94 121,94 111,108 69,108" fill="var(--success)" />
+                  </svg>
+                </div>
                 <ul>
                   {pipelineStages.map((s, i) => (
                     <li key={s.label}>
