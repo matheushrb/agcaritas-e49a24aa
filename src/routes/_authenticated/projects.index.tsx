@@ -502,8 +502,10 @@ function ViewTab({
       type="button"
       onClick={onClick}
       className={cn(
-        "inline-flex h-[34px] items-center gap-2 rounded-lg px-3 text-[13px] font-medium transition",
-        active ? "bg-[#EEF3FF] text-[#1F5FFF]" : "text-muted-foreground hover:text-foreground",
+        "inline-flex h-[34px] items-center gap-2 rounded-lg border-b-2 px-3.5 text-[13px] font-medium transition",
+        active
+          ? "border-[#1769F6] bg-[#EEF4FF] text-[#1769F6]"
+          : "border-transparent text-muted-foreground hover:text-foreground",
       )}
     >
       <Icon className="h-4 w-4" />
@@ -511,6 +513,7 @@ function ViewTab({
     </button>
   );
 }
+
 
 const TONES: Record<string, string> = {
   slate: "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300",
