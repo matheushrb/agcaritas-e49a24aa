@@ -2,16 +2,25 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-  ArrowRight,
+  AlertTriangle,
+
+
+  ArrowUpDown,
   CalendarDays,
   CheckCircle2,
-  CircleDollarSign,
-  FolderKanban,
+  ChevronLeft,
+  ChevronRight,
+  Columns,
+  Folder,
+  FolderOpen,
+  LayoutGrid,
+  List,
   ListChecks,
+  MoreHorizontal,
+  PauseCircle,
   Plus,
   Search,
-  SlidersHorizontal,
-  TriangleAlert,
+  User,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -21,22 +30,18 @@ import {
   type ProjectPreviewData,
   type ProjectPreviewStatus,
 } from "@/components/project-preview-sheet";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Progress } from "@/components/ui/progress";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/projects/")({
-  validateSearch: (s: Record<string, unknown>) => ({
-    new: s.new === 1 || s.new === "1" ? 1 : undefined,
+  validateSearch: (s: { new?: number | string }) => ({
+    new: s.new === 1 || s.new === "1" ? (1 as const) : undefined,
   }),
   component: ProjectsPage,
 });
 
 type ProjectStatus = ProjectPreviewStatus;
+
 type Project = {
   id: string;
   name: string;
@@ -45,7 +50,6 @@ type Project = {
   client_id: string | null;
   start_date: string | null;
   end_date: string | null;
-  marketing_plan_id: string | null;
   project_type: string | null;
   billing_model: string | null;
   urgency: string | null;
@@ -53,7 +57,9 @@ type Project = {
   monthly_value: number | null;
   created_at: string;
 };
+
 type Client = { id: string; name: string };
+type Member = { user_id: string; name: string; avatar: string | null };
 
 type TaskAgg = {
   counts: Record<string, { total: number; overdue: number; done: number }>;
@@ -68,13 +74,21 @@ const STATUS_META: Record<ProjectStatus, { label: string; className: string }> =
   paused: { label: "Pausado", className: "bg-rose-50 text-rose-700 dark:bg-rose-500/15 dark:text-rose-300" },
 };
 
+const PAGE_SIZES = [8, 12, 24, 48];
+
 function ProjectsPage() {
   const qc = useQueryClient();
   const navigate = useNavigate();
   const searchParams = Route.useSearch();
 
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [clientFilter, setClientFilter] = useState("all");
+  const [ownerFilter, setOwnerFilter] = useState("all");
+  const [sort, setSort] = useState("recent");
+  const [view, setView] = useState<"cards" | "list" | "kanban">("cards");
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(8);
   const [newOpen, setNewOpen] = useState(false);
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
 
@@ -91,7 +105,7 @@ function ProjectsPage() {
       const { data, error } = await supabase
         .from("projects")
         .select(
-          "id,name,description,status,client_id,start_date,end_date,marketing_plan_id,project_type,billing_model,urgency,fixed_value,monthly_value,created_at",
+          "id,name,description,status,client_id,start_date,end_date,project_type,billing_model,urgency,fixed_value,monthly_value,created_at",
         )
         .order("created_at", { ascending: false });
       if (error) throw error;
@@ -105,6 +119,31 @@ function ProjectsPage() {
       const { data, error } = await supabase.from("clients").select("id,name").order("name");
       if (error) throw error;
       return (data ?? []) as Client[];
+    },
+  });
+
+  const { data: membersByProject = {} } = useQuery<Record<string, Member[]>>({
+    queryKey: ["project-members-min"],
+    queryFn: async () => {
+      const { data: rows, error } = await supabase.from("project_members").select("project_id,user_id");
+      if (error) throw error;
+      const ids = [...new Set((rows ?? []).map((r) => r.user_id))];
+      const profiles = ids.length
+        ? (await supabase.from("profiles").select("id,full_name,display_name,avatar_url").in("id", ids)).data ?? []
+        : [];
+      const byId = Object.fromEntries(
+        profiles.map((p) => [p.id, { name: p.display_name || p.full_name || "—", avatar: p.avatar_url }]),
+      );
+      const out: Record<string, Member[]> = {};
+      for (const row of rows ?? []) {
+        const profile = byId[row.user_id];
+        (out[row.project_id] ??= []).push({
+          user_id: row.user_id,
+          name: profile?.name ?? "—",
+          avatar: profile?.avatar ?? null,
+        });
+      }
+      return out;
     },
   });
 
@@ -132,7 +171,6 @@ function ProjectsPage() {
           aired_dates: string[] | null;
           deliverables: Array<{ billing_enabled?: boolean; billing_value?: number | null }> | null;
         };
-
         if (!row.project_id) continue;
         const pid = row.project_id;
         counts[pid] ??= { total: 0, overdue: 0, done: 0 };
@@ -145,42 +183,24 @@ function ProjectsPage() {
         const deliverables = (row.deliverables ?? [])
           .filter((d) => d.billing_enabled && d.billing_value != null)
           .reduce((sum, d) => sum + Number(d.billing_value ?? 0), 0);
-
         projected[pid] = (projected[pid] ?? 0) + base * multiplier + deliverables;
       }
-
       return { counts, projected };
     },
   });
 
-  const clientById = useMemo(() => Object.fromEntries(clients.map((client) => [client.id, client.name])), [clients]);
+  const clientById = useMemo(() => Object.fromEntries(clients.map((c) => [c.id, c.name])), [clients]);
 
-  const filtered = useMemo(() => {
-    let result = projects;
-    const term = search.trim().toLowerCase();
-    if (term) {
-      result = result.filter((project) => {
-        const clientName = project.client_id ? clientById[project.client_id] ?? "" : "";
-        return [project.name, project.description ?? "", clientName].some((value) => value.toLowerCase().includes(term));
-      });
-    }
-    if (statusFilter !== "all") result = result.filter((project) => project.status === statusFilter);
-    return result;
-  }, [projects, search, statusFilter, clientById]);
+  const allMembers = useMemo(() => {
+    const map = new Map<string, Member>();
+    for (const list of Object.values(membersByProject)) for (const m of list) map.set(m.user_id, m);
+    return [...map.values()].sort((a, b) => a.name.localeCompare(b.name));
+  }, [membersByProject]);
 
-  const stats = useMemo(() => {
-    const active = projects.filter((p) => p.status === "active").length;
-    const atRisk = projects.filter((p) => (tasksAgg.counts[p.id]?.overdue ?? 0) > 0 && p.status !== "done").length;
-    const completed = projects.filter((p) => p.status === "done").length;
-    const projectedRevenue = projects.reduce((sum, project) => sum + (tasksAgg.projected[project.id] ?? 0), 0);
-    return { total: projects.length, active, atRisk, completed, projectedRevenue };
-  }, [projects, tasksAgg]);
-
-  const previewData = useMemo<ProjectPreviewData[]>(
+  const rows = useMemo<ProjectPreviewData[]>(
     () =>
       projects.map((project) => {
         const count = tasksAgg.counts[project.id] ?? { total: 0, overdue: 0, done: 0 };
-        const progress = count.total > 0 ? Math.round((count.done / count.total) * 100) : 0;
         return {
           id: project.id,
           name: project.name,
@@ -196,20 +216,59 @@ function ProjectsPage() {
           monthlyValue: project.monthly_value,
           totalTasks: count.total,
           overdueTasks: count.overdue,
+          doneTasks: count.done,
           revenue: tasksAgg.projected[project.id] ?? 0,
-          progress,
-        };
+          progress: count.total > 0 ? Math.round((count.done / count.total) * 100) : 0,
+        } as ProjectPreviewData & { doneTasks: number };
       }),
     [projects, tasksAgg, clientById],
   );
 
-  const selectedProject = previewData.find((project) => project.id === selectedProjectId) ?? null;
+  const filtered = useMemo(() => {
+    let result = rows;
+    const term = search.trim().toLowerCase();
+    if (term) {
+      result = result.filter((p) =>
+        [p.name, p.description ?? "", p.clientName ?? ""].some((v) => v.toLowerCase().includes(term)),
+      );
+    }
+    if (statusFilter !== "all") result = result.filter((p) => p.status === statusFilter);
+    if (clientFilter !== "all") {
+      const name = clientById[clientFilter];
+      result = result.filter((p) => p.clientName === name);
+    }
+    if (ownerFilter !== "all") {
+      result = result.filter((p) => (membersByProject[p.id] ?? []).some((m) => m.user_id === ownerFilter));
+    }
+    const sorted = [...result];
+    if (sort === "name") sorted.sort((a, b) => a.name.localeCompare(b.name));
+    if (sort === "deadline")
+      sorted.sort((a, b) => (a.endDate ?? "9999").localeCompare(b.endDate ?? "9999"));
+    if (sort === "revenue") sorted.sort((a, b) => b.revenue - a.revenue);
+    return sorted;
+  }, [rows, search, statusFilter, clientFilter, ownerFilter, sort, clientById, membersByProject]);
+
+  useEffect(() => setPage(1), [search, statusFilter, clientFilter, ownerFilter, sort, pageSize]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const currentPage = Math.min(page, totalPages);
+  const paged = filtered.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+
+  const kpis = useMemo(() => {
+    const total = rows.length;
+    const active = rows.filter((p) => p.status === "active").length;
+    const done = rows.filter((p) => p.status === "done").length;
+    const paused = rows.filter((p) => p.status === "paused").length;
+    const risk = rows.filter((p) => p.overdueTasks > 0 && p.status !== "done").length;
+    return { total, active, done, paused, risk };
+  }, [rows]);
+
+  const selectedProject = rows.find((p) => p.id === selectedProjectId) ?? null;
 
   const createProject = useMutation({
     mutationFn: async (input: ProjectWizardValue) => {
       const { data: profile } = await supabase.from("profiles").select("organization_id").maybeSingle();
       if (!profile?.organization_id) throw new Error("Sem organização");
-
       const { error } = await supabase.from("projects").insert({
         organization_id: profile.organization_id,
         name: input.name,
@@ -238,87 +297,168 @@ function ProjectsPage() {
 
   return (
     <>
-      <div className="space-y-5 pb-8">
-        <header className="flex flex-wrap items-end justify-between gap-4">
+      <div className="pb-8">
+        {/* Cabeçalho */}
+        <header className="mb-5 flex flex-wrap items-start justify-between gap-4">
           <div>
-            <p className="mb-2 text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">Operação</p>
-            <h1 className="text-[32px] font-semibold tracking-[-0.045em] text-foreground">Projetos</h1>
-            <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-              Visão consolidada dos projetos, prazos, entregas, risco e receita prevista.
+            <h1 className="text-[30px] font-semibold leading-none tracking-[-0.03em] text-foreground">Projetos</h1>
+            <p className="mt-2 text-[13px] text-muted-foreground">
+              Acompanhe o andamento dos projetos, prazos, equipe e resultados em um só lugar.
             </p>
           </div>
-
-          <Button className="h-10 rounded-lg bg-[#3659E3] px-4 text-white hover:bg-[#2F50CE]" onClick={() => setNewOpen(true)}>
-            <Plus className="mr-2 h-4 w-4" />
-            Novo projeto
-          </Button>
+          <div className="flex items-center gap-3">
+            <div className="flex h-[42px] items-center rounded-[10px] border border-border/80 bg-card p-1">
+              <ViewTab active={view === "cards"} onClick={() => setView("cards")} icon={LayoutGrid} label="Cards" />
+              <ViewTab active={view === "list"} onClick={() => setView("list")} icon={List} label="Lista" />
+              <ViewTab active={view === "kanban"} onClick={() => setView("kanban")} icon={Columns} label="Kanban" />
+            </div>
+            <button
+              type="button"
+              onClick={() => setNewOpen(true)}
+              className="inline-flex h-[42px] items-center gap-2 rounded-[10px] bg-[#1F5FFF] px-4 text-[13.5px] font-medium text-white transition hover:bg-[#1a52e0]"
+            >
+              <Plus className="h-4 w-4" />
+              Novo projeto
+            </button>
+          </div>
         </header>
 
-        <section className="grid grid-cols-2 gap-2.5 xl:grid-cols-5">
-          <SummaryCard label="Total de projetos" value={stats.total.toString()} icon={FolderKanban} />
-          <SummaryCard label="Projetos ativos" value={stats.active.toString()} icon={ListChecks} />
-          <SummaryCard label="Projetos em risco" value={stats.atRisk.toString()} icon={TriangleAlert} danger={stats.atRisk > 0} />
-          <SummaryCard label="Concluídos" value={stats.completed.toString()} icon={CheckCircle2} />
-          <SummaryCard label="Receita prevista" value={formatMoney(stats.projectedRevenue)} icon={CircleDollarSign} wide />
+        {/* KPIs */}
+        <section className="mb-4 grid grid-cols-2 gap-3 xl:grid-cols-5">
+          <Kpi label="Total" value={kpis.total} sub={`${kpis.active} em andamento`} icon={Folder} tone="slate" />
+          <Kpi label="Ativos" value={kpis.active} sub={pct(kpis.active, kpis.total)} icon={FolderOpen} tone="blue" />
+          <Kpi label="Concluídos" value={kpis.done} sub={pct(kpis.done, kpis.total)} icon={CheckCircle2} tone="green" />
+          <Kpi label="Pausados" value={kpis.paused} sub={pct(kpis.paused, kpis.total)} icon={PauseCircle} tone="amber" />
+          <Kpi label="Em risco" value={kpis.risk} sub={pct(kpis.risk, kpis.total)} icon={AlertTriangle} tone="red" />
         </section>
 
-        <section className="flex flex-col gap-3 rounded-xl border border-border/80 bg-card p-3 shadow-[0_8px_28px_rgba(15,23,42,0.035)] md:flex-row md:items-center">
-          <div className="relative min-w-0 flex-1">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
+        {/* Filtros */}
+        <section className="mb-4 flex flex-wrap items-center gap-3">
+          <label className="flex h-[42px] min-w-[280px] flex-1 items-center gap-2 rounded-[10px] border border-border/80 bg-card px-3 lg:max-w-[320px] lg:flex-none">
+            <Search className="h-4 w-4 text-muted-foreground" />
+            <input
               value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              placeholder="Buscar por projeto, cliente ou descrição..."
-              className="h-10 rounded-lg border-border/80 bg-background pl-9 shadow-none"
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Buscar projetos..."
+              className="w-full border-0 bg-transparent text-[13px] outline-none placeholder:text-muted-foreground"
             />
-          </div>
+          </label>
 
-          <div className="flex items-center gap-2">
-            <div className="hidden items-center gap-1.5 text-xs text-muted-foreground sm:flex">
-              <SlidersHorizontal className="h-3.5 w-3.5" />
-              Filtrar
-            </div>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="h-10 w-[170px] rounded-lg border-border/80 bg-background shadow-none">
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos os status</SelectItem>
-                {(Object.keys(STATUS_META) as ProjectStatus[]).map((status) => (
-                  <SelectItem key={status} value={status}>
-                    {STATUS_META[status].label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <FilterSelect label="Status" value={statusFilter} onChange={setStatusFilter}>
+            <option value="all">Todos</option>
+            {(Object.keys(STATUS_META) as ProjectStatus[]).map((s) => (
+              <option key={s} value={s}>
+                {STATUS_META[s].label}
+              </option>
+            ))}
+          </FilterSelect>
+
+          <FilterSelect label="Cliente" value={clientFilter} onChange={setClientFilter}>
+            <option value="all">Todos</option>
+            {clients.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))}
+          </FilterSelect>
+
+          <FilterSelect label="Responsável" value={ownerFilter} onChange={setOwnerFilter}>
+            <option value="all">Todos</option>
+            {allMembers.map((m) => (
+              <option key={m.user_id} value={m.user_id}>
+                {m.name}
+              </option>
+            ))}
+          </FilterSelect>
+
+          <div className="ml-auto">
+            <FilterSelect label="Ordenar por" value={sort} onChange={setSort} icon={ArrowUpDown}>
+              <option value="recent">Mais recentes</option>
+              <option value="name">Nome</option>
+              <option value="deadline">Prazo</option>
+              <option value="revenue">Receita</option>
+            </FilterSelect>
           </div>
         </section>
 
+        {/* Conteúdo */}
         {isLoading ? (
-          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-            {[0, 1, 2, 3, 4, 5].map((item) => (
-              <div key={item} className="h-[240px] animate-pulse rounded-xl border border-border/60 bg-card" />
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
+            {[0, 1, 2, 3, 4, 5, 6, 7].map((i) => (
+              <div key={i} className="h-[230px] animate-pulse rounded-xl border border-border/70 bg-card" />
             ))}
           </div>
         ) : filtered.length === 0 ? (
-          <section className="rounded-xl border border-dashed border-border bg-card px-6 py-16 text-center">
-            <FolderKanban className="mx-auto h-7 w-7 text-muted-foreground" />
+          <div className="rounded-xl border border-dashed border-border bg-card px-6 py-16 text-center">
+            <Folder className="mx-auto h-7 w-7 text-muted-foreground" />
             <h2 className="mt-4 text-sm font-semibold">Nenhum projeto encontrado</h2>
             <p className="mt-1 text-xs text-muted-foreground">Ajuste os filtros ou crie um novo projeto.</p>
-          </section>
+          </div>
+        ) : view === "cards" ? (
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
+            {paged.map((project) => (
+              <ProjectCard
+                key={project.id}
+                project={project}
+                members={membersByProject[project.id] ?? []}
+                onOpen={() => setSelectedProjectId(project.id)}
+              />
+            ))}
+          </div>
+        ) : view === "list" ? (
+          <ProjectTable rows={paged} membersByProject={membersByProject} onOpen={setSelectedProjectId} />
         ) : (
-          <section className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
-            {filtered.map((project) => {
-              const preview = previewData.find((item) => item.id === project.id)!;
-              return (
-                <ProjectCard
-                  key={project.id}
-                  project={preview}
-                  onClick={() => setSelectedProjectId(project.id)}
-                />
-              );
-            })}
-          </section>
+          <ProjectKanban rows={filtered} onOpen={setSelectedProjectId} />
+        )}
+
+        {/* Paginação */}
+        {view !== "kanban" && filtered.length > 0 && (
+          <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+            <p className="text-[12px] text-muted-foreground">
+              Mostrando {(currentPage - 1) * pageSize + 1}–{Math.min(currentPage * pageSize, filtered.length)} de{" "}
+              {filtered.length} projetos
+            </p>
+            <div className="flex items-center gap-1.5">
+              <PagerButton disabled={currentPage === 1} onClick={() => setPage(currentPage - 1)}>
+                <ChevronLeft className="h-4 w-4" />
+              </PagerButton>
+              {Array.from({ length: totalPages }, (_, i) => i + 1)
+                .filter((n) => n === 1 || n === totalPages || Math.abs(n - currentPage) <= 1)
+                .map((n, idx, arr) => (
+                  <span key={n} className="flex items-center gap-1.5">
+                    {idx > 0 && arr[idx - 1] !== n - 1 && <span className="px-1 text-xs text-muted-foreground">...</span>}
+                    <button
+                      type="button"
+                      onClick={() => setPage(n)}
+                      className={cn(
+                        "h-8 min-w-8 rounded-lg border px-2 text-[12.5px] transition",
+                        n === currentPage
+                          ? "border-[#1F5FFF] bg-[#1F5FFF] text-white"
+                          : "border-border/80 bg-card text-foreground hover:bg-muted",
+                      )}
+                    >
+                      {n}
+                    </button>
+                  </span>
+                ))}
+              <PagerButton disabled={currentPage === totalPages} onClick={() => setPage(currentPage + 1)}>
+                <ChevronRight className="h-4 w-4" />
+              </PagerButton>
+            </div>
+            <label className="flex h-9 items-center gap-2 rounded-[10px] border border-border/80 bg-card px-3 text-[12.5px]">
+              <select
+                value={pageSize}
+                onChange={(e) => setPageSize(Number(e.target.value))}
+                className="border-0 bg-transparent outline-none"
+              >
+                {PAGE_SIZES.map((n) => (
+                  <option key={n} value={n}>
+                    {n} por página
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
         )}
       </div>
 
@@ -341,104 +481,381 @@ function ProjectsPage() {
   );
 }
 
-function SummaryCard({
-  label,
-  value,
+/* ---------- Blocos ---------- */
+
+function ViewTab({
+  active,
+  onClick,
   icon: Icon,
-  danger = false,
-  wide = false,
+  label,
 }: {
-  label: string;
-  value: string;
+  active: boolean;
+  onClick: () => void;
   icon: React.ElementType;
-  danger?: boolean;
-  wide?: boolean;
+  label: string;
 }) {
-  return (
-    <div className={cn("rounded-xl border border-border/80 bg-card p-4 shadow-[0_8px_24px_rgba(15,23,42,0.03)]", wide && "col-span-2 xl:col-span-1")}>
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <p className="text-[11px] font-medium text-muted-foreground">{label}</p>
-          <div className={cn("mt-2 text-2xl font-semibold tracking-[-0.04em]", danger && "text-rose-600 dark:text-rose-400")}>{value}</div>
-        </div>
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#E9EDFC] text-[#3659E3] dark:bg-[#7E95F5]/10 dark:text-[#9FB0FF]">
-          <Icon className="h-4 w-4" />
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function ProjectCard({ project, onClick }: { project: ProjectPreviewData; onClick: () => void }) {
-  const status = STATUS_META[project.status];
-
   return (
     <button
       type="button"
       onClick={onClick}
-      className="group flex min-h-[238px] w-full flex-col rounded-xl border border-border/80 bg-card p-5 text-left shadow-[0_8px_24px_rgba(15,23,42,0.035)] transition hover:-translate-y-0.5 hover:border-[#3659E3]/30 hover:shadow-[0_14px_34px_rgba(15,23,42,0.07)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3659E3]/35"
+      className={cn(
+        "inline-flex h-[34px] items-center gap-2 rounded-lg px-3 text-[13px] font-medium transition",
+        active ? "bg-[#EEF3FF] text-[#1F5FFF]" : "text-muted-foreground hover:text-foreground",
+      )}
     >
-      <div className="flex items-start justify-between gap-4">
-        <div className="min-w-0">
-          <p className="text-[11px] font-medium text-muted-foreground">{project.clientName || "Projeto interno"}</p>
-          <h2 className="mt-1 truncate text-[17px] font-semibold tracking-[-0.025em] text-foreground">{project.name}</h2>
-        </div>
-        <Badge className={cn("shrink-0 rounded-md border-0 px-2 py-1 text-[10px] font-medium", status.className)}>{status.label}</Badge>
-      </div>
-
-      <p className="mt-3 line-clamp-2 min-h-10 text-xs leading-5 text-muted-foreground">
-        {project.description || "Projeto sem descrição cadastrada."}
-      </p>
-
-      <div className="mt-5">
-        <div className="mb-2 flex items-center justify-between text-[10px] text-muted-foreground">
-          <span>Progresso</span>
-          <span className="font-medium text-foreground">{project.progress}%</span>
-        </div>
-        <Progress value={project.progress} className="h-1.5 bg-muted" />
-      </div>
-
-      <div className="mt-5 grid grid-cols-3 gap-2 border-t border-border/70 pt-4">
-        <ProjectStat label="Tarefas" value={project.totalTasks.toString()} />
-        <ProjectStat label="Atrasadas" value={project.overdueTasks.toString()} danger={project.overdueTasks > 0} />
-        <ProjectStat label="Previsto" value={formatCompactMoney(project.revenue)} />
-      </div>
-
-      <div className="mt-auto flex items-center justify-between pt-4 text-[10px] text-muted-foreground">
-        <span className="inline-flex items-center gap-1.5">
-          <CalendarDays className="h-3.5 w-3.5" />
-          {formatShortDate(project.startDate)} — {formatShortDate(project.endDate)}
-        </span>
-        <span className="inline-flex items-center gap-1 font-medium text-[#3659E3] opacity-0 transition-opacity group-hover:opacity-100 dark:text-[#9FB0FF]">
-          Ver projeto <ArrowRight className="h-3 w-3" />
-        </span>
-      </div>
+      <Icon className="h-4 w-4" />
+      {label}
     </button>
   );
 }
 
-function ProjectStat({ label, value, danger = false }: { label: string; value: string; danger?: boolean }) {
+const TONES: Record<string, string> = {
+  slate: "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300",
+  blue: "bg-[#EEF3FF] text-[#1F5FFF] dark:bg-blue-500/15 dark:text-blue-300",
+  green: "bg-emerald-50 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-300",
+  amber: "bg-amber-50 text-amber-600 dark:bg-amber-500/15 dark:text-amber-300",
+  red: "bg-rose-50 text-rose-600 dark:bg-rose-500/15 dark:text-rose-300",
+};
+
+function Kpi({
+  label,
+  value,
+  sub,
+  icon: Icon,
+  tone,
+}: {
+  label: string;
+  value: number;
+  sub: string;
+  icon: React.ElementType;
+  tone: keyof typeof TONES;
+}) {
   return (
-    <div>
-      <div className={cn("text-sm font-semibold tracking-[-0.02em]", danger && "text-rose-600 dark:text-rose-400")}>{value}</div>
-      <div className="mt-0.5 text-[9px] text-muted-foreground">{label}</div>
+    <div className="rounded-xl border border-border/80 bg-card px-4 py-3.5">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="text-[12.5px] text-muted-foreground">{label}</p>
+          <div className="mt-1.5 text-[28px] font-semibold leading-none tracking-[-0.035em]">{value}</div>
+        </div>
+        <div className={cn("flex h-9 w-9 items-center justify-center rounded-full", TONES[tone])}>
+          <Icon className="h-4 w-4" />
+        </div>
+      </div>
+      <p className="mt-3 text-[11.5px] text-muted-foreground">{sub}</p>
     </div>
   );
+}
+
+function FilterSelect({
+  label,
+  value,
+  onChange,
+  children,
+  icon: Icon,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  children: React.ReactNode;
+  icon?: React.ElementType;
+}) {
+  return (
+    <label className="inline-flex h-[42px] items-center gap-2 whitespace-nowrap rounded-[10px] border border-border/80 bg-card px-3 text-[13px]">
+      {Icon && <Icon className="h-3.5 w-3.5 text-muted-foreground" />}
+      <span className="text-muted-foreground">{label}:</span>
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="cursor-pointer border-0 bg-transparent font-medium text-foreground outline-none"
+      >
+        {children}
+      </select>
+    </label>
+  );
+}
+
+function Avatars({ members }: { members: Member[] }) {
+  const shown = members.slice(0, 3);
+  const rest = members.length - shown.length;
+  if (members.length === 0) {
+    return (
+      <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-muted text-muted-foreground">
+        <User className="h-3 w-3" />
+      </span>
+    );
+  }
+  return (
+    <span className="flex items-center">
+      {shown.map((m) => (
+        <span
+          key={m.user_id}
+          title={m.name}
+          className="-ml-1.5 flex h-6 w-6 items-center justify-center overflow-hidden rounded-full border-2 border-card bg-[#EEF3FF] text-[9px] font-semibold text-[#1F5FFF] first:ml-0"
+        >
+          {m.avatar ? <img src={m.avatar} alt={m.name} className="h-full w-full object-cover" /> : initials(m.name)}
+        </span>
+      ))}
+      {rest > 0 && (
+        <span className="-ml-1.5 flex h-6 w-6 items-center justify-center rounded-full border-2 border-card bg-muted text-[9px] font-semibold text-muted-foreground">
+          +{rest}
+        </span>
+      )}
+    </span>
+  );
+}
+
+function ProjectCard({
+  project,
+  members,
+  onOpen,
+}: {
+  project: ProjectPreviewData & { doneTasks?: number };
+  members: Member[];
+  onOpen: () => void;
+}) {
+  const health = healthOf(project);
+  const due = dueInfo(project.endDate, project.status);
+
+  return (
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={onOpen}
+      onKeyDown={(e) => (e.key === "Enter" ? onOpen() : undefined)}
+      className="flex cursor-pointer flex-col rounded-xl border border-border/80 bg-card px-4 pb-3 pt-4 transition hover:border-[#1F5FFF]/40 hover:shadow-[0_10px_28px_rgba(15,23,42,0.06)]"
+    >
+      <h3 className="truncate text-[16px] font-semibold tracking-[-0.02em]">{project.name}</h3>
+
+      <div className="mt-2 flex items-center gap-2">
+        <span className="inline-flex min-w-0 items-center gap-1.5 text-[12px] text-muted-foreground">
+          <User className="h-3.5 w-3.5 shrink-0" />
+          <span className="truncate">{project.clientName || "Interno"}</span>
+        </span>
+        {project.projectType && !/^[0-9a-f]{8}-[0-9a-f]{4}-/i.test(project.projectType) && (
+          <span className="truncate rounded-md border border-border/80 px-2 py-0.5 text-[11px] text-muted-foreground">
+            {project.projectType}
+          </span>
+        )}
+      </div>
+
+      <div className="mt-2 flex items-center justify-end gap-1.5 text-[11.5px]">
+        <span className={cn("h-1.5 w-1.5 rounded-full", health.dot)} />
+        <span className={health.text}>{health.label}</span>
+      </div>
+
+      <div className="mt-1.5 flex items-center gap-2">
+        <span className="text-[11.5px] text-muted-foreground">{project.progress}%</span>
+        <span className="h-1.5 flex-1 overflow-hidden rounded-full bg-muted">
+          <span className="block h-full rounded-full bg-[#1F5FFF]" style={{ width: `${project.progress}%` }} />
+        </span>
+        <span className="text-[11.5px] font-medium">{project.progress}%</span>
+      </div>
+
+      <p className={cn("mt-3 inline-flex items-center gap-1.5 text-[12px]", due.className)}>
+        <CalendarDays className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+        {due.label}
+      </p>
+
+      <div className="mt-2.5 flex items-center justify-between gap-2">
+        <Avatars members={members} />
+        <span className="inline-flex items-center gap-1.5 text-[12px] text-muted-foreground">
+          <ListChecks className="h-3.5 w-3.5" />
+          {project.doneTasks ?? 0}/{project.totalTasks} tarefas
+        </span>
+      </div>
+
+      {project.overdueTasks > 0 && (
+        <p className="mt-2 inline-flex items-center gap-1.5 text-[11.5px] font-medium text-rose-600 dark:text-rose-400">
+          <AlertTriangle className="h-3.5 w-3.5" />
+          {project.overdueTasks} tarefa{project.overdueTasks > 1 ? "s" : ""} em atraso
+        </p>
+      )}
+
+      <div className="mt-3 flex items-center justify-between gap-2 border-t border-border/70 pt-2.5">
+        <span className="text-[11.5px] text-muted-foreground">Receita prevista</span>
+        <span className="ml-auto text-[13.5px] font-semibold tracking-[-0.02em]">{formatMoney(project.revenue)}</span>
+        <button
+          type="button"
+          onClick={(e) => e.stopPropagation()}
+          className="rounded-md p-1 text-muted-foreground transition hover:bg-muted"
+        >
+          <MoreHorizontal className="h-4 w-4" />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function ProjectTable({
+  rows,
+  membersByProject,
+  onOpen,
+}: {
+  rows: (ProjectPreviewData & { doneTasks?: number })[];
+  membersByProject: Record<string, Member[]>;
+  onOpen: (id: string) => void;
+}) {
+  return (
+    <div className="overflow-hidden rounded-xl border border-border/80 bg-card">
+      <table className="w-full text-[13px]">
+        <thead>
+          <tr className="border-b border-border/70 text-left text-[11.5px] text-muted-foreground">
+            <th className="px-4 py-3 font-medium">Projeto</th>
+            <th className="px-4 py-3 font-medium">Cliente</th>
+            <th className="px-4 py-3 font-medium">Status</th>
+            <th className="px-4 py-3 font-medium">Progresso</th>
+            <th className="px-4 py-3 font-medium">Prazo final</th>
+            <th className="px-4 py-3 font-medium">Equipe</th>
+            <th className="px-4 py-3 text-right font-medium">Receita prevista</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((project) => {
+            const due = dueInfo(project.endDate, project.status);
+            return (
+              <tr
+                key={project.id}
+                onClick={() => onOpen(project.id)}
+                className="cursor-pointer border-b border-border/60 transition last:border-0 hover:bg-muted/50"
+              >
+                <td className="px-4 py-3 font-medium">{project.name}</td>
+                <td className="px-4 py-3 text-muted-foreground">{project.clientName || "Interno"}</td>
+                <td className="px-4 py-3">
+                  <span
+                    className={cn(
+                      "rounded-md px-2 py-1 text-[11px] font-medium",
+                      STATUS_META[project.status].className,
+                    )}
+                  >
+                    {STATUS_META[project.status].label}
+                  </span>
+                </td>
+                <td className="px-4 py-3">
+                  <span className="flex items-center gap-2">
+                    <span className="text-[12px]">{project.progress}%</span>
+                    <span className="h-1.5 w-20 overflow-hidden rounded-full bg-muted">
+                      <span className="block h-full rounded-full bg-[#1F5FFF]" style={{ width: `${project.progress}%` }} />
+                    </span>
+                  </span>
+                </td>
+                <td className={cn("px-4 py-3 text-[12px]", due.className)}>{due.label}</td>
+                <td className="px-4 py-3">
+                  <Avatars members={membersByProject[project.id] ?? []} />
+                </td>
+                <td className="px-4 py-3 text-right font-semibold">{formatMoney(project.revenue)}</td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function ProjectKanban({
+  rows,
+  onOpen,
+}: {
+  rows: ProjectPreviewData[];
+  onOpen: (id: string) => void;
+}) {
+  const columns = Object.keys(STATUS_META) as ProjectStatus[];
+  return (
+    <div className="grid grid-cols-1 gap-3 md:grid-cols-3 xl:grid-cols-5">
+      {columns.map((status) => {
+        const list = rows.filter((p) => p.status === status);
+        return (
+          <div key={status} className="rounded-xl border border-border/80 bg-card p-3">
+            <div className="mb-3 flex items-center justify-between">
+              <span className="text-[12.5px] font-semibold">{STATUS_META[status].label}</span>
+              <span className="text-[11.5px] text-muted-foreground">{list.length}</span>
+            </div>
+            <div className="space-y-2">
+              {list.map((project) => (
+                <button
+                  key={project.id}
+                  type="button"
+                  onClick={() => onOpen(project.id)}
+                  className="w-full rounded-lg border border-border/70 bg-background p-3 text-left transition hover:border-[#1F5FFF]/40"
+                >
+                  <p className="truncate text-[13px] font-medium">{project.name}</p>
+                  <p className="mt-1 truncate text-[11.5px] text-muted-foreground">{project.clientName || "Interno"}</p>
+                  <p className="mt-2 text-[11.5px] font-semibold">{formatMoney(project.revenue)}</p>
+                </button>
+              ))}
+              {list.length === 0 && <p className="py-4 text-center text-[11.5px] text-muted-foreground">—</p>}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function PagerButton({
+  children,
+  disabled,
+  onClick,
+}: {
+  children: React.ReactNode;
+  disabled?: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      disabled={disabled}
+      onClick={onClick}
+      className="flex h-8 w-8 items-center justify-center rounded-lg border border-border/80 bg-card text-muted-foreground transition hover:bg-muted disabled:opacity-40"
+    >
+      {children}
+    </button>
+  );
+}
+
+/* ---------- Utils ---------- */
+
+function initials(name: string) {
+  return name
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((n) => n[0]?.toUpperCase())
+    .join("");
+}
+
+function pct(value: number, total: number) {
+  if (!total) return "0% do total";
+  return `${((value / total) * 100).toLocaleString("pt-BR", { maximumFractionDigits: 1 })}% do total`;
+}
+
+function healthOf(project: ProjectPreviewData) {
+  if (project.status === "done") return { label: "Concluído", dot: "bg-emerald-500", text: "text-muted-foreground" };
+  if (project.overdueTasks >= 3) return { label: "Crítico", dot: "bg-rose-500", text: "text-rose-600 dark:text-rose-400" };
+  if (project.overdueTasks > 0) return { label: "Atenção", dot: "bg-amber-500", text: "text-amber-600 dark:text-amber-400" };
+  return { label: "Saudável", dot: "bg-emerald-500", text: "text-muted-foreground" };
+}
+
+function dueInfo(endDate: string | null, status: ProjectStatus) {
+  if (!endDate) return { label: "Sem prazo definido", className: "text-muted-foreground" };
+  const date = parseDate(endDate);
+  const formatted = date.toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric" });
+  if (status === "done") return { label: `Concluído em ${formatted}`, className: "text-muted-foreground" };
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const days = Math.round((date.getTime() - today.getTime()) / 86_400_000);
+  if (days < 0)
+    return { label: `Vence em ${days} dias (${formatted})`, className: "text-rose-600 dark:text-rose-400" };
+  if (days <= 7) return { label: `Vence em ${days} dias (${formatted})`, className: "text-amber-600 dark:text-amber-400" };
+  return { label: `Vence em ${days} dias (${formatted})`, className: "text-muted-foreground" };
+}
+
+function parseDate(value: string) {
+  const match = value.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  return match ? new Date(+match[1], +match[2] - 1, +match[3]) : new Date(value);
 }
 
 function formatMoney(value: number) {
   return value.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
 }
 
-function formatCompactMoney(value: number) {
-  if (value >= 1_000_000) return `R$ ${(value / 1_000_000).toLocaleString("pt-BR", { maximumFractionDigits: 1 })} mi`;
-  if (value >= 1_000) return `R$ ${(value / 1_000).toLocaleString("pt-BR", { maximumFractionDigits: 0 })} mil`;
-  return `R$ ${value.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}`;
-}
-
-function formatShortDate(value: string | null) {
-  if (!value) return "—";
-  const match = value.match(/^(\d{4})-(\d{2})-(\d{2})/);
-  const date = match ? new Date(+match[1], +match[2] - 1, +match[3]) : new Date(value);
-  return date.toLocaleDateString("pt-BR", { day: "2-digit", month: "short" });
-}
