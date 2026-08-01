@@ -325,7 +325,7 @@ function ProjectsPage() {
         </header>
 
         {/* KPIs */}
-        <section className="mb-4 grid grid-cols-2 gap-3 xl:grid-cols-5">
+        <section className="mb-[17px] grid grid-cols-2 gap-[14px] xl:grid-cols-5">
           <Kpi label="Total" value={kpis.total} sub={`${kpis.active} em andamento`} icon={Folder} tone="slate" />
           <Kpi label="Ativos" value={kpis.active} sub={pct(kpis.active, kpis.total)} icon={FolderOpen} tone="blue" />
           <Kpi label="Concluídos" value={kpis.done} sub={pct(kpis.done, kpis.total)} icon={CheckCircle2} tone="green" />
@@ -334,8 +334,9 @@ function ProjectsPage() {
         </section>
 
         {/* Filtros */}
-        <section className="mb-4 flex flex-wrap items-center gap-3">
-          <label className="flex h-[42px] min-w-[280px] flex-1 items-center gap-2 rounded-[10px] border border-border/80 bg-card px-3 lg:max-w-[320px] lg:flex-none">
+        <section className="mb-[11px] flex flex-wrap items-center gap-[14px]">
+          <label className="flex h-[42px] min-w-[280px] flex-1 items-center gap-2 rounded-[10px] border border-border bg-card px-3 lg:max-w-[320px] lg:flex-none">
+
             <Search className="h-4 w-4 text-muted-foreground" />
             <input
               value={search}
