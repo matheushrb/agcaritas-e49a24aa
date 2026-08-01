@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { NewProjectWizard, type ProjectWizardValue } from "@/components/new-project-wizard";
 import {
   Search, Plus, Briefcase, Calendar, LayoutGrid, List, Columns,
-  Folder, FolderOpen, CheckCircle2, PauseCircle, AlertTriangle, User, ListChecks,
+  Folder, FolderOpen, CheckCircle2, PauseCircle, AlertTriangle, User, ListChecks, MoreHorizontal,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
