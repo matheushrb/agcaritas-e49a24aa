@@ -152,6 +152,11 @@ function ProjectsPage() {
 
   const clientById = useMemo(() => Object.fromEntries(clients.map(c => [c.id, c.name])), [clients]);
 
+  const allMembers = useMemo(() => {
+    const map = new Map<string, Member>();
+    for (const list of Object.values(membersByProject)) for (const m of list) map.set(m.user_id, m);
+    return [...map.values()].sort((a, b) => a.name.localeCompare(b.name, "pt-BR"));
+  }, [membersByProject]);
 
   const filtered = useMemo(() => {
     let arr = projects;
@@ -161,6 +166,7 @@ function ProjectsPage() {
     }
     if (statusFilter !== "all") arr = arr.filter(p => p.status === statusFilter);
     if (clientFilter !== "all") arr = arr.filter(p => p.client_id === clientFilter);
+    if (ownerFilter !== "all") arr = arr.filter(p => (membersByProject[p.id] ?? []).some(m => m.user_id === ownerFilter));
     const rev = tasksAgg.projected;
     arr = [...arr].sort((a, b) => {
       if (sort === "name") return a.name.localeCompare(b.name, "pt-BR");
