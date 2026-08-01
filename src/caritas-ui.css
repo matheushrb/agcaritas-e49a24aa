@@ -477,7 +477,7 @@
    A área útil cresce na vertical, sem zoom e sem alterar a tipografia. */
 @media (min-width: 1500px) and (min-height: 950px) {
   .cv-dashboard-grid {
-    height: calc(100vh - 150px);
+    height: calc(100vh - 180px);
     min-height: 830px;
   }
 
