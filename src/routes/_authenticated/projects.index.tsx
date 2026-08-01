@@ -238,10 +238,10 @@ function ProjectsPage() {
 
       <div className="cv-prj-kpis">
         <PrjKpi label="Total" value={kpis.total} sub={`${kpis.active} em andamento`} icon={<Folder className="h-4 w-4" />} />
-        <PrjKpi label="Ativos" value={kpis.active} sub={`${pct(kpis.active, kpis.total)} do total`} tone="blue" icon={<FolderOpen className="h-4 w-4" />} />
-        <PrjKpi label="Concluídos" value={kpis.done} sub={`${pct(kpis.done, kpis.total)} do total`} tone="green" icon={<CheckCircle2 className="h-4 w-4" />} />
-        <PrjKpi label="Pausados" value={kpis.paused} sub={`${pct(kpis.paused, kpis.total)} do total`} tone="amber" icon={<PauseCircle className="h-4 w-4" />} />
-        <PrjKpi label="Em risco" value={kpis.risk} sub={`${pct(kpis.risk, kpis.total)} do total`} tone="red" icon={<AlertTriangle className="h-4 w-4" />} />
+        <PrjKpi label="Ativos" value={kpis.active} sub={pct(kpis.active, kpis.total)} tone="blue" icon={<FolderOpen className="h-4 w-4" />} />
+        <PrjKpi label="Concluídos" value={kpis.done} sub={pct(kpis.done, kpis.total)} tone="green" icon={<CheckCircle2 className="h-4 w-4" />} />
+        <PrjKpi label="Pausados" value={kpis.paused} sub={pct(kpis.paused, kpis.total)} tone="amber" icon={<PauseCircle className="h-4 w-4" />} />
+        <PrjKpi label="Em risco" value={kpis.risk} sub={pct(kpis.risk, kpis.total)} tone="red" icon={<AlertTriangle className="h-4 w-4" />} />
       </div>
 
       <div className="cv-prj-filters">

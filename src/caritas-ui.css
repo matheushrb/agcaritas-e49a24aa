@@ -172,7 +172,7 @@
 /* PAGE HEADER */
 .cv-page-head { display: flex; align-items: flex-start; justify-content: space-between; height: 51px; margin: 0 0 9px; }
 .cv-page-head h1 { font-size: 23px; line-height: 1.1; margin: 0 0 7px; letter-spacing: 0; font-weight: 650; }
-.cv-page-head p { margin: 0; color: var(--muted); font-size: 9px; }
+.cv-page-head p { margin: 0; color: var(--muted); font-size: 12.5px; }
 .cv-page-actions { display: flex; gap: 10px; }
 .cv-button {
   height: 34px;
