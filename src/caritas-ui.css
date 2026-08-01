@@ -475,10 +475,10 @@
 
 /* Ocupação proporcional da prancheta de referência em 1920 × 1080.
    A área útil cresce na vertical, sem zoom e sem alterar a tipografia. */
-@media (min-width: 1500px) and (min-height: 950px) {
+@media (min-width: 1500px) and (min-height: 800px) {
   .cv-dashboard-grid {
-    height: calc(100vh - 180px);
-    min-height: 830px;
+    height: calc(100vh - 174px);
+    min-height: 0;
   }
 
   .cv-content {
