@@ -335,9 +335,37 @@ function PrjKpi({ label, value, sub, icon, tone }: { label: string; value: numbe
   );
 }
 
-function ProjectCard({ project, clientName, counts, revenue }: {
+type Member = { user_id: string; name: string; avatar: string | null };
+
+function Avatars({ members }: { members: Member[] }) {
+  const shown = members.slice(0, 3);
+  const rest = members.length - shown.length;
+  if (!members.length) {
+    return (
+      <div className="cv-avatars">
+        <span className="more" title="Sem equipe definida"><User className="h-3 w-3" /></span>
+      </div>
+    );
+  }
+  return (
+    <div className="cv-avatars">
+      {shown.map(m => (
+        <span key={m.user_id} title={m.name}>
+          {m.avatar ? <img src={m.avatar} alt={m.name} loading="lazy" /> : initials(m.name)}
+        </span>
+      ))}
+      {rest > 0 && <span className="more" title={members.slice(3).map(m => m.name).join(", ")}>+{rest}</span>}
+    </div>
+  );
+}
+
+const initials = (n: string) =>
+  n.split(" ").filter(Boolean).slice(0, 2).map(p => p[0]?.toUpperCase() ?? "").join("") || "?";
+
+function ProjectCard({ project, clientName, counts, revenue, members }: {
   project: Project; clientName: string | null;
   counts: { total: number; done: number; overdue: number }; revenue: number;
+  members: Member[];
 }) {
   const progress = counts.total ? Math.round((counts.done / counts.total) * 100) : 0;
   const dl = deadlineText(project.end_date, counts.overdue);
@@ -365,22 +393,34 @@ function ProjectCard({ project, clientName, counts, revenue }: {
       <div className="cv-prj-line" style={{ color: toneColor }}>
         <Calendar className="h-3.5 w-3.5" />{dl.text}
       </div>
-      <div className="cv-prj-line" style={{ justifyContent: "space-between" }}>
+      <div className="cv-prj-line" style={{ gap: 12 }}>
+        <Avatars members={members} />
         <span className="inline-flex items-center gap-1.5">
           <ListChecks className="h-3.5 w-3.5" />{counts.done}/{counts.total} tarefas
         </span>
-        {counts.overdue > 0 && (
-          <span className="inline-flex items-center gap-1" style={{ color: "var(--danger)" }}>
-            <AlertTriangle className="h-3.5 w-3.5" />{counts.overdue} em atraso
-          </span>
-        )}
       </div>
+      {counts.overdue > 0 && (
+        <div className="cv-prj-alert">
+          <AlertTriangle className="h-3.5 w-3.5" />{counts.overdue} {counts.overdue === 1 ? "tarefa em atraso" : "tarefas em atraso"}
+        </div>
+      )}
       <div className="cv-prj-foot">
         <span>Receita prevista</span>
-        <b>{money(revenue)}</b>
+        <span className="val">
+          <b>{money(revenue)}</b>
+          <button
+            type="button"
+            className="more"
+            aria-label="Mais ações"
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
+          >
+            <MoreHorizontal className="h-3.5 w-3.5" />
+          </button>
+        </span>
       </div>
     </Link>
   );
 }
+
 
 
