@@ -631,7 +631,7 @@ function ProjectCard({
           <User className="h-3.5 w-3.5 shrink-0" />
           <span className="truncate">{project.clientName || "Interno"}</span>
         </span>
-        {project.projectType && (
+        {project.projectType && !/^[0-9a-f]{8}-[0-9a-f]{4}-/i.test(project.projectType) && (
           <span className="truncate rounded-md border border-border/80 px-2 py-0.5 text-[11px] text-muted-foreground">
             {project.projectType}
           </span>
