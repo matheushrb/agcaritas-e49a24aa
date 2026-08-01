@@ -91,7 +91,11 @@
 }
 
 /* SHELL */
-.cv-shell { margin-left: 104px; min-width: 0; }
+.cv-shell {
+  margin-left: 104px;
+  width: min(1568px, calc(100vw - 104px));
+  min-width: 0;
+}
 
 /* TOPBAR */
 .cv-topbar {
@@ -200,7 +204,7 @@
 
 /* KPI */
 .cv-kpi-grid { display: grid; grid-template-columns: 1.42fr 1.34fr repeat(4, 1fr); gap: 10px; margin-bottom: 10px; }
-.cv-kpi { height: 116px; padding: 14px 16px; display: flex; flex-direction: column; justify-content: space-between; overflow: hidden; }
+.cv-kpi { height: 104px; padding: 12px 15px; display: flex; flex-direction: column; justify-content: space-between; overflow: hidden; }
 .cv-kpi-label { display: block; font-weight: 600; font-size: 12px; }
 .cv-kpi-main { display: flex; align-items: flex-end; justify-content: space-between; margin: 6px 0 4px; }
 .cv-kpi-main strong { font-size: 22px; letter-spacing: 0; }
@@ -467,28 +471,5 @@
   .cv-panel { height: auto; min-height: 230px; }
 }
 
-/*
- * A referência DASH-01 foi desenhada em 1672×941. Em monitores amplos a
- * interface cresce como um sistema inteiro (tipo, ícones, raios, espaços e
- * painéis), em vez de somente alargar as colunas.
- */
-@media (min-width: 1800px) and (min-height: 820px) {
-  .caritas-ui {
-    zoom: 1.18;
-    min-height: calc(100vh / 1.18);
-  }
-}
-
-@media (min-width: 2200px) and (min-height: 1050px) {
-  .caritas-ui {
-    zoom: 1.28;
-    min-height: calc(100vh / 1.28);
-  }
-}
-
-@media (min-width: 2800px) and (min-height: 1250px) {
-  .caritas-ui {
-    zoom: 1.4;
-    min-height: calc(100vh / 1.4);
-  }
-}
+/* DASH-01 tem uma prancheta de 1672 px. Em telas mais largas, preservamos
+   essa geometria em vez de esticar gráficos e cards ou aplicar zoom global. */
