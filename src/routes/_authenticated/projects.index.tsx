@@ -397,7 +397,8 @@ function ProjectsPage() {
             <p className="mt-1 text-xs text-muted-foreground">Ajuste os filtros ou crie um novo projeto.</p>
           </div>
         ) : view === "cards" ? (
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
+          <div className="grid grid-cols-1 gap-[14px] md:grid-cols-2 xl:grid-cols-4">
+
             {paged.map((project) => (
               <ProjectCard
                 key={project.id}
