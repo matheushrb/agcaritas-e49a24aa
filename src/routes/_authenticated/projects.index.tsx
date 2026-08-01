@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { NewProjectWizard, type ProjectWizardValue } from "@/components/new-project-wizard";
 import {
   Search, Plus, Briefcase, Calendar, LayoutGrid, List, Columns,
-  Folder, FolderOpen, CheckCircle2, PauseCircle, AlertTriangle, User, ListChecks, MoreHorizontal,
+  Folder, FolderOpen, CheckCircle2, PauseCircle, AlertTriangle, User, ListChecks, MoreHorizontal, ArrowUpDown,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -272,8 +272,10 @@ function ProjectsPage() {
             {allMembers.map(m => <option key={m.user_id} value={m.user_id}>{m.name}</option>)}
           </select>
         </label>
-        <label className="cv-field">
+        <label className="cv-field cv-field--sort">
+          <ArrowUpDown className="h-3.5 w-3.5 k" />
           <span className="k">Ordenar por:</span>
+
           <select value={sort} onChange={e => setSort(e.target.value)}>
             <option value="recent">Mais recentes</option>
             <option value="name">Nome</option>
