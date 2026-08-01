@@ -629,58 +629,60 @@ function ProjectCard({
       tabIndex={0}
       onClick={onOpen}
       onKeyDown={(e) => (e.key === "Enter" ? onOpen() : undefined)}
-      className="flex cursor-pointer flex-col rounded-xl border border-border/80 bg-card px-4 pb-3 pt-4 transition hover:border-[#1F5FFF]/40 hover:shadow-[0_10px_28px_rgba(15,23,42,0.06)]"
+      className="flex min-h-[217px] cursor-pointer flex-col rounded-[12px] border border-border bg-card transition hover:border-[#1769F6]/40 hover:shadow-[0_10px_28px_rgba(15,23,42,0.06)]"
     >
-      <h3 className="truncate text-[16px] font-semibold tracking-[-0.02em]">{project.name}</h3>
+      <div className="flex flex-1 flex-col px-5 pt-[18px]">
+        <h3 className="truncate text-[15px] font-semibold leading-[20px] tracking-[-0.01em]">{project.name}</h3>
 
-      <div className="mt-2 flex items-center gap-2">
-        <span className="inline-flex min-w-0 items-center gap-1.5 text-[12px] text-muted-foreground">
-          <User className="h-3.5 w-3.5 shrink-0" />
-          <span className="truncate">{project.clientName || "Interno"}</span>
-        </span>
-        {project.projectType && !/^[0-9a-f]{8}-[0-9a-f]{4}-/i.test(project.projectType) && (
-          <span className="truncate rounded-md border border-border/80 px-2 py-0.5 text-[11px] text-muted-foreground">
-            {project.projectType}
+        <div className="mt-2.5 flex items-center gap-2">
+          <span className="inline-flex min-w-0 items-center gap-1.5 text-[11px] text-muted-foreground">
+            <User className="h-3.5 w-3.5 shrink-0" />
+            <span className="truncate">{project.clientName || "Interno"}</span>
           </span>
+          {project.projectType && !/^[0-9a-f]{8}-[0-9a-f]{4}-/i.test(project.projectType) && (
+            <span className="truncate rounded-[6px] border border-border px-2 py-[3px] text-[10.5px] text-muted-foreground">
+              {project.projectType}
+            </span>
+          )}
+        </div>
+
+        <div className="mt-2 flex items-center justify-end gap-1.5 text-[10px]">
+          <span className={cn("h-[7px] w-[7px] rounded-full", health.dot)} />
+          <span className={health.text}>{health.label}</span>
+        </div>
+
+        <div className="mt-1.5 flex items-center gap-2.5">
+          <span className="text-[11px] text-muted-foreground">{project.progress}%</span>
+          <span className="h-[5px] flex-1 overflow-hidden rounded-full bg-muted">
+            <span className="block h-full rounded-full bg-[#1769F6]" style={{ width: `${project.progress}%` }} />
+          </span>
+          <span className="text-[11px] font-medium">{project.progress}%</span>
+        </div>
+
+        <p className={cn("mt-3 inline-flex items-center gap-1.5 text-[10.5px]", due.className)}>
+          <CalendarDays className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+          {due.label}
+        </p>
+
+        <div className="mt-2.5 flex items-center justify-between gap-2">
+          <Avatars members={members} />
+          <span className="inline-flex items-center gap-1.5 text-[10.5px] text-muted-foreground">
+            <ListChecks className="h-3.5 w-3.5" />
+            {project.doneTasks ?? 0}/{project.totalTasks} tarefas
+          </span>
+        </div>
+
+        {project.overdueTasks > 0 && (
+          <p className="mt-2 inline-flex items-center gap-1.5 text-[10px] font-medium text-rose-600 dark:text-rose-400">
+            <AlertTriangle className="h-3.5 w-3.5" />
+            {project.overdueTasks} tarefa{project.overdueTasks > 1 ? "s" : ""} em atraso
+          </p>
         )}
       </div>
 
-      <div className="mt-2 flex items-center justify-end gap-1.5 text-[11.5px]">
-        <span className={cn("h-1.5 w-1.5 rounded-full", health.dot)} />
-        <span className={health.text}>{health.label}</span>
-      </div>
-
-      <div className="mt-1.5 flex items-center gap-2">
-        <span className="text-[11.5px] text-muted-foreground">{project.progress}%</span>
-        <span className="h-1.5 flex-1 overflow-hidden rounded-full bg-muted">
-          <span className="block h-full rounded-full bg-[#1F5FFF]" style={{ width: `${project.progress}%` }} />
-        </span>
-        <span className="text-[11.5px] font-medium">{project.progress}%</span>
-      </div>
-
-      <p className={cn("mt-3 inline-flex items-center gap-1.5 text-[12px]", due.className)}>
-        <CalendarDays className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-        {due.label}
-      </p>
-
-      <div className="mt-2.5 flex items-center justify-between gap-2">
-        <Avatars members={members} />
-        <span className="inline-flex items-center gap-1.5 text-[12px] text-muted-foreground">
-          <ListChecks className="h-3.5 w-3.5" />
-          {project.doneTasks ?? 0}/{project.totalTasks} tarefas
-        </span>
-      </div>
-
-      {project.overdueTasks > 0 && (
-        <p className="mt-2 inline-flex items-center gap-1.5 text-[11.5px] font-medium text-rose-600 dark:text-rose-400">
-          <AlertTriangle className="h-3.5 w-3.5" />
-          {project.overdueTasks} tarefa{project.overdueTasks > 1 ? "s" : ""} em atraso
-        </p>
-      )}
-
-      <div className="mt-3 flex items-center justify-between gap-2 border-t border-border/70 pt-2.5">
-        <span className="text-[11.5px] text-muted-foreground">Receita prevista</span>
-        <span className="ml-auto text-[13.5px] font-semibold tracking-[-0.02em]">{formatMoney(project.revenue)}</span>
+      <div className="mt-auto flex items-center gap-2 border-t border-border px-5 py-3">
+        <span className="text-[10.5px] text-muted-foreground">Receita prevista</span>
+        <span className="ml-auto text-[14px] font-semibold tracking-[-0.01em]">{formatMoney(project.revenue)}</span>
         <button
           type="button"
           onClick={(e) => e.stopPropagation()}
@@ -689,6 +691,7 @@ function ProjectCard({
           <MoreHorizontal className="h-4 w-4" />
         </button>
       </div>
+
     </div>
   );
 }
