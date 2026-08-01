@@ -3,8 +3,8 @@ import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   AlertTriangle,
-  ArrowDown,
-  ArrowUp,
+
+
   ArrowUpDown,
   CalendarDays,
   CheckCircle2,
@@ -859,4 +859,3 @@ function formatMoney(value: number) {
   return value.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
 }
 
-export { ArrowUp, ArrowDown };
