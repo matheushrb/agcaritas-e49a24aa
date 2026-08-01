@@ -1,18 +1,32 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Card } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { NewProjectWizard, type ProjectWizardValue } from "@/components/new-project-wizard";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-  Search, Plus, Briefcase, Calendar, LayoutGrid, List, Columns,
-  Folder, FolderOpen, CheckCircle2, PauseCircle, AlertTriangle, User, ListChecks, MoreHorizontal, ArrowUpDown,
+  ArrowRight,
+  CalendarDays,
+  CheckCircle2,
+  CircleDollarSign,
+  FolderKanban,
+  ListChecks,
+  Plus,
+  Search,
+  SlidersHorizontal,
+  TriangleAlert,
 } from "lucide-react";
 import { toast } from "sonner";
+
+import { NewProjectWizard, type ProjectWizardValue } from "@/components/new-project-wizard";
+import {
+  ProjectPreviewSheet,
+  type ProjectPreviewData,
+  type ProjectPreviewStatus,
+} from "@/components/project-preview-sheet";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Progress } from "@/components/ui/progress";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/projects/")({
@@ -22,7 +36,7 @@ export const Route = createFileRoute("/_authenticated/projects/")({
   component: ProjectsPage,
 });
 
-type ProjectStatus = "planning" | "active" | "review" | "done" | "paused";
+type ProjectStatus = ProjectPreviewStatus;
 type Project = {
   id: string;
   name: string;
@@ -32,30 +46,37 @@ type Project = {
   start_date: string | null;
   end_date: string | null;
   marketing_plan_id: string | null;
+  project_type: string | null;
+  billing_model: string | null;
+  urgency: string | null;
+  fixed_value: number | null;
+  monthly_value: number | null;
   created_at: string;
 };
 type Client = { id: string; name: string };
-type Charge = { id: string; project_id: string | null; amount: number };
 
-const STATUS_META: Record<ProjectStatus, { label: string; color: string }> = {
-  planning: { label: "Planejamento", color: "bg-muted text-muted-foreground" },
-  active:   { label: "Ativo",         color: "bg-blue-500/15 text-blue-600 dark:text-blue-400" },
-  review:   { label: "Revisão",       color: "bg-amber-500/15 text-amber-600 dark:text-amber-400" },
-  done:     { label: "Concluído",     color: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400" },
-  paused:   { label: "Pausado",       color: "bg-red-500/15 text-red-600 dark:text-red-400" },
+type TaskAgg = {
+  counts: Record<string, { total: number; overdue: number; done: number }>;
+  projected: Record<string, number>;
+};
+
+const STATUS_META: Record<ProjectStatus, { label: string; className: string }> = {
+  planning: { label: "Planejamento", className: "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300" },
+  active: { label: "Ativo", className: "bg-blue-50 text-blue-700 dark:bg-blue-500/15 dark:text-blue-300" },
+  review: { label: "Revisão", className: "bg-amber-50 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300" },
+  done: { label: "Concluído", className: "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300" },
+  paused: { label: "Pausado", className: "bg-rose-50 text-rose-700 dark:bg-rose-500/15 dark:text-rose-300" },
 };
 
 function ProjectsPage() {
   const qc = useQueryClient();
   const navigate = useNavigate();
   const searchParams = Route.useSearch();
+
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [clientFilter, setClientFilter] = useState<string>("all");
-  const [ownerFilter, setOwnerFilter] = useState<string>("all");
-  const [sort, setSort] = useState<string>("recent");
-  const [view, setView] = useState<"cards" | "list" | "kanban">("cards");
   const [newOpen, setNewOpen] = useState(false);
+  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
 
   useEffect(() => {
     if (searchParams.new) {
@@ -69,7 +90,9 @@ function ProjectsPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("projects")
-        .select("id,name,description,status,client_id,start_date,end_date,marketing_plan_id,created_at")
+        .select(
+          "id,name,description,status,client_id,start_date,end_date,marketing_plan_id,project_type,billing_model,urgency,fixed_value,monthly_value,created_at",
+        )
         .order("created_at", { ascending: false });
       if (error) throw error;
       return (data ?? []) as Project[];
@@ -85,112 +108,108 @@ function ProjectsPage() {
     },
   });
 
-  const { data: membersByProject = {} } = useQuery<Record<string, Member[]>>({
-    queryKey: ["projects-members"],
-    queryFn: async () => {
-      const [{ data: pm, error: e1 }, { data: profs, error: e2 }] = await Promise.all([
-        supabase.from("project_members").select("project_id,user_id"),
-        supabase.from("profiles").select("id,full_name,display_name,avatar_url"),
-      ]);
-      if (e1) throw e1;
-      if (e2) throw e2;
-      const pById = Object.fromEntries(
-        (profs ?? []).map(p => [p.id, { name: p.display_name || p.full_name || "Membro", avatar: p.avatar_url as string | null }]),
-      );
-      const map: Record<string, Member[]> = {};
-      for (const row of pm ?? []) {
-        const info = pById[row.user_id];
-        (map[row.project_id] ??= []).push({
-          user_id: row.user_id,
-          name: info?.name ?? "Membro",
-          avatar: info?.avatar ?? null,
-        });
-      }
-      return map;
-    },
-  });
-
-
-  const { data: tasksAgg = { counts: {}, projected: {} } } = useQuery<{
-    counts: Record<string, { total: number; done: number; overdue: number }>;
-    projected: Record<string, number>;
-  }>({
+  const { data: tasksAgg = { counts: {}, projected: {} } } = useQuery<TaskAgg>({
     queryKey: ["projects-tasks-agg"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("tasks")
         .select("project_id,status,due_date,billing_enabled,billing_value,broadcast_kind,aired_dates,deliverables");
       if (error) throw error;
-      const counts: Record<string, { total: number; done: number; overdue: number }> = {};
-      const projected: Record<string, number> = {};
-      for (const t of data ?? []) {
-        const row = t as {
-          project_id: string | null; due_date: string | null; status: string;
-          billing_enabled: boolean | null; billing_value: number | null;
-          broadcast_kind: string | null; aired_dates: string[] | null;
+
+      const counts: TaskAgg["counts"] = {};
+      const projected: TaskAgg["projected"] = {};
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      for (const raw of data ?? []) {
+        const row = raw as {
+          project_id: string | null;
+          due_date: string | null;
+          status: string;
+          billing_enabled: boolean | null;
+          billing_value: number | null;
+          broadcast_kind: string | null;
+          aired_dates: string[] | null;
           deliverables: Array<{ billing_enabled?: boolean; billing_value?: number | null }> | null;
         };
+
+        if (!row.project_id) continue;
         const pid = row.project_id;
-        if (!pid) continue;
-        counts[pid] ??= { total: 0, done: 0, overdue: 0 };
+        counts[pid] ??= { total: 0, overdue: 0, done: 0 };
         counts[pid].total += 1;
         if (row.status === "done") counts[pid].done += 1;
-        if (row.due_date && new Date(row.due_date) < new Date() && row.status !== "done") counts[pid].overdue += 1;
+        if (row.due_date && new Date(row.due_date) < today && row.status !== "done") counts[pid].overdue += 1;
+
         const base = row.billing_enabled && row.billing_value != null ? Number(row.billing_value) : 0;
-        const mult = row.broadcast_kind && (row.aired_dates?.length ?? 0) > 0 ? row.aired_dates!.length : 1;
-        const deliv = (row.deliverables ?? [])
-          .filter(d => d.billing_enabled && d.billing_value != null)
-          .reduce((s, d) => s + Number(d.billing_value ?? 0), 0);
-        projected[pid] = (projected[pid] ?? 0) + base * mult + deliv;
+        const multiplier = row.broadcast_kind && (row.aired_dates?.length ?? 0) > 0 ? row.aired_dates!.length : 1;
+        const deliverables = (row.deliverables ?? [])
+          .filter((d) => d.billing_enabled && d.billing_value != null)
+          .reduce((sum, d) => sum + Number(d.billing_value ?? 0), 0);
+
+        projected[pid] = (projected[pid] ?? 0) + base * multiplier + deliverables;
       }
+
       return { counts, projected };
     },
   });
-  const taskCounts = tasksAgg.counts;
-  const revenueByProject = tasksAgg.projected;
 
-
-  const clientById = useMemo(() => Object.fromEntries(clients.map(c => [c.id, c.name])), [clients]);
-
-  const allMembers = useMemo(() => {
-    const map = new Map<string, Member>();
-    for (const list of Object.values(membersByProject)) for (const m of list) map.set(m.user_id, m);
-    return [...map.values()].sort((a, b) => a.name.localeCompare(b.name, "pt-BR"));
-  }, [membersByProject]);
+  const clientById = useMemo(() => Object.fromEntries(clients.map((client) => [client.id, client.name])), [clients]);
 
   const filtered = useMemo(() => {
-    let arr = projects;
-    if (search.trim()) {
-      const s = search.toLowerCase();
-      arr = arr.filter(p => p.name.toLowerCase().includes(s) || (p.description ?? "").toLowerCase().includes(s));
+    let result = projects;
+    const term = search.trim().toLowerCase();
+    if (term) {
+      result = result.filter((project) => {
+        const clientName = project.client_id ? clientById[project.client_id] ?? "" : "";
+        return [project.name, project.description ?? "", clientName].some((value) => value.toLowerCase().includes(term));
+      });
     }
-    if (statusFilter !== "all") arr = arr.filter(p => p.status === statusFilter);
-    if (clientFilter !== "all") arr = arr.filter(p => p.client_id === clientFilter);
-    if (ownerFilter !== "all") arr = arr.filter(p => (membersByProject[p.id] ?? []).some(m => m.user_id === ownerFilter));
-    const rev = tasksAgg.projected;
-    arr = [...arr].sort((a, b) => {
-      if (sort === "name") return a.name.localeCompare(b.name, "pt-BR");
-      if (sort === "deadline") return (a.end_date ?? "9999").localeCompare(b.end_date ?? "9999");
-      if (sort === "revenue") return (rev[b.id] ?? 0) - (rev[a.id] ?? 0);
-      return b.created_at.localeCompare(a.created_at);
-    });
-    return arr;
-  }, [projects, search, statusFilter, clientFilter, ownerFilter, membersByProject, sort, tasksAgg.projected]);
+    if (statusFilter !== "all") result = result.filter((project) => project.status === statusFilter);
+    return result;
+  }, [projects, search, statusFilter, clientById]);
 
-  const kpis = useMemo(() => {
-    const total = projects.length;
-    const active = projects.filter(p => p.status === "active").length;
-    const done = projects.filter(p => p.status === "done").length;
-    const paused = projects.filter(p => p.status === "paused").length;
-    const risk = projects.filter(p => (taskCounts[p.id]?.overdue ?? 0) > 0 && p.status !== "done").length;
-    return { total, active, done, paused, risk };
-  }, [projects, taskCounts]);
+  const stats = useMemo(() => {
+    const active = projects.filter((p) => p.status === "active").length;
+    const atRisk = projects.filter((p) => (tasksAgg.counts[p.id]?.overdue ?? 0) > 0 && p.status !== "done").length;
+    const completed = projects.filter((p) => p.status === "done").length;
+    const projectedRevenue = projects.reduce((sum, project) => sum + (tasksAgg.projected[project.id] ?? 0), 0);
+    return { total: projects.length, active, atRisk, completed, projectedRevenue };
+  }, [projects, tasksAgg]);
 
+  const previewData = useMemo<ProjectPreviewData[]>(
+    () =>
+      projects.map((project) => {
+        const count = tasksAgg.counts[project.id] ?? { total: 0, overdue: 0, done: 0 };
+        const progress = count.total > 0 ? Math.round((count.done / count.total) * 100) : 0;
+        return {
+          id: project.id,
+          name: project.name,
+          description: project.description,
+          status: project.status,
+          clientName: project.client_id ? clientById[project.client_id] ?? "Cliente" : null,
+          startDate: project.start_date,
+          endDate: project.end_date,
+          projectType: project.project_type,
+          urgency: project.urgency,
+          billingModel: project.billing_model,
+          fixedValue: project.fixed_value,
+          monthlyValue: project.monthly_value,
+          totalTasks: count.total,
+          overdueTasks: count.overdue,
+          revenue: tasksAgg.projected[project.id] ?? 0,
+          progress,
+        };
+      }),
+    [projects, tasksAgg, clientById],
+  );
+
+  const selectedProject = previewData.find((project) => project.id === selectedProjectId) ?? null;
 
   const createProject = useMutation({
     mutationFn: async (input: ProjectWizardValue) => {
       const { data: profile } = await supabase.from("profiles").select("organization_id").maybeSingle();
       if (!profile?.organization_id) throw new Error("Sem organização");
+
       const { error } = await supabase.from("projects").insert({
         organization_id: profile.organization_id,
         name: input.name,
@@ -214,255 +233,212 @@ function ProjectsPage() {
       toast.success("Projeto criado");
       setNewOpen(false);
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (error: Error) => toast.error(error.message),
   });
 
   return (
     <>
-      <div className="cv-page-head">
-        <div>
-          <h1>Projetos</h1>
-          <p>Acompanhe o andamento dos projetos, prazos, equipe e resultados em um só lugar.</p>
-        </div>
-        <div className="cv-page-actions">
-          <div className="cv-viewswitch">
-            <button className={view === "cards" ? "active" : ""} onClick={() => setView("cards")}><LayoutGrid className="h-3.5 w-3.5" />Cards</button>
-            <button className={view === "list" ? "active" : ""} onClick={() => setView("list")}><List className="h-3.5 w-3.5" />Lista</button>
-            <button className={view === "kanban" ? "active" : ""} onClick={() => setView("kanban")}><Columns className="h-3.5 w-3.5" />Kanban</button>
+      <div className="space-y-5 pb-8">
+        <header className="flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <p className="mb-2 text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">Operação</p>
+            <h1 className="text-[32px] font-semibold tracking-[-0.045em] text-foreground">Projetos</h1>
+            <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
+              Visão consolidada dos projetos, prazos, entregas, risco e receita prevista.
+            </p>
           </div>
-          <Button className="gap-1.5 rounded-[10px] h-9" onClick={() => setNewOpen(true)}>
-            <Plus className="h-4 w-4" /> Novo projeto
+
+          <Button className="h-10 rounded-lg bg-[#3659E3] px-4 text-white hover:bg-[#2F50CE]" onClick={() => setNewOpen(true)}>
+            <Plus className="mr-2 h-4 w-4" />
+            Novo projeto
           </Button>
-        </div>
-      </div>
+        </header>
 
-      <div className="cv-prj-kpis">
-        <PrjKpi label="Total" value={kpis.total} sub={`${kpis.active} em andamento`} icon={<Folder className="h-4 w-4" />} />
-        <PrjKpi label="Ativos" value={kpis.active} sub={pct(kpis.active, kpis.total)} tone="blue" icon={<FolderOpen className="h-4 w-4" />} />
-        <PrjKpi label="Concluídos" value={kpis.done} sub={pct(kpis.done, kpis.total)} tone="green" icon={<CheckCircle2 className="h-4 w-4" />} />
-        <PrjKpi label="Pausados" value={kpis.paused} sub={pct(kpis.paused, kpis.total)} tone="amber" icon={<PauseCircle className="h-4 w-4" />} />
-        <PrjKpi label="Em risco" value={kpis.risk} sub={pct(kpis.risk, kpis.total)} tone="red" icon={<AlertTriangle className="h-4 w-4" />} />
-      </div>
+        <section className="grid grid-cols-2 gap-2.5 xl:grid-cols-5">
+          <SummaryCard label="Total de projetos" value={stats.total.toString()} icon={FolderKanban} />
+          <SummaryCard label="Projetos ativos" value={stats.active.toString()} icon={ListChecks} />
+          <SummaryCard label="Projetos em risco" value={stats.atRisk.toString()} icon={TriangleAlert} danger={stats.atRisk > 0} />
+          <SummaryCard label="Concluídos" value={stats.completed.toString()} icon={CheckCircle2} />
+          <SummaryCard label="Receita prevista" value={formatMoney(stats.projectedRevenue)} icon={CircleDollarSign} wide />
+        </section>
 
-      <div className="cv-prj-filters">
-        <div className="cv-field grow">
-          <Search className="h-3.5 w-3.5 k" />
-          <input placeholder="Buscar projetos..." value={search} onChange={e => setSearch(e.target.value)} />
-        </div>
-        <label className="cv-field">
-          <span className="k">Status:</span>
-          <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
-            <option value="all">Todos</option>
-            {(Object.keys(STATUS_META) as ProjectStatus[]).map(s => (
-              <option key={s} value={s}>{STATUS_META[s].label}</option>
-            ))}
-          </select>
-        </label>
-        <label className="cv-field">
-          <span className="k">Cliente:</span>
-          <select value={clientFilter} onChange={e => setClientFilter(e.target.value)}>
-            <option value="all">Todos</option>
-            {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-          </select>
-        </label>
-        <label className="cv-field">
-          <span className="k">Responsável:</span>
-          <select value={ownerFilter} onChange={e => setOwnerFilter(e.target.value)}>
-            <option value="all">Todos</option>
-            {allMembers.map(m => <option key={m.user_id} value={m.user_id}>{m.name}</option>)}
-          </select>
-        </label>
-        <label className="cv-field cv-field--sort">
-          <ArrowUpDown className="h-3.5 w-3.5 k" />
-          <span className="k">Ordenar por:</span>
-
-          <select value={sort} onChange={e => setSort(e.target.value)}>
-            <option value="recent">Mais recentes</option>
-            <option value="name">Nome</option>
-            <option value="deadline">Prazo</option>
-            <option value="revenue">Receita</option>
-          </select>
-        </label>
-      </div>
-
-      {isLoading ? (
-        <div className="cv-empty">Carregando…</div>
-      ) : filtered.length === 0 ? (
-        <div className="cv-empty">
-          <Briefcase className="h-6 w-6 mx-auto mb-2" />
-          Nenhum projeto por aqui. Crie o primeiro para começar a organizar as entregas.
-        </div>
-      ) : view === "cards" ? (
-        <div className="cv-prj-grid">
-          {filtered.map(p => (
-            <ProjectCard
-              key={p.id}
-              project={p}
-              clientName={p.client_id ? clientById[p.client_id] ?? "Cliente" : null}
-              counts={taskCounts[p.id] ?? { total: 0, done: 0, overdue: 0 }}
-              revenue={revenueByProject[p.id] ?? 0}
-              members={membersByProject[p.id] ?? []}
+        <section className="flex flex-col gap-3 rounded-xl border border-border/80 bg-card p-3 shadow-[0_8px_28px_rgba(15,23,42,0.035)] md:flex-row md:items-center">
+          <div className="relative min-w-0 flex-1">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="Buscar por projeto, cliente ou descrição..."
+              className="h-10 rounded-lg border-border/80 bg-background pl-9 shadow-none"
             />
-          ))}
-        </div>
-      ) : view === "list" ? (
-        <div className="cv-card" style={{ padding: "6px 15px 10px" }}>
-          <div className="cv-table">
-            <div className="cv-table-row cv-table-head">
-              <span>Projeto</span><span>Cliente</span><span>Prazo</span><span>Receita prevista</span>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <div className="hidden items-center gap-1.5 text-xs text-muted-foreground sm:flex">
+              <SlidersHorizontal className="h-3.5 w-3.5" />
+              Filtrar
             </div>
-            {filtered.map(p => (
-              <Link key={p.id} to="/projects/$projectId" params={{ projectId: p.id }} className="cv-table-row">
-                <span><b>{p.name}</b><small>{STATUS_META[p.status].label}</small></span>
-                <span>{p.client_id ? clientById[p.client_id] ?? "—" : "—"}</span>
-                <span>{deadlineText(p.end_date, taskCounts[p.id]?.overdue ?? 0).text}</span>
-                <span><b>{money(revenueByProject[p.id] ?? 0)}</b></span>
-              </Link>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="h-10 w-[170px] rounded-lg border-border/80 bg-background shadow-none">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos os status</SelectItem>
+                {(Object.keys(STATUS_META) as ProjectStatus[]).map((status) => (
+                  <SelectItem key={status} value={status}>
+                    {STATUS_META[status].label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </section>
+
+        {isLoading ? (
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+            {[0, 1, 2, 3, 4, 5].map((item) => (
+              <div key={item} className="h-[240px] animate-pulse rounded-xl border border-border/60 bg-card" />
             ))}
           </div>
-        </div>
-      ) : (
-        <div className="cv-prj-grid" style={{ gridTemplateColumns: "repeat(5, minmax(0,1fr))", alignItems: "start" }}>
-          {(Object.keys(STATUS_META) as ProjectStatus[]).map(s => (
-            <div key={s} className="cv-card" style={{ padding: "12px 12px 14px", display: "grid", gap: 9 }}>
-              <div style={{ fontSize: 12, fontWeight: 600, color: "var(--muted)" }}>
-                {STATUS_META[s].label} · {filtered.filter(p => p.status === s).length}
-              </div>
-              {filtered.filter(p => p.status === s).map(p => (
-                <Link key={p.id} to="/projects/$projectId" params={{ projectId: p.id }}
-                  style={{ display: "grid", gap: 4, padding: "10px 11px", border: "1px solid var(--border)", borderRadius: 9, color: "inherit", textDecoration: "none" }}>
-                  <b style={{ fontSize: 12.5 }}>{p.name}</b>
-                  <span style={{ fontSize: 11, color: "var(--muted)" }}>{money(revenueByProject[p.id] ?? 0)}</span>
-                </Link>
-              ))}
-            </div>
-          ))}
-        </div>
-      )}
+        ) : filtered.length === 0 ? (
+          <section className="rounded-xl border border-dashed border-border bg-card px-6 py-16 text-center">
+            <FolderKanban className="mx-auto h-7 w-7 text-muted-foreground" />
+            <h2 className="mt-4 text-sm font-semibold">Nenhum projeto encontrado</h2>
+            <p className="mt-1 text-xs text-muted-foreground">Ajuste os filtros ou crie um novo projeto.</p>
+          </section>
+        ) : (
+          <section className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+            {filtered.map((project) => {
+              const preview = previewData.find((item) => item.id === project.id)!;
+              return (
+                <ProjectCard
+                  key={project.id}
+                  project={preview}
+                  onClick={() => setSelectedProjectId(project.id)}
+                />
+              );
+            })}
+          </section>
+        )}
+      </div>
+
+      <ProjectPreviewSheet
+        project={selectedProject}
+        open={Boolean(selectedProject)}
+        onOpenChange={(open) => {
+          if (!open) setSelectedProjectId(null);
+        }}
+      />
 
       <NewProjectWizard
         open={newOpen}
         onOpenChange={setNewOpen}
         clients={clients}
-        onCreate={(v) => createProject.mutate(v)}
+        onCreate={(value) => createProject.mutate(value)}
         pending={createProject.isPending}
       />
     </>
   );
 }
 
-const money = (n: number) => `R$ ${Math.round(n).toLocaleString("pt-BR")}`;
-const pct = (n: number, total: number) => total ? `${((n / total) * 100).toFixed(1).replace(".", ",")}% do total` : "0% do total";
-
-function deadlineText(end: string | null, overdue: number) {
-  if (!end) return { text: "Sem prazo definido", tone: "muted" as const };
-  const d = new Date(`${end}T00:00:00`);
-  const days = Math.ceil((d.getTime() - new Date().setHours(0, 0, 0, 0)) / 86400000);
-  const label = d.toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric" });
-  if (days < 0) return { text: `Vence em ${days} dias (${label})`, tone: "danger" as const };
-  if (days <= 7 || overdue > 0) return { text: `Vence em ${days} dias (${label})`, tone: "warn" as const };
-  return { text: `Vence em ${days} dias (${label})`, tone: "muted" as const };
-}
-
-function PrjKpi({ label, value, sub, icon, tone }: { label: string; value: number; sub: string; icon: React.ReactNode; tone?: "blue" | "green" | "amber" | "red" }) {
-  return (
-    <div className="cv-prj-kpi">
-      <div>
-        <div className="lbl">{label}</div>
-        <div className="val">{value}</div>
-        <div className="sub">{sub}</div>
-      </div>
-      <div className={cn("ico", tone)}>{icon}</div>
-    </div>
-  );
-}
-
-type Member = { user_id: string; name: string; avatar: string | null };
-
-function Avatars({ members }: { members: Member[] }) {
-  const shown = members.slice(0, 3);
-  const rest = members.length - shown.length;
-  if (!members.length) {
-    return (
-      <div className="cv-avatars">
-        <span className="more" title="Sem equipe definida"><User className="h-3 w-3" /></span>
-      </div>
-    );
-  }
-  return (
-    <div className="cv-avatars">
-      {shown.map(m => (
-        <span key={m.user_id} title={m.name}>
-          {m.avatar ? <img src={m.avatar} alt={m.name} loading="lazy" /> : initials(m.name)}
-        </span>
-      ))}
-      {rest > 0 && <span className="more" title={members.slice(3).map(m => m.name).join(", ")}>+{rest}</span>}
-    </div>
-  );
-}
-
-const initials = (n: string) =>
-  n.split(" ").filter(Boolean).slice(0, 2).map(p => p[0]?.toUpperCase() ?? "").join("") || "?";
-
-function ProjectCard({ project, clientName, counts, revenue, members }: {
-  project: Project; clientName: string | null;
-  counts: { total: number; done: number; overdue: number }; revenue: number;
-  members: Member[];
+function SummaryCard({
+  label,
+  value,
+  icon: Icon,
+  danger = false,
+  wide = false,
+}: {
+  label: string;
+  value: string;
+  icon: React.ElementType;
+  danger?: boolean;
+  wide?: boolean;
 }) {
-  const progress = counts.total ? Math.round((counts.done / counts.total) * 100) : 0;
-  const dl = deadlineText(project.end_date, counts.overdue);
-  const health = project.status === "done"
-    ? { label: "Concluído", color: "var(--success)" }
-    : counts.overdue > 2 ? { label: "Crítico", color: "var(--danger)" }
-    : counts.overdue > 0 ? { label: "Atenção", color: "var(--warning)" }
-    : { label: "Saudável", color: "var(--success)" };
-  const toneColor = dl.tone === "danger" ? "var(--danger)" : dl.tone === "warn" ? "var(--warning)" : "var(--muted)";
-
   return (
-    <Link to="/projects/$projectId" params={{ projectId: project.id }} className="cv-prj-card">
-      <h3>{project.name}</h3>
-      <div className="cv-prj-meta">
-        <User className="h-3.5 w-3.5" />
-        <span style={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{clientName ?? "Interno"}</span>
-        <i className="cv-tag" style={{ fontStyle: "normal" }}>{STATUS_META[project.status].label}</i>
-      </div>
-      <div className="cv-health"><span className="dot" style={{ background: health.color }} />{health.label}</div>
-      <div className="cv-progress-line">
-        <span>{progress}%</span>
-        <div className="cv-progress"><i style={{ width: `${progress}%` }} /></div>
-        <span>{progress}%</span>
-      </div>
-      <div className="cv-prj-line" style={{ color: toneColor }}>
-        <Calendar className="h-3.5 w-3.5" />{dl.text}
-      </div>
-      <div className="cv-prj-line" style={{ gap: 12 }}>
-        <Avatars members={members} />
-        <span className="inline-flex items-center gap-1.5">
-          <ListChecks className="h-3.5 w-3.5" />{counts.done}/{counts.total} tarefas
-        </span>
-      </div>
-      {counts.overdue > 0 && (
-        <div className="cv-prj-alert">
-          <AlertTriangle className="h-3.5 w-3.5" />{counts.overdue} {counts.overdue === 1 ? "tarefa em atraso" : "tarefas em atraso"}
+    <div className={cn("rounded-xl border border-border/80 bg-card p-4 shadow-[0_8px_24px_rgba(15,23,42,0.03)]", wide && "col-span-2 xl:col-span-1")}>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="text-[11px] font-medium text-muted-foreground">{label}</p>
+          <div className={cn("mt-2 text-2xl font-semibold tracking-[-0.04em]", danger && "text-rose-600 dark:text-rose-400")}>{value}</div>
         </div>
-      )}
-      <div className="cv-prj-foot">
-        <span>Receita prevista</span>
-        <span className="val">
-          <b>{money(revenue)}</b>
-          <button
-            type="button"
-            className="more"
-            aria-label="Mais ações"
-            onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
-          >
-            <MoreHorizontal className="h-3.5 w-3.5" />
-          </button>
-        </span>
+        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#E9EDFC] text-[#3659E3] dark:bg-[#7E95F5]/10 dark:text-[#9FB0FF]">
+          <Icon className="h-4 w-4" />
+        </div>
       </div>
-    </Link>
+    </div>
   );
 }
 
+function ProjectCard({ project, onClick }: { project: ProjectPreviewData; onClick: () => void }) {
+  const status = STATUS_META[project.status];
 
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="group flex min-h-[238px] w-full flex-col rounded-xl border border-border/80 bg-card p-5 text-left shadow-[0_8px_24px_rgba(15,23,42,0.035)] transition hover:-translate-y-0.5 hover:border-[#3659E3]/30 hover:shadow-[0_14px_34px_rgba(15,23,42,0.07)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3659E3]/35"
+    >
+      <div className="flex items-start justify-between gap-4">
+        <div className="min-w-0">
+          <p className="text-[11px] font-medium text-muted-foreground">{project.clientName || "Projeto interno"}</p>
+          <h2 className="mt-1 truncate text-[17px] font-semibold tracking-[-0.025em] text-foreground">{project.name}</h2>
+        </div>
+        <Badge className={cn("shrink-0 rounded-md border-0 px-2 py-1 text-[10px] font-medium", status.className)}>{status.label}</Badge>
+      </div>
 
+      <p className="mt-3 line-clamp-2 min-h-10 text-xs leading-5 text-muted-foreground">
+        {project.description || "Projeto sem descrição cadastrada."}
+      </p>
+
+      <div className="mt-5">
+        <div className="mb-2 flex items-center justify-between text-[10px] text-muted-foreground">
+          <span>Progresso</span>
+          <span className="font-medium text-foreground">{project.progress}%</span>
+        </div>
+        <Progress value={project.progress} className="h-1.5 bg-muted" />
+      </div>
+
+      <div className="mt-5 grid grid-cols-3 gap-2 border-t border-border/70 pt-4">
+        <ProjectStat label="Tarefas" value={project.totalTasks.toString()} />
+        <ProjectStat label="Atrasadas" value={project.overdueTasks.toString()} danger={project.overdueTasks > 0} />
+        <ProjectStat label="Previsto" value={formatCompactMoney(project.revenue)} />
+      </div>
+
+      <div className="mt-auto flex items-center justify-between pt-4 text-[10px] text-muted-foreground">
+        <span className="inline-flex items-center gap-1.5">
+          <CalendarDays className="h-3.5 w-3.5" />
+          {formatShortDate(project.startDate)} — {formatShortDate(project.endDate)}
+        </span>
+        <span className="inline-flex items-center gap-1 font-medium text-[#3659E3] opacity-0 transition-opacity group-hover:opacity-100 dark:text-[#9FB0FF]">
+          Ver projeto <ArrowRight className="h-3 w-3" />
+        </span>
+      </div>
+    </button>
+  );
+}
+
+function ProjectStat({ label, value, danger = false }: { label: string; value: string; danger?: boolean }) {
+  return (
+    <div>
+      <div className={cn("text-sm font-semibold tracking-[-0.02em]", danger && "text-rose-600 dark:text-rose-400")}>{value}</div>
+      <div className="mt-0.5 text-[9px] text-muted-foreground">{label}</div>
+    </div>
+  );
+}
+
+function formatMoney(value: number) {
+  return value.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
+}
+
+function formatCompactMoney(value: number) {
+  if (value >= 1_000_000) return `R$ ${(value / 1_000_000).toLocaleString("pt-BR", { maximumFractionDigits: 1 })} mi`;
+  if (value >= 1_000) return `R$ ${(value / 1_000).toLocaleString("pt-BR", { maximumFractionDigits: 0 })} mil`;
+  return `R$ ${value.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}`;
+}
+
+function formatShortDate(value: string | null) {
+  if (!value) return "—";
+  const match = value.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  const date = match ? new Date(+match[1], +match[2] - 1, +match[3]) : new Date(value);
+  return date.toLocaleDateString("pt-BR", { day: "2-digit", month: "short" });
+}
