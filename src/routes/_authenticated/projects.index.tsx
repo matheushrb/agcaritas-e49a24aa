@@ -8,7 +8,10 @@ import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { NewProjectWizard, type ProjectWizardValue } from "@/components/new-project-wizard";
-import { Search, Plus, Briefcase, Calendar, Users, DollarSign } from "lucide-react";
+import {
+  Search, Plus, Briefcase, Calendar, LayoutGrid, List, Columns,
+  Folder, FolderOpen, CheckCircle2, PauseCircle, AlertTriangle, User, ListChecks,
+} from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
