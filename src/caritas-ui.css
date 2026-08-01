@@ -483,7 +483,7 @@
 
   .cv-content {
     display: grid;
-    grid-template-rows: 118px minmax(310px, 0.92fr) minmax(330px, 1.08fr);
+    grid-template-rows: 118px minmax(0, 0.92fr) minmax(0, 1.08fr);
     gap: 12px;
   }
 
@@ -531,6 +531,12 @@
 
   .cv-right-rail {
     height: 100%;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .cv-rail {
+    min-height: 0;
   }
 
   .cv-rail:nth-child(2) {
