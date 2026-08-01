@@ -34,8 +34,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/projects/")({
-  validateSearch: (s: Record<string, unknown>) => ({
-    new: s.new === 1 || s.new === "1" ? 1 : undefined,
+  validateSearch: (s: { new?: number | string }) => ({
+    new: s.new === 1 || s.new === "1" ? (1 as const) : undefined,
   }),
   component: ProjectsPage,
 });
