@@ -175,7 +175,7 @@ function ProjectsPage() {
       return b.created_at.localeCompare(a.created_at);
     });
     return arr;
-  }, [projects, search, statusFilter, clientFilter, sort, tasksAgg.projected]);
+  }, [projects, search, statusFilter, clientFilter, ownerFilter, membersByProject, sort, tasksAgg.projected]);
 
   const kpis = useMemo(() => {
     const total = projects.length;
