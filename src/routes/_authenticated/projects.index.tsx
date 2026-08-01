@@ -299,9 +299,10 @@ function ProjectsPage() {
     <>
       <div className="pb-8">
         {/* Cabeçalho */}
-        <header className="mb-5 flex flex-wrap items-start justify-between gap-4">
+        <header className="mb-[22px] flex flex-wrap items-start justify-between gap-4">
           <div>
-            <h1 className="text-[30px] font-semibold leading-none tracking-[-0.03em] text-foreground">Projetos</h1>
+            <h1 className="text-[27px] font-semibold leading-[34px] tracking-[-0.02em] text-foreground">Projetos</h1>
+
             <p className="mt-2 text-[13px] text-muted-foreground">
               Acompanhe o andamento dos projetos, prazos, equipe e resultados em um só lugar.
             </p>
