@@ -299,15 +299,16 @@ function ProjectsPage() {
     <>
       <div className="pb-8">
         {/* Cabeçalho */}
-        <header className="mb-5 flex flex-wrap items-start justify-between gap-4">
+        <header className="mb-[22px] flex flex-wrap items-start justify-between gap-4">
           <div>
-            <h1 className="text-[30px] font-semibold leading-none tracking-[-0.03em] text-foreground">Projetos</h1>
+            <h1 className="text-[27px] font-semibold leading-[34px] tracking-[-0.02em] text-foreground">Projetos</h1>
+
             <p className="mt-2 text-[13px] text-muted-foreground">
               Acompanhe o andamento dos projetos, prazos, equipe e resultados em um só lugar.
             </p>
           </div>
           <div className="flex items-center gap-3">
-            <div className="flex h-[42px] items-center rounded-[10px] border border-border/80 bg-card p-1">
+            <div className="flex h-[42px] items-center rounded-[10px] border border-border bg-card p-1">
               <ViewTab active={view === "cards"} onClick={() => setView("cards")} icon={LayoutGrid} label="Cards" />
               <ViewTab active={view === "list"} onClick={() => setView("list")} icon={List} label="Lista" />
               <ViewTab active={view === "kanban"} onClick={() => setView("kanban")} icon={Columns} label="Kanban" />
@@ -315,7 +316,7 @@ function ProjectsPage() {
             <button
               type="button"
               onClick={() => setNewOpen(true)}
-              className="inline-flex h-[42px] items-center gap-2 rounded-[10px] bg-[#1F5FFF] px-4 text-[13.5px] font-medium text-white transition hover:bg-[#1a52e0]"
+              className="inline-flex h-[42px] items-center gap-2 rounded-[10px] bg-[#1769F6] px-4 text-[13.5px] font-medium text-white transition hover:bg-[#1a52e0]"
             >
               <Plus className="h-4 w-4" />
               Novo projeto
@@ -324,7 +325,7 @@ function ProjectsPage() {
         </header>
 
         {/* KPIs */}
-        <section className="mb-4 grid grid-cols-2 gap-3 xl:grid-cols-5">
+        <section className="mb-[17px] grid grid-cols-2 gap-[14px] xl:grid-cols-5">
           <Kpi label="Total" value={kpis.total} sub={`${kpis.active} em andamento`} icon={Folder} tone="slate" />
           <Kpi label="Ativos" value={kpis.active} sub={pct(kpis.active, kpis.total)} icon={FolderOpen} tone="blue" />
           <Kpi label="Concluídos" value={kpis.done} sub={pct(kpis.done, kpis.total)} icon={CheckCircle2} tone="green" />
@@ -333,8 +334,9 @@ function ProjectsPage() {
         </section>
 
         {/* Filtros */}
-        <section className="mb-4 flex flex-wrap items-center gap-3">
-          <label className="flex h-[42px] min-w-[280px] flex-1 items-center gap-2 rounded-[10px] border border-border/80 bg-card px-3 lg:max-w-[320px] lg:flex-none">
+        <section className="mb-[11px] flex flex-wrap items-center gap-[14px]">
+          <label className="flex h-[42px] min-w-[280px] flex-1 items-center gap-2 rounded-[10px] border border-border bg-card px-3 lg:max-w-[320px] lg:flex-none">
+
             <Search className="h-4 w-4 text-muted-foreground" />
             <input
               value={search}
@@ -385,7 +387,7 @@ function ProjectsPage() {
         {isLoading ? (
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
             {[0, 1, 2, 3, 4, 5, 6, 7].map((i) => (
-              <div key={i} className="h-[230px] animate-pulse rounded-xl border border-border/70 bg-card" />
+              <div key={i} className="h-[230px] animate-pulse rounded-xl border border-border bg-card" />
             ))}
           </div>
         ) : filtered.length === 0 ? (
@@ -395,7 +397,8 @@ function ProjectsPage() {
             <p className="mt-1 text-xs text-muted-foreground">Ajuste os filtros ou crie um novo projeto.</p>
           </div>
         ) : view === "cards" ? (
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
+          <div className="grid grid-cols-1 gap-[14px] md:grid-cols-2 xl:grid-cols-4">
+
             {paged.map((project) => (
               <ProjectCard
                 key={project.id}
@@ -413,7 +416,7 @@ function ProjectsPage() {
 
         {/* Paginação */}
         {view !== "kanban" && filtered.length > 0 && (
-          <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+          <div className="mt-[15px] flex flex-wrap items-center justify-between gap-3">
             <p className="text-[12px] text-muted-foreground">
               Mostrando {(currentPage - 1) * pageSize + 1}–{Math.min(currentPage * pageSize, filtered.length)} de{" "}
               {filtered.length} projetos
@@ -433,8 +436,8 @@ function ProjectsPage() {
                       className={cn(
                         "h-8 min-w-8 rounded-lg border px-2 text-[12.5px] transition",
                         n === currentPage
-                          ? "border-[#1F5FFF] bg-[#1F5FFF] text-white"
-                          : "border-border/80 bg-card text-foreground hover:bg-muted",
+                          ? "border-[#1769F6] bg-[#1769F6] text-white"
+                          : "border-border bg-card text-foreground hover:bg-muted",
                       )}
                     >
                       {n}
@@ -445,7 +448,7 @@ function ProjectsPage() {
                 <ChevronRight className="h-4 w-4" />
               </PagerButton>
             </div>
-            <label className="flex h-9 items-center gap-2 rounded-[10px] border border-border/80 bg-card px-3 text-[12.5px]">
+            <label className="flex h-9 items-center gap-2 rounded-[10px] border border-border bg-card px-3 text-[12.5px]">
               <select
                 value={pageSize}
                 onChange={(e) => setPageSize(Number(e.target.value))}
@@ -499,8 +502,10 @@ function ViewTab({
       type="button"
       onClick={onClick}
       className={cn(
-        "inline-flex h-[34px] items-center gap-2 rounded-lg px-3 text-[13px] font-medium transition",
-        active ? "bg-[#EEF3FF] text-[#1F5FFF]" : "text-muted-foreground hover:text-foreground",
+        "inline-flex h-[34px] items-center gap-2 rounded-lg border-b-2 px-3.5 text-[13px] font-medium transition",
+        active
+          ? "border-[#1769F6] bg-[#EEF4FF] text-[#1769F6]"
+          : "border-transparent text-muted-foreground hover:text-foreground",
       )}
     >
       <Icon className="h-4 w-4" />
@@ -509,9 +514,10 @@ function ViewTab({
   );
 }
 
+
 const TONES: Record<string, string> = {
   slate: "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300",
-  blue: "bg-[#EEF3FF] text-[#1F5FFF] dark:bg-blue-500/15 dark:text-blue-300",
+  blue: "bg-[#EEF4FF] text-[#1769F6] dark:bg-blue-500/15 dark:text-blue-300",
   green: "bg-emerald-50 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-300",
   amber: "bg-amber-50 text-amber-600 dark:bg-amber-500/15 dark:text-amber-300",
   red: "bg-rose-50 text-rose-600 dark:bg-rose-500/15 dark:text-rose-300",
@@ -531,18 +537,19 @@ function Kpi({
   tone: keyof typeof TONES;
 }) {
   return (
-    <div className="rounded-xl border border-border/80 bg-card px-4 py-3.5">
+    <div className="flex h-[115px] flex-col justify-between rounded-[12px] border border-border bg-card px-5 py-[18px]">
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="text-[12.5px] text-muted-foreground">{label}</p>
-          <div className="mt-1.5 text-[28px] font-semibold leading-none tracking-[-0.035em]">{value}</div>
+          <div className="mt-2 text-[30px] font-semibold leading-none tracking-[-0.03em]">{value}</div>
         </div>
-        <div className={cn("flex h-9 w-9 items-center justify-center rounded-full", TONES[tone])}>
-          <Icon className="h-4 w-4" />
+        <div className={cn("flex h-11 w-11 items-center justify-center rounded-full", TONES[tone])}>
+          <Icon className="h-[18px] w-[18px]" />
         </div>
       </div>
-      <p className="mt-3 text-[11.5px] text-muted-foreground">{sub}</p>
+      <p className="text-[11.5px] text-muted-foreground">{sub}</p>
     </div>
+
   );
 }
 
@@ -560,7 +567,7 @@ function FilterSelect({
   icon?: React.ElementType;
 }) {
   return (
-    <label className="inline-flex h-[42px] items-center gap-2 whitespace-nowrap rounded-[10px] border border-border/80 bg-card px-3 text-[13px]">
+    <label className="inline-flex h-[42px] items-center gap-2 whitespace-nowrap rounded-[10px] border border-border bg-card px-3 text-[13px]">
       {Icon && <Icon className="h-3.5 w-3.5 text-muted-foreground" />}
       <span className="text-muted-foreground">{label}:</span>
       <select
@@ -590,7 +597,7 @@ function Avatars({ members }: { members: Member[] }) {
         <span
           key={m.user_id}
           title={m.name}
-          className="-ml-1.5 flex h-6 w-6 items-center justify-center overflow-hidden rounded-full border-2 border-card bg-[#EEF3FF] text-[9px] font-semibold text-[#1F5FFF] first:ml-0"
+          className="-ml-1.5 flex h-6 w-6 items-center justify-center overflow-hidden rounded-full border-2 border-card bg-[#EEF4FF] text-[9px] font-semibold text-[#1769F6] first:ml-0"
         >
           {m.avatar ? <img src={m.avatar} alt={m.name} className="h-full w-full object-cover" /> : initials(m.name)}
         </span>
@@ -622,58 +629,60 @@ function ProjectCard({
       tabIndex={0}
       onClick={onOpen}
       onKeyDown={(e) => (e.key === "Enter" ? onOpen() : undefined)}
-      className="flex cursor-pointer flex-col rounded-xl border border-border/80 bg-card px-4 pb-3 pt-4 transition hover:border-[#1F5FFF]/40 hover:shadow-[0_10px_28px_rgba(15,23,42,0.06)]"
+      className="flex min-h-[217px] cursor-pointer flex-col rounded-[12px] border border-border bg-card transition hover:border-[#1769F6]/40 hover:shadow-[0_10px_28px_rgba(15,23,42,0.06)]"
     >
-      <h3 className="truncate text-[16px] font-semibold tracking-[-0.02em]">{project.name}</h3>
+      <div className="flex flex-1 flex-col px-5 pt-[18px]">
+        <h3 className="truncate text-[15px] font-semibold leading-[20px] tracking-[-0.01em]">{project.name}</h3>
 
-      <div className="mt-2 flex items-center gap-2">
-        <span className="inline-flex min-w-0 items-center gap-1.5 text-[12px] text-muted-foreground">
-          <User className="h-3.5 w-3.5 shrink-0" />
-          <span className="truncate">{project.clientName || "Interno"}</span>
-        </span>
-        {project.projectType && !/^[0-9a-f]{8}-[0-9a-f]{4}-/i.test(project.projectType) && (
-          <span className="truncate rounded-md border border-border/80 px-2 py-0.5 text-[11px] text-muted-foreground">
-            {project.projectType}
+        <div className="mt-2.5 flex items-center gap-2">
+          <span className="inline-flex min-w-0 items-center gap-1.5 text-[11px] text-muted-foreground">
+            <User className="h-3.5 w-3.5 shrink-0" />
+            <span className="truncate">{project.clientName || "Interno"}</span>
           </span>
+          {project.projectType && !/^[0-9a-f]{8}-[0-9a-f]{4}-/i.test(project.projectType) && (
+            <span className="truncate rounded-[6px] border border-border px-2 py-[3px] text-[10.5px] text-muted-foreground">
+              {project.projectType}
+            </span>
+          )}
+        </div>
+
+        <div className="mt-2 flex items-center justify-end gap-1.5 text-[10px]">
+          <span className={cn("h-[7px] w-[7px] rounded-full", health.dot)} />
+          <span className={health.text}>{health.label}</span>
+        </div>
+
+        <div className="mt-1.5 flex items-center gap-2.5">
+          <span className="text-[11px] text-muted-foreground">{project.progress}%</span>
+          <span className="h-[5px] flex-1 overflow-hidden rounded-full bg-muted">
+            <span className="block h-full rounded-full bg-[#1769F6]" style={{ width: `${project.progress}%` }} />
+          </span>
+          <span className="text-[11px] font-medium">{project.progress}%</span>
+        </div>
+
+        <p className={cn("mt-3 inline-flex items-center gap-1.5 text-[10.5px]", due.className)}>
+          <CalendarDays className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+          {due.label}
+        </p>
+
+        <div className="mt-2.5 flex items-center justify-between gap-2">
+          <Avatars members={members} />
+          <span className="inline-flex items-center gap-1.5 text-[10.5px] text-muted-foreground">
+            <ListChecks className="h-3.5 w-3.5" />
+            {project.doneTasks ?? 0}/{project.totalTasks} tarefas
+          </span>
+        </div>
+
+        {project.overdueTasks > 0 && (
+          <p className="mt-2 inline-flex items-center gap-1.5 text-[10px] font-medium text-rose-600 dark:text-rose-400">
+            <AlertTriangle className="h-3.5 w-3.5" />
+            {project.overdueTasks} tarefa{project.overdueTasks > 1 ? "s" : ""} em atraso
+          </p>
         )}
       </div>
 
-      <div className="mt-2 flex items-center justify-end gap-1.5 text-[11.5px]">
-        <span className={cn("h-1.5 w-1.5 rounded-full", health.dot)} />
-        <span className={health.text}>{health.label}</span>
-      </div>
-
-      <div className="mt-1.5 flex items-center gap-2">
-        <span className="text-[11.5px] text-muted-foreground">{project.progress}%</span>
-        <span className="h-1.5 flex-1 overflow-hidden rounded-full bg-muted">
-          <span className="block h-full rounded-full bg-[#1F5FFF]" style={{ width: `${project.progress}%` }} />
-        </span>
-        <span className="text-[11.5px] font-medium">{project.progress}%</span>
-      </div>
-
-      <p className={cn("mt-3 inline-flex items-center gap-1.5 text-[12px]", due.className)}>
-        <CalendarDays className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-        {due.label}
-      </p>
-
-      <div className="mt-2.5 flex items-center justify-between gap-2">
-        <Avatars members={members} />
-        <span className="inline-flex items-center gap-1.5 text-[12px] text-muted-foreground">
-          <ListChecks className="h-3.5 w-3.5" />
-          {project.doneTasks ?? 0}/{project.totalTasks} tarefas
-        </span>
-      </div>
-
-      {project.overdueTasks > 0 && (
-        <p className="mt-2 inline-flex items-center gap-1.5 text-[11.5px] font-medium text-rose-600 dark:text-rose-400">
-          <AlertTriangle className="h-3.5 w-3.5" />
-          {project.overdueTasks} tarefa{project.overdueTasks > 1 ? "s" : ""} em atraso
-        </p>
-      )}
-
-      <div className="mt-3 flex items-center justify-between gap-2 border-t border-border/70 pt-2.5">
-        <span className="text-[11.5px] text-muted-foreground">Receita prevista</span>
-        <span className="ml-auto text-[13.5px] font-semibold tracking-[-0.02em]">{formatMoney(project.revenue)}</span>
+      <div className="mt-auto flex items-center gap-2 border-t border-border px-5 py-3">
+        <span className="text-[10.5px] text-muted-foreground">Receita prevista</span>
+        <span className="ml-auto text-[14px] font-semibold tracking-[-0.01em]">{formatMoney(project.revenue)}</span>
         <button
           type="button"
           onClick={(e) => e.stopPropagation()}
@@ -682,6 +691,7 @@ function ProjectCard({
           <MoreHorizontal className="h-4 w-4" />
         </button>
       </div>
+
     </div>
   );
 }
@@ -696,10 +706,10 @@ function ProjectTable({
   onOpen: (id: string) => void;
 }) {
   return (
-    <div className="overflow-hidden rounded-xl border border-border/80 bg-card">
+    <div className="overflow-hidden rounded-xl border border-border bg-card">
       <table className="w-full text-[13px]">
         <thead>
-          <tr className="border-b border-border/70 text-left text-[11.5px] text-muted-foreground">
+          <tr className="border-b border-border text-left text-[11.5px] text-muted-foreground">
             <th className="px-4 py-3 font-medium">Projeto</th>
             <th className="px-4 py-3 font-medium">Cliente</th>
             <th className="px-4 py-3 font-medium">Status</th>
@@ -734,7 +744,7 @@ function ProjectTable({
                   <span className="flex items-center gap-2">
                     <span className="text-[12px]">{project.progress}%</span>
                     <span className="h-1.5 w-20 overflow-hidden rounded-full bg-muted">
-                      <span className="block h-full rounded-full bg-[#1F5FFF]" style={{ width: `${project.progress}%` }} />
+                      <span className="block h-full rounded-full bg-[#1769F6]" style={{ width: `${project.progress}%` }} />
                     </span>
                   </span>
                 </td>
@@ -765,7 +775,7 @@ function ProjectKanban({
       {columns.map((status) => {
         const list = rows.filter((p) => p.status === status);
         return (
-          <div key={status} className="rounded-xl border border-border/80 bg-card p-3">
+          <div key={status} className="rounded-xl border border-border bg-card p-3">
             <div className="mb-3 flex items-center justify-between">
               <span className="text-[12.5px] font-semibold">{STATUS_META[status].label}</span>
               <span className="text-[11.5px] text-muted-foreground">{list.length}</span>
@@ -776,7 +786,7 @@ function ProjectKanban({
                   key={project.id}
                   type="button"
                   onClick={() => onOpen(project.id)}
-                  className="w-full rounded-lg border border-border/70 bg-background p-3 text-left transition hover:border-[#1F5FFF]/40"
+                  className="w-full rounded-lg border border-border bg-background p-3 text-left transition hover:border-[#1769F6]/40"
                 >
                   <p className="truncate text-[13px] font-medium">{project.name}</p>
                   <p className="mt-1 truncate text-[11.5px] text-muted-foreground">{project.clientName || "Interno"}</p>
@@ -806,7 +816,7 @@ function PagerButton({
       type="button"
       disabled={disabled}
       onClick={onClick}
-      className="flex h-8 w-8 items-center justify-center rounded-lg border border-border/80 bg-card text-muted-foreground transition hover:bg-muted disabled:opacity-40"
+      className="flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-card text-muted-foreground transition hover:bg-muted disabled:opacity-40"
     >
       {children}
     </button>
