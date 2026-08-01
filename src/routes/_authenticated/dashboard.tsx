@@ -298,7 +298,7 @@ function DashboardPage() {
 function Spark({ tone }: { tone: "blue" | "green" }) {
   return (
     <svg viewBox="0 0 96 34" className={`spark spark-${tone}`} preserveAspectRatio="none">
-      <polyline fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"
+      <polyline fill="none" stroke="currentColor" strokeWidth="1.05" strokeLinecap="round" strokeLinejoin="round"
         points="0,28 10,24 20,26 30,18 40,21 50,12 60,16 70,9 80,13 96,4" />
     </svg>
   );
