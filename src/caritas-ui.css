@@ -1,22 +1,23 @@
 /* Caritas UI — folha de estilo aprovada (DASH-01 / DASH-03) */
 
 .caritas-ui {
-  --bg: #fafbfd;
+  --bg: #f5f6f7;
   --surface: #ffffff;
-  --surface-2: #f8f9fb;
-  --text: #121827;
-  --muted: #687386;
-  --border: #edf0f4;
-  --primary: #0872f9;
+  --surface-2: #fafbfc;
+  --text: #1c2026;
+  --muted: #66707a;
+  --border: #dde1e6;
+  --primary: #1769f6;
   --primary-2: #3659e3;
-  --primary-soft: #e9edfc;
+  --primary-soft: #eef4ff;
   --success: #2fad62;
-  --warning: #e7a11a;
+  --warning: #e79015;
   --danger: #e4473a;
   --purple: #7e57d8;
   --teal: #14a9a0;
   --shadow: 0 1px 5px rgba(19, 31, 55, 0.022);
   --radius: 10px;
+
   min-height: 100vh;
   background: var(--bg);
   color: var(--text);
