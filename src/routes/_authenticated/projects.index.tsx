@@ -136,8 +136,10 @@ function ProjectsPage() {
     const active = projects.filter(p => p.status === "active").length;
     const done = projects.filter(p => p.status === "done").length;
     const paused = projects.filter(p => p.status === "paused").length;
-    return { total, active, done, paused };
-  }, [projects]);
+    const risk = projects.filter(p => (taskCounts[p.id]?.overdue ?? 0) > 0 && p.status !== "done").length;
+    return { total, active, done, paused, risk };
+  }, [projects, taskCounts]);
+
 
   const createProject = useMutation({
     mutationFn: async (input: ProjectWizardValue) => {
