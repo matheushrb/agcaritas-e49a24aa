@@ -1,12 +1,12 @@
 /* Caritas UI — folha de estilo aprovada (DASH-01 / DASH-03) */
 
 .caritas-ui {
-  --bg: #f8fafc;
+  --bg: #fafbfd;
   --surface: #ffffff;
-  --surface-2: #f6f8fb;
+  --surface-2: #f8f9fb;
   --text: #121827;
   --muted: #687386;
-  --border: #e8ecf2;
+  --border: #edf0f4;
   --primary: #0872f9;
   --primary-2: #3659e3;
   --primary-soft: #e9edfc;
@@ -15,7 +15,7 @@
   --danger: #e4473a;
   --purple: #7e57d8;
   --teal: #14a9a0;
-  --shadow: 0 2px 10px rgba(19, 31, 55, 0.035);
+  --shadow: 0 1px 5px rgba(19, 31, 55, 0.022);
   --radius: 10px;
   min-height: 100vh;
   background: var(--bg);
@@ -93,7 +93,7 @@
 /* SHELL */
 .cv-shell {
   margin-left: 104px;
-  width: min(1568px, calc(100vw - 104px));
+  width: calc(100vw - 104px);
   min-width: 0;
 }
 
@@ -104,7 +104,7 @@
   grid-template-columns: 170px minmax(360px, 510px) 1fr;
   align-items: center;
   gap: 18px;
-  padding-right: 31px;
+  padding-right: 24px;
 }
 .cv-brand { display: flex; align-items: center; gap: 7px; font-size: 18px; }
 .cv-brand span { color: var(--primary); font-size: 30px; }
@@ -167,11 +167,11 @@
 .cv-profile span { font-size: 9px; color: var(--muted); }
 
 /* MAIN */
-.cv-main { padding: 9px 31px 18px 0; }
+.cv-main { padding: 9px 24px 18px 0; }
 
 /* PAGE HEADER */
 .cv-page-head { display: flex; align-items: flex-start; justify-content: space-between; height: 51px; margin: 0 0 9px; }
-.cv-page-head h1 { font-size: 23px; line-height: 1.1; margin: 0 0 7px; letter-spacing: 0; }
+.cv-page-head h1 { font-size: 23px; line-height: 1.1; margin: 0 0 7px; letter-spacing: 0; font-weight: 650; }
 .cv-page-head p { margin: 0; color: var(--muted); font-size: 9px; }
 .cv-page-actions { display: flex; gap: 10px; }
 .cv-button {
@@ -191,7 +191,7 @@
 .cv-button.cv-secondary { background: var(--surface); color: var(--primary); }
 
 /* DASHBOARD */
-.cv-dashboard-grid { display: grid; grid-template-columns: minmax(0, 1fr) 274px; gap: 12px; }
+.cv-dashboard-grid { display: grid; grid-template-columns: minmax(0, 1fr) 286px; gap: 12px; }
 .cv-content { min-width: 0; }
 
 /* CARD */
@@ -201,6 +201,8 @@
   border-radius: var(--radius);
   box-shadow: var(--shadow);
 }
+
+.spark polyline { stroke-width: 1.05; }
 
 /* KPI */
 .cv-kpi-grid { display: grid; grid-template-columns: 1.42fr 1.34fr repeat(4, 1fr); gap: 10px; margin-bottom: 10px; }
