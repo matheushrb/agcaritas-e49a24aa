@@ -475,15 +475,15 @@
 
 /* Ocupação proporcional da prancheta de referência em 1920 × 1080.
    A área útil cresce na vertical, sem zoom e sem alterar a tipografia. */
-@media (min-width: 1500px) and (min-height: 950px) {
+@media (min-width: 1500px) and (min-height: 800px) {
   .cv-dashboard-grid {
-    height: calc(100vh - 180px);
-    min-height: 830px;
+    height: calc(100vh - 174px);
+    min-height: 0;
   }
 
   .cv-content {
     display: grid;
-    grid-template-rows: 118px minmax(310px, 0.92fr) minmax(330px, 1.08fr);
+    grid-template-rows: 118px minmax(0, 0.92fr) minmax(0, 1.08fr);
     gap: 12px;
   }
 
@@ -502,6 +502,7 @@
     margin-bottom: 0;
     display: flex;
     flex-direction: column;
+    overflow: hidden;
   }
 
   .cv-attention .cv-table {
@@ -514,10 +515,16 @@
     flex: 1;
   }
 
-  .cv-lower-grid,
+  .cv-lower-grid {
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
+  }
+
   .cv-panel {
     height: 100%;
     min-height: 0;
+    max-height: 100%;
   }
 
   .cv-finance-viz {
@@ -531,6 +538,13 @@
 
   .cv-right-rail {
     height: 100%;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .cv-rail {
+    min-height: 0;
+    overflow: hidden;
   }
 
   .cv-rail:nth-child(2) {
