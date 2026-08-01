@@ -502,6 +502,7 @@
     margin-bottom: 0;
     display: flex;
     flex-direction: column;
+    overflow: hidden;
   }
 
   .cv-attention .cv-table {
@@ -514,10 +515,16 @@
     flex: 1;
   }
 
-  .cv-lower-grid,
+  .cv-lower-grid {
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
+  }
+
   .cv-panel {
     height: 100%;
     min-height: 0;
+    max-height: 100%;
   }
 
   .cv-finance-viz {
@@ -537,6 +544,7 @@
 
   .cv-rail {
     min-height: 0;
+    overflow: hidden;
   }
 
   .cv-rail:nth-child(2) {
