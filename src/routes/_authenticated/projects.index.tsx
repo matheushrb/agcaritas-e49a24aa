@@ -537,18 +537,19 @@ function Kpi({
   tone: keyof typeof TONES;
 }) {
   return (
-    <div className="rounded-xl border border-border/80 bg-card px-4 py-3.5">
+    <div className="flex h-[115px] flex-col justify-between rounded-[12px] border border-border bg-card px-5 py-[18px]">
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="text-[12.5px] text-muted-foreground">{label}</p>
-          <div className="mt-1.5 text-[28px] font-semibold leading-none tracking-[-0.035em]">{value}</div>
+          <div className="mt-2 text-[30px] font-semibold leading-none tracking-[-0.03em]">{value}</div>
         </div>
-        <div className={cn("flex h-9 w-9 items-center justify-center rounded-full", TONES[tone])}>
-          <Icon className="h-4 w-4" />
+        <div className={cn("flex h-11 w-11 items-center justify-center rounded-full", TONES[tone])}>
+          <Icon className="h-[18px] w-[18px]" />
         </div>
       </div>
-      <p className="mt-3 text-[11.5px] text-muted-foreground">{sub}</p>
+      <p className="text-[11.5px] text-muted-foreground">{sub}</p>
     </div>
+
   );
 }
 
