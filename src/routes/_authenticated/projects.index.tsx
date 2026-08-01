@@ -134,8 +134,16 @@ function ProjectsPage() {
       arr = arr.filter(p => p.name.toLowerCase().includes(s) || (p.description ?? "").toLowerCase().includes(s));
     }
     if (statusFilter !== "all") arr = arr.filter(p => p.status === statusFilter);
+    if (clientFilter !== "all") arr = arr.filter(p => p.client_id === clientFilter);
+    const rev = tasksAgg.projected;
+    arr = [...arr].sort((a, b) => {
+      if (sort === "name") return a.name.localeCompare(b.name, "pt-BR");
+      if (sort === "deadline") return (a.end_date ?? "9999").localeCompare(b.end_date ?? "9999");
+      if (sort === "revenue") return (rev[b.id] ?? 0) - (rev[a.id] ?? 0);
+      return b.created_at.localeCompare(a.created_at);
+    });
     return arr;
-  }, [projects, search, statusFilter]);
+  }, [projects, search, statusFilter, clientFilter, sort, tasksAgg.projected]);
 
   const kpis = useMemo(() => {
     const total = projects.length;
