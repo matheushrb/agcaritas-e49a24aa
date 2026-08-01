@@ -594,7 +594,8 @@
   padding: 10px 12px;
   margin-bottom: 12px;
 }
-.cv-prj-filters .grow { flex: 1; }
+.cv-prj-filters .grow { flex: 1 1 auto; min-width: 200px; }
+.cv-prj-filters .cv-field--sort { margin-left: auto; }
 .cv-field {
   display: inline-flex;
   align-items: center;
@@ -606,13 +607,26 @@
   background: var(--surface);
   color: var(--text);
   font-size: 12.5px;
+  white-space: nowrap;
+  flex: 0 0 auto;
 }
 .cv-field input, .cv-field select {
   border: 0; outline: 0; background: transparent; color: inherit;
   font: inherit; width: 100%; min-width: 60px;
 }
-.cv-field select { cursor: pointer; }
+.cv-field select {
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: 16px;
+  background-image: linear-gradient(45deg, transparent 50%, var(--muted) 50%),
+    linear-gradient(135deg, var(--muted) 50%, transparent 50%);
+  background-position: right 5px center, right 1px center;
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+}
 .cv-field .k { color: var(--muted); }
+
 
 .cv-prj-grid {
   display: grid;
