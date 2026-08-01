@@ -259,6 +259,13 @@ function ProjectsPage() {
           </select>
         </label>
         <label className="cv-field">
+          <span className="k">Responsável:</span>
+          <select value={ownerFilter} onChange={e => setOwnerFilter(e.target.value)}>
+            <option value="all">Todos</option>
+            {allMembers.map(m => <option key={m.user_id} value={m.user_id}>{m.name}</option>)}
+          </select>
+        </label>
+        <label className="cv-field">
           <span className="k">Ordenar por:</span>
           <select value={sort} onChange={e => setSort(e.target.value)}>
             <option value="recent">Mais recentes</option>
