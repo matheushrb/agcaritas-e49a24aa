@@ -308,7 +308,7 @@ function ProjectsPage() {
             </p>
           </div>
           <div className="flex items-center gap-3">
-            <div className="flex h-[42px] items-center rounded-[10px] border border-border/80 bg-card p-1">
+            <div className="flex h-[42px] items-center rounded-[10px] border border-border bg-card p-1">
               <ViewTab active={view === "cards"} onClick={() => setView("cards")} icon={LayoutGrid} label="Cards" />
               <ViewTab active={view === "list"} onClick={() => setView("list")} icon={List} label="Lista" />
               <ViewTab active={view === "kanban"} onClick={() => setView("kanban")} icon={Columns} label="Kanban" />
@@ -316,7 +316,7 @@ function ProjectsPage() {
             <button
               type="button"
               onClick={() => setNewOpen(true)}
-              className="inline-flex h-[42px] items-center gap-2 rounded-[10px] bg-[#1F5FFF] px-4 text-[13.5px] font-medium text-white transition hover:bg-[#1a52e0]"
+              className="inline-flex h-[42px] items-center gap-2 rounded-[10px] bg-[#1769F6] px-4 text-[13.5px] font-medium text-white transition hover:bg-[#1a52e0]"
             >
               <Plus className="h-4 w-4" />
               Novo projeto
@@ -387,7 +387,7 @@ function ProjectsPage() {
         {isLoading ? (
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
             {[0, 1, 2, 3, 4, 5, 6, 7].map((i) => (
-              <div key={i} className="h-[230px] animate-pulse rounded-xl border border-border/70 bg-card" />
+              <div key={i} className="h-[230px] animate-pulse rounded-xl border border-border bg-card" />
             ))}
           </div>
         ) : filtered.length === 0 ? (
@@ -436,8 +436,8 @@ function ProjectsPage() {
                       className={cn(
                         "h-8 min-w-8 rounded-lg border px-2 text-[12.5px] transition",
                         n === currentPage
-                          ? "border-[#1F5FFF] bg-[#1F5FFF] text-white"
-                          : "border-border/80 bg-card text-foreground hover:bg-muted",
+                          ? "border-[#1769F6] bg-[#1769F6] text-white"
+                          : "border-border bg-card text-foreground hover:bg-muted",
                       )}
                     >
                       {n}
@@ -448,7 +448,7 @@ function ProjectsPage() {
                 <ChevronRight className="h-4 w-4" />
               </PagerButton>
             </div>
-            <label className="flex h-9 items-center gap-2 rounded-[10px] border border-border/80 bg-card px-3 text-[12.5px]">
+            <label className="flex h-9 items-center gap-2 rounded-[10px] border border-border bg-card px-3 text-[12.5px]">
               <select
                 value={pageSize}
                 onChange={(e) => setPageSize(Number(e.target.value))}
@@ -517,7 +517,7 @@ function ViewTab({
 
 const TONES: Record<string, string> = {
   slate: "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300",
-  blue: "bg-[#EEF3FF] text-[#1F5FFF] dark:bg-blue-500/15 dark:text-blue-300",
+  blue: "bg-[#EEF4FF] text-[#1769F6] dark:bg-blue-500/15 dark:text-blue-300",
   green: "bg-emerald-50 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-300",
   amber: "bg-amber-50 text-amber-600 dark:bg-amber-500/15 dark:text-amber-300",
   red: "bg-rose-50 text-rose-600 dark:bg-rose-500/15 dark:text-rose-300",
@@ -567,7 +567,7 @@ function FilterSelect({
   icon?: React.ElementType;
 }) {
   return (
-    <label className="inline-flex h-[42px] items-center gap-2 whitespace-nowrap rounded-[10px] border border-border/80 bg-card px-3 text-[13px]">
+    <label className="inline-flex h-[42px] items-center gap-2 whitespace-nowrap rounded-[10px] border border-border bg-card px-3 text-[13px]">
       {Icon && <Icon className="h-3.5 w-3.5 text-muted-foreground" />}
       <span className="text-muted-foreground">{label}:</span>
       <select
@@ -597,7 +597,7 @@ function Avatars({ members }: { members: Member[] }) {
         <span
           key={m.user_id}
           title={m.name}
-          className="-ml-1.5 flex h-6 w-6 items-center justify-center overflow-hidden rounded-full border-2 border-card bg-[#EEF3FF] text-[9px] font-semibold text-[#1F5FFF] first:ml-0"
+          className="-ml-1.5 flex h-6 w-6 items-center justify-center overflow-hidden rounded-full border-2 border-card bg-[#EEF4FF] text-[9px] font-semibold text-[#1769F6] first:ml-0"
         >
           {m.avatar ? <img src={m.avatar} alt={m.name} className="h-full w-full object-cover" /> : initials(m.name)}
         </span>
@@ -706,10 +706,10 @@ function ProjectTable({
   onOpen: (id: string) => void;
 }) {
   return (
-    <div className="overflow-hidden rounded-xl border border-border/80 bg-card">
+    <div className="overflow-hidden rounded-xl border border-border bg-card">
       <table className="w-full text-[13px]">
         <thead>
-          <tr className="border-b border-border/70 text-left text-[11.5px] text-muted-foreground">
+          <tr className="border-b border-border text-left text-[11.5px] text-muted-foreground">
             <th className="px-4 py-3 font-medium">Projeto</th>
             <th className="px-4 py-3 font-medium">Cliente</th>
             <th className="px-4 py-3 font-medium">Status</th>
@@ -744,7 +744,7 @@ function ProjectTable({
                   <span className="flex items-center gap-2">
                     <span className="text-[12px]">{project.progress}%</span>
                     <span className="h-1.5 w-20 overflow-hidden rounded-full bg-muted">
-                      <span className="block h-full rounded-full bg-[#1F5FFF]" style={{ width: `${project.progress}%` }} />
+                      <span className="block h-full rounded-full bg-[#1769F6]" style={{ width: `${project.progress}%` }} />
                     </span>
                   </span>
                 </td>
@@ -775,7 +775,7 @@ function ProjectKanban({
       {columns.map((status) => {
         const list = rows.filter((p) => p.status === status);
         return (
-          <div key={status} className="rounded-xl border border-border/80 bg-card p-3">
+          <div key={status} className="rounded-xl border border-border bg-card p-3">
             <div className="mb-3 flex items-center justify-between">
               <span className="text-[12.5px] font-semibold">{STATUS_META[status].label}</span>
               <span className="text-[11.5px] text-muted-foreground">{list.length}</span>
@@ -786,7 +786,7 @@ function ProjectKanban({
                   key={project.id}
                   type="button"
                   onClick={() => onOpen(project.id)}
-                  className="w-full rounded-lg border border-border/70 bg-background p-3 text-left transition hover:border-[#1F5FFF]/40"
+                  className="w-full rounded-lg border border-border bg-background p-3 text-left transition hover:border-[#1769F6]/40"
                 >
                   <p className="truncate text-[13px] font-medium">{project.name}</p>
                   <p className="mt-1 truncate text-[11.5px] text-muted-foreground">{project.clientName || "Interno"}</p>
@@ -816,7 +816,7 @@ function PagerButton({
       type="button"
       disabled={disabled}
       onClick={onClick}
-      className="flex h-8 w-8 items-center justify-center rounded-lg border border-border/80 bg-card text-muted-foreground transition hover:bg-muted disabled:opacity-40"
+      className="flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-card text-muted-foreground transition hover:bg-muted disabled:opacity-40"
     >
       {children}
     </button>
