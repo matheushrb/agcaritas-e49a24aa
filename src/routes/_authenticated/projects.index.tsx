@@ -80,7 +80,7 @@ function ProjectsPage() {
 
 
   const { data: tasksAgg = { counts: {}, projected: {} } } = useQuery<{
-    counts: Record<string, { total: number; overdue: number }>;
+    counts: Record<string, { total: number; done: number; overdue: number }>;
     projected: Record<string, number>;
   }>({
     queryKey: ["projects-tasks-agg"],
@@ -89,7 +89,7 @@ function ProjectsPage() {
         .from("tasks")
         .select("project_id,status,due_date,billing_enabled,billing_value,broadcast_kind,aired_dates,deliverables");
       if (error) throw error;
-      const counts: Record<string, { total: number; overdue: number }> = {};
+      const counts: Record<string, { total: number; done: number; overdue: number }> = {};
       const projected: Record<string, number> = {};
       for (const t of data ?? []) {
         const row = t as {
@@ -100,8 +100,9 @@ function ProjectsPage() {
         };
         const pid = row.project_id;
         if (!pid) continue;
-        counts[pid] ??= { total: 0, overdue: 0 };
+        counts[pid] ??= { total: 0, done: 0, overdue: 0 };
         counts[pid].total += 1;
+        if (row.status === "done") counts[pid].done += 1;
         if (row.due_date && new Date(row.due_date) < new Date() && row.status !== "done") counts[pid].overdue += 1;
         const base = row.billing_enabled && row.billing_value != null ? Number(row.billing_value) : 0;
         const mult = row.broadcast_kind && (row.aired_dates?.length ?? 0) > 0 ? row.aired_dates!.length : 1;
@@ -115,6 +116,7 @@ function ProjectsPage() {
   });
   const taskCounts = tasksAgg.counts;
   const revenueByProject = tasksAgg.projected;
+
 
   const clientById = useMemo(() => Object.fromEntries(clients.map(c => [c.id, c.name])), [clients]);
 
