@@ -84,6 +84,31 @@ function ProjectsPage() {
     },
   });
 
+  const { data: membersByProject = {} } = useQuery<Record<string, Member[]>>({
+    queryKey: ["projects-members"],
+    queryFn: async () => {
+      const [{ data: pm, error: e1 }, { data: profs, error: e2 }] = await Promise.all([
+        supabase.from("project_members").select("project_id,user_id"),
+        supabase.from("profiles").select("id,full_name,display_name,avatar_url"),
+      ]);
+      if (e1) throw e1;
+      if (e2) throw e2;
+      const pById = Object.fromEntries(
+        (profs ?? []).map(p => [p.id, { name: p.display_name || p.full_name || "Membro", avatar: p.avatar_url as string | null }]),
+      );
+      const map: Record<string, Member[]> = {};
+      for (const row of pm ?? []) {
+        const info = pById[row.user_id];
+        (map[row.project_id] ??= []).push({
+          user_id: row.user_id,
+          name: info?.name ?? "Membro",
+          avatar: info?.avatar ?? null,
+        });
+      }
+      return map;
+    },
+  });
+
 
   const { data: tasksAgg = { counts: {}, projected: {} } } = useQuery<{
     counts: Record<string, { total: number; done: number; overdue: number }>;
