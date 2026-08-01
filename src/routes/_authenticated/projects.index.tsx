@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { NewProjectWizard, type ProjectWizardValue } from "@/components/new-project-wizard";
 import {
   Search, Plus, Briefcase, Calendar, LayoutGrid, List, Columns,
-  Folder, FolderOpen, CheckCircle2, PauseCircle, AlertTriangle, User, ListChecks,
+  Folder, FolderOpen, CheckCircle2, PauseCircle, AlertTriangle, User, ListChecks, MoreHorizontal,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -52,6 +52,7 @@ function ProjectsPage() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [clientFilter, setClientFilter] = useState<string>("all");
+  const [ownerFilter, setOwnerFilter] = useState<string>("all");
   const [sort, setSort] = useState<string>("recent");
   const [view, setView] = useState<"cards" | "list" | "kanban">("cards");
   const [newOpen, setNewOpen] = useState(false);
@@ -81,6 +82,31 @@ function ProjectsPage() {
       const { data, error } = await supabase.from("clients").select("id,name").order("name");
       if (error) throw error;
       return (data ?? []) as Client[];
+    },
+  });
+
+  const { data: membersByProject = {} } = useQuery<Record<string, Member[]>>({
+    queryKey: ["projects-members"],
+    queryFn: async () => {
+      const [{ data: pm, error: e1 }, { data: profs, error: e2 }] = await Promise.all([
+        supabase.from("project_members").select("project_id,user_id"),
+        supabase.from("profiles").select("id,full_name,display_name,avatar_url"),
+      ]);
+      if (e1) throw e1;
+      if (e2) throw e2;
+      const pById = Object.fromEntries(
+        (profs ?? []).map(p => [p.id, { name: p.display_name || p.full_name || "Membro", avatar: p.avatar_url as string | null }]),
+      );
+      const map: Record<string, Member[]> = {};
+      for (const row of pm ?? []) {
+        const info = pById[row.user_id];
+        (map[row.project_id] ??= []).push({
+          user_id: row.user_id,
+          name: info?.name ?? "Membro",
+          avatar: info?.avatar ?? null,
+        });
+      }
+      return map;
     },
   });
 
@@ -126,6 +152,11 @@ function ProjectsPage() {
 
   const clientById = useMemo(() => Object.fromEntries(clients.map(c => [c.id, c.name])), [clients]);
 
+  const allMembers = useMemo(() => {
+    const map = new Map<string, Member>();
+    for (const list of Object.values(membersByProject)) for (const m of list) map.set(m.user_id, m);
+    return [...map.values()].sort((a, b) => a.name.localeCompare(b.name, "pt-BR"));
+  }, [membersByProject]);
 
   const filtered = useMemo(() => {
     let arr = projects;
@@ -135,6 +166,7 @@ function ProjectsPage() {
     }
     if (statusFilter !== "all") arr = arr.filter(p => p.status === statusFilter);
     if (clientFilter !== "all") arr = arr.filter(p => p.client_id === clientFilter);
+    if (ownerFilter !== "all") arr = arr.filter(p => (membersByProject[p.id] ?? []).some(m => m.user_id === ownerFilter));
     const rev = tasksAgg.projected;
     arr = [...arr].sort((a, b) => {
       if (sort === "name") return a.name.localeCompare(b.name, "pt-BR");
@@ -143,7 +175,7 @@ function ProjectsPage() {
       return b.created_at.localeCompare(a.created_at);
     });
     return arr;
-  }, [projects, search, statusFilter, clientFilter, sort, tasksAgg.projected]);
+  }, [projects, search, statusFilter, clientFilter, ownerFilter, membersByProject, sort, tasksAgg.projected]);
 
   const kpis = useMemo(() => {
     const total = projects.length;
@@ -206,10 +238,10 @@ function ProjectsPage() {
 
       <div className="cv-prj-kpis">
         <PrjKpi label="Total" value={kpis.total} sub={`${kpis.active} em andamento`} icon={<Folder className="h-4 w-4" />} />
-        <PrjKpi label="Ativos" value={kpis.active} sub={`${pct(kpis.active, kpis.total)} do total`} tone="blue" icon={<FolderOpen className="h-4 w-4" />} />
-        <PrjKpi label="Concluídos" value={kpis.done} sub={`${pct(kpis.done, kpis.total)} do total`} tone="green" icon={<CheckCircle2 className="h-4 w-4" />} />
-        <PrjKpi label="Pausados" value={kpis.paused} sub={`${pct(kpis.paused, kpis.total)} do total`} tone="amber" icon={<PauseCircle className="h-4 w-4" />} />
-        <PrjKpi label="Em risco" value={kpis.risk} sub={`${pct(kpis.risk, kpis.total)} do total`} tone="red" icon={<AlertTriangle className="h-4 w-4" />} />
+        <PrjKpi label="Ativos" value={kpis.active} sub={pct(kpis.active, kpis.total)} tone="blue" icon={<FolderOpen className="h-4 w-4" />} />
+        <PrjKpi label="Concluídos" value={kpis.done} sub={pct(kpis.done, kpis.total)} tone="green" icon={<CheckCircle2 className="h-4 w-4" />} />
+        <PrjKpi label="Pausados" value={kpis.paused} sub={pct(kpis.paused, kpis.total)} tone="amber" icon={<PauseCircle className="h-4 w-4" />} />
+        <PrjKpi label="Em risco" value={kpis.risk} sub={pct(kpis.risk, kpis.total)} tone="red" icon={<AlertTriangle className="h-4 w-4" />} />
       </div>
 
       <div className="cv-prj-filters">
@@ -231,6 +263,13 @@ function ProjectsPage() {
           <select value={clientFilter} onChange={e => setClientFilter(e.target.value)}>
             <option value="all">Todos</option>
             {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+          </select>
+        </label>
+        <label className="cv-field">
+          <span className="k">Responsável:</span>
+          <select value={ownerFilter} onChange={e => setOwnerFilter(e.target.value)}>
+            <option value="all">Todos</option>
+            {allMembers.map(m => <option key={m.user_id} value={m.user_id}>{m.name}</option>)}
           </select>
         </label>
         <label className="cv-field">
@@ -260,6 +299,7 @@ function ProjectsPage() {
               clientName={p.client_id ? clientById[p.client_id] ?? "Cliente" : null}
               counts={taskCounts[p.id] ?? { total: 0, done: 0, overdue: 0 }}
               revenue={revenueByProject[p.id] ?? 0}
+              members={membersByProject[p.id] ?? []}
             />
           ))}
         </div>
@@ -335,9 +375,37 @@ function PrjKpi({ label, value, sub, icon, tone }: { label: string; value: numbe
   );
 }
 
-function ProjectCard({ project, clientName, counts, revenue }: {
+type Member = { user_id: string; name: string; avatar: string | null };
+
+function Avatars({ members }: { members: Member[] }) {
+  const shown = members.slice(0, 3);
+  const rest = members.length - shown.length;
+  if (!members.length) {
+    return (
+      <div className="cv-avatars">
+        <span className="more" title="Sem equipe definida"><User className="h-3 w-3" /></span>
+      </div>
+    );
+  }
+  return (
+    <div className="cv-avatars">
+      {shown.map(m => (
+        <span key={m.user_id} title={m.name}>
+          {m.avatar ? <img src={m.avatar} alt={m.name} loading="lazy" /> : initials(m.name)}
+        </span>
+      ))}
+      {rest > 0 && <span className="more" title={members.slice(3).map(m => m.name).join(", ")}>+{rest}</span>}
+    </div>
+  );
+}
+
+const initials = (n: string) =>
+  n.split(" ").filter(Boolean).slice(0, 2).map(p => p[0]?.toUpperCase() ?? "").join("") || "?";
+
+function ProjectCard({ project, clientName, counts, revenue, members }: {
   project: Project; clientName: string | null;
   counts: { total: number; done: number; overdue: number }; revenue: number;
+  members: Member[];
 }) {
   const progress = counts.total ? Math.round((counts.done / counts.total) * 100) : 0;
   const dl = deadlineText(project.end_date, counts.overdue);
@@ -365,22 +433,34 @@ function ProjectCard({ project, clientName, counts, revenue }: {
       <div className="cv-prj-line" style={{ color: toneColor }}>
         <Calendar className="h-3.5 w-3.5" />{dl.text}
       </div>
-      <div className="cv-prj-line" style={{ justifyContent: "space-between" }}>
+      <div className="cv-prj-line" style={{ gap: 12 }}>
+        <Avatars members={members} />
         <span className="inline-flex items-center gap-1.5">
           <ListChecks className="h-3.5 w-3.5" />{counts.done}/{counts.total} tarefas
         </span>
-        {counts.overdue > 0 && (
-          <span className="inline-flex items-center gap-1" style={{ color: "var(--danger)" }}>
-            <AlertTriangle className="h-3.5 w-3.5" />{counts.overdue} em atraso
-          </span>
-        )}
       </div>
+      {counts.overdue > 0 && (
+        <div className="cv-prj-alert">
+          <AlertTriangle className="h-3.5 w-3.5" />{counts.overdue} {counts.overdue === 1 ? "tarefa em atraso" : "tarefas em atraso"}
+        </div>
+      )}
       <div className="cv-prj-foot">
         <span>Receita prevista</span>
-        <b>{money(revenue)}</b>
+        <span className="val">
+          <b>{money(revenue)}</b>
+          <button
+            type="button"
+            className="more"
+            aria-label="Mais ações"
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
+          >
+            <MoreHorizontal className="h-3.5 w-3.5" />
+          </button>
+        </span>
       </div>
     </Link>
   );
 }
+
 
 
