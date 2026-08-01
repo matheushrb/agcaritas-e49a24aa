@@ -272,8 +272,10 @@ function ProjectsPage() {
             {allMembers.map(m => <option key={m.user_id} value={m.user_id}>{m.name}</option>)}
           </select>
         </label>
-        <label className="cv-field">
+        <label className="cv-field cv-field--sort">
+          <ArrowUpDown className="h-3.5 w-3.5 k" />
           <span className="k">Ordenar por:</span>
+
           <select value={sort} onChange={e => setSort(e.target.value)}>
             <option value="recent">Mais recentes</option>
             <option value="name">Nome</option>
