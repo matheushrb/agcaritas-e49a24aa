@@ -51,6 +51,9 @@ function ProjectsPage() {
   const searchParams = Route.useSearch();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [clientFilter, setClientFilter] = useState<string>("all");
+  const [sort, setSort] = useState<string>("recent");
+  const [view, setView] = useState<"cards" | "list" | "kanban">("cards");
   const [newOpen, setNewOpen] = useState(false);
 
   useEffect(() => {
