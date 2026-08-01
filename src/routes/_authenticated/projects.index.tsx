@@ -416,7 +416,7 @@ function ProjectsPage() {
 
         {/* Paginação */}
         {view !== "kanban" && filtered.length > 0 && (
-          <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+          <div className="mt-[15px] flex flex-wrap items-center justify-between gap-3">
             <p className="text-[12px] text-muted-foreground">
               Mostrando {(currentPage - 1) * pageSize + 1}–{Math.min(currentPage * pageSize, filtered.length)} de{" "}
               {filtered.length} projetos
