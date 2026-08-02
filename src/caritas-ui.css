@@ -284,6 +284,7 @@
   display: grid; place-items: center; height: 22px; width: 22px;
   border-radius: 6px; color: var(--muted); background: transparent; border: 0; cursor: pointer;
 }
+.cv-row-menu { font-size: 15px; line-height: 1; }
 .cv-row-menu:hover { background: var(--bg); color: var(--text); }
 
 .cv-badge { font-style: normal; border-radius: 999px; padding: 3px 8px; font-size: 9.5px; }
