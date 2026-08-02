@@ -83,6 +83,28 @@
 .prj03 .p3-fbtn:hover { background: #F7F9FC; }
 .prj03 .p3-fbtn svg { width: 15px; height: 15px; }
 
+/* --- teste: barra de filtros em azul --- */
+.prj03 .p3-filters {
+  background: #EAF1FE;
+  border: 1px solid #C5D9FC;
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+.prj03 .p3-filters .p3-search input,
+.prj03 .p3-filters .p3-sel,
+.prj03 .p3-filters .p3-fbtn {
+  border-color: #B9D0FA;
+  background: #fff;
+  color: var(--p3-primary);
+}
+.prj03 .p3-filters .p3-search input::placeholder,
+.prj03 .p3-filters .p3-sel .cv,
+.prj03 .p3-filters .p3-sel > svg,
+.prj03 .p3-filters .p3-search svg,
+.prj03 .p3-filters .p3-fbtn svg { color: var(--p3-primary); opacity: .8; }
+.prj03 .p3-filters .p3-fbtn:hover { background: #DCE9FE; }
+
+
 /* ---------- 03 tabela ---------- */
 .prj03 .p3-table { margin-top: 14px; overflow: hidden; }
 .prj03 table { width: 100%; border-collapse: collapse; }
