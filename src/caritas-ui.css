@@ -504,7 +504,7 @@
   .cv-kpi { height: 110px; }
 
   .cv-attention {
-    height: 272px;
+    height: auto;
     margin-bottom: 0;
     overflow: hidden;
   }
