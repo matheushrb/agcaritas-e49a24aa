@@ -71,13 +71,14 @@ function DashboardPage() {
   ];
   const critical = (data.tasks as any[]).filter((t: any) => t.status !== "done").slice(0, 3);
   const criticalRows = critical.length ? critical.map((t: any, i: number) => ({
-    id: t.id, title: t.title, project: "Projeto ativo", client: "Cliente",
+    id: t.id, title: t.title, kind: "Tarefa", project: "Projeto ativo", client: "Cliente",
     due: i < 2 ? "Vence hoje" : "Vence amanhã", priority: i === 0 ? "Crítica" : "Alta",
   })) : [
-    { id: "r1", title: "Aprovação final de KV e variações", project: "Campanha Verão 2026", client: "Doodles", due: "Vence hoje", priority: "Crítica" },
-    { id: "r2", title: "Entrega de peças para mídia digital", project: "Lançamento EcoBeleza", client: "EcoBeleza", due: "Vence hoje", priority: "Alta" },
-    { id: "r3", title: "Revisão de identidade visual", project: "Branding Viva+", client: "Viva+", due: "Vence amanhã", priority: "Alta" },
+    { id: "r1", title: "Aprovação final de KV e variações", kind: "Aprovação", project: "Campanha Verão 2026", client: "Doodles", due: "Vence hoje", priority: "Crítica" },
+    { id: "r2", title: "Entrega de peças para mídia digital", kind: "Entrega", project: "Lançamento EcoBeleza", client: "EcoBeleza", due: "Vence hoje", priority: "Alta" },
+    { id: "r3", title: "Revisão de identidade visual", kind: "Revisão", project: "Branding Viva+", client: "Viva+", due: "Vence amanhã", priority: "Alta" },
   ];
+
 
   return (
     <>
