@@ -1,0 +1,208 @@
+/* ===========================================================
+   PRJ-03 — Projeto / Aba Tarefas
+   Réplica da referência aprovada (PRJ-03_Projeto_Aba_Tarefas).
+   CSS próprio: não reaproveita estilos de outros módulos.
+   =========================================================== */
+
+.prj03 {
+  --p3-card: #FFFFFF;
+  --p3-border: #DDE1E6;
+  --p3-border-soft: #E9ECF1;
+  --p3-ink: #1A2138;
+  --p3-muted: #5B6779;
+  --p3-muted-2: #8A93A3;
+  --p3-primary: #2F6BEF;
+  --p3-green: #10B981;
+  --p3-amber: #F59E0B;
+  --p3-red: #EF4444;
+
+  font-family: "Inter", "IBM Plex Sans", system-ui, sans-serif;
+  color: var(--p3-ink);
+  margin-top: 18px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 375px;
+  gap: 18px;
+  align-items: start;
+  -webkit-font-smoothing: antialiased;
+}
+@media (max-width: 1360px) { .prj03 { grid-template-columns: minmax(0, 1fr); } }
+
+.prj03 .p3-card {
+  background: var(--p3-card);
+  border: 1px solid var(--p3-border);
+  border-radius: 10px;
+}
+
+/* ---------- 01 faixa de indicadores ---------- */
+.prj03 .p3-stats { display: flex; align-items: stretch; padding: 0 4px; }
+.prj03 .p3-stat {
+  flex: 1; min-width: 0;
+  display: flex; align-items: center; gap: 10px;
+  padding: 16px 14px;
+  border-right: 1px solid var(--p3-border-soft);
+}
+.prj03 .p3-stat:last-child { border-right: 0; }
+.prj03 .p3-stat svg { width: 16px; height: 16px; flex: none; color: var(--p3-muted-2); }
+.prj03 .p3-stat.ok svg { color: var(--p3-green); }
+.prj03 .p3-stat.warn svg { color: var(--p3-amber); }
+.prj03 .p3-stat.bad svg { color: var(--p3-red); }
+.prj03 .p3-stat-l { font-size: 12px; color: var(--p3-muted); line-height: 16px; }
+.prj03 .p3-stat-v { font-size: 18px; font-weight: 700; line-height: 24px; letter-spacing: -0.2px; }
+.prj03 .p3-stat .p3-donut { margin-left: auto; }
+
+/* ---------- 02 barra de filtros ---------- */
+.prj03 .p3-filters { display: flex; align-items: center; gap: 10px; margin-top: 14px; flex-wrap: wrap; }
+.prj03 .p3-search {
+  position: relative; width: 218px; flex: none;
+}
+.prj03 .p3-search svg { position: absolute; right: 12px; top: 13px; width: 15px; height: 15px; color: var(--p3-muted-2); }
+.prj03 .p3-search input {
+  width: 100%; height: 42px; border-radius: 8px;
+  border: 1px solid var(--p3-border); background: #fff;
+  padding: 0 34px 0 14px; font-size: 13px; color: var(--p3-ink); outline: none;
+}
+.prj03 .p3-search input::placeholder { color: var(--p3-muted-2); }
+.prj03 .p3-search input:focus { border-color: var(--p3-primary); }
+
+.prj03 .p3-sel {
+  position: relative; height: 42px; display: inline-flex; align-items: center;
+  border: 1px solid var(--p3-border); background: #fff; border-radius: 8px;
+  padding: 0 30px 0 14px; font-size: 13px; color: var(--p3-ink); gap: 6px; cursor: pointer;
+}
+.prj03 .p3-sel .cv { color: var(--p3-muted); }
+.prj03 .p3-sel > svg { position: absolute; right: 10px; width: 14px; height: 14px; color: var(--p3-muted-2); pointer-events: none; }
+.prj03 .p3-sel select {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  opacity: 0; cursor: pointer; appearance: none; border: 0;
+}
+.prj03 .p3-fbtn {
+  height: 42px; padding: 0 16px; border-radius: 8px; cursor: pointer;
+  border: 1px solid var(--p3-border); background: #fff; color: var(--p3-ink);
+  font-size: 13px; font-weight: 500; display: inline-flex; align-items: center; gap: 8px;
+}
+.prj03 .p3-fbtn:hover { background: #F7F9FC; }
+.prj03 .p3-fbtn svg { width: 15px; height: 15px; }
+
+/* ---------- 03 tabela ---------- */
+.prj03 .p3-table { margin-top: 14px; overflow: hidden; }
+.prj03 table { width: 100%; border-collapse: collapse; }
+.prj03 thead th {
+  text-align: left; font-size: 12px; font-weight: 600; color: var(--p3-muted);
+  padding: 13px 10px; border-bottom: 1px solid var(--p3-border-soft); white-space: nowrap;
+}
+.prj03 tbody td {
+  padding: 10px; font-size: 13px; border-bottom: 1px solid #F0F2F6; vertical-align: middle;
+}
+.prj03 tbody tr:last-child td { border-bottom: 0; }
+.prj03 tbody tr:hover td { background: #FAFBFD; }
+.prj03 .p3-c-check { width: 40px; padding-left: 16px !important; }
+.prj03 thead th.p3-c-check { padding-left: 16px; }
+.prj03 .p3-c-gear { width: 44px; text-align: right; padding-right: 16px !important; color: var(--p3-muted-2); }
+.prj03 input[type="checkbox"] { width: 15px; height: 15px; accent-color: var(--p3-primary); cursor: pointer; }
+.prj03 .p3-tname { font-weight: 500; color: var(--p3-ink); cursor: pointer; }
+.prj03 .p3-tname:hover { color: var(--p3-primary); }
+
+.prj03 .p3-stage {
+  display: inline-flex; align-items: center; gap: 7px;
+  height: 28px; padding: 0 10px; border-radius: 6px;
+  background: #F2F5FA; border: 1px solid #E5E9F0;
+  font-size: 12px; color: var(--p3-ink); white-space: nowrap;
+}
+.prj03 .p3-stage .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--p3-primary); }
+.prj03 .p3-stage svg { width: 13px; height: 13px; color: var(--p3-muted-2); }
+
+.prj03 .p3-assignee { display: inline-flex; align-items: center; gap: 8px; }
+.prj03 .p3-av {
+  width: 24px; height: 24px; border-radius: 50%; flex: none;
+  background: #DCE5F7; color: #2F5AA8;
+  font-size: 10px; font-weight: 700; display: grid; place-items: center;
+}
+.prj03 .p3-pill {
+  display: inline-flex; align-items: center; height: 22px; padding: 0 10px;
+  border-radius: 999px; font-size: 11px; font-weight: 600;
+}
+.prj03 .p3-pill.high { background: #FDE8E8; color: #D22F2F; }
+.prj03 .p3-pill.med  { background: #FEF3D7; color: #A9700B; }
+.prj03 .p3-pill.low  { background: #E7F6EE; color: #0E9F6E; }
+.prj03 .p3-pill.blue { background: #E4EDFD; color: #2559D6; }
+.prj03 .p3-date { color: var(--p3-muted); white-space: nowrap; }
+
+.prj03 .p3-prog { display: flex; align-items: center; gap: 10px; min-width: 150px; }
+.prj03 .p3-prog .track { flex: 1; height: 5px; border-radius: 3px; background: #E8ECF3; overflow: hidden; }
+.prj03 .p3-prog .track i { display: block; height: 100%; border-radius: 3px; background: var(--p3-primary); }
+.prj03 .p3-prog.done .track i { background: var(--p3-green); }
+.prj03 .p3-prog b { font-size: 12px; font-weight: 600; width: 34px; text-align: right; }
+.prj03 .p3-kebab { background: none; border: 0; cursor: pointer; color: var(--p3-muted-2); padding: 2px; }
+.prj03 .p3-kebab:hover { color: var(--p3-ink); }
+
+/* ---------- 04 rodapé / paginação ---------- */
+.prj03 .p3-foot {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  padding: 13px 16px; border-top: 1px solid var(--p3-border-soft);
+  font-size: 12px; color: var(--p3-muted);
+}
+.prj03 .p3-pages { display: flex; align-items: center; gap: 6px; }
+.prj03 .p3-page {
+  min-width: 30px; height: 30px; padding: 0 8px; border-radius: 7px; cursor: pointer;
+  border: 1px solid var(--p3-border); background: #fff; color: var(--p3-ink);
+  font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; justify-content: center;
+}
+.prj03 .p3-page:hover:not(:disabled) { background: #F7F9FC; }
+.prj03 .p3-page.on { background: var(--p3-primary); border-color: var(--p3-primary); color: #fff; }
+.prj03 .p3-page:disabled { opacity: .45; cursor: default; }
+.prj03 .p3-rows { display: inline-flex; align-items: center; gap: 8px; }
+
+.prj03 .p3-empty { padding: 46px 16px; text-align: center; color: var(--p3-muted); font-size: 13px; }
+
+/* ---------- coluna lateral ---------- */
+.prj03 .p3-side { display: flex; flex-direction: column; gap: 14px; }
+.prj03 .p3-side-h {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  padding: 14px 16px 12px;
+}
+.prj03 .p3-side-t { font-size: 14px; font-weight: 700; letter-spacing: -0.1px; }
+.prj03 .p3-side-t .n {
+  margin-left: 8px; display: inline-flex; align-items: center; justify-content: center;
+  min-width: 18px; height: 18px; padding: 0 5px; border-radius: 999px;
+  background: #FDE8E8; color: #D22F2F; font-size: 11px; font-weight: 700;
+}
+.prj03 .p3-side-link { font-size: 12px; color: var(--p3-primary); font-weight: 500; cursor: pointer; background: none; border: 0; }
+.prj03 .p3-side-link:hover { text-decoration: underline; }
+.prj03 .p3-newtask {
+  display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 12px;
+  border-radius: 7px; background: var(--p3-primary); border: 1px solid var(--p3-primary);
+  color: #fff; font-size: 12px; font-weight: 600; cursor: pointer;
+}
+.prj03 .p3-newtask:hover { background: #2559D6; }
+.prj03 .p3-newtask svg { width: 13px; height: 13px; }
+
+.prj03 .p3-due {
+  display: flex; align-items: flex-start; gap: 12px;
+  padding: 11px 16px; border-top: 1px solid #F0F2F6;
+}
+.prj03 .p3-chip {
+  width: 42px; flex: none; border: 1px solid var(--p3-border); border-radius: 8px;
+  text-align: center; padding: 5px 0 6px;
+}
+.prj03 .p3-chip .m { font-size: 9px; font-weight: 700; letter-spacing: .6px; color: var(--p3-muted-2); text-transform: uppercase; }
+.prj03 .p3-chip .d { font-size: 16px; font-weight: 700; line-height: 19px; }
+.prj03 .p3-chip.red { border-color: #F7C9C9; }
+.prj03 .p3-chip.red .m, .prj03 .p3-chip.red .d { color: #D22F2F; }
+.prj03 .p3-due-b { min-width: 0; flex: 1; }
+.prj03 .p3-due-t { font-size: 12.5px; font-weight: 500; line-height: 17px; cursor: pointer; }
+.prj03 .p3-due-t:hover { color: var(--p3-primary); }
+.prj03 .p3-due-m { margin-top: 6px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.prj03 .p3-due-r { font-size: 11px; color: var(--p3-muted-2); white-space: nowrap; padding-top: 2px; }
+.prj03 .p3-due-r.red { color: #D22F2F; }
+.prj03 .p3-side-f { padding: 11px 16px 14px; border-top: 1px solid #F0F2F6; }
+
+.prj03 .p3-stagerow {
+  display: grid; grid-template-columns: 92px minmax(0, 1fr) 66px;
+  align-items: center; gap: 10px; padding: 7px 16px; font-size: 12px;
+}
+.prj03 .p3-stagerow:first-of-type { padding-top: 2px; }
+.prj03 .p3-stagerow:last-of-type { padding-bottom: 14px; }
+.prj03 .p3-stagerow .lbl { color: var(--p3-ink); }
+.prj03 .p3-stagerow .bar { height: 6px; border-radius: 3px; background: #EDF0F5; overflow: hidden; }
+.prj03 .p3-stagerow .bar i { display: block; height: 100%; border-radius: 3px; }
+.prj03 .p3-stagerow .val { text-align: right; color: var(--p3-muted); font-size: 11.5px; }
