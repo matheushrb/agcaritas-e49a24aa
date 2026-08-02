@@ -297,108 +297,106 @@ function ProjectsPage() {
 
   return (
     <>
-      <div className="pb-8">
-        {/* Cabeçalho */}
-        <header className="mb-[22px] flex flex-wrap items-start justify-between gap-4">
+      <div className="prj01 pb-8">
+        {/* PAGE HEADER */}
+        <div className="page-header">
           <div>
-            <h1 className="text-[27px] font-semibold leading-[34px] tracking-[-0.02em] text-foreground">Projetos</h1>
-
-            <p className="mt-2 text-[13px] text-muted-foreground">
-              Acompanhe o andamento dos projetos, prazos, equipe e resultados em um só lugar.
-            </p>
+            <h1>Projetos</h1>
+            <p>Acompanhe o andamento dos projetos, prazos, equipe e resultados em um só lugar.</p>
           </div>
-          <div className="flex items-center gap-3">
-            <div className="flex h-[42px] items-center rounded-[10px] border border-border bg-card p-1">
-              <ViewTab active={view === "cards"} onClick={() => setView("cards")} icon={LayoutGrid} label="Cards" />
-              <ViewTab active={view === "list"} onClick={() => setView("list")} icon={List} label="Lista" />
-              <ViewTab active={view === "kanban"} onClick={() => setView("kanban")} icon={Columns} label="Kanban" />
+          <div className="header-actions">
+            <div className="view-switch">
+              <button type="button" className={view === "cards" ? "active" : ""} onClick={() => setView("cards")}>
+                <LayoutGrid /> Cards
+              </button>
+              <button type="button" className={view === "list" ? "active" : ""} onClick={() => setView("list")}>
+                <List /> Lista
+              </button>
+              <button type="button" className={view === "kanban" ? "active" : ""} onClick={() => setView("kanban")}>
+                <Columns /> Kanban
+              </button>
             </div>
-            <button
-              type="button"
-              onClick={() => setNewOpen(true)}
-              className="inline-flex h-[42px] items-center gap-2 rounded-[10px] bg-[#1769F6] px-4 text-[13.5px] font-medium text-white transition hover:bg-[#1a52e0]"
-            >
-              <Plus className="h-4 w-4" />
-              Novo projeto
+            <button type="button" className="btn-primary" onClick={() => setNewOpen(true)}>
+              <Plus /> Novo projeto
             </button>
           </div>
-        </header>
+        </div>
 
-        {/* KPIs */}
-        <section className="mb-[17px] grid grid-cols-2 gap-[14px] xl:grid-cols-5">
-          <Kpi label="Total" value={kpis.total} sub={`${kpis.active} em andamento`} icon={Folder} tone="slate" />
-          <Kpi label="Ativos" value={kpis.active} sub={pct(kpis.active, kpis.total)} icon={FolderOpen} tone="blue" />
-          <Kpi label="Concluídos" value={kpis.done} sub={pct(kpis.done, kpis.total)} icon={CheckCircle2} tone="green" />
-          <Kpi label="Pausados" value={kpis.paused} sub={pct(kpis.paused, kpis.total)} icon={PauseCircle} tone="amber" />
-          <Kpi label="Em risco" value={kpis.risk} sub={pct(kpis.risk, kpis.total)} icon={AlertTriangle} tone="red" />
-        </section>
+        {/* KPI ROW */}
+        <div className="kpi-row">
+          <Kpi label="Total" value={kpis.total} sub={`${kpis.active} em andamento`} tone="neutral" icon={Folder} iconBg="#E8EFFE" iconColor="#2F6BEF" />
+          <Kpi label="Ativos" value={kpis.active} sub={pct(kpis.active, kpis.total)} tone="neutral" icon={FolderOpen} iconBg="#E8EFFE" iconColor="#2F6BEF" />
+          <Kpi label="Concluídos" value={kpis.done} sub={pct(kpis.done, kpis.total)} tone="up" icon={CheckCircle2} iconBg="#E6F7EF" iconColor="#1FA971" />
+          <Kpi label="Pausados" value={kpis.paused} sub={pct(kpis.paused, kpis.total)} tone="neutral" icon={PauseCircle} iconBg="#FDF1E0" iconColor="#E0912E" />
+          <Kpi label="Em risco" value={kpis.risk} sub={pct(kpis.risk, kpis.total)} tone="neutral" icon={AlertTriangle} iconBg="#FCE9E9" iconColor="#E14545" />
+        </div>
 
-        {/* Filtros */}
-        <section className="mb-[11px] flex flex-wrap items-center gap-[14px]">
-          <label className="flex h-[42px] min-w-[280px] flex-1 items-center gap-2 rounded-[10px] border border-border bg-card px-3 lg:max-w-[320px] lg:flex-none">
+        {/* FILTER ROW */}
+        <div className="filter-row">
+          <div className="search-input">
+            <Search />
+            <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar projetos..." />
+          </div>
 
-            <Search className="h-4 w-4 text-muted-foreground" />
-            <input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Buscar projetos..."
-              className="w-full border-0 bg-transparent text-[13px] outline-none placeholder:text-muted-foreground"
-            />
-          </label>
+          <div className="dropdown-pill">
+            Status:
+            <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+              <option value="all">Todos</option>
+              {(Object.keys(STATUS_META) as ProjectStatus[]).map((s) => (
+                <option key={s} value={s}>
+                  {STATUS_META[s].label}
+                </option>
+              ))}
+            </select>
+          </div>
 
-          <FilterSelect label="Status" value={statusFilter} onChange={setStatusFilter}>
-            <option value="all">Todos</option>
-            {(Object.keys(STATUS_META) as ProjectStatus[]).map((s) => (
-              <option key={s} value={s}>
-                {STATUS_META[s].label}
-              </option>
-            ))}
-          </FilterSelect>
+          <div className="dropdown-pill">
+            Cliente:
+            <select value={clientFilter} onChange={(e) => setClientFilter(e.target.value)}>
+              <option value="all">Todos</option>
+              {clients.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+          </div>
 
-          <FilterSelect label="Cliente" value={clientFilter} onChange={setClientFilter}>
-            <option value="all">Todos</option>
-            {clients.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
-            ))}
-          </FilterSelect>
+          <div className="dropdown-pill">
+            Responsável:
+            <select value={ownerFilter} onChange={(e) => setOwnerFilter(e.target.value)}>
+              <option value="all">Todos</option>
+              {allMembers.map((m) => (
+                <option key={m.user_id} value={m.user_id}>
+                  {m.name}
+                </option>
+              ))}
+            </select>
+          </div>
 
-          <FilterSelect label="Responsável" value={ownerFilter} onChange={setOwnerFilter}>
-            <option value="all">Todos</option>
-            {allMembers.map((m) => (
-              <option key={m.user_id} value={m.user_id}>
-                {m.name}
-              </option>
-            ))}
-          </FilterSelect>
-
-          <div className="ml-auto">
-            <FilterSelect label="Ordenar por" value={sort} onChange={setSort} icon={ArrowUpDown}>
+          <div className="sort-control">
+            <ArrowUpDown />
+            Ordenar por:
+            <select value={sort} onChange={(e) => setSort(e.target.value)}>
               <option value="recent">Mais recentes</option>
               <option value="name">Nome</option>
               <option value="deadline">Prazo</option>
               <option value="revenue">Receita</option>
-            </FilterSelect>
+            </select>
           </div>
-        </section>
+        </div>
 
-        {/* Conteúdo */}
+        {/* CONTEÚDO */}
         {isLoading ? (
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
+          <div className="grid-cards">
             {[0, 1, 2, 3, 4, 5, 6, 7].map((i) => (
-              <div key={i} className="h-[230px] animate-pulse rounded-xl border border-border bg-card" />
+              <div key={i} className="card skeleton" />
             ))}
           </div>
         ) : filtered.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-border bg-card px-6 py-16 text-center">
-            <Folder className="mx-auto h-7 w-7 text-muted-foreground" />
-            <h2 className="mt-4 text-sm font-semibold">Nenhum projeto encontrado</h2>
-            <p className="mt-1 text-xs text-muted-foreground">Ajuste os filtros ou crie um novo projeto.</p>
-          </div>
+          <div className="empty-state">Nenhum projeto encontrado. Ajuste os filtros ou crie um novo projeto.</div>
         ) : view === "cards" ? (
-          <div className="grid grid-cols-1 gap-[14px] md:grid-cols-2 xl:grid-cols-4">
-
+          <div className="grid-cards">
             {paged.map((project) => (
               <ProjectCard
                 key={project.id}
@@ -414,56 +412,53 @@ function ProjectsPage() {
           <ProjectKanban rows={filtered} onOpen={setSelectedProjectId} />
         )}
 
-        {/* Paginação */}
+        {/* FOOTER */}
         {view !== "kanban" && filtered.length > 0 && (
-          <div className="mt-[15px] flex flex-wrap items-center justify-between gap-3">
-            <p className="text-[12px] text-muted-foreground">
+          <div className="list-footer">
+            <span className="showing">
               Mostrando {(currentPage - 1) * pageSize + 1}–{Math.min(currentPage * pageSize, filtered.length)} de{" "}
               {filtered.length} projetos
-            </p>
-            <div className="flex items-center gap-1.5">
-              <PagerButton disabled={currentPage === 1} onClick={() => setPage(currentPage - 1)}>
-                <ChevronLeft className="h-4 w-4" />
-              </PagerButton>
+            </span>
+            <div className="pagination">
+              <button type="button" className="page-btn" disabled={currentPage === 1} onClick={() => setPage(currentPage - 1)}>
+                <ChevronLeft />
+              </button>
               {Array.from({ length: totalPages }, (_, i) => i + 1)
                 .filter((n) => n === 1 || n === totalPages || Math.abs(n - currentPage) <= 1)
                 .map((n, idx, arr) => (
-                  <span key={n} className="flex items-center gap-1.5">
-                    {idx > 0 && arr[idx - 1] !== n - 1 && <span className="px-1 text-xs text-muted-foreground">...</span>}
+                  <span key={n} className="pagination">
+                    {idx > 0 && arr[idx - 1] !== n - 1 && <span className="page-btn dots">...</span>}
                     <button
                       type="button"
+                      className={cn("page-btn", n === currentPage && "active")}
                       onClick={() => setPage(n)}
-                      className={cn(
-                        "h-8 min-w-8 rounded-lg border px-2 text-[12.5px] transition",
-                        n === currentPage
-                          ? "border-[#1769F6] bg-[#1769F6] text-white"
-                          : "border-border bg-card text-foreground hover:bg-muted",
-                      )}
                     >
                       {n}
                     </button>
                   </span>
                 ))}
-              <PagerButton disabled={currentPage === totalPages} onClick={() => setPage(currentPage + 1)}>
-                <ChevronRight className="h-4 w-4" />
-              </PagerButton>
-            </div>
-            <label className="flex h-9 items-center gap-2 rounded-[10px] border border-border bg-card px-3 text-[12.5px]">
-              <select
-                value={pageSize}
-                onChange={(e) => setPageSize(Number(e.target.value))}
-                className="border-0 bg-transparent outline-none"
+              <button
+                type="button"
+                className="page-btn"
+                disabled={currentPage === totalPages}
+                onClick={() => setPage(currentPage + 1)}
               >
+                <ChevronRight />
+              </button>
+            </div>
+            <div className="per-page">
+              <select value={pageSize} onChange={(e) => setPageSize(Number(e.target.value))}>
                 {PAGE_SIZES.map((n) => (
                   <option key={n} value={n}>
                     {n} por página
                   </option>
                 ))}
               </select>
-            </label>
+            </div>
           </div>
         )}
       </div>
+
 
       <ProjectPreviewSheet
         project={selectedProject}
