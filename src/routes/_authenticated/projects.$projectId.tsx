@@ -301,8 +301,9 @@ function ProjectDetail() {
     queryKey: ["project-people", projectId, assigneeIds.join(",")],
     enabled: assigneeIds.length > 0,
     queryFn: async () => {
-      const { data } = await supabase.from("profiles").select("id,full_name,role").in("id", assigneeIds);
-      return (data ?? []) as { id: string; full_name: string | null; role: string | null }[];
+      const { data } = await supabase.from("profiles").select("id,full_name,role_title").in("id", assigneeIds);
+      return ((data ?? []) as { id: string; full_name: string | null; role_title: string | null }[])
+        .map(p => ({ id: p.id, full_name: p.full_name, role: p.role_title }));
     },
   });
 
