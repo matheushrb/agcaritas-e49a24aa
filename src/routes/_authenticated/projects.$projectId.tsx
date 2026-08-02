@@ -20,6 +20,9 @@ import { cn } from "@/lib/utils";
 import { TaskModal } from "./tasks";
 import { EditProjectDialog, type EditableProject } from "@/components/edit-project-dialog";
 import { ProjectCostsTab } from "@/components/project-costs-tab";
+import { Prj02Overview, p2Initials } from "@/components/prj02-overview";
+import { Share2, MoreHorizontal, Mail as MailIcon, Target, TrendingUp } from "lucide-react";
+import "@/prj02.css";
 
 export const Route = createFileRoute("/_authenticated/projects/$projectId")({
   component: ProjectDetail,
@@ -293,6 +296,19 @@ function ProjectDetail() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const assigneeIds = Array.from(new Set(tasks.map(t => t.assignee_id).filter(Boolean))) as string[];
+  const { data: people = [] } = useQuery({
+    queryKey: ["project-people", projectId, assigneeIds.join(",")],
+    enabled: assigneeIds.length > 0,
+    queryFn: async () => {
+      const { data } = await supabase.from("profiles").select("id,full_name,role_title").in("id", assigneeIds);
+      return ((data ?? []) as { id: string; full_name: string | null; role_title: string | null }[])
+        .map(p => ({ id: p.id, full_name: p.full_name, role: p.role_title }));
+    },
+  });
+
+  const [activeTab, setActiveTab] = useState("overview");
+
   if (!project) {
     return <div className="text-sm text-muted-foreground">Carregando projeto…</div>;
   }
@@ -304,230 +320,185 @@ function ProjectDetail() {
     return dt.toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric" });
   };
 
+  const showCalendar = !!project.has_content_calendar;
+  const showGrid = !!project.has_content_grid;
+  const showTimeline = !!project.has_timeline;
+  const showTraffic = !!project.traffic_budget?.enabled;
+  const scope = (project.scope_flags ?? {}) as Record<string, unknown>;
+  const showStrategy = ["swot", "personas", "competitors", "roadmap", "kpis", "action_plan"].some((k) => !!scope[k]);
+  const showCampaigns = showTraffic;
+
+  const taskRevenue = tasks.reduce((s, t) => {
+    const deliv = (t.deliverables ?? []).reduce((a, d) => a + Number(d.billing_value ?? 0), 0);
+    return s + (t.billing_enabled ? Number(t.billing_value ?? 0) : 0) + deliv;
+  }, 0);
+  const revenue = Number(project.fixed_value ?? 0) + Number(project.monthly_value ?? 0) + taskRevenue;
+  const health = stats.overdue > 2 ? "bad" : stats.overdue > 0 ? "warn" : "";
+  const healthLabel = health === "bad" ? "Crítico" : health === "warn" ? "Atenção" : "Saudável";
+  const ownerName = people[0]?.full_name ?? "Não definido";
+  const ownerRole = people[0]?.role ?? "Responsável";
+
+  const TABS: { id: string; label: string; count?: number }[] = [
+    { id: "overview", label: "Geral" },
+    { id: "tasks", label: "Tarefas", count: tasks.length },
+    { id: "team", label: "Equipe", count: people.length },
+    { id: "finance", label: "Financeiro" },
+    { id: "costs", label: "Custos" },
+    ...(showStrategy ? [{ id: "strategy", label: "Estratégia" }] : []),
+    ...(showCalendar ? [{ id: "calendar", label: "Calendário" }] : []),
+    ...(showGrid ? [{ id: "grid", label: "Grid" }] : []),
+    ...(showTimeline ? [{ id: "timeline", label: "Timeline" }] : []),
+    ...(showTraffic ? [{ id: "traffic", label: "Tráfego" }] : []),
+    ...(showCampaigns ? [{ id: "campaigns", label: "Campanhas" }] : []),
+    { id: "docs", label: "Arquivos" },
+  ];
+
   return (
-    <div className="space-y-6">
-      {/* Alertas */}
-      {isClosed && (
-        <div className="flex items-center gap-2 rounded-2xl border border-amber-500/30 bg-amber-500/10 px-4 py-2 text-sm text-amber-700 dark:text-amber-300">
-          <AlertTriangle className="h-4 w-4 shrink-0" />
-          Projeto {STATUS_META[project.status].label.toLowerCase()} — lançamentos financeiros ainda são permitidos.
-        </div>
-      )}
-      {isOverdueActive && (
-        <div className="flex items-center gap-2 rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-2 text-sm text-red-700 dark:text-red-300">
-          <AlertTriangle className="h-4 w-4 shrink-0" />
-          Este projeto ultrapassou a data final ({fmt(project.end_date)}) e continua ativo.
-        </div>
-      )}
+    <div className="prj02">
+      {/* 01 — cabeçalho global e projeto */}
+      <div className="p2-crumb">
+        <Link to="/projects">Projetos</Link>
+        <span className="sep">/</span>
+        <span className="cur">{project.name}</span>
+      </div>
 
-      {/* Header */}
-      <div className="space-y-4 rounded-3xl border border-border bg-card p-6">
-        <Link to="/projects" className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
-          <ArrowLeft className="h-3.5 w-3.5" /> Projetos
-        </Link>
-
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2 flex-wrap">
-              <h1 className="font-display text-3xl font-bold tracking-tight truncate">{project.name}</h1>
-              <Badge className={cn("rounded-full", STATUS_META[project.status].color)}>{STATUS_META[project.status].label}</Badge>
-              {isOverdueActive && (
-                <Badge className="rounded-full bg-red-500/15 text-red-600 dark:text-red-400">Vencido</Badge>
-              )}
-            </div>
-            {(client || project.end_date) && (
-              <div className="mt-1.5 text-sm text-muted-foreground flex items-center gap-3 flex-wrap">
-                {client && (
-                  <span className="inline-flex items-center gap-1.5">
-                    <Building2 className="h-3.5 w-3.5" />
-                    {client.trade_name || client.name}
-                  </span>
-                )}
-                <span className="inline-flex items-center gap-1">
-                  <Calendar className="h-3.5 w-3.5" />
-                  {fmt(project.start_date)} → {fmt(project.end_date)}
-                </span>
-              </div>
-            )}
+      <div className="p2-head">
+        <div style={{ minWidth: 0 }}>
+          <div className="p2-title-row">
+            <h1 className="p2-title">{project.name}</h1>
+            <span className={cn("p2-health", health)}><span className="dot" />{healthLabel}</span>
           </div>
-
-          <div className="flex items-center gap-2">
-            {isClosed ? (
-              <Button
-                variant="outline"
-                className="rounded-full gap-1.5"
-                onClick={() => setStatus.mutate("active")}
-              >
-                <RotateCcw className="h-4 w-4" /> Reabrir
-              </Button>
-            ) : (
-              <Button
-                className="rounded-full gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white"
-                onClick={() => {
-                  if (confirm("Concluir este projeto? Lançamentos financeiros continuam permitidos.")) {
-                    setStatus.mutate("done");
-                  }
-                }}
-              >
-                <CheckCircle2 className="h-4 w-4" /> Concluir Projeto
-              </Button>
-            )}
-            <Button asChild variant="outline" className="rounded-full gap-1.5">
-              <Link to="/invoices" search={{ projectId: project.id, new: "1" }}>
-                <Receipt className="h-4 w-4" /> Faturar
-              </Link>
-            </Button>
-            <Button variant="outline" className="rounded-full gap-1.5" onClick={() => setEditOpen(true)}>
-              <Pencil className="h-4 w-4" /> Editar
-            </Button>
-          </div>
+          <p className="p2-sub">{project.description || "Sem descrição cadastrada para este projeto."}</p>
         </div>
-
-        {/* Progresso geral */}
-        <div className="space-y-1.5">
-          <div className="flex items-center justify-between text-xs text-muted-foreground">
-            <span>Progresso geral</span>
-            <span>{stats.done}/{stats.total} tarefas · {stats.progress}%</span>
-          </div>
-          <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
-            <div className="h-full bg-primary transition-all" style={{ width: `${stats.progress}%` }} />
-          </div>
-        </div>
-
-        {/* Grid de 6 métricas */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-          <Kpi label="Tarefas" value={stats.total.toString()} />
-          <Kpi label="Concluídas" value={stats.done.toString()} />
-          <Kpi label="Atrasadas" value={stats.overdue.toString()} tone={stats.overdue > 0 ? "danger" : "default"} />
-          <Kpi label="Equipe" value={stats.team.toString()} />
-          <Kpi label="Faturado" value={`R$ ${stats.invoiced.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`} />
-          <Kpi
-            label={stats.daysDelta === null ? "Prazo" : stats.daysDelta >= 0 ? "Dias restantes" : "Dias excedidos"}
-            value={stats.daysDelta === null ? "—" : Math.abs(stats.daysDelta).toString()}
-            tone={stats.daysDelta !== null && stats.daysDelta < 0 ? "danger" : "default"}
-          />
+        <div className="p2-actions">
+          <button className="p2-btn" type="button" onClick={() => { navigator.clipboard?.writeText(window.location.href); toast.success("Link copiado"); }}>
+            <Share2 /> Compartilhar
+          </button>
+          <button className="p2-btn" type="button" onClick={() => setEditOpen(true)}><Pencil /> Editar projeto</button>
+          <button className="p2-btn primary" type="button" onClick={() => addTask.mutate("Nova tarefa")}><Plus /> Novo item</button>
+          {isClosed ? (
+            <button className="p2-btn icon" type="button" title="Reabrir" onClick={() => setStatus.mutate("active")}><RotateCcw /></button>
+          ) : (
+            <button className="p2-btn icon" type="button" title="Concluir projeto" onClick={() => { if (confirm("Concluir este projeto?")) setStatus.mutate("done"); }}><CheckCircle2 /></button>
+          )}
+          <Link to="/invoices" search={{ projectId: project.id, new: "1" }} className="p2-btn icon" title="Faturar"><Receipt /></Link>
         </div>
       </div>
 
-      {/* Tabs */}
-      {(() => {
-        const showCalendar = !!project.has_content_calendar;
-        const showGrid = !!project.has_content_grid;
-        const showTimeline = !!project.has_timeline;
-        const showTraffic = !!project.traffic_budget?.enabled;
-        const scope = (project.scope_flags ?? {}) as Record<string, unknown>;
-        const strategyKeys = ["swot", "personas", "competitors", "roadmap", "kpis", "action_plan"];
-        const showStrategy = strategyKeys.some((k) => !!scope[k]);
-        const showCampaigns = showTraffic;
-        return (
-          <Tabs defaultValue="tasks">
-            <div className="overflow-x-auto">
-              <TabsList className="rounded-full bg-muted/60 h-auto flex-wrap">
-                <TabsTrigger value="tasks"     className="rounded-full gap-1.5"><CheckSquare className="h-4 w-4" />Tarefas</TabsTrigger>
-                <TabsTrigger value="docs"      className="rounded-full gap-1.5"><FileText className="h-4 w-4" />Documentos</TabsTrigger>
-                {showCalendar && <TabsTrigger value="calendar"  className="rounded-full gap-1.5"><Calendar className="h-4 w-4" />Calendário</TabsTrigger>}
-                {showGrid && <TabsTrigger value="grid"      className="rounded-full gap-1.5"><Grid3x3 className="h-4 w-4" />Grid</TabsTrigger>}
-                {showTimeline && <TabsTrigger value="timeline"  className="rounded-full gap-1.5"><TimerIcon className="h-4 w-4" />Timeline</TabsTrigger>}
-                {showTraffic && <TabsTrigger value="traffic"   className="rounded-full gap-1.5"><Megaphone className="h-4 w-4" />Tráfego</TabsTrigger>}
-                {showStrategy && <TabsTrigger value="strategy"  className="rounded-full gap-1.5"><Compass className="h-4 w-4" />Estratégia</TabsTrigger>}
-                {showCampaigns && <TabsTrigger value="campaigns" className="rounded-full gap-1.5"><Rocket className="h-4 w-4" />Campanhas</TabsTrigger>}
-                <TabsTrigger value="costs"     className="rounded-full gap-1.5"><Wallet className="h-4 w-4" />Custos</TabsTrigger>
-                <TabsTrigger value="finance"   className="rounded-full gap-1.5"><DollarSign className="h-4 w-4" />Financeiro</TabsTrigger>
-              </TabsList>
-            </div>
+      {/* 02 — KPIs do projeto */}
+      <div className="p2-kpis">
+        <div className="p2-kpi">
+          <div className="p2-kpi-h"><Flag /> Status</div>
+          <div className={cn("p2-kpi-v", health === "" && "green", health === "bad" && "red")}><span className="dot" style={{ background: "currentColor" }} />{STATUS_META[project.status].label}</div>
+        </div>
+        <div className="p2-kpi">
+          <div className="p2-kpi-h">Progresso</div>
+          <div className="p2-kpi-v">{stats.progress}%<span className="track"><i style={{ width: `${stats.progress}%` }} /></span></div>
+        </div>
+        <div className="p2-kpi">
+          <div className="p2-kpi-h"><Calendar /> Prazo final</div>
+          <div className="p2-kpi-v">{fmt(project.end_date)}</div>
+          <div className="p2-kpi-f">{stats.daysDelta === null ? "sem prazo" : stats.daysDelta >= 0 ? `${stats.daysDelta} dias restantes` : `${Math.abs(stats.daysDelta)} dias em atraso`}</div>
+        </div>
+        <div className="p2-kpi">
+          <div className="p2-kpi-h"><UsersIcon /> Responsável</div>
+          <div className="p2-kpi-v" style={{ fontSize: 14 }}>{ownerName}</div>
+          <div className="p2-kpi-f">{ownerRole}</div>
+        </div>
+        <div className="p2-kpi">
+          <div className="p2-kpi-h"><UsersIcon /> Equipe</div>
+          <div className="p2-kpi-v">
+            <span className="p2-stack">
+              {people.slice(0, 3).map(p => <span className="av" key={p.id}>{p2Initials(p.full_name)}</span>)}
+              {people.length > 3 && <span className="more">+{people.length - 3}</span>}
+              {!people.length && <span className="more">—</span>}
+            </span>
+          </div>
+          <div className="p2-kpi-f">{people.length} membros</div>
+        </div>
+        <div className="p2-kpi">
+          <div className="p2-kpi-h"><CheckCircle2 /> Tarefas concluídas</div>
+          <div className="p2-kpi-v">{stats.done}</div>
+          <div className="p2-kpi-f">de {stats.total}</div>
+        </div>
+        <div className="p2-kpi">
+          <div className="p2-kpi-h"><AlertTriangle /> Tarefas atrasadas</div>
+          <div className={cn("p2-kpi-v", stats.overdue > 0 && "red")}>{stats.overdue}</div>
+          <div className="p2-kpi-f">críticas</div>
+        </div>
+        <div className="p2-kpi">
+          <div className="p2-kpi-h"><DollarSign /> Receita prevista</div>
+          <div className="p2-kpi-v">R$ {Math.round(revenue).toLocaleString("pt-BR")}</div>
+          <div className="p2-kpi-f">Faturado: R$ {Math.round(stats.invoiced).toLocaleString("pt-BR")}{revenue > 0 ? ` (${Math.round((stats.invoiced / revenue) * 100)}%)` : ""}</div>
+        </div>
+      </div>
 
-            <TabsContent value="tasks" className="mt-4">
-              <TasksTab
-                tasks={tasks}
-                baseTaskTypes={baseTaskTypes}
-                onAdd={(t) => addTask.mutate(t)}
-                onOpen={(id) => setSelectedTaskId(id)}
-                onQuickCreate={() => addTask.mutate("Nova tarefa")}
-                onCreateFromBase={(bt) => addTask.mutate({
-                  title: bt.name,
-                  task_type_id: bt.id,
-                  billing_model: bt.default_billing_model,
-                  billing_value: bt.default_price,
-                })}
-                pending={addTask.isPending}
-              />
-            </TabsContent>
+      {/* 03 — abas do projeto */}
+      <div className="p2-tabs">
+        {TABS.map(t => (
+          <button key={t.id} type="button" className={cn("p2-tab", activeTab === t.id && "on")} onClick={() => setActiveTab(t.id)}>
+            {t.label}{t.count !== undefined && <span className="count">{t.count}</span>}
+          </button>
+        ))}
+      </div>
 
+      {/* 04 a 11 — conteúdo */}
+      {activeTab === "overview" && (
+        <Prj02Overview
+          projectId={projectId}
+          description={project.description ?? ""}
+          projectType={projectTypeRow?.name ?? project.project_type ?? "—"}
+          category={project.urgency ? `Urgência ${project.urgency}` : "Padrão"}
+          budget={revenue}
+          startDate={project.start_date}
+          tags={[projectTypeRow?.name ?? null, project.billing_model, project.urgency ? `Urgência ${project.urgency}` : null].filter(Boolean) as string[]}
+          clientName={client ? (client.trade_name || client.name) : "Interno"}
+          clientSince={project.created_at ? fmt(project.created_at) : null}
+          tasks={tasks as never}
+          people={people}
+          ownerName={ownerName}
+          ownerRole={ownerRole}
+          stageLabel={STATUS_META[project.status].label}
+          stageSince={fmt(project.start_date)}
+          revenue={revenue}
+          invoiced={stats.invoiced}
+        />
+      )}
 
-            <TabsContent value="docs" className="mt-4">
-              <ComingSoon
-                icon={FileText}
-                title="Documentos"
-                description="Briefings, contratos, PDFs e anexos deste projeto ficarão aqui, com histórico de versões."
-              />
-            </TabsContent>
+      {activeTab === "tasks" && (
+        <div style={{ marginTop: 18 }}>
+          <TasksTab
+            tasks={tasks}
+            baseTaskTypes={baseTaskTypes}
+            onAdd={(t) => addTask.mutate(t)}
+            onOpen={(id) => setSelectedTaskId(id)}
+            onQuickCreate={() => addTask.mutate("Nova tarefa")}
+            onCreateFromBase={(bt) => addTask.mutate({
+              title: bt.name,
+              task_type_id: bt.id,
+              billing_model: bt.default_billing_model,
+              billing_value: bt.default_price,
+            })}
+            pending={addTask.isPending}
+          />
+        </div>
+      )}
 
-            {showCalendar && (
-              <TabsContent value="calendar" className="mt-4">
-                <ComingSoon
-                  icon={Calendar}
-                  title="Calendário de Conteúdo"
-                  description="Grade mensal com peças de conteúdo por plataforma. Clique em um dia vazio para criar; clique em peça para editar."
-                />
-              </TabsContent>
-            )}
+      {activeTab === "team" && (
+        <div style={{ marginTop: 18 }}>
+          <ComingSoon icon={UsersIcon} title="Equipe do projeto" description="Alocação, papéis e horas dedicadas por membro." />
+        </div>
+      )}
 
-            {showGrid && (
-              <TabsContent value="grid" className="mt-4">
-                <ComingSoon
-                  icon={Grid3x3}
-                  title="Grid de Conteúdo"
-                  description="Prévia visual do feed (Instagram, TikTok, LinkedIn). Arraste peças para reordenar."
-                />
-              </TabsContent>
-            )}
-
-            {showTimeline && (
-              <TabsContent value="timeline" className="mt-4">
-                <ComingSoon
-                  icon={TimerIcon}
-                  title="Timeline"
-                  description="Roadmap do projeto por fases, com marcos e entregas."
-                />
-              </TabsContent>
-            )}
-
-            {showTraffic && (
-              <TabsContent value="traffic" className="mt-4">
-                <ComingSoon
-                  icon={Megaphone}
-                  title="Tráfego Pago"
-                  description="Campanhas ativas, orçamento, CPA, ROAS e criativos vinculados ao projeto."
-                />
-              </TabsContent>
-            )}
-
-            {showStrategy && (
-              <TabsContent value="strategy" className="mt-4">
-                <StrategyTab description={project.description ?? ""} onSave={(d) => saveField.mutate({ description: d })} />
-              </TabsContent>
-            )}
-
-            {showCampaigns && (
-              <TabsContent value="campaigns" className="mt-4">
-                <ComingSoon
-                  icon={Rocket}
-                  title="Campanhas"
-                  description="Lançamentos e campanhas específicas dentro do projeto, com objetivo, período e KPI."
-                />
-              </TabsContent>
-            )}
-
-            <TabsContent value="costs" className="mt-4">
-              <ProjectCostsTab projectId={projectId} organizationId={project.organization_id} />
-            </TabsContent>
-
-            <TabsContent value="finance" className="mt-4">
-              <FinanceTab charges={charges} tasks={tasks} costs={costs} />
-            </TabsContent>
-          </Tabs>
-        );
-      })()}
+      {activeTab === "finance" && <div style={{ marginTop: 18 }}><FinanceTab charges={charges} tasks={tasks} costs={costs} /></div>}
+      {activeTab === "costs" && <div style={{ marginTop: 18 }}><ProjectCostsTab projectId={projectId} organizationId={project.organization_id} /></div>}
+      {activeTab === "strategy" && <div style={{ marginTop: 18 }}><StrategyTab description={project.description ?? ""} onSave={(d) => saveField.mutate({ description: d })} /></div>}
+      {activeTab === "calendar" && <div style={{ marginTop: 18 }}><ComingSoon icon={Calendar} title="Calendário de Conteúdo" description="Grade mensal com peças de conteúdo por plataforma." /></div>}
+      {activeTab === "grid" && <div style={{ marginTop: 18 }}><ComingSoon icon={Grid3x3} title="Grid de Conteúdo" description="Prévia visual do feed por plataforma." /></div>}
+      {activeTab === "timeline" && <div style={{ marginTop: 18 }}><ComingSoon icon={TimerIcon} title="Timeline" description="Roadmap do projeto por fases, com marcos e entregas." /></div>}
+      {activeTab === "traffic" && <div style={{ marginTop: 18 }}><ComingSoon icon={Megaphone} title="Tráfego Pago" description="Campanhas, orçamento, CPA e ROAS do projeto." /></div>}
+      {activeTab === "campaigns" && <div style={{ marginTop: 18 }}><ComingSoon icon={Rocket} title="Campanhas" description="Lançamentos e campanhas dentro do projeto." /></div>}
+      {activeTab === "docs" && <div style={{ marginTop: 18 }}><ComingSoon icon={FileText} title="Arquivos" description="Briefings, contratos, PDFs e anexos deste projeto." /></div>}
 
       <TaskModal task={selectedTask} onClose={() => setSelectedTaskId(null)} />
       <EditProjectDialog
