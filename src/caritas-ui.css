@@ -263,7 +263,7 @@
 .cv-table { font-size: 11px; }
 .cv-table-row {
   display: grid;
-  grid-template-columns: 2.1fr 1.7fr 1.08fr 0.75fr;
+  grid-template-columns: 2.1fr 1.7fr 1.08fr 0.75fr 22px;
   min-height: 35px;
   align-items: center;
   border-top: 1px solid var(--border);
@@ -273,8 +273,19 @@
 .cv-table-head { border: 0; color: var(--muted); min-height: 28px; }
 .cv-table-row b { display: block; font-weight: 500; }
 .cv-table-row small { display: block; color: var(--muted); font-size: 9.5px; }
-.cv-issue { display: flex; align-items: center; gap: 8px; }
-.cv-issue svg { color: var(--danger); }
+.cv-issue { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.cv-issue em { font-style: normal; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cv-issue svg { color: var(--danger); flex: none; }
+.cv-kind {
+  flex: none; font-style: normal; border-radius: 999px; padding: 3px 8px;
+  font-size: 9.5px; background: var(--bg); color: var(--muted); border: 1px solid var(--border);
+}
+.cv-row-menu {
+  display: grid; place-items: center; height: 22px; width: 22px;
+  border-radius: 6px; color: var(--muted); background: transparent; border: 0; cursor: pointer;
+}
+.cv-row-menu:hover { background: var(--bg); color: var(--text); }
+
 .cv-badge { font-style: normal; border-radius: 999px; padding: 3px 8px; font-size: 9.5px; }
 .cv-badge.critical { background: rgba(228, 71, 58, 0.12); color: var(--danger); }
 .cv-badge.high { background: rgba(231, 161, 26, 0.14); color: var(--warning); }
