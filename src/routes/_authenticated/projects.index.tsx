@@ -32,6 +32,7 @@ import {
 } from "@/components/project-preview-sheet";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
+import "@/prj01.css";
 
 export const Route = createFileRoute("/_authenticated/projects/")({
   validateSearch: (s: { new?: number | string }) => ({
@@ -297,108 +298,106 @@ function ProjectsPage() {
 
   return (
     <>
-      <div className="pb-8">
-        {/* Cabeçalho */}
-        <header className="mb-[22px] flex flex-wrap items-start justify-between gap-4">
+      <div className="prj01 pb-8">
+        {/* PAGE HEADER */}
+        <div className="page-header">
           <div>
-            <h1 className="text-[27px] font-semibold leading-[34px] tracking-[-0.02em] text-foreground">Projetos</h1>
-
-            <p className="mt-2 text-[13px] text-muted-foreground">
-              Acompanhe o andamento dos projetos, prazos, equipe e resultados em um só lugar.
-            </p>
+            <h1>Projetos</h1>
+            <p>Acompanhe o andamento dos projetos, prazos, equipe e resultados em um só lugar.</p>
           </div>
-          <div className="flex items-center gap-3">
-            <div className="flex h-[42px] items-center rounded-[10px] border border-border bg-card p-1">
-              <ViewTab active={view === "cards"} onClick={() => setView("cards")} icon={LayoutGrid} label="Cards" />
-              <ViewTab active={view === "list"} onClick={() => setView("list")} icon={List} label="Lista" />
-              <ViewTab active={view === "kanban"} onClick={() => setView("kanban")} icon={Columns} label="Kanban" />
+          <div className="header-actions">
+            <div className="view-switch">
+              <button type="button" className={view === "cards" ? "active" : ""} onClick={() => setView("cards")}>
+                <LayoutGrid /> Cards
+              </button>
+              <button type="button" className={view === "list" ? "active" : ""} onClick={() => setView("list")}>
+                <List /> Lista
+              </button>
+              <button type="button" className={view === "kanban" ? "active" : ""} onClick={() => setView("kanban")}>
+                <Columns /> Kanban
+              </button>
             </div>
-            <button
-              type="button"
-              onClick={() => setNewOpen(true)}
-              className="inline-flex h-[42px] items-center gap-2 rounded-[10px] bg-[#1769F6] px-4 text-[13.5px] font-medium text-white transition hover:bg-[#1a52e0]"
-            >
-              <Plus className="h-4 w-4" />
-              Novo projeto
+            <button type="button" className="btn-primary" onClick={() => setNewOpen(true)}>
+              <Plus /> Novo projeto
             </button>
           </div>
-        </header>
+        </div>
 
-        {/* KPIs */}
-        <section className="mb-[17px] grid grid-cols-2 gap-[14px] xl:grid-cols-5">
-          <Kpi label="Total" value={kpis.total} sub={`${kpis.active} em andamento`} icon={Folder} tone="slate" />
-          <Kpi label="Ativos" value={kpis.active} sub={pct(kpis.active, kpis.total)} icon={FolderOpen} tone="blue" />
-          <Kpi label="Concluídos" value={kpis.done} sub={pct(kpis.done, kpis.total)} icon={CheckCircle2} tone="green" />
-          <Kpi label="Pausados" value={kpis.paused} sub={pct(kpis.paused, kpis.total)} icon={PauseCircle} tone="amber" />
-          <Kpi label="Em risco" value={kpis.risk} sub={pct(kpis.risk, kpis.total)} icon={AlertTriangle} tone="red" />
-        </section>
+        {/* KPI ROW */}
+        <div className="kpi-row">
+          <Kpi label="Total" value={kpis.total} sub={`${kpis.active} em andamento`} tone="neutral" icon={Folder} iconBg="#E8EFFE" iconColor="#2F6BEF" />
+          <Kpi label="Ativos" value={kpis.active} sub={pct(kpis.active, kpis.total)} tone="neutral" icon={FolderOpen} iconBg="#E8EFFE" iconColor="#2F6BEF" />
+          <Kpi label="Concluídos" value={kpis.done} sub={pct(kpis.done, kpis.total)} tone="up" icon={CheckCircle2} iconBg="#E6F7EF" iconColor="#1FA971" />
+          <Kpi label="Pausados" value={kpis.paused} sub={pct(kpis.paused, kpis.total)} tone="neutral" icon={PauseCircle} iconBg="#FDF1E0" iconColor="#E0912E" />
+          <Kpi label="Em risco" value={kpis.risk} sub={pct(kpis.risk, kpis.total)} tone="neutral" icon={AlertTriangle} iconBg="#FCE9E9" iconColor="#E14545" />
+        </div>
 
-        {/* Filtros */}
-        <section className="mb-[11px] flex flex-wrap items-center gap-[14px]">
-          <label className="flex h-[42px] min-w-[280px] flex-1 items-center gap-2 rounded-[10px] border border-border bg-card px-3 lg:max-w-[320px] lg:flex-none">
+        {/* FILTER ROW */}
+        <div className="filter-row">
+          <div className="search-input">
+            <Search />
+            <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar projetos..." />
+          </div>
 
-            <Search className="h-4 w-4 text-muted-foreground" />
-            <input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Buscar projetos..."
-              className="w-full border-0 bg-transparent text-[13px] outline-none placeholder:text-muted-foreground"
-            />
-          </label>
+          <div className="dropdown-pill">
+            Status:
+            <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+              <option value="all">Todos</option>
+              {(Object.keys(STATUS_META) as ProjectStatus[]).map((s) => (
+                <option key={s} value={s}>
+                  {STATUS_META[s].label}
+                </option>
+              ))}
+            </select>
+          </div>
 
-          <FilterSelect label="Status" value={statusFilter} onChange={setStatusFilter}>
-            <option value="all">Todos</option>
-            {(Object.keys(STATUS_META) as ProjectStatus[]).map((s) => (
-              <option key={s} value={s}>
-                {STATUS_META[s].label}
-              </option>
-            ))}
-          </FilterSelect>
+          <div className="dropdown-pill">
+            Cliente:
+            <select value={clientFilter} onChange={(e) => setClientFilter(e.target.value)}>
+              <option value="all">Todos</option>
+              {clients.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+          </div>
 
-          <FilterSelect label="Cliente" value={clientFilter} onChange={setClientFilter}>
-            <option value="all">Todos</option>
-            {clients.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
-            ))}
-          </FilterSelect>
+          <div className="dropdown-pill">
+            Responsável:
+            <select value={ownerFilter} onChange={(e) => setOwnerFilter(e.target.value)}>
+              <option value="all">Todos</option>
+              {allMembers.map((m) => (
+                <option key={m.user_id} value={m.user_id}>
+                  {m.name}
+                </option>
+              ))}
+            </select>
+          </div>
 
-          <FilterSelect label="Responsável" value={ownerFilter} onChange={setOwnerFilter}>
-            <option value="all">Todos</option>
-            {allMembers.map((m) => (
-              <option key={m.user_id} value={m.user_id}>
-                {m.name}
-              </option>
-            ))}
-          </FilterSelect>
-
-          <div className="ml-auto">
-            <FilterSelect label="Ordenar por" value={sort} onChange={setSort} icon={ArrowUpDown}>
+          <div className="sort-control">
+            <ArrowUpDown />
+            Ordenar por:
+            <select value={sort} onChange={(e) => setSort(e.target.value)}>
               <option value="recent">Mais recentes</option>
               <option value="name">Nome</option>
               <option value="deadline">Prazo</option>
               <option value="revenue">Receita</option>
-            </FilterSelect>
+            </select>
           </div>
-        </section>
+        </div>
 
-        {/* Conteúdo */}
+        {/* CONTEÚDO */}
         {isLoading ? (
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
+          <div className="grid-cards">
             {[0, 1, 2, 3, 4, 5, 6, 7].map((i) => (
-              <div key={i} className="h-[230px] animate-pulse rounded-xl border border-border bg-card" />
+              <div key={i} className="card skeleton" />
             ))}
           </div>
         ) : filtered.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-border bg-card px-6 py-16 text-center">
-            <Folder className="mx-auto h-7 w-7 text-muted-foreground" />
-            <h2 className="mt-4 text-sm font-semibold">Nenhum projeto encontrado</h2>
-            <p className="mt-1 text-xs text-muted-foreground">Ajuste os filtros ou crie um novo projeto.</p>
-          </div>
+          <div className="empty-state">Nenhum projeto encontrado. Ajuste os filtros ou crie um novo projeto.</div>
         ) : view === "cards" ? (
-          <div className="grid grid-cols-1 gap-[14px] md:grid-cols-2 xl:grid-cols-4">
-
+          <div className="grid-cards">
             {paged.map((project) => (
               <ProjectCard
                 key={project.id}
@@ -414,56 +413,53 @@ function ProjectsPage() {
           <ProjectKanban rows={filtered} onOpen={setSelectedProjectId} />
         )}
 
-        {/* Paginação */}
+        {/* FOOTER */}
         {view !== "kanban" && filtered.length > 0 && (
-          <div className="mt-[15px] flex flex-wrap items-center justify-between gap-3">
-            <p className="text-[12px] text-muted-foreground">
+          <div className="list-footer">
+            <span className="showing">
               Mostrando {(currentPage - 1) * pageSize + 1}–{Math.min(currentPage * pageSize, filtered.length)} de{" "}
               {filtered.length} projetos
-            </p>
-            <div className="flex items-center gap-1.5">
-              <PagerButton disabled={currentPage === 1} onClick={() => setPage(currentPage - 1)}>
-                <ChevronLeft className="h-4 w-4" />
-              </PagerButton>
+            </span>
+            <div className="pagination">
+              <button type="button" className="page-btn" disabled={currentPage === 1} onClick={() => setPage(currentPage - 1)}>
+                <ChevronLeft />
+              </button>
               {Array.from({ length: totalPages }, (_, i) => i + 1)
                 .filter((n) => n === 1 || n === totalPages || Math.abs(n - currentPage) <= 1)
                 .map((n, idx, arr) => (
-                  <span key={n} className="flex items-center gap-1.5">
-                    {idx > 0 && arr[idx - 1] !== n - 1 && <span className="px-1 text-xs text-muted-foreground">...</span>}
+                  <span key={n} className="pagination">
+                    {idx > 0 && arr[idx - 1] !== n - 1 && <span className="page-btn dots">...</span>}
                     <button
                       type="button"
+                      className={cn("page-btn", n === currentPage && "active")}
                       onClick={() => setPage(n)}
-                      className={cn(
-                        "h-8 min-w-8 rounded-lg border px-2 text-[12.5px] transition",
-                        n === currentPage
-                          ? "border-[#1769F6] bg-[#1769F6] text-white"
-                          : "border-border bg-card text-foreground hover:bg-muted",
-                      )}
                     >
                       {n}
                     </button>
                   </span>
                 ))}
-              <PagerButton disabled={currentPage === totalPages} onClick={() => setPage(currentPage + 1)}>
-                <ChevronRight className="h-4 w-4" />
-              </PagerButton>
-            </div>
-            <label className="flex h-9 items-center gap-2 rounded-[10px] border border-border bg-card px-3 text-[12.5px]">
-              <select
-                value={pageSize}
-                onChange={(e) => setPageSize(Number(e.target.value))}
-                className="border-0 bg-transparent outline-none"
+              <button
+                type="button"
+                className="page-btn"
+                disabled={currentPage === totalPages}
+                onClick={() => setPage(currentPage + 1)}
               >
+                <ChevronRight />
+              </button>
+            </div>
+            <div className="per-page">
+              <select value={pageSize} onChange={(e) => setPageSize(Number(e.target.value))}>
                 {PAGE_SIZES.map((n) => (
                   <option key={n} value={n}>
                     {n} por página
                   </option>
                 ))}
               </select>
-            </label>
+            </div>
           </div>
         )}
       </div>
+
 
       <ProjectPreviewSheet
         project={selectedProject}
@@ -484,100 +480,36 @@ function ProjectsPage() {
   );
 }
 
-/* ---------- Blocos ---------- */
-
-function ViewTab({
-  active,
-  onClick,
-  icon: Icon,
-  label,
-}: {
-  active: boolean;
-  onClick: () => void;
-  icon: React.ElementType;
-  label: string;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={cn(
-        "inline-flex h-[34px] items-center gap-2 rounded-lg border-b-2 px-3.5 text-[13px] font-medium transition",
-        active
-          ? "border-[#1769F6] bg-[#EEF4FF] text-[#1769F6]"
-          : "border-transparent text-muted-foreground hover:text-foreground",
-      )}
-    >
-      <Icon className="h-4 w-4" />
-      {label}
-    </button>
-  );
-}
-
-
-const TONES: Record<string, string> = {
-  slate: "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300",
-  blue: "bg-[#EEF4FF] text-[#1769F6] dark:bg-blue-500/15 dark:text-blue-300",
-  green: "bg-emerald-50 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-300",
-  amber: "bg-amber-50 text-amber-600 dark:bg-amber-500/15 dark:text-amber-300",
-  red: "bg-rose-50 text-rose-600 dark:bg-rose-500/15 dark:text-rose-300",
-};
+/* ---------- Blocos (réplica PRJ-01) ---------- */
 
 function Kpi({
   label,
   value,
   sub,
-  icon: Icon,
   tone,
+  icon: Icon,
+  iconBg,
+  iconColor,
 }: {
   label: string;
   value: number;
   sub: string;
+  tone: "up" | "down" | "neutral";
   icon: React.ElementType;
-  tone: keyof typeof TONES;
+  iconBg: string;
+  iconColor: string;
 }) {
   return (
-    <div className="flex h-[115px] flex-col justify-between rounded-[12px] border border-border bg-card px-5 py-[18px]">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <p className="text-[12.5px] text-muted-foreground">{label}</p>
-          <div className="mt-2 text-[30px] font-semibold leading-none tracking-[-0.03em]">{value}</div>
-        </div>
-        <div className={cn("flex h-11 w-11 items-center justify-center rounded-full", TONES[tone])}>
-          <Icon className="h-[18px] w-[18px]" />
+    <div className="kpi-card">
+      <div className="kpi-top">
+        <span className="kpi-label">{label}</span>
+        <div className="kpi-icon" style={{ background: iconBg }}>
+          <Icon style={{ color: iconColor }} />
         </div>
       </div>
-      <p className="text-[11.5px] text-muted-foreground">{sub}</p>
+      <span className="kpi-value">{value}</span>
+      <span className={cn("kpi-sub", tone)}>{sub}</span>
     </div>
-
-  );
-}
-
-function FilterSelect({
-  label,
-  value,
-  onChange,
-  children,
-  icon: Icon,
-}: {
-  label: string;
-  value: string;
-  onChange: (v: string) => void;
-  children: React.ReactNode;
-  icon?: React.ElementType;
-}) {
-  return (
-    <label className="inline-flex h-[42px] items-center gap-2 whitespace-nowrap rounded-[10px] border border-border bg-card px-3 text-[13px]">
-      {Icon && <Icon className="h-3.5 w-3.5 text-muted-foreground" />}
-      <span className="text-muted-foreground">{label}:</span>
-      <select
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="cursor-pointer border-0 bg-transparent font-medium text-foreground outline-none"
-      >
-        {children}
-      </select>
-    </label>
   );
 }
 
@@ -586,28 +518,22 @@ function Avatars({ members }: { members: Member[] }) {
   const rest = members.length - shown.length;
   if (members.length === 0) {
     return (
-      <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-muted text-muted-foreground">
-        <User className="h-3 w-3" />
-      </span>
+      <div className="avatars">
+        <div className="av more">
+          <User style={{ width: 11, height: 11 }} />
+        </div>
+      </div>
     );
   }
   return (
-    <span className="flex items-center">
+    <div className="avatars">
       {shown.map((m) => (
-        <span
-          key={m.user_id}
-          title={m.name}
-          className="-ml-1.5 flex h-6 w-6 items-center justify-center overflow-hidden rounded-full border-2 border-card bg-[#EEF4FF] text-[9px] font-semibold text-[#1769F6] first:ml-0"
-        >
-          {m.avatar ? <img src={m.avatar} alt={m.name} className="h-full w-full object-cover" /> : initials(m.name)}
-        </span>
+        <div key={m.user_id} className="av" title={m.name}>
+          {m.avatar ? <img src={m.avatar} alt={m.name} /> : initials(m.name)}
+        </div>
       ))}
-      {rest > 0 && (
-        <span className="-ml-1.5 flex h-6 w-6 items-center justify-center rounded-full border-2 border-card bg-muted text-[9px] font-semibold text-muted-foreground">
-          +{rest}
-        </span>
-      )}
-    </span>
+      {rest > 0 && <div className="av more">+{rest}</div>}
+    </div>
   );
 }
 
@@ -622,79 +548,68 @@ function ProjectCard({
 }) {
   const health = healthOf(project);
   const due = dueInfo(project.endDate, project.status);
+  const typeTag =
+    project.projectType && !/^[0-9a-f]{8}-[0-9a-f]{4}-/i.test(project.projectType) ? project.projectType : null;
 
   return (
-    <div
-      role="button"
-      tabIndex={0}
-      onClick={onOpen}
-      onKeyDown={(e) => (e.key === "Enter" ? onOpen() : undefined)}
-      className="flex min-h-[217px] cursor-pointer flex-col rounded-[12px] border border-border bg-card transition hover:border-[#1769F6]/40 hover:shadow-[0_10px_28px_rgba(15,23,42,0.06)]"
-    >
-      <div className="flex flex-1 flex-col px-5 pt-[18px]">
-        <h3 className="truncate text-[15px] font-semibold leading-[20px] tracking-[-0.01em]">{project.name}</h3>
-
-        <div className="mt-2.5 flex items-center gap-2">
-          <span className="inline-flex min-w-0 items-center gap-1.5 text-[11px] text-muted-foreground">
-            <User className="h-3.5 w-3.5 shrink-0" />
-            <span className="truncate">{project.clientName || "Interno"}</span>
-          </span>
-          {project.projectType && !/^[0-9a-f]{8}-[0-9a-f]{4}-/i.test(project.projectType) && (
-            <span className="truncate rounded-[6px] border border-border px-2 py-[3px] text-[10.5px] text-muted-foreground">
-              {project.projectType}
-            </span>
-          )}
+    <div className="card" role="button" tabIndex={0} onClick={onOpen} onKeyDown={(e) => (e.key === "Enter" ? onOpen() : undefined)}>
+      <div className="card-title">{project.name}</div>
+      <div className="card-row1">
+        <div className="client-tags">
+          <User className="person-ic" />
+          <span className="tag">{project.clientName || "Interno"}</span>
+          {typeTag && <span className="tag">{typeTag}</span>}
         </div>
-
-        <div className="mt-2 flex items-center justify-end gap-1.5 text-[10px]">
-          <span className={cn("h-[7px] w-[7px] rounded-full", health.dot)} />
-          <span className={health.text}>{health.label}</span>
+        <div className={cn("status", health.tone)}>
+          <span className="dot" />
+          {health.label}
         </div>
+      </div>
 
-        <div className="mt-1.5 flex items-center gap-2.5">
-          <span className="text-[11px] text-muted-foreground">{project.progress}%</span>
-          <span className="h-[5px] flex-1 overflow-hidden rounded-full bg-muted">
-            <span className="block h-full rounded-full bg-[#1769F6]" style={{ width: `${project.progress}%` }} />
-          </span>
-          <span className="text-[11px] font-medium">{project.progress}%</span>
+      <div className="progress-row">
+        <span className="pct-left">{project.progress}%</span>
+        <div className="progress-track">
+          <div className="progress-fill" style={{ width: `${project.progress}%` }} />
         </div>
+        <span className="pct-right">{project.progress}%</span>
+      </div>
 
-        <p className={cn("mt-3 inline-flex items-center gap-1.5 text-[10.5px]", due.className)}>
-          <CalendarDays className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+      <div className="meta-row">
+        <div className={cn("meta", due.tone)}>
+          <CalendarDays />
           {due.label}
-        </p>
-
-        <div className="mt-2.5 flex items-center justify-between gap-2">
-          <Avatars members={members} />
-          <span className="inline-flex items-center gap-1.5 text-[10.5px] text-muted-foreground">
-            <ListChecks className="h-3.5 w-3.5" />
-            {project.doneTasks ?? 0}/{project.totalTasks} tarefas
-          </span>
         </div>
-
-        {project.overdueTasks > 0 && (
-          <p className="mt-2 inline-flex items-center gap-1.5 text-[10px] font-medium text-rose-600 dark:text-rose-400">
-            <AlertTriangle className="h-3.5 w-3.5" />
-            {project.overdueTasks} tarefa{project.overdueTasks > 1 ? "s" : ""} em atraso
-          </p>
-        )}
       </div>
 
-      <div className="mt-auto flex items-center gap-2 border-t border-border px-5 py-3">
-        <span className="text-[10.5px] text-muted-foreground">Receita prevista</span>
-        <span className="ml-auto text-[14px] font-semibold tracking-[-0.01em]">{formatMoney(project.revenue)}</span>
-        <button
-          type="button"
-          onClick={(e) => e.stopPropagation()}
-          className="rounded-md p-1 text-muted-foreground transition hover:bg-muted"
-        >
-          <MoreHorizontal className="h-4 w-4" />
-        </button>
+      <div className="team-row">
+        <Avatars members={members} />
+        <div className="task-count">
+          <ListChecks />
+          {project.doneTasks ?? 0}/{project.totalTasks} tarefas
+        </div>
       </div>
 
+      {project.overdueTasks > 0 && (
+        <div className="overdue-flag">
+          <AlertTriangle />
+          {project.overdueTasks} tarefa{project.overdueTasks > 1 ? "s" : ""} em atraso
+        </div>
+      )}
+
+      <div className="divider" />
+      <div className="fin-row">
+        <span className="fin-label">Receita prevista</span>
+        <div className="fin-value-wrap">
+          <span className="fin-value">{formatMoney(project.revenue)}</span>
+          <button type="button" className="more-btn" onClick={(e) => e.stopPropagation()}>
+            ···
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
+
 
 function ProjectTable({
   rows,
@@ -840,25 +755,30 @@ function pct(value: number, total: number) {
 }
 
 function healthOf(project: ProjectPreviewData) {
-  if (project.status === "done") return { label: "Concluído", dot: "bg-emerald-500", text: "text-muted-foreground" };
-  if (project.overdueTasks >= 3) return { label: "Crítico", dot: "bg-rose-500", text: "text-rose-600 dark:text-rose-400" };
-  if (project.overdueTasks > 0) return { label: "Atenção", dot: "bg-amber-500", text: "text-amber-600 dark:text-amber-400" };
-  return { label: "Saudável", dot: "bg-emerald-500", text: "text-muted-foreground" };
+  if (project.status === "done")
+    return { label: "Concluído", tone: "healthy", dot: "bg-emerald-500", text: "text-muted-foreground" };
+  if (project.overdueTasks >= 3)
+    return { label: "Crítico", tone: "danger", dot: "bg-rose-500", text: "text-rose-600 dark:text-rose-400" };
+  if (project.overdueTasks > 0)
+    return { label: "Atenção", tone: "warning", dot: "bg-amber-500", text: "text-amber-600 dark:text-amber-400" };
+  return { label: "Saudável", tone: "healthy", dot: "bg-emerald-500", text: "text-muted-foreground" };
 }
 
 function dueInfo(endDate: string | null, status: ProjectStatus) {
-  if (!endDate) return { label: "Sem prazo definido", className: "text-muted-foreground" };
+  if (!endDate) return { label: "Sem prazo definido", tone: "", className: "text-muted-foreground" };
   const date = parseDate(endDate);
   const formatted = date.toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric" });
-  if (status === "done") return { label: `Concluído em ${formatted}`, className: "text-muted-foreground" };
+  if (status === "done") return { label: `Concluído em ${formatted}`, tone: "done", className: "text-muted-foreground" };
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const days = Math.round((date.getTime() - today.getTime()) / 86_400_000);
   if (days < 0)
-    return { label: `Vence em ${days} dias (${formatted})`, className: "text-rose-600 dark:text-rose-400" };
-  if (days <= 7) return { label: `Vence em ${days} dias (${formatted})`, className: "text-amber-600 dark:text-amber-400" };
-  return { label: `Vence em ${days} dias (${formatted})`, className: "text-muted-foreground" };
+    return { label: `Venceu há ${Math.abs(days)} dias (${formatted})`, tone: "overdue", className: "text-rose-600 dark:text-rose-400" };
+  if (days <= 7)
+    return { label: `Vence em ${days} dias (${formatted})`, tone: "warning", className: "text-amber-600 dark:text-amber-400" };
+  return { label: `Vence em ${days} dias (${formatted})`, tone: "", className: "text-muted-foreground" };
 }
+
 
 function parseDate(value: string) {
   const match = value.match(/^(\d{4})-(\d{2})-(\d{2})/);
