@@ -451,7 +451,7 @@ function ProjectDetail() {
           category={project.urgency ? `Urgência ${project.urgency}` : "Padrão"}
           budget={revenue}
           startDate={project.start_date}
-          tags={[project.project_type, project.billing_model, project.urgency].filter(Boolean) as string[]}
+          tags={[projectTypeRow?.name ?? null, project.billing_model, project.urgency ? `Urgência ${project.urgency}` : null].filter(Boolean) as string[]}
           clientName={client ? (client.trade_name || client.name) : "Interno"}
           clientSince={project.created_at ? fmt(project.created_at) : null}
           tasks={tasks as never}
