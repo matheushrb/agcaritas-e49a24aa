@@ -82,16 +82,45 @@ function Sel({ label, value, options, onChange }: {
   label: string; value: string; options: { v: string; l: string }[]; onChange: (v: string) => void;
 }) {
   const cur = options.find((o) => o.v === value)?.l ?? options[0]?.l;
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const onDoc = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", onDoc);
+    return () => document.removeEventListener("mousedown", onDoc);
+  }, [open]);
+
   return (
-    <div className="p3-sel">
-      <span className="cv">{label}:</span> {cur}
-      <ChevronDown />
-      <select value={value} onChange={(e) => onChange(e.target.value)} aria-label={label}>
-        {options.map((o) => <option key={o.v} value={o.v}>{o.l}</option>)}
-      </select>
+    <div className={`p3-sel${open ? " open" : ""}`} ref={ref}>
+      <button type="button" className="p3-sel-btn" onClick={() => setOpen(o => !o)} aria-label={label} aria-expanded={open}>
+        <span className="cv">{label}:</span> <span className="vv">{cur}</span>
+        <ChevronDown />
+      </button>
+      {open && (
+        <div className="p3-menu" role="listbox">
+          {options.map((o) => (
+            <button
+              key={o.v}
+              type="button"
+              role="option"
+              aria-selected={o.v === value}
+              className={`p3-mi${o.v === value ? " on" : ""}`}
+              onClick={() => { onChange(o.v); setOpen(false); }}
+            >
+              <span>{o.l}</span>
+              {o.v === value && <Check />}
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
+
 
 export function Prj03Tasks({ tasks, people, onOpen, onQuickCreate, pending }: {
   tasks: P3Task[];
