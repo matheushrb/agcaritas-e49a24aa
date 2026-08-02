@@ -557,9 +557,10 @@ function ProjectCard({
       <div className="card-row1">
         <div className="client-tags">
           <User className="person-ic" />
-          <span className="tag">{project.clientName || "Interno"}</span>
+          <span className="client-name">{project.clientName || "Interno"}</span>
           {typeTag && <span className="tag">{typeTag}</span>}
         </div>
+
         <div className={cn("status", health.tone)}>
           <span className="dot" />
           {health.label}
