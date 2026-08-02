@@ -1,0 +1,172 @@
+/* ===========================================================
+   PRJ-04 — Projeto / Aba Financeiro
+   Réplica da referência aprovada (PRJ-04_Projeto_Aba_Financeiro).
+   CSS próprio: não reaproveita estilos de outros módulos.
+   =========================================================== */
+
+.prj04 {
+  --p4-card: #FFFFFF;
+  --p4-border: #DDE1E6;
+  --p4-border-soft: #E9ECF1;
+  --p4-ink: #1A2138;
+  --p4-muted: #5B6779;
+  --p4-muted-2: #8A93A3;
+  --p4-primary: #2F6BEF;
+  --p4-green: #10B981;
+  --p4-amber: #F59E0B;
+  --p4-red: #EF4444;
+  --p4-purple: #8B5CF6;
+
+  font-family: "Inter", "IBM Plex Sans", system-ui, sans-serif;
+  color: var(--p4-ink);
+  margin-top: 18px;
+  -webkit-font-smoothing: antialiased;
+}
+
+.prj04 .p4-card {
+  background: var(--p4-card);
+  border: 1px solid var(--p4-border);
+  border-radius: 10px;
+}
+.prj04 .p4-card-h {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 16px 10px;
+}
+.prj04 .p4-card-t { font-size: 14px; font-weight: 600; letter-spacing: -0.1px; }
+
+/* ---------- 01 faixa de KPIs ---------- */
+.prj04 .p4-kpis {
+  display: flex; align-items: stretch;
+  background: var(--p4-card);
+  border: 1px solid var(--p4-border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.prj04 .p4-kpi {
+  flex: 1 1 0; min-width: 0;
+  padding: 14px 16px;
+  border-right: 1px solid var(--p4-border-soft);
+}
+.prj04 .p4-kpi:last-child { border-right: 0; }
+.prj04 .p4-kpi-h { display: flex; align-items: center; gap: 8px; }
+.prj04 .p4-ico {
+  width: 24px; height: 24px; border-radius: 7px; flex: none;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.prj04 .p4-ico svg { width: 13px; height: 13px; }
+.prj04 .p4-kpi-l { font-size: 12px; color: var(--p4-muted); font-weight: 500; white-space: nowrap; }
+.prj04 .p4-kpi-v { font-size: 19px; font-weight: 700; letter-spacing: -0.4px; margin-top: 8px; white-space: nowrap; }
+.prj04 .p4-kpi-s { font-size: 11px; color: var(--p4-muted-2); margin-top: 4px; }
+.prj04 .p4-kpi.gauge { flex: 0 0 132px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; }
+.prj04 .p4-kpi.gauge .p4-kpi-l { font-size: 11px; }
+
+/* ---------- 02 corpo ---------- */
+.prj04 .p4-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 375px;
+  gap: 18px; margin-top: 18px; align-items: start;
+}
+@media (max-width: 1360px) { .prj04 .p4-body { grid-template-columns: minmax(0, 1fr); } }
+.prj04 .p4-main { display: grid; gap: 18px; }
+.prj04 .p4-row2 { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 430px); gap: 18px; }
+@media (max-width: 1180px) { .prj04 .p4-row2 { grid-template-columns: minmax(0, 1fr); } }
+.prj04 .p4-side { display: grid; gap: 18px; }
+
+/* ---------- gráfico de barras ---------- */
+.prj04 .p4-legend { display: flex; align-items: center; gap: 16px; padding: 0 16px 8px; }
+.prj04 .p4-lg { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; color: var(--p4-muted); }
+.prj04 .p4-lg i { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+.prj04 .p4-lg i.line { width: 14px; height: 2px; border-radius: 2px; }
+.prj04 .p4-chart { padding: 4px 16px 16px; }
+
+/* ---------- donut ---------- */
+.prj04 .p4-donut-wrap { display: flex; align-items: center; gap: 18px; padding: 4px 16px 18px; }
+.prj04 .p4-donut-c { position: relative; flex: none; }
+.prj04 .p4-donut-c .in {
+  position: absolute; inset: 0; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 2px;
+}
+.prj04 .p4-donut-c .in b { font-size: 15px; font-weight: 700; letter-spacing: -0.3px; }
+.prj04 .p4-donut-c .in span { font-size: 11px; color: var(--p4-muted-2); }
+.prj04 .p4-cats { flex: 1 1 auto; min-width: 0; display: grid; gap: 10px; }
+.prj04 .p4-cat { display: flex; align-items: center; gap: 8px; font-size: 12px; }
+.prj04 .p4-cat i { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+.prj04 .p4-cat .n { color: var(--p4-muted); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.prj04 .p4-cat .v { margin-left: auto; color: var(--p4-ink); font-weight: 500; white-space: nowrap; }
+
+/* ---------- tabela ---------- */
+.prj04 table { width: 100%; border-collapse: collapse; }
+.prj04 thead th {
+  text-align: left; font-size: 12px; font-weight: 600; color: var(--p4-muted);
+  padding: 10px 12px; border-top: 1px solid var(--p4-border-soft); border-bottom: 1px solid var(--p4-border-soft);
+  background: #FAFBFC;
+}
+.prj04 tbody td {
+  padding: 11px 12px; font-size: 12.5px; border-bottom: 1px solid var(--p4-border-soft);
+  color: var(--p4-ink); vertical-align: middle;
+}
+.prj04 tbody tr:hover td { background: #FAFBFD; }
+.prj04 td.num, .prj04 th.num { text-align: right; }
+.prj04 .p4-desc { display: flex; align-items: center; gap: 9px; }
+.prj04 .p4-desc .ic { width: 22px; height: 22px; border-radius: 6px; display: inline-flex; align-items: center; justify-content: center; flex: none; }
+.prj04 .p4-desc .ic svg { width: 12px; height: 12px; }
+.prj04 .p4-tag {
+  display: inline-flex; align-items: center; height: 20px; padding: 0 8px;
+  border-radius: 5px; font-size: 11px; font-weight: 500;
+}
+.prj04 .p4-tag.rev { background: #E8F7F0; color: #0E9F6E; }
+.prj04 .p4-tag.exp { background: #FDECEC; color: #E02424; }
+.prj04 .p4-tag.ok { background: #E8F7F0; color: #0E9F6E; }
+.prj04 .p4-tag.pay { background: #EEF1F6; color: #5B6779; }
+.prj04 .p4-tag.pend { background: #FEF3E2; color: #B45309; }
+.prj04 .p4-dots {
+  width: 26px; height: 26px; border-radius: 6px; border: 1px solid var(--p4-border);
+  background: #fff; color: var(--p4-muted-2); cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.prj04 .p4-dots svg { width: 14px; height: 14px; }
+
+.prj04 .p4-foot {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 16px; font-size: 12px; color: var(--p4-muted);
+}
+.prj04 .p4-pag { display: flex; align-items: center; gap: 6px; }
+.prj04 .p4-pg {
+  min-width: 30px; height: 30px; padding: 0 8px; border-radius: 7px; cursor: pointer;
+  border: 1px solid var(--p4-border); background: #fff; color: var(--p4-ink);
+  font-size: 12px; display: inline-flex; align-items: center; justify-content: center;
+}
+.prj04 .p4-pg.on { background: var(--p4-primary); border-color: var(--p4-primary); color: #fff; font-weight: 600; }
+.prj04 .p4-pg:disabled { opacity: .45; cursor: default; }
+
+/* ---------- coluna lateral ---------- */
+.prj04 .p4-item {
+  display: flex; align-items: center; gap: 10px;
+  border: 1px solid var(--p4-border-soft); border-radius: 9px;
+  padding: 10px 12px; margin: 0 16px 10px;
+}
+.prj04 .p4-item:last-child { margin-bottom: 16px; }
+.prj04 .p4-item .ic { width: 26px; height: 26px; border-radius: 7px; background: #EEF3FE; color: var(--p4-primary); display: inline-flex; align-items: center; justify-content: center; flex: none; }
+.prj04 .p4-item .ic svg { width: 13px; height: 13px; }
+.prj04 .p4-item .tx { min-width: 0; flex: 1 1 auto; }
+.prj04 .p4-item .tx b { display: block; font-size: 12.5px; font-weight: 600; }
+.prj04 .p4-item .tx span { display: block; font-size: 11px; color: var(--p4-muted-2); margin-top: 2px; }
+.prj04 .p4-item .rt { text-align: right; flex: none; }
+.prj04 .p4-item .rt b { font-size: 12.5px; font-weight: 700; color: var(--p4-green); }
+.prj04 .p4-item .rt span { display: block; font-size: 11px; color: var(--p4-muted-2); margin-top: 2px; }
+
+.prj04 .p4-alert {
+  display: flex; align-items: flex-start; gap: 10px;
+  border: 1px solid var(--p4-border-soft); border-radius: 9px;
+  padding: 12px; margin: 0 16px 10px;
+}
+.prj04 .p4-alert:last-child { margin-bottom: 16px; }
+.prj04 .p4-alert .ic { width: 26px; height: 26px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; flex: none; }
+.prj04 .p4-alert .ic svg { width: 14px; height: 14px; }
+.prj04 .p4-alert.warn .ic { background: #FEF3E2; color: #D97706; }
+.prj04 .p4-alert.info .ic { background: #EEF3FE; color: var(--p4-primary); }
+.prj04 .p4-alert .tx b { display: block; font-size: 12.5px; font-weight: 500; line-height: 17px; }
+.prj04 .p4-alert .tx span { display: block; font-size: 11px; color: var(--p4-muted-2); margin-top: 3px; }
+.prj04 .p4-alert .go { margin-left: auto; color: var(--p4-muted-2); flex: none; }
+
+.prj04 .p4-empty { padding: 26px 16px; text-align: center; font-size: 12.5px; color: var(--p4-muted-2); }
