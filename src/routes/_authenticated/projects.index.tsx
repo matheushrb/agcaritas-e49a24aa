@@ -479,100 +479,36 @@ function ProjectsPage() {
   );
 }
 
-/* ---------- Blocos ---------- */
-
-function ViewTab({
-  active,
-  onClick,
-  icon: Icon,
-  label,
-}: {
-  active: boolean;
-  onClick: () => void;
-  icon: React.ElementType;
-  label: string;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={cn(
-        "inline-flex h-[34px] items-center gap-2 rounded-lg border-b-2 px-3.5 text-[13px] font-medium transition",
-        active
-          ? "border-[#1769F6] bg-[#EEF4FF] text-[#1769F6]"
-          : "border-transparent text-muted-foreground hover:text-foreground",
-      )}
-    >
-      <Icon className="h-4 w-4" />
-      {label}
-    </button>
-  );
-}
-
-
-const TONES: Record<string, string> = {
-  slate: "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300",
-  blue: "bg-[#EEF4FF] text-[#1769F6] dark:bg-blue-500/15 dark:text-blue-300",
-  green: "bg-emerald-50 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-300",
-  amber: "bg-amber-50 text-amber-600 dark:bg-amber-500/15 dark:text-amber-300",
-  red: "bg-rose-50 text-rose-600 dark:bg-rose-500/15 dark:text-rose-300",
-};
+/* ---------- Blocos (réplica PRJ-01) ---------- */
 
 function Kpi({
   label,
   value,
   sub,
-  icon: Icon,
   tone,
+  icon: Icon,
+  iconBg,
+  iconColor,
 }: {
   label: string;
   value: number;
   sub: string;
+  tone: "up" | "down" | "neutral";
   icon: React.ElementType;
-  tone: keyof typeof TONES;
+  iconBg: string;
+  iconColor: string;
 }) {
   return (
-    <div className="flex h-[115px] flex-col justify-between rounded-[12px] border border-border bg-card px-5 py-[18px]">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <p className="text-[12.5px] text-muted-foreground">{label}</p>
-          <div className="mt-2 text-[30px] font-semibold leading-none tracking-[-0.03em]">{value}</div>
-        </div>
-        <div className={cn("flex h-11 w-11 items-center justify-center rounded-full", TONES[tone])}>
-          <Icon className="h-[18px] w-[18px]" />
+    <div className="kpi-card">
+      <div className="kpi-top">
+        <span className="kpi-label">{label}</span>
+        <div className="kpi-icon" style={{ background: iconBg }}>
+          <Icon style={{ color: iconColor }} />
         </div>
       </div>
-      <p className="text-[11.5px] text-muted-foreground">{sub}</p>
+      <span className="kpi-value">{value}</span>
+      <span className={cn("kpi-sub", tone)}>{sub}</span>
     </div>
-
-  );
-}
-
-function FilterSelect({
-  label,
-  value,
-  onChange,
-  children,
-  icon: Icon,
-}: {
-  label: string;
-  value: string;
-  onChange: (v: string) => void;
-  children: React.ReactNode;
-  icon?: React.ElementType;
-}) {
-  return (
-    <label className="inline-flex h-[42px] items-center gap-2 whitespace-nowrap rounded-[10px] border border-border bg-card px-3 text-[13px]">
-      {Icon && <Icon className="h-3.5 w-3.5 text-muted-foreground" />}
-      <span className="text-muted-foreground">{label}:</span>
-      <select
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="cursor-pointer border-0 bg-transparent font-medium text-foreground outline-none"
-      >
-        {children}
-      </select>
-    </label>
   );
 }
 
@@ -581,28 +517,22 @@ function Avatars({ members }: { members: Member[] }) {
   const rest = members.length - shown.length;
   if (members.length === 0) {
     return (
-      <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-muted text-muted-foreground">
-        <User className="h-3 w-3" />
-      </span>
+      <div className="avatars">
+        <div className="av more">
+          <User style={{ width: 11, height: 11 }} />
+        </div>
+      </div>
     );
   }
   return (
-    <span className="flex items-center">
+    <div className="avatars">
       {shown.map((m) => (
-        <span
-          key={m.user_id}
-          title={m.name}
-          className="-ml-1.5 flex h-6 w-6 items-center justify-center overflow-hidden rounded-full border-2 border-card bg-[#EEF4FF] text-[9px] font-semibold text-[#1769F6] first:ml-0"
-        >
-          {m.avatar ? <img src={m.avatar} alt={m.name} className="h-full w-full object-cover" /> : initials(m.name)}
-        </span>
+        <div key={m.user_id} className="av" title={m.name}>
+          {m.avatar ? <img src={m.avatar} alt={m.name} /> : initials(m.name)}
+        </div>
       ))}
-      {rest > 0 && (
-        <span className="-ml-1.5 flex h-6 w-6 items-center justify-center rounded-full border-2 border-card bg-muted text-[9px] font-semibold text-muted-foreground">
-          +{rest}
-        </span>
-      )}
-    </span>
+      {rest > 0 && <div className="av more">+{rest}</div>}
+    </div>
   );
 }
 
@@ -617,79 +547,68 @@ function ProjectCard({
 }) {
   const health = healthOf(project);
   const due = dueInfo(project.endDate, project.status);
+  const typeTag =
+    project.projectType && !/^[0-9a-f]{8}-[0-9a-f]{4}-/i.test(project.projectType) ? project.projectType : null;
 
   return (
-    <div
-      role="button"
-      tabIndex={0}
-      onClick={onOpen}
-      onKeyDown={(e) => (e.key === "Enter" ? onOpen() : undefined)}
-      className="flex min-h-[217px] cursor-pointer flex-col rounded-[12px] border border-border bg-card transition hover:border-[#1769F6]/40 hover:shadow-[0_10px_28px_rgba(15,23,42,0.06)]"
-    >
-      <div className="flex flex-1 flex-col px-5 pt-[18px]">
-        <h3 className="truncate text-[15px] font-semibold leading-[20px] tracking-[-0.01em]">{project.name}</h3>
-
-        <div className="mt-2.5 flex items-center gap-2">
-          <span className="inline-flex min-w-0 items-center gap-1.5 text-[11px] text-muted-foreground">
-            <User className="h-3.5 w-3.5 shrink-0" />
-            <span className="truncate">{project.clientName || "Interno"}</span>
-          </span>
-          {project.projectType && !/^[0-9a-f]{8}-[0-9a-f]{4}-/i.test(project.projectType) && (
-            <span className="truncate rounded-[6px] border border-border px-2 py-[3px] text-[10.5px] text-muted-foreground">
-              {project.projectType}
-            </span>
-          )}
+    <div className="card" role="button" tabIndex={0} onClick={onOpen} onKeyDown={(e) => (e.key === "Enter" ? onOpen() : undefined)}>
+      <div className="card-title">{project.name}</div>
+      <div className="card-row1">
+        <div className="client-tags">
+          <User className="person-ic" />
+          <span className="tag">{project.clientName || "Interno"}</span>
+          {typeTag && <span className="tag">{typeTag}</span>}
         </div>
-
-        <div className="mt-2 flex items-center justify-end gap-1.5 text-[10px]">
-          <span className={cn("h-[7px] w-[7px] rounded-full", health.dot)} />
-          <span className={health.text}>{health.label}</span>
+        <div className={cn("status", health.tone)}>
+          <span className="dot" />
+          {health.label}
         </div>
+      </div>
 
-        <div className="mt-1.5 flex items-center gap-2.5">
-          <span className="text-[11px] text-muted-foreground">{project.progress}%</span>
-          <span className="h-[5px] flex-1 overflow-hidden rounded-full bg-muted">
-            <span className="block h-full rounded-full bg-[#1769F6]" style={{ width: `${project.progress}%` }} />
-          </span>
-          <span className="text-[11px] font-medium">{project.progress}%</span>
+      <div className="progress-row">
+        <span className="pct-left">{project.progress}%</span>
+        <div className="progress-track">
+          <div className="progress-fill" style={{ width: `${project.progress}%` }} />
         </div>
+        <span className="pct-right">{project.progress}%</span>
+      </div>
 
-        <p className={cn("mt-3 inline-flex items-center gap-1.5 text-[10.5px]", due.className)}>
-          <CalendarDays className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+      <div className="meta-row">
+        <div className={cn("meta", due.tone)}>
+          <CalendarDays />
           {due.label}
-        </p>
-
-        <div className="mt-2.5 flex items-center justify-between gap-2">
-          <Avatars members={members} />
-          <span className="inline-flex items-center gap-1.5 text-[10.5px] text-muted-foreground">
-            <ListChecks className="h-3.5 w-3.5" />
-            {project.doneTasks ?? 0}/{project.totalTasks} tarefas
-          </span>
         </div>
-
-        {project.overdueTasks > 0 && (
-          <p className="mt-2 inline-flex items-center gap-1.5 text-[10px] font-medium text-rose-600 dark:text-rose-400">
-            <AlertTriangle className="h-3.5 w-3.5" />
-            {project.overdueTasks} tarefa{project.overdueTasks > 1 ? "s" : ""} em atraso
-          </p>
-        )}
       </div>
 
-      <div className="mt-auto flex items-center gap-2 border-t border-border px-5 py-3">
-        <span className="text-[10.5px] text-muted-foreground">Receita prevista</span>
-        <span className="ml-auto text-[14px] font-semibold tracking-[-0.01em]">{formatMoney(project.revenue)}</span>
-        <button
-          type="button"
-          onClick={(e) => e.stopPropagation()}
-          className="rounded-md p-1 text-muted-foreground transition hover:bg-muted"
-        >
-          <MoreHorizontal className="h-4 w-4" />
-        </button>
+      <div className="team-row">
+        <Avatars members={members} />
+        <div className="task-count">
+          <ListChecks />
+          {project.doneTasks ?? 0}/{project.totalTasks} tarefas
+        </div>
       </div>
 
+      {project.overdueTasks > 0 && (
+        <div className="overdue-flag">
+          <AlertTriangle />
+          {project.overdueTasks} tarefa{project.overdueTasks > 1 ? "s" : ""} em atraso
+        </div>
+      )}
+
+      <div className="divider" />
+      <div className="fin-row">
+        <span className="fin-label">Receita prevista</span>
+        <div className="fin-value-wrap">
+          <span className="fin-value">{formatMoney(project.revenue)}</span>
+          <button type="button" className="more-btn" onClick={(e) => e.stopPropagation()}>
+            ···
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
+
 
 function ProjectTable({
   rows,
