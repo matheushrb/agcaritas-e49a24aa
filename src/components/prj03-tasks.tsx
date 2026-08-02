@@ -1,7 +1,7 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ListChecks, Activity, AlertTriangle, CheckCircle2, Eye, Search, ChevronDown,
-  SlidersHorizontal, Calendar, MoreVertical, Plus, Settings2,
+  SlidersHorizontal, Calendar, MoreVertical, Plus, Settings2, Check,
 } from "lucide-react";
 import "@/prj03.css";
 
@@ -82,16 +82,45 @@ function Sel({ label, value, options, onChange }: {
   label: string; value: string; options: { v: string; l: string }[]; onChange: (v: string) => void;
 }) {
   const cur = options.find((o) => o.v === value)?.l ?? options[0]?.l;
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const onDoc = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", onDoc);
+    return () => document.removeEventListener("mousedown", onDoc);
+  }, [open]);
+
   return (
-    <div className="p3-sel">
-      <span className="cv">{label}:</span> {cur}
-      <ChevronDown />
-      <select value={value} onChange={(e) => onChange(e.target.value)} aria-label={label}>
-        {options.map((o) => <option key={o.v} value={o.v}>{o.l}</option>)}
-      </select>
+    <div className={`p3-sel${open ? " open" : ""}`} ref={ref}>
+      <button type="button" className="p3-sel-btn" onClick={() => setOpen(o => !o)} aria-label={label} aria-expanded={open}>
+        <span className="cv">{label}:</span> <span className="vv">{cur}</span>
+        <ChevronDown />
+      </button>
+      {open && (
+        <div className="p3-menu" role="listbox">
+          {options.map((o) => (
+            <button
+              key={o.v}
+              type="button"
+              role="option"
+              aria-selected={o.v === value}
+              className={`p3-mi${o.v === value ? " on" : ""}`}
+              onClick={() => { onChange(o.v); setOpen(false); }}
+            >
+              <span>{o.l}</span>
+              {o.v === value && <Check />}
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
+
 
 export function Prj03Tasks({ tasks, people, onOpen, onQuickCreate, pending }: {
   tasks: P3Task[];
@@ -293,13 +322,15 @@ export function Prj03Tasks({ tasks, people, onOpen, onQuickCreate, pending }: {
             </div>
             <div className="p3-rows">
               Linhas por página:
-              <div className="p3-sel" style={{ height: 30, fontSize: 12, paddingRight: 26 }}>
-                {perPage}
-                <ChevronDown />
-                <select value={String(perPage)} onChange={(e) => { setPerPage(Number(e.target.value)); setPage(1); }} aria-label="Linhas por página">
-                  {[10, 25, 50].map((n) => <option key={n} value={n}>{n}</option>)}
-                </select>
-              </div>
+              <select
+                className="p3-rows-sel"
+                value={String(perPage)}
+                onChange={(e) => { setPerPage(Number(e.target.value)); setPage(1); }}
+                aria-label="Linhas por página"
+              >
+                {[10, 25, 50].map((n) => <option key={n} value={n}>{n}</option>)}
+              </select>
+
             </div>
           </div>
         </div>
