@@ -32,6 +32,7 @@ import {
 } from "@/components/project-preview-sheet";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
+import "@/prj01.css";
 
 export const Route = createFileRoute("/_authenticated/projects/")({
   validateSearch: (s: { new?: number | string }) => ({
