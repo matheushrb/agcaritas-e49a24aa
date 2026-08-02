@@ -71,13 +71,14 @@ function DashboardPage() {
   ];
   const critical = (data.tasks as any[]).filter((t: any) => t.status !== "done").slice(0, 3);
   const criticalRows = critical.length ? critical.map((t: any, i: number) => ({
-    id: t.id, title: t.title, project: "Projeto ativo", client: "Cliente",
+    id: t.id, title: t.title, kind: "Tarefa", project: "Projeto ativo", client: "Cliente",
     due: i < 2 ? "Vence hoje" : "Vence amanhã", priority: i === 0 ? "Crítica" : "Alta",
   })) : [
-    { id: "r1", title: "Aprovação final de KV e variações", project: "Campanha Verão 2026", client: "Doodles", due: "Vence hoje", priority: "Crítica" },
-    { id: "r2", title: "Entrega de peças para mídia digital", project: "Lançamento EcoBeleza", client: "EcoBeleza", due: "Vence hoje", priority: "Alta" },
-    { id: "r3", title: "Revisão de identidade visual", project: "Branding Viva+", client: "Viva+", due: "Vence amanhã", priority: "Alta" },
+    { id: "r1", title: "Aprovação final de KV e variações", kind: "Aprovação", project: "Campanha Verão 2026", client: "Doodles", due: "Vence hoje", priority: "Crítica" },
+    { id: "r2", title: "Entrega de peças para mídia digital", kind: "Entrega", project: "Lançamento EcoBeleza", client: "EcoBeleza", due: "Vence hoje", priority: "Alta" },
+    { id: "r3", title: "Revisão de identidade visual", kind: "Revisão", project: "Branding Viva+", client: "Viva+", due: "Vence amanhã", priority: "Alta" },
   ];
+
 
   return (
     <>
@@ -124,16 +125,22 @@ function DashboardPage() {
 
             <div className="cv-table">
               <div className="cv-table-row cv-table-head">
-                <span>Pendências críticas</span><span>Cliente / Projeto</span><span>Vencimento</span><span>Prioridade</span>
+                <span>Pendências críticas</span><span>Cliente / Projeto</span><span>Vencimento</span><span>Prioridade</span><span />
               </div>
               {criticalRows.map((row, i) => (
                 <div className="cv-table-row" key={row.id}>
-                  <span className="cv-issue"><AlertTriangle className="h-3 w-3" />{row.title}</span>
+                  <span className="cv-issue">
+                    <AlertTriangle className="h-3 w-3" />
+                    <em>{row.title}</em>
+                    <i className="cv-kind">{row.kind}</i>
+                  </span>
                   <span><b>{row.project}</b><small>Cliente: {row.client}</small></span>
                   <span style={i < 2 ? { color: "var(--danger)" } : { color: "var(--muted)" }}>{row.due}</span>
                   <span><i className={`cv-badge ${row.priority === "Crítica" ? "critical" : "high"}`}>{row.priority}</i></span>
+                  <button type="button" className="cv-row-menu" title="Ações">⋮</button>
                 </div>
               ))}
+
             </div>
           </section>
 
