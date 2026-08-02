@@ -7,7 +7,7 @@ import { useState } from "react";
 import { reconcilePrefs, type UserPref } from "@/lib/dashboard-widgets";
 import {
   AlertTriangle, CalendarDays, Check, Clock3, FolderKanban,
-  Users, CheckCircle2, ChevronRight, Info, MoreVertical,
+  Users, CheckCircle2, ChevronRight, Info,
 } from "lucide-react";
 
 
@@ -137,7 +137,7 @@ function DashboardPage() {
                   <span><b>{row.project}</b><small>Cliente: {row.client}</small></span>
                   <span style={i < 2 ? { color: "var(--danger)" } : { color: "var(--muted)" }}>{row.due}</span>
                   <span><i className={`cv-badge ${row.priority === "Crítica" ? "critical" : "high"}`}>{row.priority}</i></span>
-                  <button type="button" className="cv-row-menu" title="Ações"><MoreVertical className="h-3.5 w-3.5" /></button>
+                  <button type="button" className="cv-row-menu" title="Ações">⋮</button>
                 </div>
               ))}
 
