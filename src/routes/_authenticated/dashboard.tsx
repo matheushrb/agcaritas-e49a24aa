@@ -125,16 +125,22 @@ function DashboardPage() {
 
             <div className="cv-table">
               <div className="cv-table-row cv-table-head">
-                <span>Pendências críticas</span><span>Cliente / Projeto</span><span>Vencimento</span><span>Prioridade</span>
+                <span>Pendências críticas</span><span>Cliente / Projeto</span><span>Vencimento</span><span>Prioridade</span><span />
               </div>
               {criticalRows.map((row, i) => (
                 <div className="cv-table-row" key={row.id}>
-                  <span className="cv-issue"><AlertTriangle className="h-3 w-3" />{row.title}</span>
+                  <span className="cv-issue">
+                    <AlertTriangle className="h-3 w-3" />
+                    <em>{row.title}</em>
+                    <i className="cv-kind">{row.kind}</i>
+                  </span>
                   <span><b>{row.project}</b><small>Cliente: {row.client}</small></span>
                   <span style={i < 2 ? { color: "var(--danger)" } : { color: "var(--muted)" }}>{row.due}</span>
                   <span><i className={`cv-badge ${row.priority === "Crítica" ? "critical" : "high"}`}>{row.priority}</i></span>
+                  <button type="button" className="cv-row-menu" title="Ações"><MoreVertical className="h-3.5 w-3.5" /></button>
                 </div>
               ))}
+
             </div>
           </section>
 
