@@ -22,6 +22,7 @@ import { EditProjectDialog, type EditableProject } from "@/components/edit-proje
 import { ProjectCostsTab } from "@/components/project-costs-tab";
 import { Prj02Overview, p2Initials } from "@/components/prj02-overview";
 import { Prj03Tasks } from "@/components/prj03-tasks";
+import { Prj04Finance } from "@/components/prj04-finance";
 import { Share2, MoreHorizontal, Mail as MailIcon, Target, TrendingUp } from "lucide-react";
 import "@/prj02.css";
 
@@ -482,7 +483,7 @@ function ProjectDetail() {
         </div>
       )}
 
-      {activeTab === "finance" && <div style={{ marginTop: 18 }}><FinanceTab charges={charges} tasks={tasks} costs={costs} /></div>}
+      {activeTab === "finance" && <Prj04Finance charges={charges as never} tasks={tasks as never} costs={costs as never} />}
       {activeTab === "costs" && <div style={{ marginTop: 18 }}><ProjectCostsTab projectId={projectId} organizationId={project.organization_id} /></div>}
       {activeTab === "strategy" && <div style={{ marginTop: 18 }}><StrategyTab description={project.description ?? ""} onSave={(d) => saveField.mutate({ description: d })} /></div>}
       {activeTab === "calendar" && <div style={{ marginTop: 18 }}><ComingSoon icon={Calendar} title="Calendário de Conteúdo" description="Grade mensal com peças de conteúdo por plataforma." /></div>}
