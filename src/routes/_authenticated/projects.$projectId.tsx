@@ -21,6 +21,7 @@ import { TaskModal } from "./tasks";
 import { EditProjectDialog, type EditableProject } from "@/components/edit-project-dialog";
 import { ProjectCostsTab } from "@/components/project-costs-tab";
 import { Prj02Overview, p2Initials } from "@/components/prj02-overview";
+import { Prj03Tasks } from "@/components/prj03-tasks";
 import { Share2, MoreHorizontal, Mail as MailIcon, Target, TrendingUp } from "lucide-react";
 import "@/prj02.css";
 
@@ -466,22 +467,13 @@ function ProjectDetail() {
       )}
 
       {activeTab === "tasks" && (
-        <div style={{ marginTop: 18 }}>
-          <TasksTab
-            tasks={tasks}
-            baseTaskTypes={baseTaskTypes}
-            onAdd={(t) => addTask.mutate(t)}
-            onOpen={(id) => setSelectedTaskId(id)}
-            onQuickCreate={() => addTask.mutate("Nova tarefa")}
-            onCreateFromBase={(bt) => addTask.mutate({
-              title: bt.name,
-              task_type_id: bt.id,
-              billing_model: bt.default_billing_model,
-              billing_value: bt.default_price,
-            })}
-            pending={addTask.isPending}
-          />
-        </div>
+        <Prj03Tasks
+          tasks={tasks as never}
+          people={people}
+          onOpen={(id) => setSelectedTaskId(id)}
+          onQuickCreate={() => addTask.mutate("Nova tarefa")}
+          pending={addTask.isPending}
+        />
       )}
 
       {activeTab === "team" && (
