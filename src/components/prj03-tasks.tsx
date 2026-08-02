@@ -322,13 +322,15 @@ export function Prj03Tasks({ tasks, people, onOpen, onQuickCreate, pending }: {
             </div>
             <div className="p3-rows">
               Linhas por página:
-              <div className="p3-sel" style={{ height: 30, fontSize: 12, paddingRight: 26 }}>
-                {perPage}
-                <ChevronDown />
-                <select value={String(perPage)} onChange={(e) => { setPerPage(Number(e.target.value)); setPage(1); }} aria-label="Linhas por página">
-                  {[10, 25, 50].map((n) => <option key={n} value={n}>{n}</option>)}
-                </select>
-              </div>
+              <select
+                className="p3-rows-sel"
+                value={String(perPage)}
+                onChange={(e) => { setPerPage(Number(e.target.value)); setPage(1); }}
+                aria-label="Linhas por página"
+              >
+                {[10, 25, 50].map((n) => <option key={n} value={n}>{n}</option>)}
+              </select>
+
             </div>
           </div>
         </div>
