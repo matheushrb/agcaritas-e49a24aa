@@ -20,6 +20,9 @@ import { cn } from "@/lib/utils";
 import { TaskModal } from "./tasks";
 import { EditProjectDialog, type EditableProject } from "@/components/edit-project-dialog";
 import { ProjectCostsTab } from "@/components/project-costs-tab";
+import { Prj02Overview, p2Initials } from "@/components/prj02-overview";
+import { Share2, MoreHorizontal, Mail as MailIcon, Target, TrendingUp } from "lucide-react";
+import "@/prj02.css";
 
 export const Route = createFileRoute("/_authenticated/projects/$projectId")({
   component: ProjectDetail,
@@ -292,6 +295,18 @@ function ProjectDetail() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["project", projectId] }),
     onError: (e: Error) => toast.error(e.message),
   });
+
+  const assigneeIds = Array.from(new Set(tasks.map(t => t.assignee_id).filter(Boolean))) as string[];
+  const { data: people = [] } = useQuery({
+    queryKey: ["project-people", projectId, assigneeIds.join(",")],
+    enabled: assigneeIds.length > 0,
+    queryFn: async () => {
+      const { data } = await supabase.from("profiles").select("id,full_name,role").in("id", assigneeIds);
+      return (data ?? []) as { id: string; full_name: string | null; role: string | null }[];
+    },
+  });
+
+  const [activeTab, setActiveTab] = useState("overview");
 
   if (!project) {
     return <div className="text-sm text-muted-foreground">Carregando projeto…</div>;
