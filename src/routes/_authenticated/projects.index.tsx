@@ -754,25 +754,30 @@ function pct(value: number, total: number) {
 }
 
 function healthOf(project: ProjectPreviewData) {
-  if (project.status === "done") return { label: "Concluído", dot: "bg-emerald-500", text: "text-muted-foreground" };
-  if (project.overdueTasks >= 3) return { label: "Crítico", dot: "bg-rose-500", text: "text-rose-600 dark:text-rose-400" };
-  if (project.overdueTasks > 0) return { label: "Atenção", dot: "bg-amber-500", text: "text-amber-600 dark:text-amber-400" };
-  return { label: "Saudável", dot: "bg-emerald-500", text: "text-muted-foreground" };
+  if (project.status === "done")
+    return { label: "Concluído", tone: "healthy", dot: "bg-emerald-500", text: "text-muted-foreground" };
+  if (project.overdueTasks >= 3)
+    return { label: "Crítico", tone: "danger", dot: "bg-rose-500", text: "text-rose-600 dark:text-rose-400" };
+  if (project.overdueTasks > 0)
+    return { label: "Atenção", tone: "warning", dot: "bg-amber-500", text: "text-amber-600 dark:text-amber-400" };
+  return { label: "Saudável", tone: "healthy", dot: "bg-emerald-500", text: "text-muted-foreground" };
 }
 
 function dueInfo(endDate: string | null, status: ProjectStatus) {
-  if (!endDate) return { label: "Sem prazo definido", className: "text-muted-foreground" };
+  if (!endDate) return { label: "Sem prazo definido", tone: "", className: "text-muted-foreground" };
   const date = parseDate(endDate);
   const formatted = date.toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric" });
-  if (status === "done") return { label: `Concluído em ${formatted}`, className: "text-muted-foreground" };
+  if (status === "done") return { label: `Concluído em ${formatted}`, tone: "done", className: "text-muted-foreground" };
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const days = Math.round((date.getTime() - today.getTime()) / 86_400_000);
   if (days < 0)
-    return { label: `Vence em ${days} dias (${formatted})`, className: "text-rose-600 dark:text-rose-400" };
-  if (days <= 7) return { label: `Vence em ${days} dias (${formatted})`, className: "text-amber-600 dark:text-amber-400" };
-  return { label: `Vence em ${days} dias (${formatted})`, className: "text-muted-foreground" };
+    return { label: `Venceu há ${Math.abs(days)} dias (${formatted})`, tone: "overdue", className: "text-rose-600 dark:text-rose-400" };
+  if (days <= 7)
+    return { label: `Vence em ${days} dias (${formatted})`, tone: "warning", className: "text-amber-600 dark:text-amber-400" };
+  return { label: `Vence em ${days} dias (${formatted})`, tone: "", className: "text-muted-foreground" };
 }
+
 
 function parseDate(value: string) {
   const match = value.match(/^(\d{4})-(\d{2})-(\d{2})/);
