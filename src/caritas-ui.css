@@ -220,7 +220,7 @@
 .is-danger { color: var(--danger) !important; }
 
 /* ATENÇÃO */
-.cv-attention { height: 262px; padding: 14px 15px 10px; margin-bottom: 10px; overflow: hidden; }
+.cv-attention { height: auto; padding: 14px 15px 10px; margin-bottom: 10px; overflow: hidden; }
 .cv-section-head { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 11px; }
 .cv-section-head.compact { align-items: center; gap: 8px; }
 .cv-panel .cv-section-head h2 { font-size: 14px; white-space: nowrap; }
