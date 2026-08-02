@@ -7,7 +7,7 @@ import { useState } from "react";
 import { reconcilePrefs, type UserPref } from "@/lib/dashboard-widgets";
 import {
   AlertTriangle, CalendarDays, Check, Clock3, FolderKanban,
-  Users, CheckCircle2, ChevronRight, Info,
+  Users, CheckCircle2, ChevronRight, Info, MoreVertical,
 } from "lucide-react";
 
 
