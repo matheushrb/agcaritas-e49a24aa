@@ -162,7 +162,8 @@ function InvoiceDetailPage() {
 
   async function openPDF() {
     if (!invoice) return;
-    if (!invoice.number) {
+    const pdfNumber = (editOpen ? form.number.trim() : "") || invoice.number;
+    if (!pdfNumber) {
       toast.error("Defina o número da fatura antes de gerar o PDF.");
       openEdit();
       return;
@@ -176,7 +177,7 @@ function InvoiceDetailPage() {
         [[c.address_city, c.address_state].filter(Boolean).join("/"), c.address_zip ? `CEP ${c.address_zip}` : null].filter(Boolean).join(" · "),
       ].filter(Boolean).join("\n") || null : null;
       const doc = await generateInvoicePDF({
-        number: invoice.number,
+        number: pdfNumber,
         issue_date: invoice.issue_date || invoice.created_at || new Date().toISOString().slice(0, 10),
         due_date: invoice.due_date,
         client: c ? {
