@@ -23,6 +23,7 @@ import { ProjectCostsTab } from "@/components/project-costs-tab";
 import { Prj02Overview, p2Initials } from "@/components/prj02-overview";
 import { Prj03Tasks } from "@/components/prj03-tasks";
 import { Prj04Finance } from "@/components/prj04-finance";
+import { Prj05Strategy } from "@/components/prj05-strategy";
 import { Share2, MoreHorizontal, Mail as MailIcon, Target, TrendingUp } from "lucide-react";
 import "@/prj02.css";
 
