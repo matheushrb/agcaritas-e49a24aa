@@ -136,7 +136,7 @@
 .tskv .t-gbar {
   position: absolute; top: 10px; height: 18px; border-radius: 999px;
   background: var(--t-primary); display: flex; align-items: center; cursor: pointer;
-  box-shadow: 0 1px 3px rgba(47,107,239,.35); min-width: 8px;
+  box-shadow: 0 1px 3px rgba(47,107,239,.35); min-width: 62px;
 }
 .tskv .t-gbar.done { background: var(--t-green); box-shadow: none; }
 .tskv .t-gbar.late { background: var(--t-red); }
