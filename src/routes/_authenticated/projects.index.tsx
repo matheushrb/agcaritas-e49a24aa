@@ -26,12 +26,12 @@ import { toast } from "sonner";
 
 import { NewProjectWizard, type ProjectWizardValue } from "@/components/new-project-wizard";
 import {
-  ProjectPreviewSheet,
   type ProjectPreviewData,
   type ProjectPreviewStatus,
 } from "@/components/project-preview-sheet";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
+import { Prj08Table, Prj08Preview } from "@/components/prj08-list";
 import "@/prj01.css";
 
 export const Route = createFileRoute("/_authenticated/projects/")({
@@ -408,7 +408,7 @@ function ProjectsPage() {
             ))}
           </div>
         ) : view === "list" ? (
-          <ProjectTable rows={paged} membersByProject={membersByProject} onOpen={setSelectedProjectId} />
+          <Prj08Table rows={paged} membersByProject={membersByProject} selectedId={selectedProjectId} onOpen={setSelectedProjectId} />
         ) : (
           <ProjectKanban rows={filtered} onOpen={setSelectedProjectId} />
         )}
@@ -461,8 +461,9 @@ function ProjectsPage() {
       </div>
 
 
-      <ProjectPreviewSheet
+      <Prj08Preview
         project={selectedProject}
+        members={selectedProject ? membersByProject[selectedProject.id] ?? [] : []}
         open={Boolean(selectedProject)}
         onOpenChange={(open) => {
           if (!open) setSelectedProjectId(null);
@@ -611,72 +612,6 @@ function ProjectCard({
   );
 }
 
-
-function ProjectTable({
-  rows,
-  membersByProject,
-  onOpen,
-}: {
-  rows: (ProjectPreviewData & { doneTasks?: number })[];
-  membersByProject: Record<string, Member[]>;
-  onOpen: (id: string) => void;
-}) {
-  return (
-    <div className="overflow-hidden rounded-xl border border-border bg-card">
-      <table className="w-full text-[13px]">
-        <thead>
-          <tr className="border-b border-border text-left text-[11.5px] text-muted-foreground">
-            <th className="px-4 py-3 font-medium">Projeto</th>
-            <th className="px-4 py-3 font-medium">Cliente</th>
-            <th className="px-4 py-3 font-medium">Status</th>
-            <th className="px-4 py-3 font-medium">Progresso</th>
-            <th className="px-4 py-3 font-medium">Prazo final</th>
-            <th className="px-4 py-3 font-medium">Equipe</th>
-            <th className="px-4 py-3 text-right font-medium">Receita prevista</th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((project) => {
-            const due = dueInfo(project.endDate, project.status);
-            return (
-              <tr
-                key={project.id}
-                onClick={() => onOpen(project.id)}
-                className="cursor-pointer border-b border-border/60 transition last:border-0 hover:bg-muted/50"
-              >
-                <td className="px-4 py-3 font-medium">{project.name}</td>
-                <td className="px-4 py-3 text-muted-foreground">{project.clientName || "Interno"}</td>
-                <td className="px-4 py-3">
-                  <span
-                    className={cn(
-                      "rounded-md px-2 py-1 text-[11px] font-medium",
-                      STATUS_META[project.status].className,
-                    )}
-                  >
-                    {STATUS_META[project.status].label}
-                  </span>
-                </td>
-                <td className="px-4 py-3">
-                  <span className="flex items-center gap-2">
-                    <span className="text-[12px]">{project.progress}%</span>
-                    <span className="h-1.5 w-20 overflow-hidden rounded-full bg-muted">
-                      <span className="block h-full rounded-full bg-[#1769F6]" style={{ width: `${project.progress}%` }} />
-                    </span>
-                  </span>
-                </td>
-                <td className={cn("px-4 py-3 text-[12px]", due.className)}>{due.label}</td>
-                <td className="px-4 py-3">
-                  <Avatars members={membersByProject[project.id] ?? []} />
-                </td>
-                <td className="px-4 py-3 text-right font-semibold">{formatMoney(project.revenue)}</td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
-    </div>
-  );
-}
 
 function ProjectKanban({
   rows,
