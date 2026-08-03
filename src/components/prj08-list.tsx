@@ -11,7 +11,6 @@ import {
   MoreHorizontal,
   Pencil,
   Rocket,
-  X,
 } from "lucide-react";
 
 import { Sheet, SheetContent } from "@/components/ui/sheet";
@@ -39,6 +38,12 @@ function dotColor(name: string) {
 
 function initials(name: string) {
   return name.split(" ").filter(Boolean).slice(0, 2).map((n) => n[0]?.toUpperCase()).join("");
+}
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-/i;
+function cleanType(v?: string | null) {
+  if (!v || UUID.test(v)) return null;
+  return v;
 }
 
 function money(value: number) {
@@ -138,7 +143,7 @@ export function Prj08Table({
                     </span>
                     <div>
                       <div className="p8-proj-name">{p.name}</div>
-                      <div className="p8-proj-sub">{p.projectType || p.description || "Projeto"}</div>
+                      <div className="p8-proj-sub">{cleanType(p.projectType) || p.description || "Projeto"}</div>
                     </div>
                   </div>
                 </td>
@@ -225,13 +230,6 @@ export function Prj08Preview({
           <div className="p8-body">
             <div className="flex items-start justify-between gap-3">
               <h2>{project.name}</h2>
-              <button
-                type="button"
-                onClick={() => onOpenChange(false)}
-                className="rounded-md p-1 text-[#98a2b3] hover:bg-[#f1f3f7]"
-              >
-                <X size={17} />
-              </button>
             </div>
 
             <div className="p8-head-row">
@@ -338,7 +336,7 @@ export function Prj08Preview({
               <div className="p8-item">
                 <Building2 color="#7b879a" />
                 <span>Tipo</span>
-                <span className="p8-when">{project.projectType || "—"}</span>
+                <span className="p8-when">{cleanType(project.projectType) || "—"}</span>
               </div>
               <div className="p8-item">
                 <CalendarDays color="#7b879a" />
