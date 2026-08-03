@@ -88,6 +88,16 @@ export function EditProjectDialog({
     enabled: open,
   });
 
+  const { data: projectTypes = [] } = useQuery<Array<{ id: string; name: string; slug: string | null }>>({
+    queryKey: ["project_types"],
+    queryFn: async () => {
+      const { data } = await (supabase as any).from("project_types").select("id,name,slug").eq("active", true).order("sort_order");
+      return (data ?? []) as Array<{ id: string; name: string; slug: string | null }>;
+    },
+  });
+  const projectTypeLabel = (key: string | null) =>
+    projectTypes.find(t => t.id === key || t.slug === key)?.name ?? key ?? null;
+
   const { data: profiles = [] } = useQuery<Profile[]>({
     queryKey: ["profiles-min"],
     queryFn: async () => {
@@ -220,7 +230,7 @@ export function EditProjectDialog({
                 </span>
                 {form.project_type && (
                   <span className="inline-flex items-center gap-1.5 rounded-full bg-primary-foreground/15 px-2.5 py-1">
-                    <Briefcase className="h-3.5 w-3.5" /> {form.project_type}
+                    <Briefcase className="h-3.5 w-3.5" /> {projectTypeLabel(form.project_type)}
                   </span>
                 )}
               </div>
@@ -266,7 +276,18 @@ export function EditProjectDialog({
                     </Select>
                   </Field>
                   <Field label="Tipo de projeto" icon={<Briefcase className="h-3.5 w-3.5" />}>
-                    <Input value={form.project_type ?? ""} onChange={e => set("project_type", e.target.value || null)} placeholder="Ex.: Social media" />
+                    <Select
+                      value={projectTypes.find(t => t.id === form.project_type || t.slug === form.project_type)?.id ?? "none"}
+                      onValueChange={v => set("project_type", v === "none" ? null : v)}
+                    >
+                      <SelectTrigger><SelectValue placeholder="Selecione o tipo" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">Sem tipo</SelectItem>
+                        {projectTypes.map(t => (
+                          <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </Field>
                 </div>
               </Section>

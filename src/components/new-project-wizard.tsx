@@ -159,7 +159,7 @@ export function NewProjectWizard({
     },
   });
 
-  const typeOptions = projectTypes.map(t => ({ value: t.slug || t.id, label: t.name, raw: t }));
+  const typeOptions = projectTypes.map(t => ({ value: t.id, label: t.name, raw: t }));
   const selectedType = typeOptions.find(t => t.value === v.project_type);
   const personName = (id: string | null) => people.find(p => p.id === id)?.display_name || people.find(p => p.id === id)?.full_name || "—";
   const clientName = clients.find(c => c.id === v.client_id)?.name ?? "—";

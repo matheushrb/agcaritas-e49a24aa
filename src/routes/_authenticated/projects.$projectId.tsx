@@ -205,11 +205,11 @@ function ProjectDetail() {
     enabled: !!project?.project_type,
     queryFn: async () => {
       const key = project!.project_type!;
-      const { data } = await (supabase as any)
-        .from("project_types")
-        .select("id,slug,name,base_tasks")
-        .or(`slug.eq.${key},id.eq.${key}`)
-        .maybeSingle();
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(key);
+      const query = (supabase as any).from("project_types").select("id,slug,name,base_tasks");
+      const { data } = isUuid
+        ? await query.eq("id", key).maybeSingle()
+        : await query.eq("slug", key).maybeSingle();
       return data as { id: string; slug: string | null; name: string; base_tasks: { task_type_id: string }[] } | null;
     },
   });
