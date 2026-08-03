@@ -209,7 +209,7 @@ function InvoicesPage() {
         invoices={invoices as unknown as F2Invoice[]}
         clients={clients}
         projects={projects}
-        onOpen={(id) => setDetailId(id)}
+        onOpen={(id) => navigate({ to: "/invoices/$invoiceId", params: { invoiceId: id } })}
         onNewInvoice={() => setWizardOpen(true)}
         onNewCharge={() => navigate({ to: "/finance", search: { new: 1 } })}
         onExport={() => exportInvoicesCsv(invoices, clientById, projectById)}
