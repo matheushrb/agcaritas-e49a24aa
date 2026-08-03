@@ -83,6 +83,8 @@ function InvoiceDetailPage() {
   const [drafts, setDrafts] = useState<{ id?: string; description: string; amount: string; due_date: string }[]>([]);
   const [removed, setRemoved] = useState<string[]>([]);
   const [pay, setPay] = useState({ date: new Date().toISOString().slice(0, 10), method: "", amount: "" });
+  const editTotal = Math.max(0, drafts.reduce((a, d) => a + (Number(d.amount) || 0), 0) - (Number(form.discount) || 0));
+
 
 
   const { data: invoice } = useQuery<Inv | null>({
