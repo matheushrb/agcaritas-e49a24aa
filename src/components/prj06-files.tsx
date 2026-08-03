@@ -3,7 +3,7 @@ import {
   Search, FolderPlus, UploadCloud, ChevronDown, Folder, Tag, CheckCircle2,
   DollarSign, List, LayoutGrid, ArrowDown, MoreHorizontal, Download,
   ChevronLeft, ChevronRight, Plus, Users, Link2, FileText, FileImage,
-  FileSpreadsheet, FileCode2,
+  FileCode2,
 } from "lucide-react";
 import "@/prj06.css";
 
