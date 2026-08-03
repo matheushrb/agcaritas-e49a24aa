@@ -90,34 +90,19 @@ function FinancePage() {
     },
   });
 
-  const kpis = useMemo(() => {
-    const now = new Date();
-    const monthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
-    let received = 0, pending = 0, overdue = 0, monthTotal = 0;
-    for (const c of charges) {
-      // Rascunhos (fatura aguardando confirmação) e pending_invoice não são lançamentos ainda
-      if (c.status === "draft" || c.status === "pending_invoice") continue;
-      const amt = Number(c.amount ?? 0);
-      if (c.status === "paid") received += amt;
-      if (c.status === "pending") pending += amt;
-      if (c.status === "overdue") overdue += amt;
-      if ((c.due_date ?? "").startsWith(monthKey) && c.status !== "cancelled") monthTotal += amt;
-    }
-    return { received, pending, overdue, monthTotal };
-  }, [charges]);
+  const { data: costs = [] } = useQuery<F1Cost[]>({
+    queryKey: ["project-costs-min"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("project_costs")
+        .select("id,amount,kind,status,description,occurred_on")
+        .order("occurred_on", { ascending: false });
+      if (error) throw error;
+      return (data ?? []) as F1Cost[];
+    },
+  });
 
-  const dre = useMemo(() => {
-    const byMonth: Record<string, { in: number; out: number }> = {};
-    for (const c of charges) {
-      if (c.status === "cancelled") continue;
-      const d = c.paid_at ?? c.due_date;
-      if (!d) continue;
-      const k = d.slice(0, 7);
-      byMonth[k] ??= { in: 0, out: 0 };
-      byMonth[k].in += Number(c.amount ?? 0);
-    }
-    return Object.entries(byMonth).sort(([a], [b]) => b.localeCompare(a)).slice(0, 6);
-  }, [charges]);
+
 
   const createCharge = useMutation({
     mutationFn: async (input: Partial<Charge>) => {
