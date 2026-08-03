@@ -328,7 +328,8 @@ function ProjectDetail() {
   const showTimeline = !!project.has_timeline;
   const showTraffic = !!project.traffic_budget?.enabled;
   const scope = (project.scope_flags ?? {}) as Record<string, unknown>;
-  const showStrategy = ["swot", "personas", "competitors", "roadmap", "kpis", "action_plan"].some((k) => !!scope[k]);
+  // @ts-ignore-unused
+  const _showStrategy = ["swot", "personas", "competitors", "roadmap", "kpis", "action_plan"].some((k) => !!scope[k]);
   const showCampaigns = showTraffic;
 
   const taskRevenue = tasks.reduce((s, t) => {
