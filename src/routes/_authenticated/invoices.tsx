@@ -200,43 +200,17 @@ function InvoicesPage() {
   const projectById = useMemo(() => Object.fromEntries(projects.map(p => [p.id, p])), [projects]);
 
   return (
-    <div className="mx-auto max-w-7xl px-6 py-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold flex items-center gap-2"><Receipt className="h-6 w-6" />Faturas</h1>
-          <p className="text-sm text-muted-foreground">Agrupe cobranças e tarefas em uma fatura única.</p>
-        </div>
-        <Button onClick={() => setWizardOpen(true)}><Plus className="h-4 w-4 mr-1" />Nova fatura</Button>
-      </div>
+    <div className="px-6 py-6">
+      <Fin02Invoices
+        invoices={invoices as unknown as F2Invoice[]}
+        clients={clients}
+        projects={projects}
+        onOpen={(id) => setDetailId(id)}
+        onNewInvoice={() => setWizardOpen(true)}
+        onNewCharge={() => navigate({ to: "/finance", search: { new: 1 } })}
+        onExport={() => exportInvoicesCsv(invoices, clientById, projectById)}
+      />
 
-      <Card className="p-0 overflow-hidden">
-        <div className="grid grid-cols-[110px_1fr_1fr_120px_120px_120px_80px] gap-3 px-4 py-2 text-xs font-medium text-muted-foreground bg-muted/40 border-b">
-          <div>Número</div><div>Cliente</div><div>Projeto</div>
-          <div>Emissão</div><div>Vencimento</div><div className="text-right">Total</div><div className="text-right">Status</div>
-        </div>
-        {invoices.length === 0 && (
-          <div className="p-8 text-center text-sm text-muted-foreground">Nenhuma fatura ainda. Clique em <strong>Nova fatura</strong>.</div>
-        )}
-        {invoices.map(inv => {
-          const total = Number(inv.total ?? inv.amount ?? 0);
-          const meta = STATUS_META[inv.status] ?? STATUS_META.pending;
-          return (
-            <button
-              key={inv.id}
-              onClick={() => setDetailId(inv.id)}
-              className="w-full grid grid-cols-[110px_1fr_1fr_120px_120px_120px_80px] gap-3 px-4 py-3 text-sm items-center hover:bg-muted/40 border-b last:border-b-0 text-left"
-            >
-              <div className="font-mono text-xs">{inv.number?.trim() ? inv.number : <span className="text-muted-foreground italic">— rascunho</span>}</div>
-              <div className="truncate">{inv.client_id ? clientById[inv.client_id]?.name ?? "—" : "—"}</div>
-              <div className="truncate text-muted-foreground">{inv.project_id ? projectById[inv.project_id]?.name ?? "—" : "Múltiplos"}</div>
-              <div className="text-xs text-muted-foreground">{fmtDate(inv.issue_date)}</div>
-              <div className="text-xs text-muted-foreground">{fmtDate(inv.due_date)}</div>
-              <div className="text-right font-medium">{money(total)}</div>
-              <div className="text-right"><Badge variant="secondary" className={cn("text-[10px]", meta.className)}>{meta.label}</Badge></div>
-            </button>
-          );
-        })}
-      </Card>
 
       {wizardOpen && (
         <NewInvoiceWizard
