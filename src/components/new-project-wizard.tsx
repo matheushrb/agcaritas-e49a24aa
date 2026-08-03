@@ -2,105 +2,140 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
-import { Badge } from "@/components/ui/badge";
 import {
-  FolderPlus, ChevronLeft, ChevronRight, Check, Zap, DollarSign,
-  Share2, Target, Rocket, Flag, Sparkles,
+  X, ChevronDown, ChevronRight, ChevronLeft, Check, Info, Plus, Pencil, Trash2,
+  Clock, GripVertical, Save, FolderKanban, Users, DollarSign, ClipboardCheck,
+  CalendarDays, Flag, Zap, FileText, RefreshCcw, CircleDollarSign, Search,
 } from "lucide-react";
-import * as Icons from "lucide-react";
-import { cn } from "@/lib/utils";
+import "@/windows.css";
+
+/* ============================================================
+   Tipos
+   ============================================================ */
+export type ProjectStage = { id: string; name: string; description: string; duration: string; color: string };
+export type ProjectParticipant = {
+  id: string; user_id: string | null; name: string; role: string;
+  department: string; permission: "admin" | "editor" | "collaborator" | "viewer"; load: string;
+};
 
 export type ProjectWizardValue = {
+  /* Etapa 1 */
   name: string;
   client_id: string | null;
   description: string;
   project_type: string;
-  billing_model: "per_task" | "fixed" | "contract" | "monthly";
-  fixed_value: number | null;
-  urgency: "low" | "medium" | "high" | "critical";
+  initial_status: "planning" | "active" | "paused";
+  owner_id: string | null;
+  cost_center: string;
+  create_default_tasks: boolean;
+  /* Etapa 2 */
   start_date: string | null;
   end_date: string | null;
+  urgency: "low" | "medium" | "high" | "critical";
+  recurring: boolean;
+  initial_progress: number;
+  stages: ProjectStage[];
+  /* Etapa 3 */
+  creative_lead_id: string | null;
+  client_contact: string;
+  participants: ProjectParticipant[];
+  notify_members: boolean;
+  allow_finance_view: boolean;
+  /* Etapa 4 */
+  billing_model: "per_task" | "fixed" | "contract" | "monthly";
+  fixed_value: number | null;
+  bill_per_task_default: boolean;
+  bill_per_deliverable: boolean;
+  use_task_type_value: boolean;
+  allow_value_override: boolean;
+  finance_owner_id: string | null;
+  payment_terms: string;
+  due_days: string;
+  finance_notes: string;
+  /* Escopo complementar (preservado do fluxo anterior) */
   tools: string[];
   strategy_enabled: boolean;
   scope_flags: {
-    swot: boolean;
-    personas: boolean;
-    competitors: boolean;
-    roadmap: boolean;
-    kpis: boolean;
-    action_plan: boolean;
+    swot: boolean; personas: boolean; competitors: boolean;
+    roadmap: boolean; kpis: boolean; action_plan: boolean;
   };
   traffic_budget: { enabled: boolean; amount: number | null; platforms: string[] } | null;
   other_budgets: { label: string; amount: number }[];
 };
 
-type CatalogItem = { id: string; name: string; slug: string | null; color: string | null; icon: string | null; category?: string | null };
+type CatalogItem = { id: string; name: string; slug: string | null; color: string | null; icon: string | null; category?: string | null; base_tasks?: any };
+type Person = { id: string; full_name: string; display_name: string | null; role_title: string | null };
 
-const PROJECT_TYPES_FALLBACK = [
-  { value: "marketing", label: "Marketing Digital" },
-];
+const STAGE_COLORS = ["#1769F6", "#16A34A", "#7C3AED", "#F97316", "#0EA5E9", "#EC4899"];
 
 const BILLING_OPTIONS = [
-  { value: "per_task", label: "Por tarefa", desc: "Cada task tem valor próprio", icon: Zap },
-  { value: "fixed", label: "Valor fixo", desc: "Escopo fechado, pagamento único", icon: DollarSign },
-  { value: "contract", label: "Contrato / Proposta", desc: "Vinculado a uma proposta aprovada", icon: Flag },
-  { value: "monthly", label: "Recorrente mensal", desc: "Fee mensal de agência (MRR)", icon: Sparkles },
+  { value: "per_task", label: "Por tarefa", desc: "A receita será formada pelas tarefas e entregáveis faturáveis do projeto.", icon: Zap },
+  { value: "fixed", label: "Valor fixo", desc: "Um valor fechado para todo o projeto.", icon: CircleDollarSign },
+  { value: "contract", label: "Contrato / Proposta", desc: "Vinculado a uma proposta ou contrato comercial.", icon: FileText },
+  { value: "monthly", label: "Recorrente mensal", desc: "Cobrança recorrente em ciclos mensais.", icon: RefreshCcw },
+] as const;
+
+const PRIORITY_OPTIONS = [
+  { value: "low", label: "Baixa" },
+  { value: "medium", label: "Média" },
+  { value: "high", label: "Alta" },
+  { value: "critical", label: "Urgente" },
 ];
 
-const URGENCY = [
-  { value: "low", label: "Baixa", color: "bg-muted text-muted-foreground" },
-  { value: "medium", label: "Média", color: "bg-blue-500/15 text-blue-600 dark:text-blue-400" },
-  { value: "high", label: "Alta", color: "bg-amber-500/15 text-amber-600 dark:text-amber-400" },
-  { value: "critical", label: "Urgente", color: "bg-red-500/15 text-red-600 dark:text-red-400" },
-];
-
-const TRAFFIC_PLATFORMS = ["Meta", "Google", "TikTok", "LinkedIn", "YouTube", "Pinterest", "X (Twitter)"];
-
-const STRATEGY_ITEMS: { key: keyof ProjectWizardValue["scope_flags"]; label: string; desc: string }[] = [
-  { key: "swot", label: "Análise SWOT", desc: "Forças, Fraquezas, Oportunidades e Ameaças" },
-  { key: "personas", label: "Personas", desc: "Perfis de público-alvo detalhados" },
-  { key: "competitors", label: "Concorrentes", desc: "Benchmarking do mercado" },
-  { key: "roadmap", label: "Roadmap", desc: "Cronograma estratégico de execução" },
-  { key: "kpis", label: "KPIs & Metas", desc: "Indicadores de performance por área" },
-  { key: "action_plan", label: "Plano de Ação", desc: "Iniciativas priorizadas e responsáveis" },
+const STRATEGY_ITEMS: { key: keyof ProjectWizardValue["scope_flags"]; label: string }[] = [
+  { key: "swot", label: "Análise SWOT" },
+  { key: "personas", label: "Personas" },
+  { key: "competitors", label: "Concorrentes" },
+  { key: "roadmap", label: "Roadmap" },
+  { key: "kpis", label: "KPIs & Metas" },
+  { key: "action_plan", label: "Plano de ação" },
 ];
 
 const STEPS = [
-  { id: 1, title: "Escopo",       icon: FolderPlus },
-  { id: 2, title: "Faturamento",  icon: DollarSign },
-  { id: 3, title: "Plataformas",  icon: Share2 },
-  { id: 4, title: "Verbas",       icon: Target },
-  { id: 5, title: "Estratégia",   icon: Rocket },
+  { id: 1, title: "Informações básicas", desc: "Dados principais do projeto", icon: FolderKanban },
+  { id: 2, title: "Prazos e planejamento", desc: "Datas, prazos e etapas", icon: CalendarDays },
+  { id: 3, title: "Equipe", desc: "Responsáveis e participantes", icon: Users },
+  { id: 4, title: "Financeiro", desc: "Custos, receitas e condições", icon: DollarSign },
+  { id: 5, title: "Revisão", desc: "Confirme os dados do projeto", icon: ClipboardCheck },
 ];
 
-const defaultValue: ProjectWizardValue = {
-  name: "", client_id: null, description: "",
-  project_type: "", billing_model: "fixed",
-  fixed_value: null, urgency: "medium",
-  start_date: null, end_date: null,
-  tools: [],
-  strategy_enabled: false,
+export const defaultProjectWizardValue: ProjectWizardValue = {
+  name: "", client_id: null, description: "", project_type: "",
+  initial_status: "active", owner_id: null, cost_center: "", create_default_tasks: true,
+  start_date: null, end_date: null, urgency: "medium", recurring: false,
+  initial_progress: 0, stages: [],
+  creative_lead_id: null, client_contact: "", participants: [],
+  notify_members: true, allow_finance_view: true,
+  billing_model: "per_task", fixed_value: null,
+  bill_per_task_default: true, bill_per_deliverable: true,
+  use_task_type_value: false, allow_value_override: true,
+  finance_owner_id: null, payment_terms: "30 dias", due_days: "30 dias", finance_notes: "",
+  tools: [], strategy_enabled: false,
   scope_flags: { swot: false, personas: false, competitors: false, roadmap: false, kpis: false, action_plan: false },
   traffic_budget: { enabled: false, amount: null, platforms: [] },
   other_budgets: [],
 };
 
+const initials = (n: string) => n.trim().split(/\s+/).slice(0, 2).map(p => p[0]?.toUpperCase() ?? "").join("");
+const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+const fmtDate = (d: string | null) => (d ? new Date(`${d}T00:00:00`).toLocaleDateString("pt-BR") : "—");
+
+/* ============================================================
+   Componente principal
+   ============================================================ */
 export function NewProjectWizard({
-  open, onOpenChange, clients, onCreate, pending,
+  open, onOpenChange, clients, onCreate, pending, onSaveDraft,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   clients: { id: string; name: string }[];
   onCreate: (v: ProjectWizardValue) => void;
   pending: boolean;
+  onSaveDraft?: (v: ProjectWizardValue) => void;
 }) {
   const [step, setStep] = useState(1);
-  const [v, setV] = useState<ProjectWizardValue>(defaultValue);
+  const [v, setV] = useState<ProjectWizardValue>(defaultProjectWizardValue);
+  const [touched, setTouched] = useState(false);
 
   const { data: projectTypes = [] } = useQuery({
     queryKey: ["project_types"],
@@ -116,457 +151,892 @@ export function NewProjectWizard({
       return (data ?? []) as CatalogItem[];
     },
   });
-
-  const typeOptions = projectTypes.length
-    ? projectTypes.map(t => ({ value: t.slug || t.id, label: t.name }))
-    : PROJECT_TYPES_FALLBACK;
-
-  const reset = () => { setStep(1); setV(defaultValue); };
-  const handleOpen = (o: boolean) => { onOpenChange(o); if (!o) reset(); };
-
-  const canNext = step === 1 ? v.name.trim().length > 0 : true;
-  const isLast = step === STEPS.length;
-
-  const patch = <K extends keyof ProjectWizardValue>(k: K, val: ProjectWizardValue[K]) => setV(p => ({ ...p, [k]: val }));
-  const toggleTool = (t: string) => setV(p => ({
-    ...p, tools: p.tools.includes(t) ? p.tools.filter(x => x !== t) : [...p.tools, t],
-  }));
-  const togglePlatform = (t: string) => setV(p => {
-    const tb = p.traffic_budget ?? { enabled: false, amount: null, platforms: [] };
-    return {
-      ...p,
-      traffic_budget: {
-        ...tb,
-        platforms: tb.platforms.includes(t) ? tb.platforms.filter(x => x !== t) : [...tb.platforms, t],
-      },
-    };
+  const { data: people = [] } = useQuery({
+    queryKey: ["profiles_people"],
+    queryFn: async () => {
+      const { data } = await supabase.from("profiles").select("id,full_name,display_name,role_title").order("full_name");
+      return (data ?? []) as Person[];
+    },
   });
+
+  const typeOptions = projectTypes.map(t => ({ value: t.slug || t.id, label: t.name, raw: t }));
+  const selectedType = typeOptions.find(t => t.value === v.project_type);
+  const personName = (id: string | null) => people.find(p => p.id === id)?.display_name || people.find(p => p.id === id)?.full_name || "—";
+  const clientName = clients.find(c => c.id === v.client_id)?.name ?? "—";
+
+  const patch = <K extends keyof ProjectWizardValue>(k: K, val: ProjectWizardValue[K]) => {
+    setTouched(true);
+    setV(p => ({ ...p, [k]: val }));
+  };
+
+  const reset = () => { setStep(1); setV(defaultProjectWizardValue); setTouched(false); };
+  const handleOpen = (o: boolean) => { onOpenChange(o); if (!o) reset(); };
+  const requestClose = () => {
+    if (touched && !window.confirm("Existem alterações não salvas. Deseja fechar mesmo assim?")) return;
+    handleOpen(false);
+  };
+
+  /* Carrega etapas do tipo de projeto selecionado */
+  const applyTypeStages = (typeValue: string) => {
+    const t = typeOptions.find(o => o.value === typeValue)?.raw;
+    const base = Array.isArray(t?.base_tasks) ? (t!.base_tasks as any[]) : [];
+    const stages: ProjectStage[] = base.map((b: any, i: number) => ({
+      id: `s-${i}-${Math.random().toString(36).slice(2, 7)}`,
+      name: typeof b === "string" ? b : (b?.name ?? b?.title ?? `Etapa ${i + 1}`),
+      description: typeof b === "string" ? "" : (b?.description ?? ""),
+      duration: typeof b === "string" ? "1 dia" : (b?.duration ?? "1 dia"),
+      color: STAGE_COLORS[i % STAGE_COLORS.length],
+    }));
+    setV(p => ({ ...p, project_type: typeValue, stages: stages.length ? stages : p.stages }));
+    setTouched(true);
+  };
+
+  const errors = {
+    name: !v.name.trim(),
+    client: !v.client_id,
+    type: !v.project_type,
+    owner: !v.owner_id,
+    dates: !v.start_date || !v.end_date,
+  };
+  const step1Ok = !errors.name && !errors.client && !errors.type && !errors.owner;
+  const step2Ok = !errors.dates;
+  const allOk = step1Ok && step2Ok;
+
+  const canGo = (target: number) => {
+    if (target <= step) return true;
+    if (target >= 2 && !step1Ok) return false;
+    if (target >= 3 && !step2Ok) return false;
+    return true;
+  };
+  const next = () => setStep(s => Math.min(5, s + 1));
+  const back = () => setStep(s => Math.max(1, s - 1));
+
+  const nextDisabled = (step === 1 && !step1Ok) || (step === 2 && !step2Ok);
 
   return (
     <Dialog open={open} onOpenChange={handleOpen}>
-      <DialogContent className="p-0 gap-0 rounded-3xl overflow-hidden w-[calc(100vw-2rem)] max-w-[980px] max-h-[90vh] flex flex-col sm:max-w-[980px]">
-        {/* Header */}
-        <div className="px-6 pt-6 pb-4 border-b border-border bg-blue-500/5">
-          <div className="flex items-start gap-3">
-            <div className="grid h-10 w-10 place-items-center rounded-xl bg-background shadow-sm">
-              <FolderPlus className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-            </div>
+      <DialogContent
+        className="cw p-0 gap-0 border-0 overflow-hidden [&>button:last-of-type]:hidden w-[calc(100vw-2rem)] max-w-[1105px] sm:max-w-[1105px]"
+        style={{ borderRadius: 14, boxShadow: "0 24px 60px rgba(15,25,40,.20)" }}
+      >
+        <div className="cw-window">
+          {/* HEADER */}
+          <div className="cw-header">
             <div className="min-w-0 flex-1">
-              <div className="text-[11px] uppercase tracking-wider font-medium text-blue-600 dark:text-blue-400">Projetos</div>
-              <DialogTitle className="text-lg font-semibold">Novo projeto</DialogTitle>
-              <p className="text-sm text-muted-foreground mt-0.5">
-                {STEPS[step - 1].title} — passo {step} de {STEPS.length}
-              </p>
+              <DialogTitle asChild><h2>Novo Projeto</h2></DialogTitle>
+              <p>Crie um novo projeto em 5 etapas simples</p>
+            </div>
+            <button type="button" className="cw-close" onClick={requestClose} aria-label="Fechar"><X size={18} /></button>
+          </div>
+
+          <div className="cw-body">
+            {/* STEPPER */}
+            <div className="cw-stepper">
+              {STEPS.map((s, i) => {
+                const active = s.id === step;
+                const done = s.id < step;
+                return (
+                  <button
+                    key={s.id}
+                    type="button"
+                    disabled={!canGo(s.id)}
+                    onClick={() => canGo(s.id) && setStep(s.id)}
+                    className={`cw-step${active ? " is-active" : ""}${done ? " is-done" : ""}`}
+                  >
+                    {i < STEPS.length - 1 && <span className="cw-step-line" />}
+                    <span className="cw-step-num">{done ? <Check size={13} /> : s.id}</span>
+                    <span className="min-w-0">
+                      <span className="cw-step-title block">{s.title}</span>
+                      <span className="cw-step-desc block">{s.desc}</span>
+                    </span>
+                  </button>
+                );
+              })}
+              <div className="cw-help">
+                <Info size={15} style={{ color: "var(--cw-cobalt)", flexShrink: 0 }} />
+                <div>
+                  <strong>Precisando de ajuda?</strong>
+                  <span>Você pode salvar o rascunho e continuar depois.</span>
+                </div>
+              </div>
+            </div>
+
+            {/* CONTEÚDO */}
+            <div className="cw-content">
+              {step === 1 && (
+                <StepBasics
+                  v={v} patch={patch} errors={errors} clients={clients}
+                  typeOptions={typeOptions} people={people} applyTypeStages={applyTypeStages}
+                />
+              )}
+              {step === 2 && <StepPlanning v={v} patch={patch} errors={errors} selectedTypeLabel={selectedType?.label ?? null} />}
+              {step === 3 && <StepTeam v={v} patch={patch} people={people} />}
+              {step === 4 && <StepFinance v={v} patch={patch} people={people} platforms={platforms} />}
+              {step === 5 && (
+                <StepReview
+                  v={v} allOk={allOk} goTo={setStep}
+                  clientName={clientName} typeLabel={selectedType?.label ?? "—"} personName={personName}
+                />
+              )}
             </div>
           </div>
 
-          {/* Stepper */}
-          <div className="mt-5 flex items-center gap-2">
-            {STEPS.map((s, i) => {
-              const Icon = s.icon;
-              const active = s.id === step;
-              const done = s.id < step;
-              return (
-                <div key={s.id} className="flex items-center gap-2 flex-1">
-                  <button
-                    type="button"
-                    onClick={() => setStep(s.id)}
-                    className={cn(
-                      "flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-medium transition-colors",
-                      active ? "bg-primary text-primary-foreground" :
-                      done ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400" :
-                      "bg-muted text-muted-foreground",
-                    )}
-                  >
-                    {done ? <Check className="h-3.5 w-3.5" /> : <Icon className="h-3.5 w-3.5" />}
-                    <span className="hidden sm:inline">{s.title}</span>
-                  </button>
-                  {i < STEPS.length - 1 && <div className="flex-1 h-px bg-border" />}
-                </div>
-              );
-            })}
+          {/* RODAPÉ */}
+          <div className="cw-footer">
+            <div className="cw-foot-group">
+              <button type="button" className="cw-btn cw-btn-secondary" onClick={requestClose}>Cancelar</button>
+              {step > 1 && onSaveDraft && (
+                <button type="button" className="cw-btn cw-btn-secondary" onClick={() => onSaveDraft(v)}>
+                  <Save /> Salvar rascunho
+                </button>
+              )}
+            </div>
+            <div className="cw-foot-group">
+              <button type="button" className="cw-btn cw-btn-secondary" onClick={back} disabled={step === 1}>
+                <ChevronLeft /> Voltar
+              </button>
+              {step < 5 ? (
+                <button type="button" className="cw-btn cw-btn-primary" onClick={next} disabled={nextDisabled}>
+                  Continuar <ChevronRight />
+                </button>
+              ) : (
+                <button type="button" className="cw-btn cw-btn-primary" disabled={pending || !allOk} onClick={() => onCreate(v)}>
+                  {pending ? "Criando…" : "Criar projeto"} <Check />
+                </button>
+              )}
+            </div>
           </div>
-        </div>
-
-        {/* Body */}
-        <div className="flex-1 min-h-0 overflow-auto px-6 py-5">
-          {step === 1 && <StepScope v={v} patch={patch} clients={clients} typeOptions={typeOptions} />}
-          {step === 2 && <StepBilling v={v} patch={patch} />}
-          {step === 3 && <StepTools v={v} toggleTool={toggleTool} platforms={platforms} />}
-          {step === 4 && <StepBudgets v={v} patch={patch} togglePlatform={togglePlatform} />}
-          {step === 5 && <StepStrategy v={v} patch={patch} typeOptions={typeOptions} />}
-        </div>
-
-        {/* Footer */}
-        <div className="border-t border-border px-6 py-3 flex items-center justify-between bg-background">
-          <Button variant="ghost" className="rounded-full gap-1.5" disabled={step === 1}
-            onClick={() => setStep(s => Math.max(1, s - 1))}>
-            <ChevronLeft className="h-4 w-4" /> Voltar
-          </Button>
-          <div className="text-xs text-muted-foreground hidden sm:block">
-            {v.name || "Sem título"}{v.project_type ? ` · ${typeOptions.find(t => t.value === v.project_type)?.label ?? ""}` : ""}
-          </div>
-          {isLast ? (
-            <Button className="rounded-full gap-1.5" disabled={pending || !v.name.trim()}
-              onClick={() => onCreate(v)}>
-              <Check className="h-4 w-4" /> {pending ? "Criando…" : "Criar projeto"}
-            </Button>
-          ) : (
-            <Button className="rounded-full gap-1.5" disabled={!canNext}
-              onClick={() => setStep(s => Math.min(STEPS.length, s + 1))}>
-              Próximo <ChevronRight className="h-4 w-4" />
-            </Button>
-          )}
         </div>
       </DialogContent>
     </Dialog>
   );
 }
 
-/* ============================================================ */
-
-function Label({ children }: { children: React.ReactNode }) {
-  return <label className="text-xs font-medium text-muted-foreground">{children}</label>;
-}
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+/* ============================================================
+   Primitivos
+   ============================================================ */
+function Field({ label, required, hint, error, children, className = "" }: {
+  label: string; required?: boolean; hint?: string; error?: string; children: React.ReactNode; className?: string;
+}) {
   return (
-    <div className="space-y-3">
-      <div className="text-[11px] uppercase tracking-wider font-medium text-muted-foreground">{title}</div>
+    <div className={`cw-field ${className}`}>
+      <span className="cw-label">{label}{required && <span className="req">*</span>}</span>
       {children}
+      {error ? <span className="cw-error">{error}</span> : hint ? <span className="cw-hint">{hint}</span> : null}
     </div>
   );
 }
 
-function StepScope({ v, patch, clients, typeOptions }: {
-  v: ProjectWizardValue;
-  patch: <K extends keyof ProjectWizardValue>(k: K, val: ProjectWizardValue[K]) => void;
+function Sel({ value, onChange, children, invalid }: {
+  value: string; onChange: (v: string) => void; children: React.ReactNode; invalid?: boolean;
+}) {
+  return (
+    <div className="cw-select-wrap">
+      <select className={`cw-select${invalid ? " is-error" : ""}`} value={value} onChange={e => onChange(e.target.value)}>
+        {children}
+      </select>
+      <ChevronDown />
+    </div>
+  );
+}
+
+function Switch({ on, onToggle }: { on: boolean; onToggle: () => void }) {
+  return <button type="button" role="switch" aria-checked={on} className={`cw-switch${on ? " is-on" : ""}`} onClick={onToggle} />;
+}
+
+function SwitchRow({ title, desc, on, onToggle }: { title: string; desc?: string; on: boolean; onToggle: () => void }) {
+  return (
+    <div className="cw-switch-row">
+      <div>
+        <div className="cw-sw-title">{title}</div>
+        {desc && <div className="cw-sw-desc">{desc}</div>}
+      </div>
+      <Switch on={on} onToggle={onToggle} />
+    </div>
+  );
+}
+
+type Patch = <K extends keyof ProjectWizardValue>(k: K, val: ProjectWizardValue[K]) => void;
+
+/* ============================================================
+   NP-01 — Informações básicas
+   ============================================================ */
+function StepBasics({ v, patch, errors, clients, typeOptions, people, applyTypeStages }: {
+  v: ProjectWizardValue; patch: Patch; errors: Record<string, boolean>;
   clients: { id: string; name: string }[];
   typeOptions: { value: string; label: string }[];
+  people: Person[];
+  applyTypeStages: (t: string) => void;
 }) {
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-      <div className="lg:col-span-2 space-y-4">
-        <div className="space-y-1.5">
-          <Label>Nome do projeto</Label>
-          <Input autoFocus value={v.name} onChange={e => patch("name", e.target.value)}
-            placeholder="Ex.: Rebrand Bella Estética Q2/2026" />
-        </div>
-        <div className="space-y-1.5">
-          <Label>Descrição / objetivo</Label>
-          <Textarea rows={5} value={v.description} onChange={e => patch("description", e.target.value)}
-            placeholder="Escopo, entregáveis principais e resultado esperado." />
-        </div>
-        <div className="grid grid-cols-2 gap-3">
-          <div className="space-y-1.5">
-            <Label>Início</Label>
-            <Input type="date" value={v.start_date ?? ""} onChange={e => patch("start_date", e.target.value || null)} />
+    <>
+      <h3>Informações básicas</h3>
+      <p className="cw-sub">Preencha os dados principais do seu projeto.</p>
+
+      <div className="cw-grid cw-grid-2">
+        <Field label="Nome do projeto" required>
+          <input
+            className={`cw-input${errors.name ? " is-error" : ""}`}
+            maxLength={100}
+            autoFocus
+            value={v.name}
+            onChange={e => patch("name", e.target.value)}
+            placeholder="Ex.: Reforma Clínica Odontológica"
+          />
+          <span className="cw-count">{v.name.length} / 100</span>
+        </Field>
+
+        <div className="cw-field">
+          <span className="cw-label">Cliente<span className="req">*</span></span>
+          <div className="cw-select-wrap">
+            <Search style={{ position: "absolute", right: 32, top: "50%", transform: "translateY(-50%)", width: 14, height: 14, color: "var(--cw-muted)", pointerEvents: "none" }} />
+            <select
+              className={`cw-select${errors.client ? " is-error" : ""}`}
+              value={v.client_id ?? ""}
+              onChange={e => patch("client_id", e.target.value || null)}
+            >
+              <option value="">Selecione ou busque o cliente</option>
+              {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+            </select>
+            <ChevronDown />
           </div>
-          <div className="space-y-1.5">
-            <Label>Prazo final</Label>
-            <Input type="date" value={v.end_date ?? ""} onChange={e => patch("end_date", e.target.value || null)} />
+          <div style={{ textAlign: "right" }}>
+            <a className="cw-link" href="/clients" style={{ display: "inline-flex" }}>+ Novo cliente</a>
           </div>
         </div>
+
+        <Field label="Tipo de projeto" required hint="Gerencie os tipos em Configurações → Tipos de Projeto.">
+          <Sel value={v.project_type} onChange={applyTypeStages} invalid={errors.type}>
+            <option value="">Selecione o tipo de projeto</option>
+            {typeOptions.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+          </Sel>
+        </Field>
+
+        <Field label="Status inicial" required>
+          <Sel value={v.initial_status} onChange={val => patch("initial_status", val as ProjectWizardValue["initial_status"])}>
+            <option value="active">Ativo</option>
+            <option value="planning">Planejamento</option>
+            <option value="paused">Pausado</option>
+          </Sel>
+        </Field>
+
+        <div className="cw-field cw-span-2">
+          <span className="cw-label">Descrição do projeto</span>
+          <textarea
+            className="cw-textarea"
+            rows={4}
+            maxLength={500}
+            value={v.description}
+            onChange={e => patch("description", e.target.value)}
+            placeholder="Descreva o objetivo, escopo e observações importantes..."
+          />
+          <span className="cw-count">{v.description.length} / 500</span>
+        </div>
+
+        <Field label="Responsável principal" required>
+          <Sel value={v.owner_id ?? ""} onChange={val => patch("owner_id", val || null)} invalid={errors.owner}>
+            <option value="">Selecione o responsável</option>
+            {people.map(p => <option key={p.id} value={p.id}>{p.display_name || p.full_name}</option>)}
+          </Sel>
+        </Field>
+
+        <Field label="Centro de custo">
+          <input className="cw-input" value={v.cost_center} onChange={e => patch("cost_center", e.target.value)} placeholder="Selecione o centro de custo" />
+        </Field>
       </div>
-      <div className="space-y-4">
-        <div className="space-y-1.5">
-          <Label>Cliente</Label>
-          <Select value={v.client_id ?? "none"} onValueChange={val => patch("client_id", val === "none" ? null : val)}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="none">Sem cliente (interno)</SelectItem>
-              {clients.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
-            </SelectContent>
-          </Select>
+
+      <label className="flex items-center gap-2 mt-4" style={{ fontSize: 12 }}>
+        <input type="checkbox" checked={v.create_default_tasks} onChange={e => patch("create_default_tasks", e.target.checked)} />
+        Criar tarefas padrão para este projeto
+      </label>
+
+      <div className="cw-section">
+        <div className="cw-section-head">
+          <div>
+            <h4>Escopo estratégico</h4>
+            <p>Ative os blocos que serão liberados na aba Estratégia do projeto.</p>
+          </div>
+          <Switch on={v.strategy_enabled} onToggle={() => patch("strategy_enabled", !v.strategy_enabled)} />
         </div>
-        <div className="space-y-1.5">
-          <Label>Tipo de projeto</Label>
-          <Select value={v.project_type || undefined} onValueChange={val => patch("project_type", val)}>
-            <SelectTrigger><SelectValue placeholder="Selecione…" /></SelectTrigger>
-            <SelectContent>
-              {typeOptions.map(t => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}
-            </SelectContent>
-          </Select>
-          <p className="text-[11px] text-muted-foreground">Gerencie os tipos em <b>Configurações → Tipos de Projeto</b>.</p>
-        </div>
-        <div className="space-y-2">
-          <Label>Urgência</Label>
+        {v.strategy_enabled && (
           <div className="flex flex-wrap gap-2">
-            {URGENCY.map(u => (
-              <button
-                key={u.value}
-                type="button"
-                onClick={() => patch("urgency", u.value as ProjectWizardValue["urgency"])}
-                className={cn(
-                  "rounded-full px-3 py-1 text-xs font-medium border transition-colors",
-                  v.urgency === u.value ? "border-primary bg-primary/10 text-primary" : "border-border hover:bg-muted",
-                )}
-              >{u.label}</button>
-            ))}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function StepBilling({ v, patch }: {
-  v: ProjectWizardValue;
-  patch: <K extends keyof ProjectWizardValue>(k: K, val: ProjectWizardValue[K]) => void;
-}) {
-  return (
-    <div className="space-y-5">
-      <Section title="Como este projeto será faturado?">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          {BILLING_OPTIONS.map(opt => {
-            const Icon = opt.icon;
-            const active = v.billing_model === opt.value;
-            return (
-              <button
-                key={opt.value}
-                type="button"
-                onClick={() => patch("billing_model", opt.value as ProjectWizardValue["billing_model"])}
-                className={cn(
-                  "flex items-start gap-3 rounded-2xl border p-4 text-left transition-all",
-                  active ? "border-primary bg-primary/5 shadow-sm" : "border-border hover:bg-muted/50",
-                )}
-              >
-                <div className={cn("grid h-10 w-10 place-items-center rounded-xl shrink-0",
-                  active ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground")}>
-                  <Icon className="h-4 w-4" />
-                </div>
-                <div className="min-w-0">
-                  <div className="font-medium">{opt.label}</div>
-                  <div className="text-xs text-muted-foreground mt-0.5">{opt.desc}</div>
-                </div>
-              </button>
-            );
-          })}
-        </div>
-      </Section>
-
-      {(v.billing_model === "fixed" || v.billing_model === "monthly") && (
-        <div className="space-y-1.5 max-w-xs">
-          <Label>{v.billing_model === "fixed" ? "Valor total (R$)" : "Fee mensal (R$)"}</Label>
-          <Input type="number" step="0.01" value={v.fixed_value ?? ""}
-            onChange={e => patch("fixed_value", e.target.value ? Number(e.target.value) : null)}
-            placeholder="0,00" />
-        </div>
-      )}
-    </div>
-  );
-}
-
-function StepTools({ v, toggleTool, platforms }: {
-  v: ProjectWizardValue;
-  toggleTool: (t: string) => void;
-  platforms: CatalogItem[];
-}) {
-  const groups: Record<string, CatalogItem[]> = {};
-  platforms.forEach(p => {
-    const k = p.category || "Outros";
-    (groups[k] ??= []).push(p);
-  });
-  return (
-    <Section title="Plataformas usadas neste projeto">
-      <p className="text-xs text-muted-foreground -mt-1">
-        Selecione as redes, canais e mídias envolvidas. Gerencie a lista em <b>Configurações → Plataformas</b>.
-      </p>
-      {platforms.length === 0 ? (
-        <div className="text-sm text-muted-foreground py-8 text-center border border-dashed rounded-xl">
-          Nenhuma plataforma cadastrada ainda.
-        </div>
-      ) : (
-        <div className="space-y-4">
-          {Object.entries(groups).map(([cat, items]) => (
-            <div key={cat}>
-              <div className="text-[11px] uppercase tracking-wider font-medium text-muted-foreground mb-2">{cat}</div>
-              <div className="flex flex-wrap gap-2">
-                {items.map(p => {
-                  const Icon = (p.icon && (Icons as any)[p.icon]) || Icons.Circle;
-                  const on = v.tools.includes(p.name);
-                  const iconUrl = (p as any).icon_url as string | undefined;
-                  return (
-                    <button
-                      key={p.id}
-                      type="button"
-                      onClick={() => toggleTool(p.name)}
-                      className={cn(
-                        "rounded-full pl-1 pr-3 py-1 text-xs font-medium border transition-colors flex items-center gap-1.5",
-                        on ? "border-primary bg-primary text-primary-foreground" : "border-border hover:bg-muted",
-                      )}
-                      style={on ? undefined : { color: p.color ?? undefined, borderColor: (p.color ?? "") + "66" }}
-                    >
-                      <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-background overflow-hidden shrink-0">
-                        {iconUrl ? (
-                          <img src={iconUrl} alt="" className="h-[70%] w-[70%] object-contain" />
-                        ) : (
-                          <Icon className="h-3.5 w-3.5" style={{ color: p.color ?? undefined }} />
-                        )}
-                      </span>
-                      {p.name}
-                    </button>
-                  );
-                })}
-
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-    </Section>
-  );
-}
-
-function StepBudgets({ v, patch, togglePlatform }: {
-  v: ProjectWizardValue;
-  patch: <K extends keyof ProjectWizardValue>(k: K, val: ProjectWizardValue[K]) => void;
-  togglePlatform: (t: string) => void;
-}) {
-  const tb = v.traffic_budget ?? { enabled: false, amount: null, platforms: [] };
-  const addOther = () => patch("other_budgets", [...v.other_budgets, { label: "", amount: 0 }]);
-  const updateOther = (i: number, key: "label" | "amount", val: string | number) => {
-    const arr = [...v.other_budgets];
-    (arr[i] as any)[key] = val;
-    patch("other_budgets", arr);
-  };
-  const removeOther = (i: number) => patch("other_budgets", v.other_budgets.filter((_, x) => x !== i));
-
-  return (
-    <div className="space-y-6">
-      <Section title="Verba de tráfego pago">
-        <div className="rounded-2xl border border-border p-4">
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <div className="font-medium text-sm">Este projeto terá investimento em mídia paga?</div>
-              <p className="text-xs text-muted-foreground">Ative para definir orçamento e plataformas.</p>
-            </div>
-            <Switch checked={tb.enabled}
-              onCheckedChange={c => patch("traffic_budget", { ...tb, enabled: c })} />
-          </div>
-
-          {tb.enabled && (
-            <div className="mt-4 space-y-3">
-              <div className="space-y-1.5 max-w-xs">
-                <Label>Verba mensal estimada (R$)</Label>
-                <Input type="number" step="0.01" value={tb.amount ?? ""}
-                  onChange={e => patch("traffic_budget", { ...tb, amount: e.target.value ? Number(e.target.value) : null })}
-                  placeholder="0,00" />
-              </div>
-              <div className="space-y-2">
-                <Label>Plataformas</Label>
-                <div className="flex flex-wrap gap-2">
-                  {TRAFFIC_PLATFORMS.map(p => {
-                    const on = tb.platforms.includes(p);
-                    return (
-                      <button
-                        key={p}
-                        type="button"
-                        onClick={() => togglePlatform(p)}
-                        className={cn(
-                          "rounded-full px-3 py-1 text-xs font-medium border",
-                          on ? "border-primary bg-primary/10 text-primary" : "border-border hover:bg-muted",
-                        )}
-                      >{p}</button>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-      </Section>
-
-      <Section title="Outras verbas (produção, freelas, licenças, viagens…)">
-        <div className="space-y-2">
-          {v.other_budgets.map((ob, i) => (
-            <div key={i} className="flex items-center gap-2">
-              <Input placeholder="Ex.: Produção fotográfica"
-                value={ob.label} onChange={e => updateOther(i, "label", e.target.value)} />
-              <Input type="number" step="0.01" placeholder="Valor" className="w-32"
-                value={ob.amount || ""} onChange={e => updateOther(i, "amount", Number(e.target.value))} />
-              <Button type="button" variant="ghost" className="rounded-full" onClick={() => removeOther(i)}>×</Button>
-            </div>
-          ))}
-          <Button type="button" variant="outline" className="rounded-full gap-1" onClick={addOther}>
-            + Adicionar verba
-          </Button>
-        </div>
-      </Section>
-    </div>
-  );
-}
-
-function StepStrategy({ v, patch, typeOptions }: {
-  v: ProjectWizardValue;
-  patch: <K extends keyof ProjectWizardValue>(k: K, val: ProjectWizardValue[K]) => void;
-  typeOptions: { value: string; label: string }[];
-}) {
-  const toggle = (key: keyof ProjectWizardValue["scope_flags"]) =>
-    patch("scope_flags", { ...v.scope_flags, [key]: !v.scope_flags[key] });
-
-  return (
-    <div className="space-y-4">
-      <div className="rounded-2xl border border-border p-4 flex items-center justify-between gap-4">
-        <div>
-          <div className="font-medium text-sm">Este projeto terá planejamento estratégico?</div>
-          <p className="text-xs text-muted-foreground">Ative para escolher os artefatos (SWOT, Personas, KPIs…) que virarão abas do projeto.</p>
-        </div>
-        <Switch
-          checked={v.strategy_enabled}
-          onCheckedChange={c => {
-            patch("strategy_enabled", c);
-            if (!c) patch("scope_flags", { swot: false, personas: false, competitors: false, roadmap: false, kpis: false, action_plan: false });
-          }}
-        />
-      </div>
-
-      {v.strategy_enabled && (
-        <Section title="Artefatos de planejamento estratégico">
-          <p className="text-xs text-muted-foreground -mt-1">Cada item ativado vira uma aba na página do projeto.</p>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {STRATEGY_ITEMS.map(item => {
-              const on = v.scope_flags[item.key];
+            {STRATEGY_ITEMS.map(it => {
+              const on = v.scope_flags[it.key];
               return (
                 <button
-                  key={item.key}
+                  key={it.key}
                   type="button"
-                  onClick={() => toggle(item.key)}
-                  className={cn(
-                    "flex items-start gap-3 rounded-2xl border p-4 text-left transition-all",
-                    on ? "border-primary bg-primary/5" : "border-border hover:bg-muted/50",
-                  )}
+                  className={`cw-chip${on ? "" : " is-neutral"}`}
+                  onClick={() => patch("scope_flags", { ...v.scope_flags, [it.key]: !on })}
                 >
-                  <div className={cn(
-                    "mt-0.5 h-5 w-5 rounded-md border grid place-items-center shrink-0",
-                    on ? "bg-primary border-primary text-primary-foreground" : "border-border",
-                  )}>{on && <Check className="h-3 w-3" />}</div>
-                  <div className="min-w-0">
-                    <div className="font-medium text-sm">{item.label}</div>
-                    <div className="text-xs text-muted-foreground mt-0.5">{item.desc}</div>
-                  </div>
+                  {on && <Check size={12} />} {it.label}
                 </button>
               );
             })}
           </div>
-        </Section>
-      )}
+        )}
+      </div>
+    </>
+  );
+}
 
-      <div className="rounded-2xl border border-border p-4 bg-muted/30">
-        <div className="text-[11px] uppercase tracking-wider text-muted-foreground mb-2">Resumo do projeto</div>
-        <div className="text-sm font-semibold">{v.name || "Sem título"}</div>
-        <div className="text-xs text-muted-foreground mt-1 flex flex-wrap gap-1">
-          {v.project_type && <Badge variant="outline" className="rounded-full">{typeOptions.find(t => t.value === v.project_type)?.label ?? v.project_type}</Badge>}
-          <Badge variant="outline" className="rounded-full">{BILLING_OPTIONS.find(b => b.value === v.billing_model)?.label}</Badge>
-          <Badge variant="outline" className="rounded-full">{URGENCY.find(u => u.value === v.urgency)?.label}</Badge>
-          {v.tools.length > 0 && <Badge variant="outline" className="rounded-full">{v.tools.length} plataformas</Badge>}
-          {v.traffic_budget?.enabled && <Badge variant="outline" className="rounded-full">Tráfego pago</Badge>}
-          {v.strategy_enabled && Object.values(v.scope_flags).some(Boolean) && (
-            <Badge variant="outline" className="rounded-full">
-              {Object.values(v.scope_flags).filter(Boolean).length} artefatos estratégicos
-            </Badge>
-          )}
+/* ============================================================
+   NP-02 — Prazos e planejamento
+   ============================================================ */
+function StepPlanning({ v, patch, errors, selectedTypeLabel }: {
+  v: ProjectWizardValue; patch: Patch; errors: Record<string, boolean>; selectedTypeLabel: string | null;
+}) {
+  const [editing, setEditing] = useState<string | null>(null);
+
+  const addStage = () => {
+    patch("stages", [...v.stages, {
+      id: `s-${Date.now()}`, name: "Nova etapa", description: "", duration: "1 dia",
+      color: STAGE_COLORS[v.stages.length % STAGE_COLORS.length],
+    }]);
+  };
+  const updStage = (id: string, p: Partial<ProjectStage>) =>
+    patch("stages", v.stages.map(s => (s.id === id ? { ...s, ...p } : s)));
+  const delStage = (id: string) => patch("stages", v.stages.filter(s => s.id !== id));
+
+  return (
+    <>
+      <h3>Prazos e planejamento</h3>
+      <p className="cw-sub">Defina as datas, prioridade e as etapas que compõem este projeto.</p>
+
+      <div className="cw-grid cw-grid-4">
+        <Field label="Data de início" required>
+          <input type="date" className={`cw-input${errors.dates && !v.start_date ? " is-error" : ""}`}
+            value={v.start_date ?? ""} onChange={e => patch("start_date", e.target.value || null)} />
+        </Field>
+        <Field label="Prazo final" required>
+          <input type="date" className={`cw-input${errors.dates && !v.end_date ? " is-error" : ""}`}
+            value={v.end_date ?? ""} onChange={e => patch("end_date", e.target.value || null)} />
+        </Field>
+        <Field label="Prioridade" required>
+          <Sel value={v.urgency} onChange={val => patch("urgency", val as ProjectWizardValue["urgency"])}>
+            {PRIORITY_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+          </Sel>
+        </Field>
+        <div className="cw-field">
+          <span className="cw-label">Projeto recorrente</span>
+          <div className="flex items-center gap-3" style={{ height: 42 }}>
+            <Switch on={v.recurring} onToggle={() => patch("recurring", !v.recurring)} />
+            <span style={{ fontSize: 12, color: "var(--cw-muted)" }}>{v.recurring ? "Sim" : "Não"}</span>
+          </div>
+        </div>
+
+        <div className="cw-field cw-span-2">
+          <span className="cw-label">Progresso inicial<span className="req">*</span></span>
+          <div className="flex items-center gap-3">
+            <div className="flex-1">
+              <input type="range" min={0} max={100} step={5} className="cw-slider"
+                value={v.initial_progress} onChange={e => patch("initial_progress", Number(e.target.value))} />
+              <div className="cw-slider-scale"><span>0%</span><span>25%</span><span>50%</span><span>75%</span><span>100%</span></div>
+            </div>
+            <div className="cw-input" style={{ width: 66, display: "grid", placeItems: "center", fontWeight: 600 }}>
+              {v.initial_progress}%
+            </div>
+          </div>
+        </div>
+        <Field label="Centro de custo" className="cw-span-2">
+          <input className="cw-input" value={v.cost_center} onChange={e => patch("cost_center", e.target.value)} placeholder="Selecione o centro de custo" />
+        </Field>
+      </div>
+
+      <div className="cw-section">
+        <div className="cw-section-head">
+          <div>
+            <h4>Etapas do projeto</h4>
+            <p>Etapas carregadas automaticamente do tipo de projeto selecionado.</p>
+          </div>
+          <button type="button" className="cw-btn cw-btn-secondary sm" onClick={addStage}><Plus /> Adicionar etapa</button>
+        </div>
+
+        <div className="cw-callout" style={{ marginBottom: 14 }}>
+          <Info />
+          <span>
+            As etapas abaixo vêm do tipo de projeto e serão criadas automaticamente para este projeto.<br />
+            Alterações feitas aqui não alteram o modelo original.
+          </span>
+        </div>
+
+        <div className="flex items-center gap-2 mb-3" style={{ fontSize: 11.5, color: "var(--cw-muted)" }}>
+          Tipo de projeto selecionado:
+          <span className="cw-chip">{selectedTypeLabel ?? "Nenhum"}</span>
+        </div>
+
+        <table className="cw-table">
+          <thead>
+            <tr>
+              <th style={{ width: 34 }} />
+              <th style={{ width: 58 }}>Ordem</th>
+              <th style={{ width: 180 }}>Etapa</th>
+              <th>Descrição</th>
+              <th style={{ width: 130 }}>Duração estimada</th>
+              <th style={{ width: 72 }}>Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            {v.stages.length === 0 && (
+              <tr><td colSpan={6} className="cw-mut" style={{ textAlign: "center" }}>Nenhuma etapa definida. Selecione um tipo de projeto ou adicione manualmente.</td></tr>
+            )}
+            {v.stages.map((s, i) => {
+              const isEdit = editing === s.id;
+              return (
+                <tr key={s.id}>
+                  <td><GripVertical size={15} color="#b6bfc9" /></td>
+                  <td><span className="cw-ordem inline-grid place-items-center">{i + 1}</span></td>
+                  <td>
+                    <span className="cw-dot" style={{ background: s.color }} />
+                    {isEdit
+                      ? <input className="cw-table-inline-input" style={{ width: 120 }} value={s.name} onChange={e => updStage(s.id, { name: e.target.value })} />
+                      : <span className="cw-strong">{s.name}</span>}
+                  </td>
+                  <td className="cw-mut">
+                    {isEdit
+                      ? <input className="cw-table-inline-input" value={s.description} onChange={e => updStage(s.id, { description: e.target.value })} placeholder="Descrição da etapa" />
+                      : (s.description || "—")}
+                  </td>
+                  <td>
+                    <Clock size={13} style={{ display: "inline", marginRight: 6, color: "var(--cw-muted)" }} />
+                    {isEdit
+                      ? <input className="cw-table-inline-input" style={{ width: 70 }} value={s.duration} onChange={e => updStage(s.id, { duration: e.target.value })} />
+                      : s.duration}
+                  </td>
+                  <td>
+                    <div className="flex gap-1.5">
+                      <button type="button" className="cw-row-icon" onClick={() => setEditing(isEdit ? null : s.id)}>
+                        {isEdit ? <Check size={13} /> : <Pencil size={13} />}
+                      </button>
+                      <button type="button" className="cw-row-icon" onClick={() => delStage(s.id)}><Trash2 size={13} /></button>
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </>
+  );
+}
+
+/* ============================================================
+   NP-03 — Equipe
+   ============================================================ */
+const PERMISSION_LABEL: Record<ProjectParticipant["permission"], string> = {
+  admin: "Administrador", editor: "Editor", collaborator: "Colaborador", viewer: "Leitura",
+};
+
+function StepTeam({ v, patch, people }: { v: ProjectWizardValue; patch: Patch; people: Person[] }) {
+  const [pick, setPick] = useState("");
+
+  const addParticipant = () => {
+    const person = people.find(p => p.id === pick);
+    if (!person) return;
+    if (v.participants.some(p => p.user_id === person.id)) return;
+    patch("participants", [...v.participants, {
+      id: `p-${Date.now()}`, user_id: person.id,
+      name: person.display_name || person.full_name,
+      role: person.role_title ?? "Participante",
+      department: "—", permission: "collaborator", load: "8h/sem",
+    }]);
+    setPick("");
+  };
+  const upd = (id: string, p: Partial<ProjectParticipant>) =>
+    patch("participants", v.participants.map(x => (x.id === id ? { ...x, ...p } : x)));
+  const del = (id: string) => patch("participants", v.participants.filter(x => x.id !== id));
+
+  return (
+    <>
+      <h3>Equipe</h3>
+      <p className="cw-sub">Defina os responsáveis e participantes do projeto.</p>
+
+      <div className="cw-grid cw-grid-3">
+        <Field label="Responsável principal" required>
+          <Sel value={v.owner_id ?? ""} onChange={val => patch("owner_id", val || null)}>
+            <option value="">Selecione</option>
+            {people.map(p => <option key={p.id} value={p.id}>{p.display_name || p.full_name}</option>)}
+          </Sel>
+        </Field>
+        <Field label="Líder de criação">
+          <Sel value={v.creative_lead_id ?? ""} onChange={val => patch("creative_lead_id", val || null)}>
+            <option value="">Selecione</option>
+            {people.map(p => <option key={p.id} value={p.id}>{p.display_name || p.full_name}</option>)}
+          </Sel>
+        </Field>
+        <Field label="Cliente / ponto focal">
+          <input className="cw-input" value={v.client_contact} onChange={e => patch("client_contact", e.target.value)} placeholder="Nome do contato no cliente" />
+        </Field>
+      </div>
+
+      <div className="cw-field cw-span-full" style={{ marginTop: 16 }}>
+        <span className="cw-label">Equipe interna</span>
+        <div className="flex flex-wrap gap-2 items-center" style={{ minHeight: 42, border: "1px solid var(--cw-input-border)", borderRadius: 8, padding: "7px 10px" }}>
+          {v.participants.length === 0 && <span style={{ fontSize: 12, color: "#98a2ad" }}>Nenhum participante adicionado</span>}
+          {v.participants.map(p => (
+            <span key={p.id} className="cw-chip is-neutral">
+              <span className="cw-avatar sm">{initials(p.name)}</span>
+              {p.name}
+              <button type="button" onClick={() => del(p.id)}><X size={11} /></button>
+            </span>
+          ))}
         </div>
       </div>
+
+      <div className="flex items-end gap-2 justify-end" style={{ marginTop: 12 }}>
+        <div style={{ width: 240 }}>
+          <Sel value={pick} onChange={setPick}>
+            <option value="">Selecione uma pessoa</option>
+            {people.filter(p => !v.participants.some(x => x.user_id === p.id)).map(p => (
+              <option key={p.id} value={p.id}>{p.display_name || p.full_name}</option>
+            ))}
+          </Sel>
+        </div>
+        <button type="button" className="cw-btn cw-btn-secondary" onClick={addParticipant} disabled={!pick}>
+          <Plus /> Adicionar participante
+        </button>
+      </div>
+
+      <div className="cw-section">
+        <div className="cw-section-head"><div><h4>Participantes do projeto</h4></div></div>
+        <table className="cw-table">
+          <thead>
+            <tr>
+              <th style={{ width: 180 }}>Nome</th>
+              <th style={{ width: 165 }}>Função no projeto</th>
+              <th style={{ width: 135 }}>Departamento</th>
+              <th style={{ width: 135 }}>Permissão</th>
+              <th style={{ width: 100 }}>Carga prevista</th>
+              <th style={{ width: 72 }}>Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            {v.participants.length === 0 && (
+              <tr><td colSpan={6} className="cw-mut" style={{ textAlign: "center" }}>Nenhum participante adicionado ainda.</td></tr>
+            )}
+            {v.participants.map(p => (
+              <tr key={p.id}>
+                <td>
+                  <div className="flex items-center gap-2">
+                    <span className="cw-avatar">{initials(p.name)}</span>
+                    <span className="cw-strong">{p.name}</span>
+                  </div>
+                </td>
+                <td><input className="cw-table-inline-input" value={p.role} onChange={e => upd(p.id, { role: e.target.value })} /></td>
+                <td><input className="cw-table-inline-input" value={p.department} onChange={e => upd(p.id, { department: e.target.value })} /></td>
+                <td>
+                  <select
+                    className="cw-chip"
+                    style={{ appearance: "none", cursor: "pointer", fontFamily: "var(--cw-font)" }}
+                    value={p.permission}
+                    onChange={e => upd(p.id, { permission: e.target.value as ProjectParticipant["permission"] })}
+                  >
+                    {(Object.keys(PERMISSION_LABEL) as ProjectParticipant["permission"][]).map(k => (
+                      <option key={k} value={k}>{PERMISSION_LABEL[k]}</option>
+                    ))}
+                  </select>
+                </td>
+                <td><input className="cw-table-inline-input" value={p.load} onChange={e => upd(p.id, { load: e.target.value })} /></td>
+                <td><button type="button" className="cw-row-icon" onClick={() => del(p.id)}><Trash2 size={13} /></button></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+
+        <div className="cw-callout" style={{ marginTop: 14 }}>
+          <Info />
+          <span>Participantes podem ser ajustados a qualquer momento. As permissões definem o nível de colaboração e visibilidade no projeto.</span>
+        </div>
+      </div>
+
+      <div className="cw-section">
+        <div className="cw-section-head"><div><h4>Notificações e acesso</h4></div></div>
+        <SwitchRow title="Notificar novos participantes por e-mail" on={v.notify_members} onToggle={() => patch("notify_members", !v.notify_members)} />
+        <SwitchRow title="Permitir que membros vejam financeiro do projeto" on={v.allow_finance_view} onToggle={() => patch("allow_finance_view", !v.allow_finance_view)} />
+      </div>
+    </>
+  );
+}
+
+/* ============================================================
+   NP-04 — Financeiro
+   ============================================================ */
+function StepFinance({ v, patch, people, platforms }: {
+  v: ProjectWizardValue; patch: Patch; people: Person[]; platforms: CatalogItem[];
+}) {
+  const [notesOpen, setNotesOpen] = useState(false);
+  const tb = v.traffic_budget ?? { enabled: false, amount: null, platforms: [] };
+
+  const togglePlatform = (name: string) => patch("traffic_budget", {
+    ...tb,
+    platforms: tb.platforms.includes(name) ? tb.platforms.filter(x => x !== name) : [...tb.platforms, name],
+  });
+
+  return (
+    <>
+      <h3>Financeiro do projeto</h3>
+      <p className="cw-sub">Defina como o projeto será faturado e configure as condições comerciais.</p>
+
+      <div className="cw-section-head"><div><h4>Modelo de cobrança do projeto</h4></div></div>
+      <div className="cw-grid cw-grid-4">
+        {BILLING_OPTIONS.map(opt => {
+          const Icon = opt.icon;
+          const on = v.billing_model === opt.value;
+          return (
+            <button key={opt.value} type="button" className={`cw-choice${on ? " is-on" : ""}`}
+              onClick={() => patch("billing_model", opt.value as ProjectWizardValue["billing_model"])}>
+              <span className="cw-choice-title"><Icon size={15} /> {opt.label}</span>
+              <span className="cw-choice-desc">{opt.desc}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="cw-callout" style={{ marginTop: 14 }}>
+        <Info />
+        <span>
+          {v.billing_model === "per_task"
+            ? "No modelo \"Por tarefa\", a receita prevista do projeto será calculada automaticamente com base nas tarefas e entregáveis faturáveis. Você verá o valor atualizado no resumo ao lado conforme eles forem criados."
+            : "A receita prevista deste projeto será baseada no valor definido abaixo, somada aos faturamentos gerados durante a execução."}
+        </span>
+      </div>
+
+      <div className="grid gap-5 mt-5" style={{ gridTemplateColumns: "minmax(0,1fr) 290px" }}>
+        {/* Configurações comerciais */}
+        <div>
+          <div className="cw-section-head"><div><h4>Configurações comerciais</h4></div></div>
+
+          {(v.billing_model === "fixed" || v.billing_model === "monthly") && (
+            <div style={{ maxWidth: 240, marginBottom: 12 }}>
+              <Field label={v.billing_model === "fixed" ? "Valor total (R$)" : "Fee mensal (R$)"}>
+                <input type="number" step="0.01" className="cw-input" value={v.fixed_value ?? ""}
+                  onChange={e => patch("fixed_value", e.target.value ? Number(e.target.value) : null)} placeholder="0,00" />
+              </Field>
+            </div>
+          )}
+
+          <SwitchRow title="Faturamento por tarefa ativado por padrão" desc="Novas tarefas serão criadas com faturamento ativado."
+            on={v.bill_per_task_default} onToggle={() => patch("bill_per_task_default", !v.bill_per_task_default)} />
+          <SwitchRow title="Permitir faturamento por entregável" desc="Entregáveis poderão ser faturados individualmente."
+            on={v.bill_per_deliverable} onToggle={() => patch("bill_per_deliverable", !v.bill_per_deliverable)} />
+          <SwitchRow title="Usar valor padrão do tipo de tarefa" desc="Sugere o valor configurado no tipo de tarefa ao criar."
+            on={v.use_task_type_value} onToggle={() => patch("use_task_type_value", !v.use_task_type_value)} />
+          <SwitchRow title="Permitir alteração do valor nas tarefas" desc="O valor poderá ser ajustado manualmente nas tarefas."
+            on={v.allow_value_override} onToggle={() => patch("allow_value_override", !v.allow_value_override)} />
+
+          <div className="cw-grid cw-grid-2" style={{ marginTop: 16 }}>
+            <Field label="Responsável financeiro">
+              <Sel value={v.finance_owner_id ?? ""} onChange={val => patch("finance_owner_id", val || null)}>
+                <option value="">Selecione</option>
+                {people.map(p => <option key={p.id} value={p.id}>{p.display_name || p.full_name}</option>)}
+              </Sel>
+            </Field>
+            <Field label="Centro de custo">
+              <input className="cw-input" value={v.cost_center} onChange={e => patch("cost_center", e.target.value)} placeholder="Selecione o centro de custo" />
+            </Field>
+            <Field label="Condição de pagamento padrão">
+              <Sel value={v.payment_terms} onChange={val => patch("payment_terms", val)}>
+                {["À vista", "15 dias", "30 dias", "45 dias", "60 dias"].map(o => <option key={o} value={o}>{o}</option>)}
+              </Sel>
+            </Field>
+            <Field label="Vencimento padrão após faturamento">
+              <Sel value={v.due_days} onChange={val => patch("due_days", val)}>
+                {["7 dias", "15 dias", "30 dias", "45 dias"].map(o => <option key={o} value={o}>{o}</option>)}
+              </Sel>
+            </Field>
+          </div>
+
+          <div className="cw-card" style={{ marginTop: 16 }}>
+            <button type="button" className="w-full flex items-center justify-between cw-card-pad" onClick={() => setNotesOpen(o => !o)}>
+              <span style={{ textAlign: "left" }}>
+                <span style={{ fontSize: 12.5, fontWeight: 600, display: "block" }}>Observações financeiras <span style={{ color: "var(--cw-muted)", fontWeight: 400 }}>(opcional)</span></span>
+                <span style={{ fontSize: 10.5, color: "var(--cw-muted)" }}>Informações adicionais sobre condições comerciais do projeto.</span>
+              </span>
+              <ChevronDown size={16} style={{ color: "var(--cw-muted)", transform: notesOpen ? "rotate(180deg)" : undefined }} />
+            </button>
+            {notesOpen && (
+              <div style={{ padding: "0 16px 14px" }}>
+                <textarea className="cw-textarea" rows={3} value={v.finance_notes}
+                  onChange={e => patch("finance_notes", e.target.value)} placeholder="Condições, descontos, particularidades..." />
+              </div>
+            )}
+          </div>
+
+          {/* Verbas e plataformas — preserva o fluxo existente */}
+          <div className="cw-section">
+            <div className="cw-section-head">
+              <div>
+                <h4>Verba de mídia e plataformas</h4>
+                <p>Verba de tráfego separada do fee da agência.</p>
+              </div>
+              <Switch on={tb.enabled} onToggle={() => patch("traffic_budget", { ...tb, enabled: !tb.enabled })} />
+            </div>
+            {tb.enabled && (
+              <>
+                <div style={{ maxWidth: 220, marginBottom: 12 }}>
+                  <Field label="Verba mensal (R$)">
+                    <input type="number" step="0.01" className="cw-input" value={tb.amount ?? ""}
+                      onChange={e => patch("traffic_budget", { ...tb, amount: e.target.value ? Number(e.target.value) : null })} placeholder="0,00" />
+                  </Field>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {platforms.map(p => {
+                    const on = tb.platforms.includes(p.name);
+                    return (
+                      <button key={p.id} type="button" className={`cw-chip${on ? "" : " is-neutral"}`} onClick={() => togglePlatform(p.name)}>
+                        {on && <Check size={12} />} {p.name}
+                      </button>
+                    );
+                  })}
+                  {platforms.length === 0 && <span style={{ fontSize: 11, color: "var(--cw-muted)" }}>Cadastre plataformas em Configurações.</span>}
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* Resumo financeiro */}
+        <div className="flex flex-col gap-3">
+          <div className="cw-card cw-card-pad">
+            <h5>Resumo financeiro <span style={{ fontWeight: 400, color: "var(--cw-muted)", fontSize: 10.5 }}>(calculado automaticamente)</span></h5>
+            <div style={{ fontSize: 10.5, color: "var(--cw-muted)" }}>Receita prevista atual</div>
+            <div style={{ fontSize: 22, fontWeight: 600, margin: "2px 0 10px", fontVariantNumeric: "tabular-nums" }}>
+              {brl(v.billing_model === "per_task" ? 0 : (v.fixed_value ?? 0))}
+            </div>
+            {[["Tarefas faturáveis", "0"], ["Entregáveis faturáveis", "0"], ["Cobranças geradas", "0"], ["Faturas emitidas", "0"], ["Receita realizada", brl(0)]].map(([k, val]) => (
+              <div key={k} className="cw-side-line"><span>{k}</span><span>{val}</span></div>
+            ))}
+          </div>
+          <div className="cw-callout">
+            <Info />
+            <span>Esse resumo será preenchido à medida que tarefas e entregáveis faturáveis forem criados e faturados.</span>
+          </div>
+          <div className="cw-card cw-card-pad">
+            <h5>Custos do projeto</h5>
+            <div style={{ fontSize: 10.5, color: "var(--cw-muted)", marginBottom: 10 }}>
+              Registre os custos previstos ou reais depois de criar o projeto, na aba Financeiro.
+            </div>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
+
+/* ============================================================
+   NP-05 — Revisão
+   ============================================================ */
+function StepReview({ v, allOk, goTo, clientName, typeLabel, personName }: {
+  v: ProjectWizardValue; allOk: boolean; goTo: (n: number) => void;
+  clientName: string; typeLabel: string; personName: (id: string | null) => string;
+}) {
+  const priority = PRIORITY_OPTIONS.find(p => p.value === v.urgency)?.label ?? "—";
+  const billing = BILLING_OPTIONS.find(b => b.value === v.billing_model)?.label ?? "—";
+
+  const Item = ({ label, value }: { label: string; value: React.ReactNode }) => (
+    <div style={{ marginBottom: 10 }}>
+      <div style={{ fontSize: 10.5, color: "var(--cw-muted)" }}>{label}</div>
+      <div style={{ fontSize: 12, fontWeight: 500 }}>{value}</div>
     </div>
+  );
+  const EditBtn = ({ to }: { to: number }) => (
+    <button type="button" className="cw-btn cw-btn-secondary sm" onClick={() => goTo(to)}>Editar</button>
+  );
+
+  return (
+    <>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h3>Revisão do projeto</h3>
+          <p className="cw-sub">Confira todas as informações antes de criar o projeto.</p>
+        </div>
+        <div className={`cw-callout${allOk ? " is-green" : ""}`} style={{ maxWidth: 230 }}>
+          {allOk ? <Check /> : <Info />}
+          <span>
+            <strong style={{ display: "block", fontWeight: 600 }}>{allOk ? "Tudo certo!" : "Faltam dados"}</strong>
+            {allOk ? "Todos os campos obrigatórios foram preenchidos." : "Revise as etapas destacadas antes de criar."}
+          </span>
+        </div>
+      </div>
+
+      <div className="cw-grid cw-grid-2">
+        <div className="cw-card cw-card-pad">
+          <div className="flex items-center justify-between mb-2">
+            <h5><FolderKanban size={15} /> Informações básicas</h5>
+            <EditBtn to={1} />
+          </div>
+          <Item label="Nome do projeto" value={v.name || "—"} />
+          <Item label="Cliente" value={<span style={{ color: "var(--cw-cobalt)" }}>{clientName}</span>} />
+          <Item label="Tipo de projeto" value={typeLabel} />
+          <Item label="Descrição" value={v.description || "—"} />
+        </div>
+
+        <div className="cw-card cw-card-pad">
+          <div className="flex items-center justify-between mb-2">
+            <h5><CalendarDays size={15} /> Prazos e planejamento</h5>
+            <EditBtn to={2} />
+          </div>
+          <div className="cw-grid cw-grid-2">
+            <Item label="Data de início" value={fmtDate(v.start_date)} />
+            <Item label="Prazo final" value={fmtDate(v.end_date)} />
+            <Item label="Prioridade" value={<span className="inline-flex items-center gap-1.5"><Flag size={12} color="#e14545" /> {priority}</span>} />
+            <Item label="Projeto recorrente" value={v.recurring ? "Sim" : "Não"} />
+            <Item label="Progresso inicial" value={`${v.initial_progress}%`} />
+            <Item label="Centro de custo" value={v.cost_center || "—"} />
+          </div>
+        </div>
+      </div>
+
+      <div className="cw-card cw-card-pad" style={{ marginTop: 16 }}>
+        <div className="flex items-center justify-between mb-2">
+          <h5>Etapas do projeto <span style={{ fontWeight: 400, color: "var(--cw-muted)" }}>(vinculadas ao tipo selecionado)</span></h5>
+          <EditBtn to={2} />
+        </div>
+        <table className="cw-table">
+          <thead><tr><th style={{ width: 70 }}>Ordem</th><th style={{ width: 180 }}>Etapa</th><th>Descrição</th><th style={{ width: 140 }}>Duração estimada</th></tr></thead>
+          <tbody>
+            {v.stages.length === 0 && <tr><td colSpan={4} className="cw-mut" style={{ textAlign: "center" }}>Nenhuma etapa definida.</td></tr>}
+            {v.stages.map((s, i) => (
+              <tr key={s.id}>
+                <td><span className="cw-ordem inline-grid place-items-center">{i + 1}</span></td>
+                <td><span className="cw-dot" style={{ background: s.color }} /><span className="cw-strong">{s.name}</span></td>
+                <td className="cw-mut">{s.description || "—"}</td>
+                <td><Clock size={13} style={{ display: "inline", marginRight: 6, color: "var(--cw-muted)" }} />{s.duration}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <div className="cw-grid cw-grid-3" style={{ marginTop: 16 }}>
+        <div className="cw-card cw-card-pad">
+          <div className="flex items-center justify-between mb-2">
+            <h5><Users size={15} /> Equipe do projeto</h5>
+            <EditBtn to={3} />
+          </div>
+          <Item label="Gerente do projeto" value={personName(v.owner_id)} />
+          <Item label="Responsável financeiro" value={personName(v.finance_owner_id ?? v.owner_id)} />
+          <Item label={`Participantes (${v.participants.length})`} value={v.participants.map(p => p.name).join(", ") || "—"} />
+        </div>
+
+        <div className="cw-card cw-card-pad">
+          <div className="flex items-center justify-between mb-2">
+            <h5><DollarSign size={15} /> Financeiro do projeto</h5>
+            <EditBtn to={4} />
+          </div>
+          <Item label="Modelo de cobrança" value={<span className="cw-chip is-green">{billing}</span>} />
+          <Item label="Receita prevista atual" value={brl(v.billing_model === "per_task" ? 0 : (v.fixed_value ?? 0))} />
+          <div className="cw-side-line"><span>Tarefas faturáveis</span><span>0</span></div>
+          <div className="cw-side-line"><span>Entregáveis faturáveis</span><span>0</span></div>
+          <div className="cw-side-line"><span>Cobranças geradas</span><span>0</span></div>
+        </div>
+
+        <div className="cw-card cw-card-pad">
+          <h5>Custos do projeto</h5>
+          <div style={{ fontSize: 11, color: "var(--cw-muted)" }}>Nenhum custo cadastrado até o momento.</div>
+        </div>
+      </div>
+    </>
   );
 }
