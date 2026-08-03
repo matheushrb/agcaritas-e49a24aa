@@ -133,6 +133,26 @@ function InvoiceDetailPage() {
     },
   });
 
+  const { data: allClients = [] } = useQuery({
+    queryKey: ["clients-min"],
+    enabled: editOpen,
+    queryFn: async () => {
+      const { data } = await supabase.from("clients").select("id,name").order("name");
+      return (data ?? []) as { id: string; name: string }[];
+    },
+  });
+
+  const { data: allProjects = [] } = useQuery({
+    queryKey: ["projects-min"],
+    enabled: editOpen,
+    queryFn: async () => {
+      const { data } = await supabase.from("projects").select("id,name,client_id").order("name");
+      return (data ?? []) as { id: string; name: string; client_id: string | null }[];
+    },
+  });
+
+
+
   async function openPDF() {
     if (!invoice) return;
     try {
