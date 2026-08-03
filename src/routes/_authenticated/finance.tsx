@@ -159,177 +159,47 @@ function FinancePage() {
   });
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold flex items-center gap-2"><DollarSign className="size-6" />Financeiro</h1>
-          <p className="text-sm text-muted-foreground">Faturamento, recebimentos e DRE.</p>
-        </div>
-        <Button onClick={() => setNewOpen(true)}><Plus className="size-4 mr-1" />Novo lançamento</Button>
+    <>
+      <div className="p-6">
+        <Fin01Overview
+          charges={charges as unknown as F1Charge[]}
+          costs={costs}
+          clients={clients}
+          projects={projects}
+          onNewEntry={() => setNewOpen(true)}
+          onNewInvoice={() => navigate({ to: "/invoices", search: { new: 1 } })}
+          onExport={() => exportCsv(charges, clients, projects)}
+          onOpenInvoices={() => navigate({ to: "/invoices" })}
+          onOpenEntries={() => setTab("movements")}
+        />
       </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <KpiCard label="Recebido" value={money(kpis.received)} icon={TrendingUp} tone="emerald" />
-        <KpiCard label="A receber" value={money(kpis.pending)} icon={Wallet} tone="amber" />
-        <KpiCard label="Em atraso" value={money(kpis.overdue)} icon={TrendingDown} tone="red" />
-        <KpiCard label="Mês corrente" value={money(kpis.monthTotal)} icon={DollarSign} tone="blue" />
-      </div>
-
-      <Tabs value={tab} onValueChange={setTab}>
-        <TabsList className="rounded-full bg-primary p-1 dark:bg-primary">
-          <TabsTrigger value="overview" className="rounded-full gap-1.5 text-primary-foreground/80 dark:text-primary-foreground/90 data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-sm dark:data-[state=active]:bg-card dark:data-[state=active]:text-foreground">Visão geral</TabsTrigger>
-          <TabsTrigger value="movements" className="rounded-full gap-1.5 text-primary-foreground/80 dark:text-primary-foreground/90 data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-sm dark:data-[state=active]:bg-card dark:data-[state=active]:text-foreground">Movimentações</TabsTrigger>
-          <TabsTrigger value="invoicing" className="rounded-full gap-1.5 text-primary-foreground/80 dark:text-primary-foreground/90 data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-sm dark:data-[state=active]:bg-card dark:data-[state=active]:text-foreground">Faturamentos</TabsTrigger>
-          <TabsTrigger value="dre" className="rounded-full gap-1.5 text-primary-foreground/80 dark:text-primary-foreground/90 data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-sm dark:data-[state=active]:bg-card dark:data-[state=active]:text-foreground">DRE</TabsTrigger>
-          <TabsTrigger value="params" className="rounded-full gap-1.5 text-primary-foreground/80 dark:text-primary-foreground/90 data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-sm dark:data-[state=active]:bg-card dark:data-[state=active]:text-foreground">Parâmetros</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="overview" className="mt-4">
-          <Card className="p-4">
-            <h3 className="font-medium mb-3">Próximos vencimentos</h3>
-            <ChargeTable
-              rows={charges.filter(c => c.status === "pending" || c.status === "overdue").slice(0, 10)}
-              clients={clients} projects={projects}
-              onStatus={(id, status) => updateStatus.mutate({ id, status })}
-            />
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="movements" className="mt-4">
-          <Card className="p-4">
-            <ChargeTable rows={charges} clients={clients} projects={projects}
-              onStatus={(id, status) => updateStatus.mutate({ id, status })} />
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="invoicing" className="mt-4">
-          <Card className="p-4">
-            <h3 className="font-medium mb-3">Faturamentos por cliente</h3>
-            <div className="space-y-2">
-              {Object.entries(charges.reduce<Record<string, number>>((acc, c) => {
-                if (c.status === "cancelled" || !c.client_id) return acc;
-                acc[c.client_id] = (acc[c.client_id] ?? 0) + Number(c.amount ?? 0);
-                return acc;
-              }, {})).sort(([, a], [, b]) => b - a).map(([cid, total]) => (
-                <div key={cid} className="flex justify-between border-b py-2 text-sm">
-                  <span>{clients.find(c => c.id === cid)?.name ?? "—"}</span>
-                  <span className="font-medium">{money(total)}</span>
-                </div>
-              ))}
-              {charges.length === 0 && <p className="text-sm text-muted-foreground">Sem dados.</p>}
-            </div>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="dre" className="mt-4">
-          <Card className="p-4">
-            <h3 className="font-medium mb-3">Resumo por mês (últimos 6)</h3>
-            <table className="w-full text-sm">
-              <thead className="text-left text-muted-foreground border-b">
-                <tr><th className="py-2">Mês</th><th className="py-2">Entrada</th></tr>
-              </thead>
-              <tbody>
-                {dre.map(([m, v]) => (
-                  <tr key={m} className="border-b"><td className="py-2">{m}</td><td className="py-2">{money(v.in)}</td></tr>
-                ))}
-                {dre.length === 0 && <tr><td colSpan={2} className="py-4 text-muted-foreground">Sem dados.</td></tr>}
-              </tbody>
-            </table>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="params" className="mt-4">
-          <Card className="p-4 space-y-2 text-sm text-muted-foreground">
-            <p>Configurações de faturamento, categorias e regras de recorrência estarão disponíveis em breve.</p>
-          </Card>
-        </TabsContent>
-      </Tabs>
 
       <NewChargeDialog open={newOpen} onOpenChange={setNewOpen} clients={clients} projects={projects}
         onCreate={(v) => createCharge.mutate(v)} />
-    </div>
+    </>
   );
 }
 
-function KpiCard({ label, value, icon: Icon, tone }: { label: string; value: string; icon: typeof DollarSign; tone: "emerald" | "amber" | "red" | "blue" }) {
-  const tones = {
-    emerald: "text-emerald-600 dark:text-emerald-400",
-    amber: "text-amber-600 dark:text-amber-400",
-    red: "text-red-600 dark:text-red-400",
-    blue: "text-blue-600 dark:text-blue-400",
-  };
-  return (
-    <Card className="p-4">
-      <div className="flex items-center justify-between">
-        <span className="text-xs text-muted-foreground">{label}</span>
-        <Icon className={cn("size-4", tones[tone])} />
-      </div>
-      <div className="text-xl font-semibold mt-1">{value}</div>
-    </Card>
-  );
+function exportCsv(charges: Charge[], clients: Client[], projects: Project[]) {
+  const head = ["Descrição", "Cliente", "Projeto", "Vencimento", "Status", "Valor"];
+  const rows = charges.map(c => [
+    c.description ?? "",
+    clients.find(x => x.id === c.client_id)?.name ?? "",
+    projects.find(x => x.id === c.project_id)?.name ?? "",
+    c.due_date ?? "",
+    STATUS_META[c.status]?.label ?? c.status,
+    String(Number(c.amount ?? 0).toFixed(2)),
+  ]);
+  const csv = [head, ...rows].map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(";")).join("\n");
+  const url = URL.createObjectURL(new Blob([`\uFEFF${csv}`], { type: "text/csv;charset=utf-8" }));
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `financeiro-${new Date().toISOString().slice(0, 10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+  toast.success("Exportação gerada");
 }
 
-function ChargeTable({ rows, clients, projects, onStatus }: {
-  rows: Charge[]; clients: Client[]; projects: Project[];
-  onStatus: (id: string, s: ChargeStatus) => void;
-}) {
-  if (rows.length === 0) return <p className="text-sm text-muted-foreground">Sem lançamentos.</p>;
-  return (
-    <table className="w-full text-sm">
-      <thead className="text-left text-muted-foreground border-b">
-        <tr>
-          <th className="py-2">Descrição</th><th>Cliente</th><th>Projeto</th>
-          <th>Vencimento</th><th>Valor</th><th>Status</th><th></th>
-        </tr>
-      </thead>
-      <tbody>
-        {rows.map(c => {
-          const M = STATUS_META[c.status];
-          const client = clients.find(x => x.id === c.client_id);
-          return (
-            <tr key={c.id} className="border-b hover:bg-muted/40">
-              <td className="py-2">{c.description ?? "—"}</td>
-              <td>{client?.name ?? "—"}</td>
-              <td>{projects.find(x => x.id === c.project_id)?.name ?? "—"}</td>
-              <td>{c.due_date ?? "—"}</td>
-              <td className="font-medium">{money(Number(c.amount ?? 0))}</td>
-              <td>
-                <Select value={c.status} onValueChange={(v) => onStatus(c.id, v as ChargeStatus)}>
-                  <SelectTrigger className="h-7 w-auto gap-2 border-none px-2">
-                    <Badge className={M.color}><M.icon className="size-3 mr-1" />{M.label}</Badge>
-                  </SelectTrigger>
-                  <SelectContent>
-                    {(Object.keys(STATUS_META) as ChargeStatus[]).map(s => (
-                      <SelectItem key={s} value={s}>{STATUS_META[s].label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </td>
-              <td className="text-right pr-2">
-                <UIButton
-                  variant="ghost" size="sm" className="h-7 gap-1"
-                  onClick={async () => {
-                    const num = c.id.slice(0, 8).toUpperCase();
-                    const pdf = await generateInvoicePDF({
-                      number: num,
-                      issue_date: c.created_at,
-                      due_date: c.due_date,
-                      client: { name: client?.name ?? "Cliente" },
-                      lines: [{ title: c.description ?? "Cobrança", amount: Number(c.amount ?? 0) }],
-                    });
-                    pdf.save(`fatura-${num}.pdf`);
-                  }}
-                >
-                  <Download className="size-3.5" /> PDF
-                </UIButton>
-              </td>
-            </tr>
-          );
-        })}
-      </tbody>
-    </table>
-  );
-}
 
 function NewChargeDialog({ open, onOpenChange, clients, projects, onCreate }: {
   open: boolean; onOpenChange: (v: boolean) => void;
