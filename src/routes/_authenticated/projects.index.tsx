@@ -32,6 +32,7 @@ import {
 } from "@/components/project-preview-sheet";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
+import { Prj08Table, Prj08Preview } from "@/components/prj08-list";
 import "@/prj01.css";
 
 export const Route = createFileRoute("/_authenticated/projects/")({
@@ -408,7 +409,7 @@ function ProjectsPage() {
             ))}
           </div>
         ) : view === "list" ? (
-          <ProjectTable rows={paged} membersByProject={membersByProject} onOpen={setSelectedProjectId} />
+          <Prj08Table rows={paged} membersByProject={membersByProject} selectedId={selectedProjectId} onOpen={setSelectedProjectId} />
         ) : (
           <ProjectKanban rows={filtered} onOpen={setSelectedProjectId} />
         )}
@@ -461,8 +462,9 @@ function ProjectsPage() {
       </div>
 
 
-      <ProjectPreviewSheet
+      <Prj08Preview
         project={selectedProject}
+        members={selectedProject ? membersByProject[selectedProject.id] ?? [] : []}
         open={Boolean(selectedProject)}
         onOpenChange={(open) => {
           if (!open) setSelectedProjectId(null);
