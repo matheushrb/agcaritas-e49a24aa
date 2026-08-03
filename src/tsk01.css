@@ -144,3 +144,8 @@
 .tskv .t-gtoday { position: absolute; top: 0; bottom: 0; width: 2px; background: rgba(239,68,68,.55); }
 
 .tskv .t-empty { padding: 34px; text-align: center; font-size: 13px; color: var(--t-muted-2); }
+
+/* correções de overflow no quadro */
+.tskv .t-bcard, .tskv .t-bcard > div { min-width: 0; }
+.tskv .t-bitem { min-width: 0; overflow: hidden; }
+.tskv .t-bitem span.tt { flex: 1 1 auto; min-width: 0; }
