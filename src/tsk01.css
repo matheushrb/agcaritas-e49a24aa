@@ -1,0 +1,146 @@
+/* ===========================================================
+   TSK — Tarefas: Lista / Quadro / Kanban / Gantt
+   Mesma linguagem visual das telas PRJ (aprovadas).
+   =========================================================== */
+
+.tskv {
+  --t-card: #FFFFFF;
+  --t-border: #DDE1E6;
+  --t-border-soft: #E9ECF1;
+  --t-ink: #1A2138;
+  --t-muted: #5B6779;
+  --t-muted-2: #8A93A3;
+  --t-primary: #2F6BEF;
+  --t-primary-soft: #EAF1FE;
+  --t-green: #10B981;
+  --t-amber: #F59E0B;
+  --t-red: #EF4444;
+
+  font-family: "Inter", "IBM Plex Sans", system-ui, sans-serif;
+  color: var(--t-ink);
+  -webkit-font-smoothing: antialiased;
+}
+.dark .tskv {
+  --t-card: hsl(var(--card));
+  --t-border: hsl(var(--border));
+  --t-border-soft: hsl(var(--border));
+  --t-ink: hsl(var(--foreground));
+  --t-muted: hsl(var(--muted-foreground));
+  --t-muted-2: hsl(var(--muted-foreground));
+  --t-primary-soft: rgba(47, 107, 239, .18);
+}
+
+.tskv .t-card { background: var(--t-card); border: 1px solid var(--t-border); border-radius: 10px; }
+
+/* ---------- switcher ---------- */
+.tskv .t-switch { display: inline-flex; gap: 4px; padding: 4px; border-radius: 10px; background: var(--t-primary-soft); }
+.tskv .t-switch button {
+  display: inline-flex; align-items: center; gap: 6px;
+  height: 34px; padding: 0 12px; border-radius: 8px;
+  font-size: 12.5px; font-weight: 600; color: var(--t-primary);
+  background: transparent; border: 0; cursor: pointer; transition: .15s;
+}
+.tskv .t-switch button:hover { background: rgba(47, 107, 239, .12); }
+.tskv .t-switch button.on { background: var(--t-primary); color: #fff; box-shadow: 0 1px 3px rgba(47,107,239,.35); }
+
+/* ---------- lista ---------- */
+.tskv .t-group { margin-bottom: 14px; overflow: hidden; }
+.tskv .t-group-h {
+  display: flex; align-items: center; gap: 10px;
+  padding: 11px 14px; border-bottom: 1px solid var(--t-border-soft);
+  font-size: 13px; font-weight: 700;
+}
+.tskv .t-count { font-size: 11.5px; font-weight: 600; color: var(--t-muted-2); }
+.tskv .t-group-h .t-right { margin-left: auto; font-size: 12px; font-weight: 600; color: var(--t-muted); }
+
+.tskv .t-row {
+  display: grid; grid-template-columns: 22px minmax(0,1fr) 130px 110px 108px 92px 96px;
+  align-items: center; gap: 10px;
+  padding: 10px 14px; border-bottom: 1px solid var(--t-border-soft);
+  cursor: pointer; transition: background .12s;
+}
+.tskv .t-row:last-child { border-bottom: 0; }
+.tskv .t-row:hover { background: rgba(47,107,239,.045); }
+.tskv .t-row .t-name { font-size: 13px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tskv .t-row .t-sub { font-size: 11px; color: var(--t-muted-2); margin-top: 2px; }
+.tskv .t-cell { font-size: 12px; color: var(--t-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tskv .t-num { font-variant-numeric: tabular-nums; font-weight: 600; color: var(--t-ink); }
+.tskv .t-late { color: var(--t-red); font-weight: 600; }
+
+.tskv .t-dot { width: 9px; height: 9px; border-radius: 999px; }
+.tskv .t-pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  height: 22px; padding: 0 9px; border-radius: 999px;
+  font-size: 11px; font-weight: 600; white-space: nowrap;
+}
+.tskv .t-pill.todo { background: #EFF1F5; color: #5B6779; }
+.tskv .t-pill.in_progress { background: #EAF1FE; color: #2F6BEF; }
+.tskv .t-pill.review { background: #FEF3E2; color: #B45309; }
+.tskv .t-pill.done { background: #E7F8F1; color: #0F9D6E; }
+.tskv .t-pill.low { background: #EFF1F5; color: #5B6779; }
+.tskv .t-pill.medium { background: #FEF6E7; color: #B45309; }
+.tskv .t-pill.high { background: #FDECEC; color: #DC2626; }
+.tskv .t-pill.urgent { background: #FFEDD5; color: #C2410C; }
+.tskv .t-pill.critical { background: #FEE2E2; color: #B91C1C; }
+
+.tskv .t-bar { height: 6px; border-radius: 999px; background: #EDF1F7; overflow: hidden; }
+.tskv .t-bar i { display: block; height: 100%; border-radius: 999px; background: var(--t-primary); }
+
+.tskv .t-quick {
+  width: 100%; border: 0; background: transparent; outline: none;
+  padding: 9px 14px; font-size: 12.5px; color: var(--t-ink);
+}
+.tskv .t-quick::placeholder { color: var(--t-muted-2); }
+
+/* ---------- quadro (cards por projeto) ---------- */
+.tskv .t-board { display: grid; grid-template-columns: repeat(auto-fill, minmax(310px, 1fr)); gap: 14px; }
+.tskv .t-bcard { padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+.tskv .t-bcard h4 { font-size: 13.5px; font-weight: 700; margin: 0; }
+.tskv .t-bmeta { font-size: 11.5px; color: var(--t-muted-2); }
+.tskv .t-bitem {
+  display: flex; align-items: center; gap: 8px; padding: 8px 10px;
+  border: 1px solid var(--t-border-soft); border-radius: 8px; cursor: pointer; transition: .12s;
+}
+.tskv .t-bitem:hover { border-color: var(--t-primary); background: rgba(47,107,239,.04); }
+.tskv .t-bitem span.tt { font-size: 12.5px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tskv .t-bitem .t-when { margin-left: auto; font-size: 11px; color: var(--t-muted-2); white-space: nowrap; }
+
+/* ---------- kanban ---------- */
+.tskv .t-kb { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 14px; align-items: start; }
+@media (max-width: 1180px) { .tskv .t-kb { grid-template-columns: repeat(2, minmax(0,1fr)); } }
+.tskv .t-col { background: #F7F8FA; border: 1px solid var(--t-border-soft); border-radius: 12px; padding: 10px; min-height: 240px; }
+.dark .tskv .t-col { background: rgba(255,255,255,.03); }
+.tskv .t-col.over { border-color: var(--t-primary); background: rgba(47,107,239,.07); }
+.tskv .t-col-h { display: flex; align-items: center; gap: 8px; padding: 2px 4px 10px; }
+.tskv .t-kcard {
+  background: var(--t-card); border: 1px solid var(--t-border); border-radius: 10px;
+  padding: 10px 11px; margin-bottom: 8px; cursor: grab; transition: .12s;
+}
+.tskv .t-kcard:hover { border-color: var(--t-primary); box-shadow: 0 2px 8px rgba(26,33,56,.07); }
+.tskv .t-kcard .kt { font-size: 12.5px; font-weight: 600; line-height: 17px; }
+.tskv .t-kcard .km { display: flex; align-items: center; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+.tskv .t-kcard .kv { margin-left: auto; font-size: 11.5px; font-weight: 700; font-variant-numeric: tabular-nums; }
+
+/* ---------- gantt ---------- */
+.tskv .t-gantt { overflow-x: auto; }
+.tskv .t-gwrap { min-width: 880px; }
+.tskv .t-grow { display: grid; grid-template-columns: 240px minmax(0,1fr); align-items: center; border-bottom: 1px solid var(--t-border-soft); }
+.tskv .t-grow:last-child { border-bottom: 0; }
+.tskv .t-ghead { position: sticky; top: 0; background: var(--t-card); z-index: 1; }
+.tskv .t-glabel { padding: 9px 14px; font-size: 12.5px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tskv .t-gtrack { position: relative; height: 38px; border-left: 1px solid var(--t-border-soft); }
+.tskv .t-gticks { position: absolute; inset: 0; display: flex; }
+.tskv .t-gticks div { flex: 1; border-right: 1px solid var(--t-border-soft); }
+.tskv .t-gscale { display: flex; }
+.tskv .t-gscale div { flex: 1; padding: 8px 6px; font-size: 11px; font-weight: 600; color: var(--t-muted-2); border-right: 1px solid var(--t-border-soft); text-align: center; }
+.tskv .t-gbar {
+  position: absolute; top: 10px; height: 18px; border-radius: 999px;
+  background: var(--t-primary); display: flex; align-items: center; cursor: pointer;
+  box-shadow: 0 1px 3px rgba(47,107,239,.35); min-width: 8px;
+}
+.tskv .t-gbar.done { background: var(--t-green); box-shadow: none; }
+.tskv .t-gbar.late { background: var(--t-red); }
+.tskv .t-gbar span { font-size: 10.5px; color: #fff; font-weight: 600; padding: 0 8px; white-space: nowrap; overflow: hidden; }
+.tskv .t-gtoday { position: absolute; top: 0; bottom: 0; width: 2px; background: rgba(239,68,68,.55); }
+
+.tskv .t-empty { padding: 34px; text-align: center; font-size: 13px; color: var(--t-muted-2); }
