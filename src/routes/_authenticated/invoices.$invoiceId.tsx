@@ -627,16 +627,155 @@ function InvoiceDetailPage() {
               <button className="f3-btn" onClick={() => navigate({ to: "/invoices", search: { new: "1", projectId: invoice.project_id ?? undefined } })}>
                 <Copy size={15} /> Duplicar fatura
               </button>
-              <button className="f3-btn" disabled={invoice.status !== "paid"} onClick={() => toast.success("Recibo gerado")}>
+              <button className="f3-btn" disabled={invoice.status !== "paid"} onClick={openPDF}>
                 <Receipt size={15} /> Gerar recibo
               </button>
-              <button className="f3-btn danger" disabled={invoice.status === "canceled"} onClick={() => cancelInvoice.mutate()}>
+              <button
+                className="f3-btn danger"
+                disabled={invoice.status === "canceled"}
+                onClick={() => { if (window.confirm("Cancelar esta fatura? Os itens voltam para 'a faturar'.")) cancelInvoice.mutate(); }}
+              >
                 <XCircle size={15} /> Cancelar fatura
               </button>
             </div>
           </div>
         </div>
       </div>
+
+      {/* ==== Editar fatura ==== */}
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogContent className="sm:max-w-[860px] max-h-[88vh] overflow-auto">
+          <DialogHeader><DialogTitle>Editar fatura {invoice.number ? `#${invoice.number}` : "(rascunho)"}</DialogTitle></DialogHeader>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <label className="text-xs font-medium text-muted-foreground space-y-1">
+              <span>Cliente</span>
+              <select
+                className="w-full h-9 rounded-md border bg-background px-2 text-sm text-foreground"
+                value={form.client_id}
+                onChange={e => setForm(f => ({ ...f, client_id: e.target.value, project_id: "" }))}
+              >
+                <option value="">— Selecionar —</option>
+                {allClients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+              </select>
+            </label>
+            <label className="text-xs font-medium text-muted-foreground space-y-1">
+              <span>Projeto</span>
+              <select
+                className="w-full h-9 rounded-md border bg-background px-2 text-sm text-foreground"
+                value={form.project_id}
+                onChange={e => setForm(f => ({ ...f, project_id: e.target.value }))}
+              >
+                <option value="">— Sem projeto —</option>
+                {allProjects.filter(p => !form.client_id || p.client_id === form.client_id).map(p => (
+                  <option key={p.id} value={p.id}>{p.name}</option>
+                ))}
+              </select>
+            </label>
+            <label className="text-xs font-medium text-muted-foreground space-y-1">
+              <span>Emissão</span>
+              <input type="date" className="w-full h-9 rounded-md border bg-background px-2 text-sm text-foreground"
+                value={form.issue_date} onChange={e => setForm(f => ({ ...f, issue_date: e.target.value }))} />
+            </label>
+            <label className="text-xs font-medium text-muted-foreground space-y-1">
+              <span>Vencimento</span>
+              <input type="date" className="w-full h-9 rounded-md border bg-background px-2 text-sm text-foreground"
+                value={form.due_date} onChange={e => setForm(f => ({ ...f, due_date: e.target.value }))} />
+            </label>
+            <label className="text-xs font-medium text-muted-foreground space-y-1">
+              <span>Forma de pagamento</span>
+              <input className="w-full h-9 rounded-md border bg-background px-2 text-sm text-foreground" placeholder="PIX, boleto, transferência…"
+                value={form.payment_method} onChange={e => setForm(f => ({ ...f, payment_method: e.target.value }))} />
+            </label>
+            <label className="text-xs font-medium text-muted-foreground space-y-1">
+              <span>Condições de pagamento</span>
+              <input className="w-full h-9 rounded-md border bg-background px-2 text-sm text-foreground" placeholder="30 dias após emissão"
+                value={form.payment_terms} onChange={e => setForm(f => ({ ...f, payment_terms: e.target.value }))} />
+            </label>
+            <label className="text-xs font-medium text-muted-foreground space-y-1">
+              <span>Link de pagamento</span>
+              <input className="w-full h-9 rounded-md border bg-background px-2 text-sm text-foreground" placeholder="https://…"
+                value={form.payment_link} onChange={e => setForm(f => ({ ...f, payment_link: e.target.value }))} />
+            </label>
+            <label className="text-xs font-medium text-muted-foreground space-y-1">
+              <span>Desconto (R$)</span>
+              <input type="number" step="0.01" className="w-full h-9 rounded-md border bg-background px-2 text-sm text-foreground"
+                value={form.discount} onChange={e => setForm(f => ({ ...f, discount: e.target.value }))} />
+            </label>
+          </div>
+
+          <div className="mt-2">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-semibold">Itens faturados</span>
+              <button type="button" className="f3-btn" style={{ height: 30, padding: "0 10px" }}
+                onClick={() => setDrafts(d => [...d, { description: "", amount: "0", due_date: form.due_date }])}>
+                <Plus size={14} /> Adicionar item
+              </button>
+            </div>
+            <div className="space-y-2">
+              {drafts.length === 0 && <div className="text-xs text-muted-foreground">Nenhum item. Adicione ao menos um.</div>}
+              {drafts.map((d, i) => (
+                <div key={i} className="grid grid-cols-[1fr_120px_140px_36px] gap-2 items-center">
+                  <input className="h-9 rounded-md border bg-background px-2 text-sm" placeholder="Descrição"
+                    value={d.description} onChange={e => setDrafts(a => a.map((x, j) => j === i ? { ...x, description: e.target.value } : x))} />
+                  <input type="number" step="0.01" className="h-9 rounded-md border bg-background px-2 text-sm text-right"
+                    value={d.amount} onChange={e => setDrafts(a => a.map((x, j) => j === i ? { ...x, amount: e.target.value } : x))} />
+                  <input type="date" className="h-9 rounded-md border bg-background px-2 text-sm"
+                    value={d.due_date} onChange={e => setDrafts(a => a.map((x, j) => j === i ? { ...x, due_date: e.target.value } : x))} />
+                  <button type="button" className="f3-btn danger" style={{ height: 34, padding: "0 8px" }}
+                    onClick={() => { if (d.id) setRemoved(r => [...r, d.id!]); setDrafts(a => a.filter((_, j) => j !== i)); }}>
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+              ))}
+            </div>
+            <div className="text-right text-sm mt-3">
+              Total: <strong>{money(Math.max(0, drafts.reduce((a, d) => a + (Number(d.amount) || 0), 0) - (Number(form.discount) || 0)))}</strong>
+            </div>
+          </div>
+
+          <label className="text-xs font-medium text-muted-foreground space-y-1 block">
+            <span>Observações</span>
+            <textarea className="w-full min-h-20 rounded-md border bg-background p-2 text-sm text-foreground"
+              value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} />
+          </label>
+
+          <DialogFooter>
+            <button className="f3-btn" onClick={() => setEditOpen(false)}>Cancelar</button>
+            <button className="f3-btn primary" disabled={saveInvoice.isPending} onClick={() => saveInvoice.mutate()}>
+              {saveInvoice.isPending ? "Salvando…" : "Salvar alterações"}
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ==== Registrar pagamento ==== */}
+      <Dialog open={payOpen} onOpenChange={setPayOpen}>
+        <DialogContent className="sm:max-w-[440px]">
+          <DialogHeader><DialogTitle>Registrar pagamento</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <label className="text-xs font-medium text-muted-foreground space-y-1 block">
+              <span>Data do pagamento</span>
+              <input type="date" className="w-full h-9 rounded-md border bg-background px-2 text-sm text-foreground"
+                value={pay.date} onChange={e => setPay(p => ({ ...p, date: e.target.value }))} />
+            </label>
+            <label className="text-xs font-medium text-muted-foreground space-y-1 block">
+              <span>Forma de pagamento</span>
+              <input className="w-full h-9 rounded-md border bg-background px-2 text-sm text-foreground" placeholder="PIX, boleto…"
+                value={pay.method} onChange={e => setPay(p => ({ ...p, method: e.target.value }))} />
+            </label>
+            <div className="text-sm">Valor a baixar: <strong>{money(totals.open || totals.total)}</strong></div>
+          </div>
+          <DialogFooter>
+            <button className="f3-btn" onClick={() => setPayOpen(false)}>Cancelar</button>
+            <button className="f3-btn primary" disabled={registerPayment.isPending}
+              onClick={() => registerPayment.mutate({ date: pay.date, method: pay.method })}>
+              Confirmar pagamento
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
+
   );
 }
