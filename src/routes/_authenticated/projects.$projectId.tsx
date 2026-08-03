@@ -23,6 +23,7 @@ import { ProjectCostsTab } from "@/components/project-costs-tab";
 import { Prj02Overview, p2Initials } from "@/components/prj02-overview";
 import { Prj03Tasks } from "@/components/prj03-tasks";
 import { Prj04Finance } from "@/components/prj04-finance";
+import { Prj05Strategy } from "@/components/prj05-strategy";
 import { Share2, MoreHorizontal, Mail as MailIcon, Target, TrendingUp } from "lucide-react";
 import "@/prj02.css";
 
@@ -327,7 +328,8 @@ function ProjectDetail() {
   const showTimeline = !!project.has_timeline;
   const showTraffic = !!project.traffic_budget?.enabled;
   const scope = (project.scope_flags ?? {}) as Record<string, unknown>;
-  const showStrategy = ["swot", "personas", "competitors", "roadmap", "kpis", "action_plan"].some((k) => !!scope[k]);
+  // @ts-ignore-unused
+  const _showStrategy = ["swot", "personas", "competitors", "roadmap", "kpis", "action_plan"].some((k) => !!scope[k]);
   const showCampaigns = showTraffic;
 
   const taskRevenue = tasks.reduce((s, t) => {
@@ -346,7 +348,7 @@ function ProjectDetail() {
     { id: "team", label: "Equipe", count: people.length },
     { id: "finance", label: "Financeiro" },
     { id: "costs", label: "Custos" },
-    ...(showStrategy ? [{ id: "strategy", label: "Estratégia" }] : []),
+    { id: "strategy", label: "Estratégia" },
     ...(showCalendar ? [{ id: "calendar", label: "Calendário" }] : []),
     ...(showGrid ? [{ id: "grid", label: "Grid" }] : []),
     ...(showTimeline ? [{ id: "timeline", label: "Timeline" }] : []),
@@ -485,7 +487,7 @@ function ProjectDetail() {
 
       {activeTab === "finance" && <Prj04Finance charges={charges as never} tasks={tasks as never} costs={costs as never} />}
       {activeTab === "costs" && <div style={{ marginTop: 18 }}><ProjectCostsTab projectId={projectId} organizationId={project.organization_id} /></div>}
-      {activeTab === "strategy" && <div style={{ marginTop: 18 }}><StrategyTab description={project.description ?? ""} onSave={(d) => saveField.mutate({ description: d })} /></div>}
+      {activeTab === "strategy" && <Prj05Strategy description={project.description ?? ""} onSaveDescription={(d) => saveField.mutate({ description: d })} />}
       {activeTab === "calendar" && <div style={{ marginTop: 18 }}><ComingSoon icon={Calendar} title="Calendário de Conteúdo" description="Grade mensal com peças de conteúdo por plataforma." /></div>}
       {activeTab === "grid" && <div style={{ marginTop: 18 }}><ComingSoon icon={Grid3x3} title="Grid de Conteúdo" description="Prévia visual do feed por plataforma." /></div>}
       {activeTab === "timeline" && <div style={{ marginTop: 18 }}><ComingSoon icon={TimerIcon} title="Timeline" description="Roadmap do projeto por fases, com marcos e entregas." /></div>}
