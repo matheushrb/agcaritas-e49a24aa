@@ -249,6 +249,81 @@ function InvoiceDetailPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  function openEdit() {
+    if (!invoice) return;
+    setForm({
+      client_id: invoice.client_id ?? "",
+      project_id: invoice.project_id ?? "",
+      issue_date: (invoice.issue_date ?? "").slice(0, 10),
+      due_date: (invoice.due_date ?? "").slice(0, 10),
+      payment_method: invoice.payment_method ?? "",
+      payment_terms: invoice.payment_terms ?? "",
+      payment_link: invoice.payment_link ?? "",
+      discount: String(num(invoice.discount)),
+      notes: invoice.notes ?? "",
+    });
+    setDrafts(items.map(i => ({ id: i.id, description: i.description, amount: String(num(i.amount)), due_date: (i.due_date ?? "").slice(0, 10) })));
+    setRemoved([]);
+    setEditOpen(true);
+  }
+
+  const saveInvoice = useMutation({
+    mutationFn: async () => {
+      const lines = drafts.filter(d => d.description.trim());
+      const subtotal = lines.reduce((a, d) => a + (Number(d.amount) || 0), 0);
+      const discount = Number(form.discount) || 0;
+
+      const { error } = await supabase.from("invoices").update({
+        client_id: form.client_id || null,
+        project_id: form.project_id || null,
+        issue_date: form.issue_date || null,
+        due_date: form.due_date || null,
+        payment_method: form.payment_method || null,
+        payment_terms: form.payment_terms || null,
+        payment_link: form.payment_link || null,
+        discount,
+        amount: subtotal,
+        total: Math.max(0, subtotal - discount),
+        notes: form.notes || null,
+      }).eq("id", invoiceId);
+      if (error) throw error;
+
+      if (removed.length) {
+        const { error: delErr } = await supabase.from("charges")
+          .update({ invoice_id: null, status: "pending_invoice" }).in("id", removed);
+        if (delErr) throw delErr;
+      }
+
+      for (const d of lines) {
+        const amount = Number(d.amount) || 0;
+        const due = d.due_date || form.due_date || new Date().toISOString().slice(0, 10);
+        if (d.id) {
+          const { error: e2 } = await supabase.from("charges")
+            .update({ description: d.description, amount, due_date: due }).eq("id", d.id);
+          if (e2) throw e2;
+        } else {
+          const { data: prof } = await supabase.from("profiles").select("organization_id").maybeSingle();
+          if (!prof?.organization_id) throw new Error("Organização não encontrada");
+          const { error: e3 } = await supabase.from("charges").insert({
+            organization_id: prof.organization_id,
+            invoice_id: invoiceId,
+            client_id: form.client_id || null,
+            project_id: form.project_id || null,
+            description: d.description,
+            amount,
+            due_date: due,
+            nature: "income",
+            status: "pending",
+          });
+          if (e3) throw e3;
+        }
+      }
+    },
+    onSuccess: () => { invalidate(); setEditOpen(false); toast.success("Fatura atualizada"); },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+
   const totals = useMemo(() => {
     const subtotal = items.reduce((a, i) => a + num(i.amount), 0);
     const discount = num(invoice?.discount);
