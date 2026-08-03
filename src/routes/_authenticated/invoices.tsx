@@ -244,6 +244,34 @@ function InvoicesPage() {
   );
 }
 
+function exportInvoicesCsv(
+  invoices: Invoice[],
+  clientById: Record<string, Client>,
+  projectById: Record<string, Project>,
+) {
+  const head = ["Número", "Cliente", "Projeto", "Emissão", "Vencimento", "Status", "Total", "Recebido"];
+  const rows = invoices.map(i => [
+    i.number ?? "",
+    i.client_id ? clientById[i.client_id]?.name ?? "" : "",
+    i.project_id ? projectById[i.project_id]?.name ?? "" : "",
+    i.issue_date ?? "",
+    i.due_date ?? "",
+    STATUS_META[i.status]?.label ?? i.status,
+    Number(i.total ?? i.amount ?? 0).toFixed(2),
+    i.paid_at ? Number(i.total ?? i.amount ?? 0).toFixed(2) : "0.00",
+  ]);
+  const csv = [head, ...rows].map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(";")).join("\n");
+  const url = URL.createObjectURL(new Blob([`\uFEFF${csv}`], { type: "text/csv;charset=utf-8" }));
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `faturas-${new Date().toISOString().slice(0, 10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+  toast.success("Exportação gerada");
+}
+
+
+
 /* ----------------------------------- Wizard ------------------------------ */
 function NewInvoiceWizard({
   initialProjectId, clients, projects, organization, onClose, onCreated,
