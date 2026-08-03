@@ -94,9 +94,21 @@ function InvoiceDetailPage() {
     enabled: !!invoice?.client_id,
     queryFn: async () => {
       const { data } = await supabase.from("clients")
-        .select("id,name,company,email,phone,contact_name,contact_role,contact_email,contact_phone,billing_email")
+        .select("id,name,company,trade_name,legal_name,tax_id,state_registration,email,phone,contact_name,contact_role,contact_email,contact_phone,billing_email,address_street,address_number,address_complement,address_neighborhood,address_city,address_state,address_zip")
         .eq("id", invoice!.client_id!).maybeSingle();
-      return data;
+      return data as Record<string, string | null> | null;
+    },
+  });
+
+  const { data: organization = null } = useQuery({
+    queryKey: ["organization-invoice"],
+    queryFn: async () => {
+      const { data: p } = await supabase.from("profiles").select("organization_id").maybeSingle();
+      if (!p?.organization_id) return null;
+      const { data } = await supabase.from("organizations")
+        .select("id,name,legal_name,tax_id,email,phone,address,website,bank_info")
+        .eq("id", p.organization_id).maybeSingle();
+      return (data ?? null) as Record<string, string | null> | null;
     },
   });
 
@@ -108,6 +120,50 @@ function InvoiceDetailPage() {
       return data;
     },
   });
+
+  async function openPDF() {
+    if (!invoice) return;
+    try {
+      const { generateInvoicePDF, DEFAULT_PAYMENT_TERMS } = await import("@/lib/pdf/invoice-pdf");
+      const c = client;
+      const addr = c ? [
+        [c.address_street, c.address_number].filter(Boolean).join(", "),
+        [c.address_complement, c.address_neighborhood].filter(Boolean).join(" · "),
+        [[c.address_city, c.address_state].filter(Boolean).join("/"), c.address_zip ? `CEP ${c.address_zip}` : null].filter(Boolean).join(" · "),
+      ].filter(Boolean).join("\n") || null : null;
+      const doc = await generateInvoicePDF({
+        number: invoice.number ?? "RASCUNHO",
+        issue_date: invoice.issue_date || invoice.created_at || new Date().toISOString().slice(0, 10),
+        due_date: invoice.due_date,
+        client: c ? {
+          name: c.name ?? "—", company: c.trade_name || c.company || null, legal_name: c.legal_name || null,
+          document: c.tax_id || null, state_registration: c.state_registration || null,
+          email: c.billing_email || c.email || null, phone: c.phone || null, address: addr,
+          contact_name: c.contact_name || null, contact_role: c.contact_role || null,
+        } : { name: "—" },
+        agency: organization ? {
+          name: organization.name ?? null, legal_name: organization.legal_name ?? null,
+          document: organization.tax_id ?? null, email: organization.email ?? null,
+          phone: organization.phone ?? null, address: organization.address ?? null,
+          website: organization.website ?? null, bank_info: organization.bank_info ?? null,
+        } : undefined,
+        lines: items.map(it => ({
+          key: it.id, title: it.description, amount: num(it.amount),
+          reference_date: it.due_date, reference_label: "Referência",
+        })),
+        discount: num(invoice.discount) || undefined,
+        notes: invoice.notes || undefined,
+        payment_terms: invoice.payment_terms || DEFAULT_PAYMENT_TERMS,
+        payment_link: invoice.payment_link || undefined,
+        is_preview: invoice.status === "draft",
+      });
+      const url = doc.output("bloburl") as unknown as string;
+      window.open(url, "_blank", "noopener,noreferrer");
+    } catch (e) {
+      toast.error((e as Error).message);
+    }
+  }
+
 
   useEffect(() => { if (invoice) setNotes(invoice.notes ?? ""); }, [invoice]);
 
@@ -208,9 +264,13 @@ function InvoiceDetailPage() {
           </div>
         </div>
         <div className="f3-actions">
+          <button className="f3-btn" onClick={openPDF}>
+            <FileText size={15} /> Ver prévia do PDF
+          </button>
           <button className="f3-btn" onClick={() => { navigator.clipboard?.writeText(window.location.href); toast.success("Link copiado"); }}>
             <Share2 size={15} /> Compartilhar
           </button>
+
           <button className="f3-btn" disabled={invoice.status === "paid" || invoice.status === "canceled"} onClick={() => sendInvoice.mutate()}>
             <Send size={15} /> Enviar cobrança
           </button>
