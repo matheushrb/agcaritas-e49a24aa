@@ -276,7 +276,7 @@ function InvoiceDetailPage() {
       const { error } = await supabase.from("invoices").update({
         client_id: form.client_id || null,
         project_id: form.project_id || null,
-        issue_date: form.issue_date || null,
+        issue_date: form.issue_date || undefined,
         due_date: form.due_date || null,
         payment_method: form.payment_method || null,
         payment_terms: form.payment_terms || null,
