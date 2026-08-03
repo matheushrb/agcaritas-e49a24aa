@@ -77,7 +77,7 @@ function InvoiceDetailPage() {
   const [editOpen, setEditOpen] = useState(false);
   const [payOpen, setPayOpen] = useState(false);
   const [form, setForm] = useState({
-    client_id: "", project_id: "", issue_date: "", due_date: "",
+    number: "", client_id: "", project_id: "", issue_date: "", due_date: "",
     payment_method: "", payment_terms: "", payment_link: "", discount: "0", notes: "",
   });
   const [drafts, setDrafts] = useState<{ id?: string; description: string; amount: string; due_date: string }[]>([]);
@@ -162,6 +162,11 @@ function InvoiceDetailPage() {
 
   async function openPDF() {
     if (!invoice) return;
+    if (!invoice.number) {
+      toast.error("Defina o número da fatura antes de gerar o PDF.");
+      openEdit();
+      return;
+    }
     try {
       const { generateInvoicePDF, DEFAULT_PAYMENT_TERMS } = await import("@/lib/pdf/invoice-pdf");
       const c = client;
@@ -171,7 +176,7 @@ function InvoiceDetailPage() {
         [[c.address_city, c.address_state].filter(Boolean).join("/"), c.address_zip ? `CEP ${c.address_zip}` : null].filter(Boolean).join(" · "),
       ].filter(Boolean).join("\n") || null : null;
       const doc = await generateInvoicePDF({
-        number: invoice.number ?? "RASCUNHO",
+        number: invoice.number,
         issue_date: invoice.issue_date || invoice.created_at || new Date().toISOString().slice(0, 10),
         due_date: invoice.due_date,
         client: c ? {
@@ -256,9 +261,18 @@ function InvoiceDetailPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  async function suggestNumber() {
+    const base = (form.issue_date || invoice?.issue_date || new Date().toISOString().slice(0, 10)).slice(0, 7).replace("-", "");
+    const { data } = await supabase.from("invoices").select("number").like("number", `${base}%`).order("number", { ascending: false }).limit(1);
+    const last = data?.[0]?.number ?? "";
+    const seq = last.length > 6 ? Number(last.slice(6)) : 0;
+    setForm(f => ({ ...f, number: `${base}${String((Number.isFinite(seq) ? seq : 0) + 1).padStart(3, "0")}` }));
+  }
+
   function openEdit() {
     if (!invoice) return;
     setForm({
+      number: invoice.number ?? "",
       client_id: invoice.client_id ?? "",
       project_id: invoice.project_id ?? "",
       issue_date: (invoice.issue_date ?? "").slice(0, 10),
@@ -280,7 +294,15 @@ function InvoiceDetailPage() {
       const subtotal = lines.reduce((a, d) => a + (Number(d.amount) || 0), 0);
       const discount = Number(form.discount) || 0;
 
+      const nextNumber = form.number.trim();
+      if (nextNumber && nextNumber !== (invoice?.number ?? "")) {
+        const { data: dup } = await supabase.from("invoices")
+          .select("id").eq("number", nextNumber).neq("id", invoiceId).maybeSingle();
+        if (dup) throw new Error(`Já existe uma fatura com o número ${nextNumber}`);
+      }
+
       const { error } = await supabase.from("invoices").update({
+        ...(nextNumber ? { number: nextNumber } : {}),
         client_id: form.client_id || null,
         project_id: form.project_id || null,
         issue_date: form.issue_date || undefined,
@@ -663,6 +685,15 @@ function InvoiceDetailPage() {
             {/* ---- coluna de edição ---- */}
             <div className="space-y-3 overflow-y-auto pr-2 min-h-0">
               <div>
+                <label className="text-xs font-medium text-muted-foreground">Número da fatura</label>
+                <div className="flex gap-2">
+                  <Input value={form.number} placeholder="Ex.: 202608001"
+                    onChange={e => setForm(f => ({ ...f, number: e.target.value }))} />
+                  <Button type="button" variant="outline" onClick={suggestNumber}>Gerar</Button>
+                </div>
+                <p className="text-[10px] text-muted-foreground mt-1">Obrigatório para gerar o PDF. Formato sugerido: AAAAMM + sequência.</p>
+              </div>
+              <div>
                 <label className="text-xs font-medium text-muted-foreground">Cliente pagador</label>
                 <Select value={form.client_id || "none"} onValueChange={v => setForm(f => ({ ...f, client_id: v === "none" ? "" : v, project_id: "" }))}>
                   <SelectTrigger><SelectValue placeholder="Escolha o cliente" /></SelectTrigger>
@@ -737,7 +768,7 @@ function InvoiceDetailPage() {
                     <FileText className="h-4 w-4" />
                     <span className="text-xs font-semibold tracking-wider uppercase">Prévia da fatura</span>
                   </div>
-                  <span className="font-mono text-sm font-bold">{invoice.number ?? "RASCUNHO"}</span>
+                  <span className="font-mono text-sm font-bold">{form.number || "SEM NÚMERO"}</span>
                 </div>
 
                 <div className="p-4 space-y-3 text-xs">

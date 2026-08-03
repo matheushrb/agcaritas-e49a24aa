@@ -75,6 +75,7 @@ type Task = {
   client_id: string | null;
   assignee_id: string | null;
   due_date: string | null;
+  start_date?: string | null;
   billing_model: BillingModel | null;
   billing_value: number | null;
   billing_enabled: boolean;
