@@ -22,7 +22,6 @@ import { Route as AuthenticatedProposalsRouteImport } from './routes/_authentica
 import { Route as AuthenticatedNotificationsRouteImport } from './routes/_authenticated/notifications'
 import { Route as AuthenticatedMessagesRouteImport } from './routes/_authenticated/messages'
 import { Route as AuthenticatedMarketingPlansRouteImport } from './routes/_authenticated/marketing-plans'
-import { Route as AuthenticatedInvoicesRouteImport } from './routes/_authenticated/invoices'
 import { Route as AuthenticatedInboxRouteImport } from './routes/_authenticated/inbox'
 import { Route as AuthenticatedIdeasRouteImport } from './routes/_authenticated/ideas'
 import { Route as AuthenticatedGoalsRouteImport } from './routes/_authenticated/goals'
@@ -34,6 +33,7 @@ import { Route as AuthenticatedClientsRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedCampaignsRouteImport } from './routes/_authenticated/campaigns'
 import { Route as AuthenticatedCalendarRouteImport } from './routes/_authenticated/calendar'
 import { Route as AuthenticatedProjectsIndexRouteImport } from './routes/_authenticated/projects.index'
+import { Route as AuthenticatedInvoicesIndexRouteImport } from './routes/_authenticated/invoices.index'
 import { Route as AuthenticatedProjectsProjectIdRouteImport } from './routes/_authenticated/projects.$projectId'
 import { Route as AuthenticatedClientsClientIdRouteImport } from './routes/_authenticated/clients.$clientId'
 
@@ -103,11 +103,6 @@ const AuthenticatedMarketingPlansRoute =
     path: '/marketing-plans',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const AuthenticatedInvoicesRoute = AuthenticatedInvoicesRouteImport.update({
-  id: '/invoices',
-  path: '/invoices',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
 const AuthenticatedInboxRoute = AuthenticatedInboxRouteImport.update({
   id: '/inbox',
   path: '/inbox',
@@ -164,6 +159,12 @@ const AuthenticatedProjectsIndexRoute =
     path: '/projects/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedInvoicesIndexRoute =
+  AuthenticatedInvoicesIndexRouteImport.update({
+    id: '/invoices/',
+    path: '/invoices/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedProjectsProjectIdRoute =
   AuthenticatedProjectsProjectIdRouteImport.update({
     id: '/projects/$projectId',
@@ -191,7 +192,6 @@ export interface FileRoutesByFullPath {
   '/goals': typeof AuthenticatedGoalsRoute
   '/ideas': typeof AuthenticatedIdeasRoute
   '/inbox': typeof AuthenticatedInboxRoute
-  '/invoices': typeof AuthenticatedInvoicesRoute
   '/marketing-plans': typeof AuthenticatedMarketingPlansRoute
   '/messages': typeof AuthenticatedMessagesRoute
   '/notifications': typeof AuthenticatedNotificationsRoute
@@ -203,6 +203,7 @@ export interface FileRoutesByFullPath {
   '/p/$token': typeof PTokenRoute
   '/clients/$clientId': typeof AuthenticatedClientsClientIdRoute
   '/projects/$projectId': typeof AuthenticatedProjectsProjectIdRoute
+  '/invoices/': typeof AuthenticatedInvoicesIndexRoute
   '/projects/': typeof AuthenticatedProjectsIndexRoute
 }
 export interface FileRoutesByTo {
@@ -219,7 +220,6 @@ export interface FileRoutesByTo {
   '/goals': typeof AuthenticatedGoalsRoute
   '/ideas': typeof AuthenticatedIdeasRoute
   '/inbox': typeof AuthenticatedInboxRoute
-  '/invoices': typeof AuthenticatedInvoicesRoute
   '/marketing-plans': typeof AuthenticatedMarketingPlansRoute
   '/messages': typeof AuthenticatedMessagesRoute
   '/notifications': typeof AuthenticatedNotificationsRoute
@@ -231,6 +231,7 @@ export interface FileRoutesByTo {
   '/p/$token': typeof PTokenRoute
   '/clients/$clientId': typeof AuthenticatedClientsClientIdRoute
   '/projects/$projectId': typeof AuthenticatedProjectsProjectIdRoute
+  '/invoices': typeof AuthenticatedInvoicesIndexRoute
   '/projects': typeof AuthenticatedProjectsIndexRoute
 }
 export interface FileRoutesById {
@@ -249,7 +250,6 @@ export interface FileRoutesById {
   '/_authenticated/goals': typeof AuthenticatedGoalsRoute
   '/_authenticated/ideas': typeof AuthenticatedIdeasRoute
   '/_authenticated/inbox': typeof AuthenticatedInboxRoute
-  '/_authenticated/invoices': typeof AuthenticatedInvoicesRoute
   '/_authenticated/marketing-plans': typeof AuthenticatedMarketingPlansRoute
   '/_authenticated/messages': typeof AuthenticatedMessagesRoute
   '/_authenticated/notifications': typeof AuthenticatedNotificationsRoute
@@ -261,6 +261,7 @@ export interface FileRoutesById {
   '/p/$token': typeof PTokenRoute
   '/_authenticated/clients/$clientId': typeof AuthenticatedClientsClientIdRoute
   '/_authenticated/projects/$projectId': typeof AuthenticatedProjectsProjectIdRoute
+  '/_authenticated/invoices/': typeof AuthenticatedInvoicesIndexRoute
   '/_authenticated/projects/': typeof AuthenticatedProjectsIndexRoute
 }
 export interface FileRouteTypes {
@@ -279,7 +280,6 @@ export interface FileRouteTypes {
     | '/goals'
     | '/ideas'
     | '/inbox'
-    | '/invoices'
     | '/marketing-plans'
     | '/messages'
     | '/notifications'
@@ -291,6 +291,7 @@ export interface FileRouteTypes {
     | '/p/$token'
     | '/clients/$clientId'
     | '/projects/$projectId'
+    | '/invoices/'
     | '/projects/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -307,7 +308,6 @@ export interface FileRouteTypes {
     | '/goals'
     | '/ideas'
     | '/inbox'
-    | '/invoices'
     | '/marketing-plans'
     | '/messages'
     | '/notifications'
@@ -319,6 +319,7 @@ export interface FileRouteTypes {
     | '/p/$token'
     | '/clients/$clientId'
     | '/projects/$projectId'
+    | '/invoices'
     | '/projects'
   id:
     | '__root__'
@@ -336,7 +337,6 @@ export interface FileRouteTypes {
     | '/_authenticated/goals'
     | '/_authenticated/ideas'
     | '/_authenticated/inbox'
-    | '/_authenticated/invoices'
     | '/_authenticated/marketing-plans'
     | '/_authenticated/messages'
     | '/_authenticated/notifications'
@@ -348,6 +348,7 @@ export interface FileRouteTypes {
     | '/p/$token'
     | '/_authenticated/clients/$clientId'
     | '/_authenticated/projects/$projectId'
+    | '/_authenticated/invoices/'
     | '/_authenticated/projects/'
   fileRoutesById: FileRoutesById
 }
@@ -452,13 +453,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedMarketingPlansRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/invoices': {
-      id: '/_authenticated/invoices'
-      path: '/invoices'
-      fullPath: '/invoices'
-      preLoaderRoute: typeof AuthenticatedInvoicesRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
     '/_authenticated/inbox': {
       id: '/_authenticated/inbox'
       path: '/inbox'
@@ -536,6 +530,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedProjectsIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/invoices/': {
+      id: '/_authenticated/invoices/'
+      path: '/invoices'
+      fullPath: '/invoices/'
+      preLoaderRoute: typeof AuthenticatedInvoicesIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/projects/$projectId': {
       id: '/_authenticated/projects/$projectId'
       path: '/projects/$projectId'
@@ -575,7 +576,6 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedGoalsRoute: typeof AuthenticatedGoalsRoute
   AuthenticatedIdeasRoute: typeof AuthenticatedIdeasRoute
   AuthenticatedInboxRoute: typeof AuthenticatedInboxRoute
-  AuthenticatedInvoicesRoute: typeof AuthenticatedInvoicesRoute
   AuthenticatedMarketingPlansRoute: typeof AuthenticatedMarketingPlansRoute
   AuthenticatedMessagesRoute: typeof AuthenticatedMessagesRoute
   AuthenticatedNotificationsRoute: typeof AuthenticatedNotificationsRoute
@@ -585,6 +585,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedTasksRoute: typeof AuthenticatedTasksRoute
   AuthenticatedTeamRoute: typeof AuthenticatedTeamRoute
   AuthenticatedProjectsProjectIdRoute: typeof AuthenticatedProjectsProjectIdRoute
+  AuthenticatedInvoicesIndexRoute: typeof AuthenticatedInvoicesIndexRoute
   AuthenticatedProjectsIndexRoute: typeof AuthenticatedProjectsIndexRoute
 }
 
@@ -599,7 +600,6 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedGoalsRoute: AuthenticatedGoalsRoute,
   AuthenticatedIdeasRoute: AuthenticatedIdeasRoute,
   AuthenticatedInboxRoute: AuthenticatedInboxRoute,
-  AuthenticatedInvoicesRoute: AuthenticatedInvoicesRoute,
   AuthenticatedMarketingPlansRoute: AuthenticatedMarketingPlansRoute,
   AuthenticatedMessagesRoute: AuthenticatedMessagesRoute,
   AuthenticatedNotificationsRoute: AuthenticatedNotificationsRoute,
@@ -609,6 +609,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedTasksRoute: AuthenticatedTasksRoute,
   AuthenticatedTeamRoute: AuthenticatedTeamRoute,
   AuthenticatedProjectsProjectIdRoute: AuthenticatedProjectsProjectIdRoute,
+  AuthenticatedInvoicesIndexRoute: AuthenticatedInvoicesIndexRoute,
   AuthenticatedProjectsIndexRoute: AuthenticatedProjectsIndexRoute,
 }
 
@@ -625,13 +626,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
