@@ -1,4 +1,6 @@
-import { createFileRoute, useSearch } from "@tanstack/react-router";
+import { createFileRoute, useSearch, useNavigate } from "@tanstack/react-router";
+import { Fin02Invoices, type F2Invoice } from "@/components/fin02-invoices";
+
 import { useMemo, useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -147,6 +149,8 @@ const fmtDate = (d: string | null) => d ? new Date(d + "T00:00:00").toLocaleDate
 function InvoicesPage() {
   const qc = useQueryClient();
   const search = useSearch({ from: "/_authenticated/invoices" });
+  const navigate = useNavigate();
+
   const [wizardOpen, setWizardOpen] = useState(false);
   const [detailId, setDetailId] = useState<string | null>(null);
 
@@ -159,7 +163,7 @@ function InvoicesPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("invoices")
-        .select("id,number,client_id,project_id,status,issue_date,due_date,total,amount,paid_at,notes,payment_terms,payment_link")
+        .select("id,number,client_id,project_id,status,issue_date,due_date,total,amount,paid_at,notes,payment_terms,payment_link,payment_method")
         .order("issue_date", { ascending: false });
       if (error) throw error;
       return (data ?? []) as Invoice[];
@@ -200,43 +204,17 @@ function InvoicesPage() {
   const projectById = useMemo(() => Object.fromEntries(projects.map(p => [p.id, p])), [projects]);
 
   return (
-    <div className="mx-auto max-w-7xl px-6 py-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold flex items-center gap-2"><Receipt className="h-6 w-6" />Faturas</h1>
-          <p className="text-sm text-muted-foreground">Agrupe cobranças e tarefas em uma fatura única.</p>
-        </div>
-        <Button onClick={() => setWizardOpen(true)}><Plus className="h-4 w-4 mr-1" />Nova fatura</Button>
-      </div>
+    <div className="px-6 py-6">
+      <Fin02Invoices
+        invoices={invoices as unknown as F2Invoice[]}
+        clients={clients}
+        projects={projects}
+        onOpen={(id) => setDetailId(id)}
+        onNewInvoice={() => setWizardOpen(true)}
+        onNewCharge={() => navigate({ to: "/finance", search: { new: 1 } })}
+        onExport={() => exportInvoicesCsv(invoices, clientById, projectById)}
+      />
 
-      <Card className="p-0 overflow-hidden">
-        <div className="grid grid-cols-[110px_1fr_1fr_120px_120px_120px_80px] gap-3 px-4 py-2 text-xs font-medium text-muted-foreground bg-muted/40 border-b">
-          <div>Número</div><div>Cliente</div><div>Projeto</div>
-          <div>Emissão</div><div>Vencimento</div><div className="text-right">Total</div><div className="text-right">Status</div>
-        </div>
-        {invoices.length === 0 && (
-          <div className="p-8 text-center text-sm text-muted-foreground">Nenhuma fatura ainda. Clique em <strong>Nova fatura</strong>.</div>
-        )}
-        {invoices.map(inv => {
-          const total = Number(inv.total ?? inv.amount ?? 0);
-          const meta = STATUS_META[inv.status] ?? STATUS_META.pending;
-          return (
-            <button
-              key={inv.id}
-              onClick={() => setDetailId(inv.id)}
-              className="w-full grid grid-cols-[110px_1fr_1fr_120px_120px_120px_80px] gap-3 px-4 py-3 text-sm items-center hover:bg-muted/40 border-b last:border-b-0 text-left"
-            >
-              <div className="font-mono text-xs">{inv.number?.trim() ? inv.number : <span className="text-muted-foreground italic">— rascunho</span>}</div>
-              <div className="truncate">{inv.client_id ? clientById[inv.client_id]?.name ?? "—" : "—"}</div>
-              <div className="truncate text-muted-foreground">{inv.project_id ? projectById[inv.project_id]?.name ?? "—" : "Múltiplos"}</div>
-              <div className="text-xs text-muted-foreground">{fmtDate(inv.issue_date)}</div>
-              <div className="text-xs text-muted-foreground">{fmtDate(inv.due_date)}</div>
-              <div className="text-right font-medium">{money(total)}</div>
-              <div className="text-right"><Badge variant="secondary" className={cn("text-[10px]", meta.className)}>{meta.label}</Badge></div>
-            </button>
-          );
-        })}
-      </Card>
 
       {wizardOpen && (
         <NewInvoiceWizard
@@ -265,6 +243,34 @@ function InvoicesPage() {
     </div>
   );
 }
+
+function exportInvoicesCsv(
+  invoices: Invoice[],
+  clientById: Record<string, Client>,
+  projectById: Record<string, Project>,
+) {
+  const head = ["Número", "Cliente", "Projeto", "Emissão", "Vencimento", "Status", "Total", "Recebido"];
+  const rows = invoices.map(i => [
+    i.number ?? "",
+    i.client_id ? clientById[i.client_id]?.name ?? "" : "",
+    i.project_id ? projectById[i.project_id]?.name ?? "" : "",
+    i.issue_date ?? "",
+    i.due_date ?? "",
+    STATUS_META[i.status]?.label ?? i.status,
+    Number(i.total ?? i.amount ?? 0).toFixed(2),
+    i.paid_at ? Number(i.total ?? i.amount ?? 0).toFixed(2) : "0.00",
+  ]);
+  const csv = [head, ...rows].map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(";")).join("\n");
+  const url = URL.createObjectURL(new Blob([`\uFEFF${csv}`], { type: "text/csv;charset=utf-8" }));
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `faturas-${new Date().toISOString().slice(0, 10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+  toast.success("Exportação gerada");
+}
+
+
 
 /* ----------------------------------- Wizard ------------------------------ */
 function NewInvoiceWizard({
@@ -1088,7 +1094,7 @@ function InvoiceDetail({ id, clients, organization, onClose }: { id: string; cli
     queryKey: ["invoice", id],
     queryFn: async () => {
       const { data } = await supabase.from("invoices")
-        .select("id,number,client_id,project_id,status,issue_date,due_date,total,amount,paid_at,notes,payment_terms,payment_link")
+        .select("id,number,client_id,project_id,status,issue_date,due_date,total,amount,paid_at,notes,payment_terms,payment_link,payment_method")
         .eq("id", id).maybeSingle();
       return (data ?? null) as Invoice | null;
     },
