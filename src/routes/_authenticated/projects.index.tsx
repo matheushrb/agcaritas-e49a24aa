@@ -114,6 +114,16 @@ function ProjectsPage() {
     },
   });
 
+  const { data: projectTypes = [] } = useQuery<Array<{ id: string; name: string; slug: string | null }>>({
+    queryKey: ["project_types"],
+    queryFn: async () => {
+      const { data } = await (supabase as any).from("project_types").select("id,name,slug").order("sort_order");
+      return (data ?? []) as Array<{ id: string; name: string; slug: string | null }>;
+    },
+  });
+  const projectTypeName = (key: string | null) =>
+    (key ? projectTypes.find(t => t.id === key || t.slug === key)?.name ?? null : null);
+
   const { data: clients = [] } = useQuery<Client[]>({
     queryKey: ["clients-min"],
     queryFn: async () => {
@@ -210,7 +220,7 @@ function ProjectsPage() {
           clientName: project.client_id ? clientById[project.client_id] ?? "Cliente" : null,
           startDate: project.start_date,
           endDate: project.end_date,
-          projectType: project.project_type,
+          projectType: projectTypeName(project.project_type),
           urgency: project.urgency,
           billingModel: project.billing_model,
           fixedValue: project.fixed_value,
@@ -222,7 +232,7 @@ function ProjectsPage() {
           progress: count.total > 0 ? Math.round((count.done / count.total) * 100) : 0,
         } as ProjectPreviewData & { doneTasks: number };
       }),
-    [projects, tasksAgg, clientById],
+    [projects, tasksAgg, clientById, projectTypes],
   );
 
   const filtered = useMemo(() => {
