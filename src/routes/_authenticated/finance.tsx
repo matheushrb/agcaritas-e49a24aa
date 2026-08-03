@@ -1,20 +1,16 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Card } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { EntityDialog, DialogField, DialogCancelButton } from "@/components/entity-dialog";
 import { Button as UIButton } from "@/components/ui/button";
-import { DollarSign, Plus, TrendingUp, TrendingDown, Wallet, AlertCircle, CheckCircle2, Clock, Receipt, Download } from "lucide-react";
+import { AlertCircle, CheckCircle2, Clock, Receipt } from "lucide-react";
 import { toast } from "sonner";
-import { cn } from "@/lib/utils";
-import { generateInvoicePDF } from "@/lib/pdf/invoice-pdf";
+import { Fin01Overview, type F1Charge, type F1Cost } from "@/components/fin01-overview";
+
 
 export const Route = createFileRoute("/_authenticated/finance")({
   validateSearch: (s: Record<string, unknown>) => ({
