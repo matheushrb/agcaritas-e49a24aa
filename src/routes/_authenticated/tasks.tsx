@@ -34,6 +34,7 @@ import { CostConfirmDialog, type CostSuggestion } from "@/components/cost-confir
 import { suggestTaskCost, type CostMode } from "@/components/team-cost-fields";
 import { useCalendarBlocks, BLOCK_META, type CalendarBlock } from "@/lib/calendar-blocks";
 import { NewTaskWindow } from "@/components/new-task-window";
+import { TaskViews, TaskViewSwitcher, type TskView } from "@/components/tsk-views";
 
 export const Route = createFileRoute("/_authenticated/tasks")({
   validateSearch: (s: Record<string, unknown>) => ({
@@ -117,7 +118,7 @@ function TasksPage() {
   const [search, setSearch] = useState("");
   const [priorityFilter, setPriorityFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [view, setView] = useState<"list" | "kanban">("list");
+  const [view, setView] = useState<TskView>("list");
   const [turbo, setTurbo] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [draftTask, setDraftTask] = useState<Task | null>(null);
@@ -149,7 +150,7 @@ function TasksPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("tasks")
-        .select("id,title,description,status,priority,project_id,client_id,assignee_id,due_date,billing_model,billing_value,billing_enabled,progress,platform,delivery_type,estimated_hours,stage,task_type_id,current_stage_id,deliverables,subtasks,broadcast_kind,recorded_at,aired_at,recorded_dates,aired_dates,created_at")
+        .select("id,title,description,status,priority,project_id,client_id,assignee_id,due_date,billing_model,billing_value,billing_enabled,progress,start_date,platform,delivery_type,estimated_hours,stage,task_type_id,current_stage_id,deliverables,subtasks,broadcast_kind,recorded_at,aired_at,recorded_dates,aired_dates,created_at")
         .order("created_at", { ascending: false });
       if (error) throw error;
       return ((data ?? []) as any[]).map(t => ({
@@ -158,6 +159,25 @@ function TasksPage() {
         aired_dates: Array.isArray(t.aired_dates) ? t.aired_dates : [],
       })) as Task[];
     },
+  });
+
+  const { data: projectsMin = [] } = useQuery({
+    queryKey: ["projects-min-tasks"],
+    queryFn: async () => {
+      const { data } = await supabase.from("projects").select("id,name").order("name");
+      return (data ?? []) as { id: string; name: string }[];
+    },
+  });
+  const projectName = (id: string | null) =>
+    (id && projectsMin.find(p => p.id === id)?.name) || "Sem projeto";
+
+  const updateStatus = useMutation({
+    mutationFn: async ({ id, status }: { id: string; status: TaskStatus }) => {
+      const { error } = await supabase.from("tasks").update({ status }).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["tasks"] }),
+    onError: (e: Error) => toast.error(e.message),
   });
 
   const tasks = useMemo(() => rawTasks.map(t => {
@@ -281,73 +301,23 @@ function TasksPage() {
             >
               <Zap className="h-4 w-4" /> Turbo
             </Button>
-            <div className="ml-auto flex items-center rounded-full border border-border p-1 bg-card">
-              <button
-                onClick={() => setView("list")}
-                className={cn("grid h-8 w-8 place-items-center rounded-full", view === "list" && "bg-primary text-primary-foreground")}
-                title="Lista"
-              ><ListIcon className="h-4 w-4" /></button>
-              <button
-                onClick={() => setView("kanban")}
-                className={cn("grid h-8 w-8 place-items-center rounded-full", view === "kanban" && "bg-primary text-primary-foreground")}
-                title="Kanban"
-              ><LayoutGrid className="h-4 w-4" /></button>
+            <div className="ml-auto">
+              <TaskViewSwitcher view={view} onChange={setView} />
             </div>
           </div>
         </Card>
 
         {isLoading ? (
           <div className="text-sm text-muted-foreground">Carregando…</div>
-        ) : view === "list" ? (
-          <div className="space-y-4">
-            {STATUS_ORDER.map(status => (
-              <Card key={status} className="rounded-2xl overflow-hidden">
-                <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-                  <div className="flex items-center gap-2">
-                    <Badge className={cn("rounded-full", STATUS_META[status].color)}>{STATUS_META[status].label}</Badge>
-                    <span className="text-sm text-muted-foreground">{byStatus[status].length}</span>
-                  </div>
-                </div>
-                <ul className="divide-y divide-border">
-                  {byStatus[status].map(t => (
-                    <TaskRow key={t.id} task={t} onClick={() => { setDraftTask(null); setSelectedId(t.id); }} />
-                  ))}
-                  <li className="px-4 py-2">
-                    <input
-                      value={quickTitle[status] ?? ""}
-                      onChange={e => setQuickTitle(p => ({ ...p, [status]: e.target.value }))}
-                      onKeyDown={e => { if (e.key === "Enter") handleQuickCreate(status); }}
-                      placeholder="+ Digite e pressione Enter para criar..."
-                      className="w-full bg-transparent outline-none text-sm placeholder:text-muted-foreground py-1"
-                    />
-                  </li>
-                </ul>
-              </Card>
-            ))}
-          </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-            {STATUS_ORDER.map(status => (
-              <Card key={status} className="rounded-2xl p-3 flex flex-col gap-2 min-h-[320px] bg-muted/30">
-                <div className="flex items-center justify-between px-1">
-                  <Badge className={cn("rounded-full", STATUS_META[status].color)}>{STATUS_META[status].label}</Badge>
-                  <span className="text-xs text-muted-foreground">{byStatus[status].length}</span>
-                </div>
-                <div className="space-y-2">
-                  {byStatus[status].map(t => (
-                    <KanbanCard key={t.id} task={t} onClick={() => { setDraftTask(null); setSelectedId(t.id); }} />
-                  ))}
-                </div>
-                <input
-                  value={quickTitle[status] ?? ""}
-                  onChange={e => setQuickTitle(p => ({ ...p, [status]: e.target.value }))}
-                  onKeyDown={e => { if (e.key === "Enter") handleQuickCreate(status); }}
-                  placeholder="+ Nova tarefa..."
-                  className="mt-auto w-full bg-transparent outline-none text-xs placeholder:text-muted-foreground px-2 py-2 rounded-lg border border-dashed border-border"
-                />
-              </Card>
-            ))}
-          </div>
+          <TaskViews
+            view={view}
+            tasks={filtered as any}
+            projectName={projectName}
+            onOpen={(id) => { setDraftTask(null); setSelectedId(id); }}
+            onQuickCreate={(status, title) => createTask.mutate({ title, status })}
+            onStatusChange={(id, status) => updateStatus.mutate({ id, status })}
+          />
         )}
       </div>
 
