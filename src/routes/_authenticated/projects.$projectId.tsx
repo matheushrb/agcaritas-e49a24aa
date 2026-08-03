@@ -347,7 +347,7 @@ function ProjectDetail() {
     { id: "team", label: "Equipe", count: people.length },
     { id: "finance", label: "Financeiro" },
     { id: "costs", label: "Custos" },
-    ...(showStrategy ? [{ id: "strategy", label: "Estratégia" }] : []),
+    { id: "strategy", label: "Estratégia" },
     ...(showCalendar ? [{ id: "calendar", label: "Calendário" }] : []),
     ...(showGrid ? [{ id: "grid", label: "Grid" }] : []),
     ...(showTimeline ? [{ id: "timeline", label: "Timeline" }] : []),
