@@ -69,6 +69,16 @@ function InvoiceDetailPage() {
   const qc = useQueryClient();
   const [notes, setNotes] = useState("");
   const [editingNotes, setEditingNotes] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [payOpen, setPayOpen] = useState(false);
+  const [form, setForm] = useState({
+    client_id: "", project_id: "", issue_date: "", due_date: "",
+    payment_method: "", payment_terms: "", payment_link: "", discount: "0", notes: "",
+  });
+  const [drafts, setDrafts] = useState<{ id?: string; description: string; amount: string; due_date: string }[]>([]);
+  const [removed, setRemoved] = useState<string[]>([]);
+  const [pay, setPay] = useState({ date: new Date().toISOString().slice(0, 10), method: "", amount: "" });
+
 
   const { data: invoice } = useQuery<Inv | null>({
     queryKey: ["invoice", invoiceId],
