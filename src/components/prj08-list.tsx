@@ -22,9 +22,9 @@ type Member = { user_id: string; name: string };
 
 const STATUS: Record<ProjectPreviewStatus, { label: string; cls: string }> = {
   planning: { label: "Planejamento", cls: "neutral" },
-  active: { label: "Em andamento", cls: "warn" },
+  active: { label: "Em andamento", cls: "info" },
   review: { label: "Revisão", cls: "info" },
-  done: { label: "Concluído", cls: "neutral" },
+  done: { label: "Concluído", cls: "ok" },
   paused: { label: "Pausado", cls: "danger" },
 };
 
@@ -143,7 +143,7 @@ export function Prj08Table({
                     </span>
                     <div>
                       <div className="p8-proj-name">{p.name}</div>
-                      <div className="p8-proj-sub">{cleanType(p.projectType) || p.description || "Projeto"}</div>
+                      <div className="p8-proj-sub">{cleanType(p.projectType) || cleanType(p.description) || "Projeto"}</div>
                     </div>
                   </div>
                 </td>
