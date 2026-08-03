@@ -149,6 +149,8 @@ const fmtDate = (d: string | null) => d ? new Date(d + "T00:00:00").toLocaleDate
 function InvoicesPage() {
   const qc = useQueryClient();
   const search = useSearch({ from: "/_authenticated/invoices" });
+  const navigate = useNavigate();
+
   const [wizardOpen, setWizardOpen] = useState(false);
   const [detailId, setDetailId] = useState<string | null>(null);
 
