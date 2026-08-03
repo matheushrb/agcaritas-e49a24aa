@@ -4,10 +4,12 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Share2, Send, PenLine, Wallet, Check, Calendar, CreditCard, FileText,
-  ArrowRight, Mail, Phone, Copy, Receipt, XCircle, ArrowLeft,
+  ArrowRight, Mail, Phone, Copy, Receipt, XCircle, ArrowLeft, Plus, Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import "@/fin03.css";
+
 
 export const Route = createFileRoute("/_authenticated/invoices/$invoiceId")({
   component: InvoiceDetailPage,
@@ -67,6 +69,16 @@ function InvoiceDetailPage() {
   const qc = useQueryClient();
   const [notes, setNotes] = useState("");
   const [editingNotes, setEditingNotes] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [payOpen, setPayOpen] = useState(false);
+  const [form, setForm] = useState({
+    client_id: "", project_id: "", issue_date: "", due_date: "",
+    payment_method: "", payment_terms: "", payment_link: "", discount: "0", notes: "",
+  });
+  const [drafts, setDrafts] = useState<{ id?: string; description: string; amount: string; due_date: string }[]>([]);
+  const [removed, setRemoved] = useState<string[]>([]);
+  const [pay, setPay] = useState({ date: new Date().toISOString().slice(0, 10), method: "", amount: "" });
+
 
   const { data: invoice } = useQuery<Inv | null>({
     queryKey: ["invoice", invoiceId],
@@ -120,6 +132,26 @@ function InvoiceDetailPage() {
       return data;
     },
   });
+
+  const { data: allClients = [] } = useQuery({
+    queryKey: ["clients-min"],
+    enabled: editOpen,
+    queryFn: async () => {
+      const { data } = await supabase.from("clients").select("id,name").order("name");
+      return (data ?? []) as { id: string; name: string }[];
+    },
+  });
+
+  const { data: allProjects = [] } = useQuery({
+    queryKey: ["projects-min"],
+    enabled: editOpen,
+    queryFn: async () => {
+      const { data } = await supabase.from("projects").select("id,name,client_id").order("name");
+      return (data ?? []) as { id: string; name: string; client_id: string | null }[];
+    },
+  });
+
+
 
   async function openPDF() {
     if (!invoice) return;
@@ -175,13 +207,16 @@ function InvoiceDetailPage() {
   };
 
   const registerPayment = useMutation({
-    mutationFn: async () => {
-      const now = new Date().toISOString();
-      const { error } = await supabase.from("invoices").update({ status: "paid", paid_at: now }).eq("id", invoiceId);
+    mutationFn: async (input?: { date: string; method: string }) => {
+      const now = input?.date ? new Date(input.date + "T12:00:00").toISOString() : new Date().toISOString();
+      const patch = { status: "paid" as const, paid_at: now, ...(input?.method ? { payment_method: input.method } : {}) };
+      const { error } = await supabase.from("invoices").update(patch).eq("id", invoiceId);
       if (error) throw error;
+
       await supabase.from("charges").update({ status: "paid", paid_at: now }).eq("invoice_id", invoiceId);
     },
-    onSuccess: () => { invalidate(); toast.success("Pagamento registrado"); },
+    onSuccess: () => { invalidate(); setPayOpen(false); toast.success("Pagamento registrado"); },
+
     onError: (e: Error) => toast.error(e.message),
   });
 
@@ -213,6 +248,81 @@ function InvoiceDetailPage() {
     onSuccess: () => { invalidate(); setEditingNotes(false); toast.success("Observações salvas"); },
     onError: (e: Error) => toast.error(e.message),
   });
+
+  function openEdit() {
+    if (!invoice) return;
+    setForm({
+      client_id: invoice.client_id ?? "",
+      project_id: invoice.project_id ?? "",
+      issue_date: (invoice.issue_date ?? "").slice(0, 10),
+      due_date: (invoice.due_date ?? "").slice(0, 10),
+      payment_method: invoice.payment_method ?? "",
+      payment_terms: invoice.payment_terms ?? "",
+      payment_link: invoice.payment_link ?? "",
+      discount: String(num(invoice.discount)),
+      notes: invoice.notes ?? "",
+    });
+    setDrafts(items.map(i => ({ id: i.id, description: i.description, amount: String(num(i.amount)), due_date: (i.due_date ?? "").slice(0, 10) })));
+    setRemoved([]);
+    setEditOpen(true);
+  }
+
+  const saveInvoice = useMutation({
+    mutationFn: async () => {
+      const lines = drafts.filter(d => d.description.trim());
+      const subtotal = lines.reduce((a, d) => a + (Number(d.amount) || 0), 0);
+      const discount = Number(form.discount) || 0;
+
+      const { error } = await supabase.from("invoices").update({
+        client_id: form.client_id || null,
+        project_id: form.project_id || null,
+        issue_date: form.issue_date || undefined,
+        due_date: form.due_date || null,
+        payment_method: form.payment_method || null,
+        payment_terms: form.payment_terms || null,
+        payment_link: form.payment_link || null,
+        discount,
+        amount: subtotal,
+        total: Math.max(0, subtotal - discount),
+        notes: form.notes || null,
+      }).eq("id", invoiceId);
+      if (error) throw error;
+
+      if (removed.length) {
+        const { error: delErr } = await supabase.from("charges")
+          .update({ invoice_id: null, status: "pending_invoice" }).in("id", removed);
+        if (delErr) throw delErr;
+      }
+
+      for (const d of lines) {
+        const amount = Number(d.amount) || 0;
+        const due = d.due_date || form.due_date || new Date().toISOString().slice(0, 10);
+        if (d.id) {
+          const { error: e2 } = await supabase.from("charges")
+            .update({ description: d.description, amount, due_date: due }).eq("id", d.id);
+          if (e2) throw e2;
+        } else {
+          const { data: prof } = await supabase.from("profiles").select("organization_id").maybeSingle();
+          if (!prof?.organization_id) throw new Error("Organização não encontrada");
+          const { error: e3 } = await supabase.from("charges").insert({
+            organization_id: prof.organization_id,
+            invoice_id: invoiceId,
+            client_id: form.client_id || null,
+            project_id: form.project_id || null,
+            description: d.description,
+            amount,
+            due_date: due,
+            nature: "income",
+            status: "pending",
+          });
+          if (e3) throw e3;
+        }
+      }
+    },
+    onSuccess: () => { invalidate(); setEditOpen(false); toast.success("Fatura atualizada"); },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
 
   const totals = useMemo(() => {
     const subtotal = items.reduce((a, i) => a + num(i.amount), 0);
@@ -274,10 +384,15 @@ function InvoiceDetailPage() {
           <button className="f3-btn" disabled={invoice.status === "paid" || invoice.status === "canceled"} onClick={() => sendInvoice.mutate()}>
             <Send size={15} /> Enviar cobrança
           </button>
-          <button className="f3-btn" onClick={() => setEditingNotes(true)}><PenLine size={15} /> Editar fatura</button>
-          <button className="f3-btn primary" disabled={invoice.status === "paid" || invoice.status === "canceled"} onClick={() => registerPayment.mutate()}>
+          <button className="f3-btn" disabled={invoice.status === "canceled"} onClick={openEdit}><PenLine size={15} /> Editar fatura</button>
+          <button
+            className="f3-btn primary"
+            disabled={invoice.status === "paid" || invoice.status === "canceled"}
+            onClick={() => { setPay({ date: new Date().toISOString().slice(0, 10), method: invoice.payment_method ?? "", amount: String(totals.open || totals.total) }); setPayOpen(true); }}
+          >
             <Wallet size={15} /> Registrar pagamento
           </button>
+
         </div>
       </div>
 
@@ -483,9 +598,14 @@ function InvoiceDetailPage() {
             ) : (
               <>
                 <div className="f3-note" style={{ marginBottom: 12 }}>Nenhum pagamento registrado ainda.</div>
-                <button className="f3-btn primary" disabled={invoice.status === "canceled"} onClick={() => registerPayment.mutate()}>
+                <button
+                  className="f3-btn primary"
+                  disabled={invoice.status === "canceled"}
+                  onClick={() => { setPay({ date: new Date().toISOString().slice(0, 10), method: invoice.payment_method ?? "", amount: String(totals.open || totals.total) }); setPayOpen(true); }}
+                >
                   Registrar pagamento
                 </button>
+
               </>
             )}
           </div>
@@ -507,16 +627,155 @@ function InvoiceDetailPage() {
               <button className="f3-btn" onClick={() => navigate({ to: "/invoices", search: { new: "1", projectId: invoice.project_id ?? undefined } })}>
                 <Copy size={15} /> Duplicar fatura
               </button>
-              <button className="f3-btn" disabled={invoice.status !== "paid"} onClick={() => toast.success("Recibo gerado")}>
+              <button className="f3-btn" disabled={invoice.status !== "paid"} onClick={openPDF}>
                 <Receipt size={15} /> Gerar recibo
               </button>
-              <button className="f3-btn danger" disabled={invoice.status === "canceled"} onClick={() => cancelInvoice.mutate()}>
+              <button
+                className="f3-btn danger"
+                disabled={invoice.status === "canceled"}
+                onClick={() => { if (window.confirm("Cancelar esta fatura? Os itens voltam para 'a faturar'.")) cancelInvoice.mutate(); }}
+              >
                 <XCircle size={15} /> Cancelar fatura
               </button>
             </div>
           </div>
         </div>
       </div>
+
+      {/* ==== Editar fatura ==== */}
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogContent className="sm:max-w-[860px] max-h-[88vh] overflow-auto">
+          <DialogHeader><DialogTitle>Editar fatura {invoice.number ? `#${invoice.number}` : "(rascunho)"}</DialogTitle></DialogHeader>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <label className="text-xs font-medium text-muted-foreground space-y-1">
+              <span>Cliente</span>
+              <select
+                className="w-full h-9 rounded-md border bg-background px-2 text-sm text-foreground"
+                value={form.client_id}
+                onChange={e => setForm(f => ({ ...f, client_id: e.target.value, project_id: "" }))}
+              >
+                <option value="">— Selecionar —</option>
+                {allClients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+              </select>
+            </label>
+            <label className="text-xs font-medium text-muted-foreground space-y-1">
+              <span>Projeto</span>
+              <select
+                className="w-full h-9 rounded-md border bg-background px-2 text-sm text-foreground"
+                value={form.project_id}
+                onChange={e => setForm(f => ({ ...f, project_id: e.target.value }))}
+              >
+                <option value="">— Sem projeto —</option>
+                {allProjects.filter(p => !form.client_id || p.client_id === form.client_id).map(p => (
+                  <option key={p.id} value={p.id}>{p.name}</option>
+                ))}
+              </select>
+            </label>
+            <label className="text-xs font-medium text-muted-foreground space-y-1">
+              <span>Emissão</span>
+              <input type="date" className="w-full h-9 rounded-md border bg-background px-2 text-sm text-foreground"
+                value={form.issue_date} onChange={e => setForm(f => ({ ...f, issue_date: e.target.value }))} />
+            </label>
+            <label className="text-xs font-medium text-muted-foreground space-y-1">
+              <span>Vencimento</span>
+              <input type="date" className="w-full h-9 rounded-md border bg-background px-2 text-sm text-foreground"
+                value={form.due_date} onChange={e => setForm(f => ({ ...f, due_date: e.target.value }))} />
+            </label>
+            <label className="text-xs font-medium text-muted-foreground space-y-1">
+              <span>Forma de pagamento</span>
+              <input className="w-full h-9 rounded-md border bg-background px-2 text-sm text-foreground" placeholder="PIX, boleto, transferência…"
+                value={form.payment_method} onChange={e => setForm(f => ({ ...f, payment_method: e.target.value }))} />
+            </label>
+            <label className="text-xs font-medium text-muted-foreground space-y-1">
+              <span>Condições de pagamento</span>
+              <input className="w-full h-9 rounded-md border bg-background px-2 text-sm text-foreground" placeholder="30 dias após emissão"
+                value={form.payment_terms} onChange={e => setForm(f => ({ ...f, payment_terms: e.target.value }))} />
+            </label>
+            <label className="text-xs font-medium text-muted-foreground space-y-1">
+              <span>Link de pagamento</span>
+              <input className="w-full h-9 rounded-md border bg-background px-2 text-sm text-foreground" placeholder="https://…"
+                value={form.payment_link} onChange={e => setForm(f => ({ ...f, payment_link: e.target.value }))} />
+            </label>
+            <label className="text-xs font-medium text-muted-foreground space-y-1">
+              <span>Desconto (R$)</span>
+              <input type="number" step="0.01" className="w-full h-9 rounded-md border bg-background px-2 text-sm text-foreground"
+                value={form.discount} onChange={e => setForm(f => ({ ...f, discount: e.target.value }))} />
+            </label>
+          </div>
+
+          <div className="mt-2">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-semibold">Itens faturados</span>
+              <button type="button" className="f3-btn" style={{ height: 30, padding: "0 10px" }}
+                onClick={() => setDrafts(d => [...d, { description: "", amount: "0", due_date: form.due_date }])}>
+                <Plus size={14} /> Adicionar item
+              </button>
+            </div>
+            <div className="space-y-2">
+              {drafts.length === 0 && <div className="text-xs text-muted-foreground">Nenhum item. Adicione ao menos um.</div>}
+              {drafts.map((d, i) => (
+                <div key={i} className="grid grid-cols-[1fr_120px_140px_36px] gap-2 items-center">
+                  <input className="h-9 rounded-md border bg-background px-2 text-sm" placeholder="Descrição"
+                    value={d.description} onChange={e => setDrafts(a => a.map((x, j) => j === i ? { ...x, description: e.target.value } : x))} />
+                  <input type="number" step="0.01" className="h-9 rounded-md border bg-background px-2 text-sm text-right"
+                    value={d.amount} onChange={e => setDrafts(a => a.map((x, j) => j === i ? { ...x, amount: e.target.value } : x))} />
+                  <input type="date" className="h-9 rounded-md border bg-background px-2 text-sm"
+                    value={d.due_date} onChange={e => setDrafts(a => a.map((x, j) => j === i ? { ...x, due_date: e.target.value } : x))} />
+                  <button type="button" className="f3-btn danger" style={{ height: 34, padding: "0 8px" }}
+                    onClick={() => { if (d.id) setRemoved(r => [...r, d.id!]); setDrafts(a => a.filter((_, j) => j !== i)); }}>
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+              ))}
+            </div>
+            <div className="text-right text-sm mt-3">
+              Total: <strong>{money(Math.max(0, drafts.reduce((a, d) => a + (Number(d.amount) || 0), 0) - (Number(form.discount) || 0)))}</strong>
+            </div>
+          </div>
+
+          <label className="text-xs font-medium text-muted-foreground space-y-1 block">
+            <span>Observações</span>
+            <textarea className="w-full min-h-20 rounded-md border bg-background p-2 text-sm text-foreground"
+              value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} />
+          </label>
+
+          <DialogFooter>
+            <button className="f3-btn" onClick={() => setEditOpen(false)}>Cancelar</button>
+            <button className="f3-btn primary" disabled={saveInvoice.isPending} onClick={() => saveInvoice.mutate()}>
+              {saveInvoice.isPending ? "Salvando…" : "Salvar alterações"}
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ==== Registrar pagamento ==== */}
+      <Dialog open={payOpen} onOpenChange={setPayOpen}>
+        <DialogContent className="sm:max-w-[440px]">
+          <DialogHeader><DialogTitle>Registrar pagamento</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <label className="text-xs font-medium text-muted-foreground space-y-1 block">
+              <span>Data do pagamento</span>
+              <input type="date" className="w-full h-9 rounded-md border bg-background px-2 text-sm text-foreground"
+                value={pay.date} onChange={e => setPay(p => ({ ...p, date: e.target.value }))} />
+            </label>
+            <label className="text-xs font-medium text-muted-foreground space-y-1 block">
+              <span>Forma de pagamento</span>
+              <input className="w-full h-9 rounded-md border bg-background px-2 text-sm text-foreground" placeholder="PIX, boleto…"
+                value={pay.method} onChange={e => setPay(p => ({ ...p, method: e.target.value }))} />
+            </label>
+            <div className="text-sm">Valor a baixar: <strong>{money(totals.open || totals.total)}</strong></div>
+          </div>
+          <DialogFooter>
+            <button className="f3-btn" onClick={() => setPayOpen(false)}>Cancelar</button>
+            <button className="f3-btn primary" disabled={registerPayment.isPending}
+              onClick={() => registerPayment.mutate({ date: pay.date, method: pay.method })}>
+              Confirmar pagamento
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
+
   );
 }
