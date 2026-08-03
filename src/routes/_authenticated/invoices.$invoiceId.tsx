@@ -264,9 +264,13 @@ function InvoiceDetailPage() {
           </div>
         </div>
         <div className="f3-actions">
+          <button className="f3-btn" onClick={openPDF}>
+            <FileText size={15} /> Ver prévia do PDF
+          </button>
           <button className="f3-btn" onClick={() => { navigator.clipboard?.writeText(window.location.href); toast.success("Link copiado"); }}>
             <Share2 size={15} /> Compartilhar
           </button>
+
           <button className="f3-btn" disabled={invoice.status === "paid" || invoice.status === "canceled"} onClick={() => sendInvoice.mutate()}>
             <Send size={15} /> Enviar cobrança
           </button>
