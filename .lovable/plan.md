@@ -1,64 +1,39 @@
-## Observação importante antes de começar
+## Próxima etapa: Módulo Tarefas
 
-O prompt que você mandou foi escrito para outro projeto (fala em `src/pages/Dashboard.tsx`, queries `ops/crm/financial/txs`, rotas `/tarefas`, `/propostas`, tabelas `deal_meetings`, `financial_parameters`). Nada disso existe aqui. No nosso sistema o dashboard é:
+Projetos está concluído (PRJ-01 a PRJ-06 e PRJ-08). As referências aprovadas restantes são **Tarefas (TSK-02, TSK-03, TSK-04, TSK-05 + componente Timesheet)** e depois **Financeiro (FIN-01 a FIN-04, FIN-06)**.
 
-- `src/routes/_authenticated/dashboard.tsx` (rota + queries `dashboard`, `profile`, `dashboard-preferences`)
-- `src/lib/dashboard-widgets.tsx` (registro de widgets + personalização)
-- `src/components/dashboard/day-panels.tsx` (Central do dia, Prioridades, Agenda, Receita, Projetos, Clientes)
+Proponho reconstruir a tela `/tasks` do zero, igual ao que fizemos em Projetos: um CSS próprio (`src/tsk.css`) com os tokens lidos das imagens e componentes novos, sem reaproveitar o layout atual.
 
-Então vou reproduzir **o visual e a posição exata da referência**, usando nossas tabelas reais (`tasks`, `calendar_events`, `proposals`, `invoices`, `projects`, `clients`) e mantendo a personalização de widgets funcionando.
+### TSK-02 — Tarefas / Lista (visão padrão)
+- Cabeçalho "Tarefas" + subtítulo, ações `Exportar` e `+ Nova tarefa`.
+- Abas: Lista | Quadro | Gantt.
+- Barra de filtros: busca + Status, Responsável, Prioridade, Projeto, Prazo + "Limpar filtros".
+- Faixa de 5 KPIs: Total, Em andamento, Em revisão, Concluídas, Atrasadas (valor + % do total + ícone colorido).
+- Tabela: checkbox, tarefa (+ código #RV-128), projeto com avatar quadrado colorido, etapa/status em pill, responsável com avatar e cargo, prioridade, prazo (dias restantes / atraso em vermelho), progresso (%+barra), menu ⋮.
+- Rodapé: "Mostrando 1 a 10 de N" + paginação + itens por página.
 
-## Layout final (igual à referência)
+### TSK-03 — Quadro (Kanban) + painel lateral
+- Colunas A fazer / Em andamento / Em revisão / Concluídas com contador e ⋮.
+- Cards: título, projeto, pill de prioridade, avatar + prazo, rodapé com comentários / anexos / subtarefas (x/y).
+- Drag & drop entre colunas atualizando o status.
+- Painel lateral de detalhe: pills (prioridade, status, projeto), grid Responsável/Prazo/Criada em/ID, descrição, checklist de subtarefas com barra de progresso, comentários recentes, atividade, rodapé "Editar tarefa" / "Marcar como concluída".
 
-```text
-Bom dia, Matheus! 👋                                   [+ Novo] [Personalizar]
-Aqui está o seu workspace diário
+### TSK-04 — Gantt
+- KPIs no topo (Em andamento, Concluídas, Atrasadas, Vencem esta semana).
+- Painel esquerdo: tarefas agrupadas por projeto (colapsáveis) com responsável, status, início e prazo.
+- Timeline à direita por semanas, com barras coloridas por status/prioridade, marcos (losangos), linha "Hoje", setas de dependência, legenda e zoom.
 
-[✓ 4 tarefas para hoje] [📅 2 reuniões] [R$ pendente] [2 aprovações]   <- pills
+### TSK-05 — Modal de detalhe da tarefa
+- Modal grande: cabeçalho com ID, título editável, pills de status/prioridade/projeto, ações (link, copiar, ⋮, navegação ‹ ›).
+- Faixa: Responsáveis (pilha de avatares), Prazo, Criado por, Última atualização.
+- Descrição + abas Subtarefas / Anexos / Comentários / Atividade.
+- Coluna direita "Campos principais": tipo, categoria, tags, prioridade, esforço estimado, tempo gasto, dependências, recorrência.
+- Timesheet (TSK-COMP-01) embutido como bloco de apontamento de horas.
 
-┌──────────────────────┬──────────────┬───────────────┐┌──────────────┐
-│ Central do dia       │ Prioridades  │ Agenda de hoje││ Receita do mês│
-│ Terça, 28 de Julho   │ do dia       │ 08:00 Livre   ││ R$ + ↑14%     │
-│ [Tudo|Tar|Reu|Fin|Ap]│ 🔥 Urgente   │ 09:00 evento  ││ Meta + 65%    │
-│ 09:00 ● item  badge  │ ⭐ Importante│ 11:00 evento  ││ sparkline     │
-│ 11:00 ● item  badge  │ 📅 Hoje      │ ...           │├──────────────┤
-│ ...                  │ 🗓 Esta sem. │               ││ Projetos ativos│
-│ Ver todas →          │              │ + Novo comp.  ││ donut 18 ativos│
-└──────────────────────┴──────────────┴───────────────┘├──────────────┤
-                                                       ││ Clientes ativos│
-                                                       ││ 32 +5 avatares │
-                                                       └└──────────────┘
-```
+### Detalhes técnicos
+- Novos arquivos: `src/tsk.css`, `src/components/tsk02-list.tsx`, `tsk03-board.tsx`, `tsk04-gantt.tsx`, `tsk05-task-modal.tsx`, `tsk-timesheet.tsx`; rota `/tasks` reescrita.
+- Dados reais do backend (tabelas de tarefas, projetos, perfis); KPIs calculados por query, sem mock.
+- O `TaskModal` atual (faturamento por entregável, checklist, timeline) tem regras de negócio que serão preservadas e migradas para o novo layout TSK-05 — nada de faturamento se perde.
+- Entrego em 2 blocos: (1) TSK-02 + TSK-05, (2) TSK-03 + TSK-04, com screenshot de validação a cada bloco.
 
-Grid de 12 colunas: Central do dia = 4, Prioridades = 2, Agenda = 3, coluna direita de KPIs = 3 (empilhando Receita / Projetos / Clientes). Em telas menores tudo empilha.
-
-## O que muda em cada arquivo
-
-**`src/components/dashboard/day-panels.tsx`** (reescrita dos painéis)
-
-- **Faixa de pills**: novo componente `DayQuickStats` com 4 pills clicáveis — tarefas de hoje, reuniões de hoje, valor pendente de recebimento (soma de `invoices` não pagas), propostas aguardando aprovação. Ícone quadrado colorido + número grande + label pequeno, exatamente como na imagem.
-- **Central do dia**: abas como na referência (sublinhado azul no ativo + contador em badge, no lugar dos pills atuais), cabeçalho com "Terça, 28 de Julho" e chip "Hoje" à direita. Cada linha passa a ter coluna de **horário à esquerda**, bolinha de status, ícone quadrado colorido, título + subtítulo, e badge de tipo à direita (Tarefa / Reunião / Financeiro / Aprovação / Documento). Itens vencendo hoje ganham o badge vermelho "Vence hoje". Rodapé "Ver todas as atividades →".
-- **Prioridades do dia**: passa a ser agrupada por nível — 🔥 Urgente, ⭐ Importante, 📅 Hoje, 🗓 Esta semana — em cards separados com barra/label colorido no topo, como na imagem (hoje é uma lista simples).
-- **Agenda de hoje**: vira timeline por hora (08:00 → 18:00). Horas sem evento mostram a linha e "Livre" quando o dia está vazio; horas com evento mostram o card com título e subtítulo. Mantém "Ver agenda completa" e "+ Novo compromisso".
-- **Receita do mês**: mantém a query atual e ganha a **linha de meta** (`Meta: R$ X` + % à direita) e um gráfico de área suave em vez das barras, com o ponto final destacado. Meta virá das configurações de precificação já existentes; se não houver meta cadastrada, a linha some.
-- **Projetos ativos**: donut multi-cor (Prospecção / Em andamento / Concluídos) com número central "18 ativos" e legenda com bolinhas coloridas à direita — hoje é um anel de um só valor.
-- **Clientes ativos**: número + "+N este mês" + fileira de avatares circulares com contador "+12", como na imagem (hoje é uma lista de nomes).
-
-**`src/lib/dashboard-widgets.tsx`**
-
-- Registrar o widget novo `day-quickstats` (as pills), definir os colSpans do novo grid (4/2/3/3, com a coluna direita agrupando os 3 KPIs em um único widget de coluna) e incluir os ids novos nos presets. Mantém tudo que já existe — nenhum widget é removido, só reposicionado.
-
-**`src/routes/_authenticated/dashboard.tsx`**
-
-- Saudação dinâmica ("Bom dia/Boa tarde/Boa noite, {nome}! 👋" + "Aqui está o seu workspace diário") no topo, com **+ Novo** e **Personalizar** à direita, na mesma linha — igual à referência.
-
-## Detalhes técnicos
-
-- Todas as cores saem dos tokens semânticos do `src/styles.css` (nada de hex fixo), então o modo escuro azul-marinho da segunda metade da imagem sai automático.
-- Sem estilos inline: Tailwind + os componentes shadcn já usados.
-- Novas leituras: `invoices` (pendente), `proposals` (aprovações) e a meta mensal; tudo com TanStack Query, sem alterar banco de dados.
-- Personalização continua respeitando o que você desativou; os widgets novos entram habilitados uma vez só.
-
-## Fora do escopo desta etapa
-
-Barra de busca global, sino de notificações e avatar no topo (isso é do app shell, não do dashboard) — faço numa etapa seguinte se quiser.
+Depois de Tarefas, seguimos para o Financeiro (FIN-01 a FIN-04 e FIN-06).
