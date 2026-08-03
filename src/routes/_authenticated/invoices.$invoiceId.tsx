@@ -207,13 +207,16 @@ function InvoiceDetailPage() {
   };
 
   const registerPayment = useMutation({
-    mutationFn: async () => {
-      const now = new Date().toISOString();
-      const { error } = await supabase.from("invoices").update({ status: "paid", paid_at: now }).eq("id", invoiceId);
+    mutationFn: async (input?: { date: string; method: string }) => {
+      const now = input?.date ? new Date(input.date + "T12:00:00").toISOString() : new Date().toISOString();
+      const patch: Record<string, unknown> = { status: "paid", paid_at: now };
+      if (input?.method) patch.payment_method = input.method;
+      const { error } = await supabase.from("invoices").update(patch).eq("id", invoiceId);
       if (error) throw error;
       await supabase.from("charges").update({ status: "paid", paid_at: now }).eq("invoice_id", invoiceId);
     },
-    onSuccess: () => { invalidate(); toast.success("Pagamento registrado"); },
+    onSuccess: () => { invalidate(); setPayOpen(false); toast.success("Pagamento registrado"); },
+
     onError: (e: Error) => toast.error(e.message),
   });
 
