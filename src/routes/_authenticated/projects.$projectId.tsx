@@ -355,7 +355,7 @@ function ProjectDetail() {
     ...(showTimeline ? [{ id: "timeline", label: "Timeline" }] : []),
     ...(showTraffic ? [{ id: "traffic", label: "Tráfego" }] : []),
     ...(showCampaigns ? [{ id: "campaigns", label: "Campanhas" }] : []),
-    { id: "docs", label: "Arquivos" },
+    { id: "docs", label: "Arquivos", count: 24 },
   ];
 
   return (
