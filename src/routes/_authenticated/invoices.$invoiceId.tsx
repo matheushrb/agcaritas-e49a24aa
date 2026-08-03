@@ -384,10 +384,15 @@ function InvoiceDetailPage() {
           <button className="f3-btn" disabled={invoice.status === "paid" || invoice.status === "canceled"} onClick={() => sendInvoice.mutate()}>
             <Send size={15} /> Enviar cobrança
           </button>
-          <button className="f3-btn" onClick={() => setEditingNotes(true)}><PenLine size={15} /> Editar fatura</button>
-          <button className="f3-btn primary" disabled={invoice.status === "paid" || invoice.status === "canceled"} onClick={() => registerPayment.mutate()}>
+          <button className="f3-btn" disabled={invoice.status === "canceled"} onClick={openEdit}><PenLine size={15} /> Editar fatura</button>
+          <button
+            className="f3-btn primary"
+            disabled={invoice.status === "paid" || invoice.status === "canceled"}
+            onClick={() => { setPay({ date: new Date().toISOString().slice(0, 10), method: invoice.payment_method ?? "", amount: String(totals.open || totals.total) }); setPayOpen(true); }}
+          >
             <Wallet size={15} /> Registrar pagamento
           </button>
+
         </div>
       </div>
 
