@@ -163,7 +163,7 @@ function InvoicesPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("invoices")
-        .select("id,number,client_id,project_id,status,issue_date,due_date,total,amount,paid_at,notes,payment_terms,payment_link")
+        .select("id,number,client_id,project_id,status,issue_date,due_date,total,amount,paid_at,notes,payment_terms,payment_link,payment_method")
         .order("issue_date", { ascending: false });
       if (error) throw error;
       return (data ?? []) as Invoice[];
@@ -1094,7 +1094,7 @@ function InvoiceDetail({ id, clients, organization, onClose }: { id: string; cli
     queryKey: ["invoice", id],
     queryFn: async () => {
       const { data } = await supabase.from("invoices")
-        .select("id,number,client_id,project_id,status,issue_date,due_date,total,amount,paid_at,notes,payment_terms,payment_link")
+        .select("id,number,client_id,project_id,status,issue_date,due_date,total,amount,paid_at,notes,payment_terms,payment_link,payment_method")
         .eq("id", id).maybeSingle();
       return (data ?? null) as Invoice | null;
     },
