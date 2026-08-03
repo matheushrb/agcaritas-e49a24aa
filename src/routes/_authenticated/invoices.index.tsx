@@ -19,7 +19,7 @@ import { generateInvoicePDF, DEFAULT_PAYMENT_TERMS, DEFAULT_LEGAL_NOTES } from "
 import { cn } from "@/lib/utils";
 import QRCode from "qrcode";
 
-export const Route = createFileRoute("/_authenticated/invoices")({
+export const Route = createFileRoute("/_authenticated/invoices/")({
   component: InvoicesPage,
   validateSearch: (s: Record<string, unknown>) => ({
     projectId: typeof s.projectId === "string" ? s.projectId : undefined,
@@ -148,7 +148,7 @@ const fmtDate = (d: string | null) => d ? new Date(d + "T00:00:00").toLocaleDate
 
 function InvoicesPage() {
   const qc = useQueryClient();
-  const search = useSearch({ from: "/_authenticated/invoices" });
+  const search = useSearch({ from: "/_authenticated/invoices/" });
   const navigate = useNavigate();
 
   const [wizardOpen, setWizardOpen] = useState(false);
