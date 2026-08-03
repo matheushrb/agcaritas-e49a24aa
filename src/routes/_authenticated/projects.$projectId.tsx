@@ -485,7 +485,7 @@ function ProjectDetail() {
 
       {activeTab === "finance" && <Prj04Finance charges={charges as never} tasks={tasks as never} costs={costs as never} />}
       {activeTab === "costs" && <div style={{ marginTop: 18 }}><ProjectCostsTab projectId={projectId} organizationId={project.organization_id} /></div>}
-      {activeTab === "strategy" && <div style={{ marginTop: 18 }}><StrategyTab description={project.description ?? ""} onSave={(d) => saveField.mutate({ description: d })} /></div>}
+      {activeTab === "strategy" && <Prj05Strategy description={project.description ?? ""} onSaveDescription={(d) => saveField.mutate({ description: d })} />}
       {activeTab === "calendar" && <div style={{ marginTop: 18 }}><ComingSoon icon={Calendar} title="Calendário de Conteúdo" description="Grade mensal com peças de conteúdo por plataforma." /></div>}
       {activeTab === "grid" && <div style={{ marginTop: 18 }}><ComingSoon icon={Grid3x3} title="Grid de Conteúdo" description="Prévia visual do feed por plataforma." /></div>}
       {activeTab === "timeline" && <div style={{ marginTop: 18 }}><ComingSoon icon={TimerIcon} title="Timeline" description="Roadmap do projeto por fases, com marcos e entregas." /></div>}
