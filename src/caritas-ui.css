@@ -362,7 +362,7 @@
 .cv-donut-wrap ul,
 .cv-pipeline ul { list-style: none; padding: 0; margin: 0; font-size: 10px; color: var(--muted); width: 100%; }
 .cv-donut-wrap li,
-.cv-pipeline li { display: flex; justify-content: space-between; margin: 7px 0; }
+.cv-pipeline li { display: flex; justify-content: space-between; gap: 10px; margin: 7px 0; white-space: nowrap; }
 .cv-donut-wrap b,
 .cv-pipeline b { color: var(--text); }
 
