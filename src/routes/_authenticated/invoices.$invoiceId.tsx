@@ -598,9 +598,14 @@ function InvoiceDetailPage() {
             ) : (
               <>
                 <div className="f3-note" style={{ marginBottom: 12 }}>Nenhum pagamento registrado ainda.</div>
-                <button className="f3-btn primary" disabled={invoice.status === "canceled"} onClick={() => registerPayment.mutate()}>
+                <button
+                  className="f3-btn primary"
+                  disabled={invoice.status === "canceled"}
+                  onClick={() => { setPay({ date: new Date().toISOString().slice(0, 10), method: invoice.payment_method ?? "", amount: String(totals.open || totals.total) }); setPayOpen(true); }}
+                >
                   Registrar pagamento
                 </button>
+
               </>
             )}
           </div>
