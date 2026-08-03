@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
@@ -216,8 +216,7 @@ export function NewProjectWizard({
   return (
     <Dialog open={open} onOpenChange={handleOpen}>
       <DialogContent
-        showCloseButton={false}
-        className="cw p-0 gap-0 border-0 overflow-hidden w-[calc(100vw-2rem)] max-w-[1105px] sm:max-w-[1105px]"
+        className="cw p-0 gap-0 border-0 overflow-hidden [&>button:last-of-type]:hidden w-[calc(100vw-2rem)] max-w-[1105px] sm:max-w-[1105px]"
         style={{ borderRadius: 14, boxShadow: "0 24px 60px rgba(15,25,40,.20)" }}
       >
         <div className="cw-window">
