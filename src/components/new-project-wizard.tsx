@@ -151,6 +151,13 @@ export function NewProjectWizard({
       return (data ?? []) as CatalogItem[];
     },
   });
+  const { data: taskTypes = [] } = useQuery({
+    queryKey: ["task_types_min"],
+    queryFn: async () => {
+      const { data } = await (supabase as any).from("task_types").select("id,name").order("name");
+      return (data ?? []) as { id: string; name: string }[];
+    },
+  });
   const { data: people = [] } = useQuery({
     queryKey: ["profiles_people"],
     queryFn: async () => {
@@ -182,7 +189,9 @@ export function NewProjectWizard({
     const base = Array.isArray(t?.base_tasks) ? (t!.base_tasks as any[]) : [];
     const stages: ProjectStage[] = base.map((b: any, i: number) => ({
       id: `s-${i}-${Math.random().toString(36).slice(2, 7)}`,
-      name: typeof b === "string" ? b : (b?.name ?? b?.title ?? `Etapa ${i + 1}`),
+      name: typeof b === "string"
+        ? b
+        : (b?.name ?? b?.title ?? taskTypes.find(t => t.id === b?.task_type_id)?.name ?? `Etapa ${i + 1}`),
       description: typeof b === "string" ? "" : (b?.description ?? ""),
       duration: typeof b === "string" ? "1 dia" : (b?.duration ?? "1 dia"),
       color: STAGE_COLORS[i % STAGE_COLORS.length],
