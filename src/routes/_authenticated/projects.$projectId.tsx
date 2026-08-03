@@ -24,6 +24,7 @@ import { Prj02Overview, p2Initials } from "@/components/prj02-overview";
 import { Prj03Tasks } from "@/components/prj03-tasks";
 import { Prj04Finance } from "@/components/prj04-finance";
 import { Prj05Strategy } from "@/components/prj05-strategy";
+import { Prj06Files } from "@/components/prj06-files";
 import { Share2, MoreHorizontal, Mail as MailIcon, Target, TrendingUp } from "lucide-react";
 import "@/prj02.css";
 
@@ -354,7 +355,7 @@ function ProjectDetail() {
     ...(showTimeline ? [{ id: "timeline", label: "Timeline" }] : []),
     ...(showTraffic ? [{ id: "traffic", label: "Tráfego" }] : []),
     ...(showCampaigns ? [{ id: "campaigns", label: "Campanhas" }] : []),
-    { id: "docs", label: "Arquivos" },
+    { id: "docs", label: "Arquivos", count: 24 },
   ];
 
   return (
@@ -493,7 +494,7 @@ function ProjectDetail() {
       {activeTab === "timeline" && <div style={{ marginTop: 18 }}><ComingSoon icon={TimerIcon} title="Timeline" description="Roadmap do projeto por fases, com marcos e entregas." /></div>}
       {activeTab === "traffic" && <div style={{ marginTop: 18 }}><ComingSoon icon={Megaphone} title="Tráfego Pago" description="Campanhas, orçamento, CPA e ROAS do projeto." /></div>}
       {activeTab === "campaigns" && <div style={{ marginTop: 18 }}><ComingSoon icon={Rocket} title="Campanhas" description="Lançamentos e campanhas dentro do projeto." /></div>}
-      {activeTab === "docs" && <div style={{ marginTop: 18 }}><ComingSoon icon={FileText} title="Arquivos" description="Briefings, contratos, PDFs e anexos deste projeto." /></div>}
+      {activeTab === "docs" && <Prj06Files />}
 
       <TaskModal task={selectedTask} onClose={() => setSelectedTaskId(null)} />
       <EditProjectDialog
