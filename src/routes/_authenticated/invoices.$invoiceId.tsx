@@ -4,10 +4,12 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Share2, Send, PenLine, Wallet, Check, Calendar, CreditCard, FileText,
-  ArrowRight, Mail, Phone, Copy, Receipt, XCircle, ArrowLeft,
+  ArrowRight, Mail, Phone, Copy, Receipt, XCircle, ArrowLeft, Plus, Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import "@/fin03.css";
+
 
 export const Route = createFileRoute("/_authenticated/invoices/$invoiceId")({
   component: InvoiceDetailPage,
