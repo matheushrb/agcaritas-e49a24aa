@@ -33,6 +33,7 @@ import { Link } from "@tanstack/react-router";
 import { CostConfirmDialog, type CostSuggestion } from "@/components/cost-confirm-dialog";
 import { suggestTaskCost, type CostMode } from "@/components/team-cost-fields";
 import { useCalendarBlocks, BLOCK_META, type CalendarBlock } from "@/lib/calendar-blocks";
+import { NewTaskWindow } from "@/components/new-task-window";
 
 export const Route = createFileRoute("/_authenticated/tasks")({
   validateSearch: (s: Record<string, unknown>) => ({
@@ -120,6 +121,7 @@ function TasksPage() {
   const [turbo, setTurbo] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [draftTask, setDraftTask] = useState<Task | null>(null);
+  const [newOpen, setNewOpen] = useState(false);
   const [quickTitle, setQuickTitle] = useState<Record<string, string>>({});
 
   // Abrir tarefa via ?open=<id>
@@ -134,7 +136,7 @@ function TasksPage() {
   useEffect(() => {
     if (searchParams.new) {
       setSelectedId(null);
-      setDraftTask(createLocalTask());
+      setNewOpen(true);
       navigate({ search: (prev: any) => ({ ...prev, new: undefined }), replace: true });
     }
   }, [searchParams.new]);
@@ -208,7 +210,8 @@ function TasksPage() {
 
   const handleNew = () => {
     setSelectedId(null);
-    setDraftTask(createLocalTask());
+    setDraftTask(null);
+    setNewOpen(true);
   };
 
   const handleCloseModal = () => {
@@ -351,6 +354,12 @@ function TasksPage() {
       <TaskModal
         task={selected}
         onClose={handleCloseModal}
+      />
+
+      <NewTaskWindow
+        open={newOpen}
+        onOpenChange={setNewOpen}
+        onCreated={(id) => setSelectedId(id)}
       />
     </>
   );
