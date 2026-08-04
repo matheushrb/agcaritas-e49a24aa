@@ -643,12 +643,22 @@ export function TaskWindow({
               </div>
             </div>
             <div className="cw-prop">
+              <div className="cw-label">Início</div>
+              <div className="cw-prop-value">
+                <CalendarDays size={14} style={{ color: "var(--cw-muted)", flexShrink: 0 }} />
+                <input type="date" value={startDate} max={dueDate || undefined}
+                  onChange={e => setStartDate(e.target.value)} />
+              </div>
+            </div>
+            <div className="cw-prop">
               <div className="cw-label">Prazo</div>
               <div className="cw-prop-value">
                 <CalendarDays size={14} style={{ color: "var(--cw-muted)", flexShrink: 0 }} />
-                <input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} />
+                <input type="date" value={dueDate} min={startDate || undefined}
+                  onChange={e => setDueDate(e.target.value)} />
               </div>
             </div>
+
             <div className="cw-prop">
               <div className="cw-label">Prioridade</div>
               <div className="cw-prop-value">
