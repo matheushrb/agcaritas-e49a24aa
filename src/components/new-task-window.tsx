@@ -10,7 +10,10 @@ import {
 } from "lucide-react";
 
 import { useTaskTypeStages } from "@/lib/task-types";
+import { CwDate, CwDateRange } from "@/components/cw-date";
+import { UnsavedChangesDialog, ConfirmDeleteDialog } from "@/components/confirm-dialogs";
 import "@/windows.css";
+
 
 
 type Stage = "briefing" | "creation" | "review" | "approval" | "delivery";
@@ -485,7 +488,13 @@ export function TaskWindow({
     setEstimated(""); setBillingEnabled(true); setBaseValue(""); setDeliverables([]); setChecklist([]);
     setPlatformsSel([]); setNotes(""); setLiveItems([]); setTech(EMPTY_TECH); setTab("details");
   };
-  const close = (o: boolean) => { onOpenChange(o); if (!o) reset(); };
+  const close = (o: boolean) => { setBaseline(""); onOpenChange(o); if (!o) reset(); };
+
+  /* ---------- Alterações não salvas ---------- */
+  const [baseline, setBaseline] = useState("");
+  const [askUnsaved, setAskUnsaved] = useState(false);
+  const [askDelete, setAskDelete] = useState(false);
+
 
   const payload = () => ({
     title: title.trim(),
@@ -559,7 +568,20 @@ export function TaskWindow({
   const [mode, setMode] = useState<"modal" | "docked" | "minimized">("modal");
   useEffect(() => { if (open) setMode("modal"); }, [open]);
 
+  /* snapshot inicial para detectar alterações */
+  useEffect(() => {
+    if (!open) { setBaseline(""); return; }
+    if (isEdit && !existing) return;
+    const t = setTimeout(() => setBaseline(JSON.stringify(payload())), 0);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, isEdit, existing]);
+
+  const isDirty = !!baseline && JSON.stringify(payload()) !== baseline;
+  const requestClose = () => { if (isDirty) setAskUnsaved(true); else close(false); };
+
   const canSave = title.trim().length > 0;
+
 
   const Title = ({ children }: { children: React.ReactElement }) =>
     mode === "modal" ? <DialogTitle asChild>{children}</DialogTitle> : children;
@@ -583,15 +605,36 @@ export function TaskWindow({
     </div>
   ) : null;
 
+  const confirmDialogs = (
+    <>
+      <UnsavedChangesDialog
+        open={askUnsaved} onOpenChange={setAskUnsaved}
+        saving={save.isPending}
+        onDiscard={() => { setAskUnsaved(false); close(false); }}
+        onSave={() => { setAskUnsaved(false); save.mutate(); }}
+      />
+      <ConfirmDeleteDialog
+        open={askDelete} onOpenChange={setAskDelete}
+        pending={remove.isPending}
+        title="Excluir esta tarefa?"
+        description="A tarefa, seus entregáveis e lançamentos serão removidos permanentemente."
+        onConfirm={() => { setAskDelete(false); remove.mutate(); }}
+      />
+    </>
+  );
+
   if (mode === "minimized") {
     return (
+      <>
       <div className="cw cw-mini">
         <span className="cw-title-icon"><ListChecks size={15} /></span>
         <span className="cw-mini-title">{title || (isEdit ? "Tarefa" : "Nova Tarefa")}</span>
         {timerChip}
         <button type="button" className="cw-close" onClick={() => setMode("modal")} aria-label="Restaurar"><Maximize2 size={16} /></button>
-        <button type="button" className="cw-close" onClick={() => close(false)} aria-label="Fechar"><X size={16} /></button>
+        <button type="button" className="cw-close" onClick={requestClose} aria-label="Fechar"><X size={16} /></button>
       </div>
+      {confirmDialogs}
+      </>
     );
   }
 
@@ -620,12 +663,12 @@ export function TaskWindow({
                 onClick={() => save.mutate()}><Save /> {save.isPending ? "Salvando…" : "Salvar"}</button>
               {isEdit && (
                 <button type="button" className="cw-close cw-close-danger" aria-label="Excluir" disabled={remove.isPending}
-                  onClick={() => { if (confirm("Excluir esta tarefa?")) remove.mutate(); }}><Trash2 size={17} /></button>
+                  onClick={() => setAskDelete(true)}><Trash2 size={17} /></button>
               )}
               <button type="button" className="cw-close" onClick={() => setMode("minimized")} aria-label="Minimizar"><Minus size={18} /></button>
               <button type="button" className="cw-close" onClick={() => setMode(mode === "docked" ? "modal" : "docked")}
                 aria-label="Lateralizar"><PanelRight size={17} /></button>
-              <button type="button" className="cw-close" onClick={() => close(false)} aria-label="Fechar"><X size={18} /></button>
+              <button type="button" className="cw-close" onClick={requestClose} aria-label="Fechar"><X size={18} /></button>
             </div>
           </div>
 
@@ -662,22 +705,14 @@ export function TaskWindow({
                 <ChevronDown size={14} style={{ color: "var(--cw-muted)", flexShrink: 0 }} />
               </div>
             </div>
-            <div className="cw-prop">
-              <div className="cw-label">Início</div>
+            <div className="cw-prop" style={{ gridColumn: "span 2" }}>
+              <div className="cw-label">Período (início → prazo)</div>
               <div className="cw-prop-value">
-                <CalendarDays size={14} style={{ color: "var(--cw-muted)", flexShrink: 0 }} />
-                <input type="date" value={startDate} max={dueDate || undefined}
-                  onChange={e => setStartDate(e.target.value)} />
+                <CwDateRange start={startDate} end={dueDate}
+                  onChange={(s, e) => { setStartDate(s); setDueDate(e); }} />
               </div>
             </div>
-            <div className="cw-prop">
-              <div className="cw-label">Prazo</div>
-              <div className="cw-prop-value">
-                <CalendarDays size={14} style={{ color: "var(--cw-muted)", flexShrink: 0 }} />
-                <input type="date" value={dueDate} min={startDate || undefined}
-                  onChange={e => setDueDate(e.target.value)} />
-              </div>
-            </div>
+
 
             <div className="cw-prop">
               <div className="cw-label">Prioridade</div>
@@ -811,9 +846,9 @@ export function TaskWindow({
                             onChange={e => setDeliverables(list => list.map(x => x.id === d.id ? { ...x, type: e.target.value } : x))} />
                         </td>
                         <td>
-                          <input type="date" className="cw-table-inline-input" value={d.due_date ?? ""}
-                            style={late ? { color: "#e14545", fontWeight: 600 } : undefined}
-                            onChange={e => setDeliverables(list => list.map(x => x.id === d.id ? { ...x, due_date: e.target.value || null } : x))} />
+                          <CwDate compact value={d.due_date ?? ""} placeholder="Sem data"
+                            className={late ? "text-[#e14545] font-semibold" : undefined}
+                            onChange={v => setDeliverables(list => list.map(x => x.id === d.id ? { ...x, due_date: v || null } : x))} />
                         </td>
                         <td>
                           <input type="checkbox" checked={d.billing_enabled}
@@ -962,8 +997,8 @@ export function TaskWindow({
                               </select>
                             </td>
                             <td>
-                              <input type="date" className="cw-table-inline-input" value={l.date ?? ""}
-                                onChange={e => upd({ date: e.target.value || null })} />
+                              <CwDate compact value={l.date ?? ""} placeholder="Sem data"
+                                onChange={v => upd({ date: v || null })} />
                             </td>
                             <td>
                               <input type="time" className="cw-table-inline-input" value={l.time}
@@ -1175,8 +1210,9 @@ export function TaskWindow({
                       {timeEntries.slice(0, 6).map(e => (
                         editEntry?.id === e.id ? (
                           <div key={e.id} className="cw-ts-form" style={{ marginTop: 4 }}>
-                            <input className="cw-input" type="date" value={editEntry.date}
-                              onChange={ev => setEditEntry({ ...editEntry, date: ev.target.value })} />
+                            <div className="cw-input" style={{ display: "flex", alignItems: "center" }}>
+                              <CwDate value={editEntry.date} onChange={v => setEditEntry({ ...editEntry, date: v })} />
+                            </div>
                             <input className="cw-input" type="number" step="0.25" value={editEntry.hours}
                               onChange={ev => setEditEntry({ ...editEntry, hours: ev.target.value })} placeholder="Horas" />
                             <button type="button" className="cw-btn cw-btn-sm cw-btn-primary" disabled={updateTime.isPending}
@@ -1207,7 +1243,9 @@ export function TaskWindow({
                     </div>
 
                     <div className="cw-ts-form">
-                      <input className="cw-input" type="date" value={tsDate} onChange={e => setTsDate(e.target.value)} />
+                      <div className="cw-input" style={{ display: "flex", alignItems: "center" }}>
+                        <CwDate value={tsDate} onChange={setTsDate} />
+                      </div>
                       <input className="cw-input" type="number" step="0.25" value={tsHours}
                         onChange={e => setTsHours(e.target.value)} placeholder="Horas" />
                       <button type="button" className="cw-btn cw-btn-sm" disabled={addTime.isPending}
@@ -1257,11 +1295,11 @@ export function TaskWindow({
           {/* RODAPÉ */}
           <div className="cw-footer">
             <div className="cw-foot-group">
-              <button type="button" className="cw-btn cw-btn-secondary" onClick={() => close(false)}>Cancelar</button>
+              <button type="button" className="cw-btn cw-btn-secondary" onClick={requestClose}>Cancelar</button>
               {isEdit && (
                 <button type="button" className="cw-btn cw-btn-ghost" style={{ color: "var(--cw-danger)" }}
                   disabled={remove.isPending}
-                  onClick={() => { if (confirm("Excluir esta tarefa?")) remove.mutate(); }}>
+                  onClick={() => setAskDelete(true)}>
                   <Trash /> Excluir
                 </button>
               )}
@@ -1282,18 +1320,20 @@ export function TaskWindow({
       <>
         <div className="cw-dock-backdrop" onClick={() => setMode("minimized")} />
         <aside className="cw cw-dock">{windowEl}</aside>
+        {confirmDialogs}
       </>
     );
   }
 
   return (
-    <Dialog open onOpenChange={close}>
+    <Dialog open onOpenChange={(o) => { if (!o) requestClose(); }}>
       <DialogContent
         className="cw cw-shell p-0 gap-0 border-0 overflow-hidden [&>button:last-of-type]:hidden w-[calc(100vw-2rem)] max-w-[1180px] sm:max-w-[1180px]"
         style={{ boxShadow: "0 24px 60px rgba(15,25,40,.20)" }}
       >
         {windowEl}
       </DialogContent>
+      {confirmDialogs}
     </Dialog>
   );
 }
