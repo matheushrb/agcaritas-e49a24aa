@@ -177,6 +177,18 @@ export function EditProjectDialog({
     setForm(prev => (prev ? { ...prev, [k]: v } : prev));
 
   const scope = form.scope_flags ?? {};
+  const selectedPlatforms: string[] = (() => {
+    const raw = (form as any).social_platforms;
+    if (Array.isArray(raw)) {
+      return raw.map((x: any) => (typeof x === "string" ? x : x?.name ?? "")).filter(Boolean);
+    }
+    const legacy = (scope as any).tools;
+    return Array.isArray(legacy) ? legacy : [];
+  })();
+  const togglePlatform = (name: string) =>
+    set("social_platforms" as any, (selectedPlatforms.includes(name)
+      ? selectedPlatforms.filter(x => x !== name)
+      : [...selectedPlatforms, name]) as any);
   const traffic = form.traffic_budget ?? { enabled: false, amount: null, platforms: [] };
   const clientName = clients.find(c => c.id === form.client_id)?.trade_name
     || clients.find(c => c.id === form.client_id)?.name
