@@ -187,10 +187,10 @@ export function Prj03Tasks({ tasks, people, onOpen, onQuickCreate, pending }: {
     .sort((a, b) => (toDate(a.due_date)!.getTime() - toDate(b.due_date)!.getTime()))
     .slice(0, 4), [tasks]);
 
-  const byStage = STAGE_ORDER.map((s) => {
-    const n = tasks.filter((t) => t.stage === s).length;
-    return { stage: s, n, pct: tasks.length ? Math.round((n / tasks.length) * 100) : 0 };
-  });
+  const byStatus = useMemo(() => STATUS_ORDER.map((s) => {
+    const n = tasks.filter((t) => t.status === s).length;
+    return { status: s, n, pct: tasks.length ? Math.round((n / tasks.length) * 100) : 0 };
+  }), [tasks]);
 
   const chip = (d: string | null, red = false) => {
     const dt = toDate(d);
