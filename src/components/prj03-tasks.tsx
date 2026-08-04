@@ -4,6 +4,8 @@ import {
   SlidersHorizontal, Calendar, MoreVertical, Plus, Settings2, Check,
 } from "lucide-react";
 import "@/prj03.css";
+import { useStageIndex, stageInfoOf } from "@/lib/task-types";
+
 
 export type P3Task = {
   id: string;
