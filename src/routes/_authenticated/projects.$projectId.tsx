@@ -313,7 +313,22 @@ function ProjectDetail() {
     },
   });
 
+  const { data: owner } = useQuery({
+    queryKey: ["project-owner", project?.owner_id],
+    enabled: !!project?.owner_id,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("id,full_name,display_name,role_title")
+        .eq("id", project!.owner_id!)
+        .maybeSingle();
+      return (data ?? null) as { id: string; full_name: string | null; display_name: string | null; role_title: string | null } | null;
+    },
+  });
+
   const [activeTab, setActiveTab] = useState("overview");
+  const [newTaskOpen, setNewTaskOpen] = useState(false);
+
 
   if (!project) {
     return <div className="text-sm text-muted-foreground">Carregando projeto…</div>;
