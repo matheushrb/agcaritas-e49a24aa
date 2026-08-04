@@ -1,0 +1,117 @@
+/* ===========================================================
+   Correções globais do tema escuro
+   Sobrescreve cores fixas (texto/ícones/pills) que ficavam
+   ilegíveis no fundo marinho. Prefixo html.dark garante que
+   vença as regras dos CSS de módulo independente da ordem.
+   =========================================================== */
+
+/* ---------- Textos que continuavam escuros ---------- */
+html.dark .prj01 .page-header h1,
+html.dark .prj01 .kpi-value,
+html.dark .prj01 .card-title,
+html.dark .prj02 .p2-title,
+html.dark .prj08-panel .p8-title,
+html.dark .fin02 .f2-title,
+html.dark .fin01 .f1-title { color: var(--foreground); }
+
+html.dark .prj01 .client-name,
+html.dark .prj08-table .p8-client,
+html.dark .prj08-panel .p8-desc,
+html.dark .caritas .cv-days span.muted { color: var(--muted-foreground); }
+
+/* ---------- Ícones adaptados ---------- */
+html.dark .prj01 .sort-control > svg,
+html.dark .prj01 .meta svg,
+html.dark .prj01 .task-count svg,
+html.dark .prj02 .p2-crumb .sep,
+html.dark .fin01 .f1-dots,
+html.dark .fin02 .f2-dots { color: var(--muted-foreground); }
+
+html.dark .prj05 .p5-dot svg,
+html.dark .prj05 .p5-check svg { color: #fff; }
+
+/* ---------- Avatares ---------- */
+html.dark .prj02 .p2-stack .av,
+html.dark .prj02 .p2-person .av,
+html.dark .prj02 .p2-act .av,
+html.dark .prj03 .p3-av,
+html.dark .p8-stack .p8-more {
+  background: rgba(255, 255, 255, 0.12);
+  color: var(--foreground);
+  border-color: var(--card);
+}
+html.dark .p8-av { border-color: var(--card); }
+
+/* ---------- Pills / badges / tags ----------
+   Fundo translúcido + texto claro para manter contraste. */
+html.dark .tskv .t-pill.todo,
+html.dark .tskv .t-pill.low,
+html.dark .fin01 .f1-pill.gray,
+html.dark .fin02 .f2-pill.gray,
+html.dark .p8-badge.neutral,
+html.dark .prj04 .p4-tag.pay {
+  background: rgba(255, 255, 255, 0.09);
+  color: var(--muted-foreground);
+}
+
+html.dark .tskv .t-pill.in_progress,
+html.dark .fin01 .f1-pill.blue,
+html.dark .fin02 .f2-pill.blue,
+html.dark .p8-badge.info,
+html.dark .prj03 .p3-pill.blue,
+html.dark .prj05 .p5-badge.blue,
+html.dark .prj06 .p6-tag.blue,
+html.dark .tsk2 .k-pill.st-in_progress {
+  background: rgba(47, 107, 239, 0.22);
+  color: #9CBBFF;
+}
+
+html.dark .tskv .t-pill.done,
+html.dark .fin01 .f1-pill.green,
+html.dark .fin02 .f2-pill.green,
+html.dark .p8-badge.ok,
+html.dark .prj03 .p3-pill.low,
+html.dark .prj04 .p4-tag.rev,
+html.dark .prj04 .p4-tag.ok,
+html.dark .prj05 .p5-badge.green,
+html.dark .prj06 .p6-tag.green,
+html.dark .prj02 .p2-kpi-v.green,
+html.dark .tsk2 .k-pill.st-done,
+html.dark .cw-chip.is-green,
+html.dark .cw-callout.is-green {
+  background: rgba(16, 185, 129, 0.18);
+  color: #5FE0AE;
+  border-color: rgba(16, 185, 129, 0.32);
+}
+html.dark .prj02 .p2-kpi-v.green { background: none; }
+
+html.dark .tskv .t-pill.review,
+html.dark .tskv .t-pill.medium,
+html.dark .fin01 .f1-pill.amber,
+html.dark .fin02 .f2-pill.amber,
+html.dark .p8-badge.warn,
+html.dark .tsk2 .k-pill.st-review,
+html.dark .tsk2 .k-pill.pr-medium {
+  background: rgba(245, 158, 11, 0.2);
+  color: #FBBF6E;
+}
+
+html.dark .tskv .t-pill.high,
+html.dark .tskv .t-pill.urgent,
+html.dark .tskv .t-pill.critical,
+html.dark .fin01 .f1-pill.red,
+html.dark .fin02 .f2-pill.red,
+html.dark .p8-badge.danger {
+  background: rgba(239, 68, 68, 0.2);
+  color: #FF9C9C;
+}
+
+/* ---------- Janelas (task/fatura) ---------- */
+html.dark .cw-step.is-active .cw-step-desc,
+html.dark .cw-help span { color: #9CBBFF; }
+html.dark .cw-callout {
+  background: rgba(47, 107, 239, 0.14);
+  border-color: rgba(47, 107, 239, 0.3);
+  color: #9CBBFF;
+}
+html.dark .prj05 .p5-logo { background: rgba(255, 255, 255, 0.14); color: var(--foreground); }
