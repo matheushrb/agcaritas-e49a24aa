@@ -288,10 +288,24 @@ function InvoiceDetailPage() {
       discount: String(num(invoice.discount)),
       notes: invoice.notes ?? "",
     });
-    setDrafts(items.map(i => ({ id: i.id, description: i.description, amount: String(num(i.amount)), due_date: (i.due_date ?? "").slice(0, 10) })));
+    setDrafts(items.map(i => ({ id: i.id, description: i.description, amount: String(num(i.amount)), due_date: (i.due_date ?? "").slice(0, 10), project_id: i.project_id ?? null })));
+    setMethods(parsePaymentMethods(invoice.payment_method));
     setRemoved([]);
     setEditOpen(true);
   }
+
+  // projetos vinculados à fatura (derivados dos itens)
+  const draftProjectIds = useMemo(
+    () => Array.from(new Set(drafts.map(d => d.project_id).filter(Boolean))) as string[],
+    [drafts]
+  );
+
+  function removeProjectTag(projectId: string) {
+    const ids = drafts.filter(d => d.project_id === projectId && d.id).map(d => d.id!) as string[];
+    setRemoved(r => [...r, ...ids]);
+    setDrafts(a => a.filter(d => d.project_id !== projectId));
+  }
+
 
   const saveInvoice = useMutation({
     mutationFn: async () => {
