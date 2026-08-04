@@ -315,6 +315,7 @@ export function TaskWindow({
     due_date: dueDate || null,
     stage: stage as any,
     current_stage_id: currentStageId,
+    progress,
 
     task_type_id: taskTypeId,
     estimated_hours: estimated ? Number(estimated) : null,
