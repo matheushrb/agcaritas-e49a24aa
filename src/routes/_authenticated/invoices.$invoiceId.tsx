@@ -24,7 +24,7 @@ export const Route = createFileRoute("/_authenticated/invoices/$invoiceId")({
 
 type Inv = {
   id: string; number: string | null; client_id: string | null; project_id: string | null;
-  status: string; issue_date: string | null; due_date: string | null; paid_at: string | null; sent_at?: string | null;
+  status: string; issue_date: string | null; due_date: string | null; paid_at: string | null;
   total: number | string | null; amount: number | string | null; discount: number | string | null;
   notes: string | null; payment_method: string | null; payment_terms: string | null;
   payment_link: string | null; created_at: string | null;
@@ -40,10 +40,7 @@ const num = (v: unknown) => Number(v ?? 0) || 0;
 const fmtDate = (d?: string | null) =>
   d ? new Date(d.length > 10 ? d : d + "T00:00:00").toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric" }) : "—";
 const fmtDateTime = (d?: string | null) =>
-  !d ? "—"
-    : d.length <= 10
-      ? fmtDate(d)
-      : new Date(d).toLocaleString("pt-BR", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit", timeZone: "America/Sao_Paulo" });
+  d ? new Date(d).toLocaleString("pt-BR", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "—";
 const daysDiff = (d?: string | null) => {
   if (!d) return null;
   const t = new Date(d + "T00:00:00").getTime();
@@ -99,7 +96,7 @@ function InvoiceDetailPage() {
     queryKey: ["invoice", invoiceId],
     queryFn: async () => {
       const { data, error } = await supabase.from("invoices")
-        .select("id,number,client_id,project_id,status,issue_date,due_date,paid_at,sent_at,total,amount,discount,notes,payment_method,payment_terms,payment_link,created_at")
+        .select("id,number,client_id,project_id,status,issue_date,due_date,paid_at,total,amount,discount,notes,payment_method,payment_terms,payment_link,created_at")
         .eq("id", invoiceId).maybeSingle();
       if (error) throw error;
       return (data ?? null) as Inv | null;
@@ -255,7 +252,7 @@ function InvoiceDetailPage() {
 
   const sendInvoice = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase.from("invoices").update({ status: "issued", sent_at: new Date().toISOString() }).eq("id", invoiceId);
+      const { error } = await supabase.from("invoices").update({ status: "issued" }).eq("id", invoiceId);
       if (error) throw error;
       await supabase.from("charges").update({ status: "pending" }).eq("invoice_id", invoiceId);
     },
@@ -430,7 +427,7 @@ function InvoiceDetailPage() {
 
   const steps = [
     { name: "Fatura criada", at: invoice.created_at, done: true },
-    { name: "Enviada ao cliente", at: invoice.sent_at ?? invoice.issue_date, done: invoice.status !== "draft" },
+    { name: "Enviada ao cliente", at: invoice.issue_date, done: invoice.status !== "draft" },
     { name: invoice.status === "paid" ? "Pagamento em conta" : "A receber", at: invoice.due_date, done: invoice.status === "paid", current: invoice.status !== "draft" && invoice.status !== "paid" },
     { name: "Pagamento recebido", at: invoice.paid_at, done: invoice.status === "paid", current: false },
     { name: "Fatura concluída", at: invoice.paid_at, done: invoice.status === "paid", current: false },

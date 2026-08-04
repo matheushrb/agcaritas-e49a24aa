@@ -1015,7 +1015,6 @@ export type Database = {
           pdf_url: string | null
           project_id: string | null
           proposal_id: string | null
-          sent_at: string | null
           status: string
           subtotal: number | null
           total: number | null
@@ -1043,7 +1042,6 @@ export type Database = {
           pdf_url?: string | null
           project_id?: string | null
           proposal_id?: string | null
-          sent_at?: string | null
           status?: string
           subtotal?: number | null
           total?: number | null
@@ -1071,7 +1069,6 @@ export type Database = {
           pdf_url?: string | null
           project_id?: string | null
           proposal_id?: string | null
-          sent_at?: string | null
           status?: string
           subtotal?: number | null
           total?: number | null

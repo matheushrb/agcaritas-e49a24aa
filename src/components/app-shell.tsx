@@ -5,7 +5,7 @@ import {
   Megaphone, Building2, Receipt, HelpCircle,
   Inbox, MessageSquare, FileSignature, Check, Trash2, Asterisk, ChevronDown,
 } from "lucide-react";
-import { type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useTheme } from "@/components/theme-provider";
@@ -13,6 +13,7 @@ import { GlobalSearch } from "@/components/global-search";
 import { TopbarCalendar } from "@/components/topbar-calendar";
 import { TopbarWeather } from "@/components/topbar-weather";
 import { supabase } from "@/integrations/supabase/client";
+import caritasLogo from "@/assets/caritas-logo-horizontal.png.asset.json";
 import caritasSymbol from "@/assets/caritas-symbol.png.asset.json";
 import { resolveAvatarUrl } from "@/components/settings/profile-tab";
 
@@ -45,6 +46,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
   const { theme, setTheme } = useTheme();
   const pathname = useRouterState({ select: s => s.location.pathname });
+  const [expanded] = useState(false);
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
@@ -62,82 +64,61 @@ export function AppShell({ children }: { children: ReactNode }) {
         className={`cv-nav-item${active ? " is-active" : ""}`}
       >
         <Icon className="h-[18px] w-[18px] shrink-0" />
-        <span>{item.label}</span>
       </Link>
     );
   };
 
   return (
     <div className="caritas-ui" data-theme={theme}>
-      <div className="cv-app-wrapper">
-        <div className="cv-app-card">
-          <aside className="cv-sidebar">
-            <div className="cv-sidebar-logo">
-              <img src={caritasSymbol.url} alt="Caritas" style={{ width: 30, height: "auto" }} />
-              <span>Caritas</span>
-            </div>
-
-            <nav className="cv-sidebar-nav">
-              {primaryNav.map(railItem)}
-            </nav>
-
-            <div className="cv-sidebar-bottom">
-              <Popover>
-                <PopoverTrigger asChild>
-                  <button className="cv-nav-item" title="Mais módulos">
-                    <LayoutGrid className="h-[18px] w-[18px]" />
-                    <span>Mais módulos</span>
-                  </button>
-                </PopoverTrigger>
-                <PopoverContent side="right" align="start" className="w-60 p-1.5 rounded-xl">
-                  <div className="px-2 py-1.5 text-[11px] uppercase tracking-wider text-muted-foreground">Mais módulos</div>
-                  {secondaryNav.map(item => {
-                    const Icon = item.icon;
-                    return (
-                      <Link
-                        key={item.to}
-                        to={item.to}
-                        className="flex items-center gap-2.5 rounded-lg px-2 py-2 text-sm hover:bg-muted"
-                      >
-                        <Icon className="h-4 w-4 text-muted-foreground" />
-                        {item.label}
-                      </Link>
-                    );
-                  })}
-                </PopoverContent>
-              </Popover>
-              {railItem({ to: "/settings", icon: Settings, label: "Configurações" })}
-              <button onClick={handleSignOut} title="Sair" className="cv-nav-item">
-                <LogOut className="h-[18px] w-[18px]" />
-                <span>Sair</span>
-              </button>
-            </div>
-          </aside>
-
-          <div className="cv-shell">
-            <TopBar theme={theme} onToggleTheme={setTheme} pathname={pathname} />
-            <main className="cv-main">{children}</main>
-          </div>
+      <aside className="cv-sidebar">
+        <div className="cv-sidebar-logo">
+          <img src={caritasSymbol.url} alt="Caritas" style={{ width: 26, height: "auto" }} />
         </div>
+
+        <nav className="cv-sidebar-nav">
+          {primaryNav.map(railItem)}
+          {expanded && secondaryNav.map(railItem)}
+          <Popover>
+            <PopoverTrigger asChild>
+              <button className="cv-nav-item" title="Mais módulos">
+                <LayoutGrid className="h-[18px] w-[18px]" />
+              </button>
+            </PopoverTrigger>
+            <PopoverContent side="right" align="start" className="w-60 p-1.5 rounded-xl">
+              <div className="px-2 py-1.5 text-[11px] uppercase tracking-wider text-muted-foreground">Mais módulos</div>
+              {secondaryNav.map(item => {
+                const Icon = item.icon;
+                return (
+                  <Link
+                    key={item.to}
+                    to={item.to}
+                    className="flex items-center gap-2.5 rounded-lg px-2 py-2 text-sm hover:bg-muted"
+                  >
+                    <Icon className="h-4 w-4 text-muted-foreground" />
+                    {item.label}
+                  </Link>
+                );
+              })}
+            </PopoverContent>
+          </Popover>
+        </nav>
+
+        <div className="cv-sidebar-bottom">
+          {railItem({ to: "/settings", icon: Settings, label: "Configurações" })}
+          <button onClick={handleSignOut} title="Sair" className="cv-nav-item">
+            <LogOut className="h-[18px] w-[18px]" />
+          </button>
+        </div>
+      </aside>
+
+      <div className="cv-shell">
+        <TopBar theme={theme} onToggleTheme={setTheme} pathname={pathname} />
+        <main className="cv-main">{children}</main>
       </div>
     </div>
   );
 }
 
-
-function getSectionTitle(pathname: string) {
-  if (pathname.startsWith("/dashboard")) return "Dashboard";
-  if (pathname.startsWith("/projects")) return "Projetos";
-  if (pathname.startsWith("/tasks")) return "Tarefas";
-  if (pathname.startsWith("/crm")) return "CRM";
-  if (pathname.startsWith("/proposals")) return "Propostas";
-  if (pathname.startsWith("/finance")) return "Financeiro";
-  if (pathname.startsWith("/invoices")) return "Faturas";
-  if (pathname.startsWith("/team")) return "RH";
-  if (pathname.startsWith("/clients")) return "Clientes";
-  if (pathname.startsWith("/settings")) return "Configurações";
-  return "Caritas";
-}
 
 function TopBar({
   theme, onToggleTheme, pathname,
@@ -169,11 +150,9 @@ function TopBar({
 
   return (
     <header className="cv-topbar">
-      <div className="flex items-center gap-3">
-        <span className="text-xs font-semibold tracking-wider uppercase text-muted-foreground hidden lg:block">
-          {getSectionTitle(pathname)}
-        </span>
-      </div>
+      <Link to="/dashboard" className="cv-brand" style={{ textDecoration: "none", color: "inherit" }}>
+        <img src={caritasLogo.url} alt="Agência Caritas" style={{ height: 26, width: "auto" }} />
+      </Link>
 
       <GlobalSearch />
 

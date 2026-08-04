@@ -1,1 +1,0 @@
-ALTER TABLE public.invoices ADD COLUMN IF NOT EXISTS sent_at timestamptz;
