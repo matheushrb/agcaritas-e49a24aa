@@ -46,6 +46,7 @@ const STAGE_PALETTE = ["#7F8C9E", "#8B5CF6", "#EF4444", "#0EA5E9", "#F97316", "#
 type DeliverableDraft = {
   id: string; platform: string; type: string;
   billing_enabled: boolean; billing_value: number | null; delivered: boolean;
+  due_date?: string | null;
   invoiced?: boolean;
 };
 type ChecklistDraft = { id: string; title: string; done: boolean };
@@ -233,6 +234,7 @@ export function TaskWindow({
         billing_enabled: d.billing_enabled !== false,
         billing_value: d.billing_value ?? null,
         delivered: !!d.delivered,
+        due_date: d.due_date ?? null,
         invoiced: !!d.invoiced,
       })),
     );
@@ -406,6 +408,7 @@ export function TaskWindow({
       id: d.id, platform: d.platform, type: d.type,
       billing_enabled: d.billing_enabled, billing_model: "per_task",
       billing_value: d.billing_value, delivered: d.delivered, invoiced: !!d.invoiced,
+      due_date: d.due_date || null,
     })) as any,
     subtasks: checklist as any,
   });
@@ -612,26 +615,29 @@ export function TaskWindow({
                     <p>Somente entregáveis marcados como entregues podem ser faturados.</p>
                   </div>
                   <button type="button" className="cw-btn cw-btn-secondary sm"
-                    onClick={() => setDeliverables(d => [...d, { id: uid(), platform: platformsSel[0] ?? "", type: "", billing_enabled: billingEnabled, billing_value: null, delivered: false }])}>
+                    onClick={() => setDeliverables(d => [...d, { id: uid(), platform: platformsSel[0] ?? "", type: "", billing_enabled: billingEnabled, billing_value: null, delivered: false, due_date: null }])}>
                     <Plus /> Adicionar entregável
                   </button>
                 </div>
                 <table className="cw-table">
                   <thead>
                     <tr>
-                      <th style={{ width: 150 }}>Plataforma</th>
+                      <th style={{ width: 140 }}>Plataforma</th>
                       <th>Formato / entrega</th>
-                      <th style={{ width: 110 }}>Faturável</th>
-                      <th style={{ width: 120 }}>Valor</th>
-                      <th style={{ width: 100 }}>Entregue</th>
+                      <th style={{ width: 140 }}>Prazo</th>
+                      <th style={{ width: 90 }}>Faturável</th>
+                      <th style={{ width: 110 }}>Valor</th>
+                      <th style={{ width: 120 }}>Entrega</th>
                       <th style={{ width: 56 }} />
                     </tr>
                   </thead>
                   <tbody>
                     {deliverables.length === 0 && (
-                      <tr><td colSpan={6} className="cw-mut" style={{ textAlign: "center" }}>Nenhum entregável adicionado.</td></tr>
+                      <tr><td colSpan={7} className="cw-mut" style={{ textAlign: "center" }}>Nenhum entregável adicionado.</td></tr>
                     )}
-                    {deliverables.map(d => (
+                    {deliverables.map(d => {
+                      const late = !d.delivered && !!d.due_date && d.due_date < new Date().toISOString().slice(0, 10);
+                      return (
                       <tr key={d.id}>
                         <td>
                           <select className="cw-table-inline-input" value={d.platform}
@@ -645,6 +651,11 @@ export function TaskWindow({
                             onChange={e => setDeliverables(list => list.map(x => x.id === d.id ? { ...x, type: e.target.value } : x))} />
                         </td>
                         <td>
+                          <input type="date" className="cw-table-inline-input" value={d.due_date ?? ""}
+                            style={late ? { color: "#e14545", fontWeight: 600 } : undefined}
+                            onChange={e => setDeliverables(list => list.map(x => x.id === d.id ? { ...x, due_date: e.target.value || null } : x))} />
+                        </td>
+                        <td>
                           <input type="checkbox" checked={d.billing_enabled}
                             onChange={e => setDeliverables(list => list.map(x => x.id === d.id ? { ...x, billing_enabled: e.target.checked } : x))} />
                         </td>
@@ -653,8 +664,11 @@ export function TaskWindow({
                             onChange={e => setDeliverables(list => list.map(x => x.id === d.id ? { ...x, billing_value: e.target.value ? Number(e.target.value) : null } : x))} />
                         </td>
                         <td>
-                          <input type="checkbox" checked={d.delivered}
-                            onChange={e => setDeliverables(list => list.map(x => x.id === d.id ? { ...x, delivered: e.target.checked } : x))} />
+                          <button type="button"
+                            className={`cw-deliver-btn${d.delivered ? " is-done" : late ? " is-late" : ""}`}
+                            onClick={() => setDeliverables(list => list.map(x => x.id === d.id ? { ...x, delivered: !x.delivered } : x))}>
+                            {d.delivered ? <><Check size={12} /> Entregue</> : late ? "Atrasado" : "Marcar entregue"}
+                          </button>
                         </td>
                         <td>
                           <button type="button" className="cw-row-icon" onClick={() => setDeliverables(list => list.filter(x => x.id !== d.id))}>
@@ -662,7 +676,8 @@ export function TaskWindow({
                           </button>
                         </td>
                       </tr>
-                    ))}
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>

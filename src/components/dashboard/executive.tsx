@@ -27,7 +27,7 @@ export const executiveQuery = {
       supabase.from("charges").select("id,amount,type,status,due_date,paid_at,category,project_id").gte("due_date", prevFrom).lt("due_date", to),
       supabase.from("clients").select("id,name,created_at,status"),
       supabase.from("projects").select("id,name,status,end_date,client_id"),
-      supabase.from("tasks").select("id,title,status,priority,due_date,project_id,client_id,assignee_id,updated_at"),
+      supabase.from("tasks").select("id,title,status,priority,due_date,project_id,client_id,assignee_id,updated_at,deliverables").limit(2000),
       supabase.from("leads").select("id,stage,estimated_value"),
       supabase.from("calendar_events").select("id,title,description,kind,starts_at,ends_at").gte("starts_at", dayStart().toISOString()).order("starts_at").limit(40),
     ]);
@@ -140,6 +140,27 @@ function useMetrics(data: Data) {
         overdue: !!(t.due_date && new Date(t.due_date) < today),
       }));
 
+    // Entregáveis pendentes (subitens de tarefas) com prazo vencido ou vencendo hoje
+    const todayIso = today.toISOString().slice(0, 10);
+    const pendingDeliverables = open.flatMap(t => {
+      const list = Array.isArray((t as any).deliverables) ? (t as any).deliverables : [];
+      return list
+        .filter((d: any) => !d.delivered && d.due_date && String(d.due_date) <= todayIso)
+        .map((d: any) => ({
+          key: `${t.id}-${d.id}`,
+          taskId: t.id,
+          taskTitle: t.title as string,
+          label: [d.platform, d.type].filter(Boolean).join(" · ") || "Entregável",
+          dueDate: String(d.due_date),
+          overdue: String(d.due_date) < todayIso,
+          projectName: data.projects.find(p => p.id === t.project_id)?.name ?? "Sem projeto",
+          priority: t.priority,
+        }));
+    })
+      .sort((a: any, b: any) => a.dueDate.localeCompare(b.dueDate))
+      .slice(0, 6);
+
+
     // Receita por dia do mês (barras) e categorias de despesa (donut)
     const days = new Date(me.getTime() - 86_400_000).getDate();
     const perDay = Array.from({ length: days }, (_, i) => {
@@ -169,6 +190,7 @@ function useMetrics(data: Data) {
       approvals: approvals.length,
       urgentApprovals: approvals.filter(t => t.priority === "urgent" || t.priority === "high").length,
       critPend,
+      pendingDeliverables,
       taskCounts: { todo: byStatus("todo"), doing: byStatus("in_progress"), review: byStatus("review"), done: doneToday.length },
       nextTasks: open
         .filter(t => t.due_date)
@@ -315,7 +337,7 @@ function AttentionBlock({ m, data }: { m: Metrics; data: Data }) {
           <span>Prioridade</span>
           <span />
         </div>
-        {m.critPend.length === 0 && (
+        {m.critPend.length === 0 && m.pendingDeliverables.length === 0 && (
           <p className="py-4 text-center text-[12px] text-muted-foreground">Nenhuma pendência crítica. Bom trabalho.</p>
         )}
         {m.critPend.map(t => (
@@ -338,6 +360,33 @@ function AttentionBlock({ m, data }: { m: Metrics; data: Data }) {
             </span>
             <span>
               <PriorityBadge value={t.priority} />
+            </span>
+            <MoreVertical className="h-3.5 w-3.5 text-muted-foreground" />
+          </Link>
+        ))}
+
+        {m.pendingDeliverables.map((d: any) => (
+          <Link
+            key={d.key}
+            to="/tasks"
+            search={{ open: d.taskId } as any}
+            className="grid grid-cols-[minmax(0,1fr)_150px_110px_90px_24px] items-center gap-3 border-b border-border py-2 text-[13px] last:border-0 hover:bg-muted/50"
+          >
+            <span className="flex min-w-0 items-center gap-2 pl-5">
+              <Circle className={`h-2.5 w-2.5 shrink-0 ${d.overdue ? "text-destructive" : "text-warning"}`} />
+              <span className="min-w-0">
+                <span className="block truncate text-[12px]">{d.label}</span>
+                <span className="block truncate text-[11px] text-muted-foreground">Entregável de: {d.taskTitle}</span>
+              </span>
+            </span>
+            <span className="min-w-0 text-[12px] text-muted-foreground">
+              <span className="block truncate">{d.projectName}</span>
+            </span>
+            <span className={`text-[12px] ${d.overdue ? "text-destructive" : ""}`}>
+              {d.overdue ? "Atrasado" : "Entrega hoje"}
+            </span>
+            <span>
+              <PriorityBadge value={d.priority} />
             </span>
             <MoreVertical className="h-3.5 w-3.5 text-muted-foreground" />
           </Link>
