@@ -441,7 +441,9 @@ export function TaskWindow({
                     <h4>Plataformas e canais</h4>
                     <p>{projectId && projectPlatformNames.length > 0
                       ? "Apenas as plataformas cadastradas no projeto."
-                      : "Tarefa avulsa: todas as plataformas disponíveis."}</p>
+                      : projectId
+                        ? "Projeto sem plataformas cadastradas — exibindo todas."
+                        : "Tarefa avulsa: todas as plataformas disponíveis."}</p>
                   </div>
                 </div>
                 <div className="flex flex-wrap gap-2">
