@@ -1,22 +1,22 @@
-/* Caritas UI — folha de estilo aprovada (DASH-01 / DASH-03) */
+/* Caritas UI — folha de estilo aprovada (DASH-01 / DASH-03 / V3 refinamento) */
 
 .caritas-ui {
-  --bg: #f5f6f7;
+  --bg: #e8edf3;
   --surface: #ffffff;
-  --surface-2: #fafbfc;
-  --text: #1c2026;
-  --muted: #66707a;
-  --border: #dde1e6;
-  --primary: #1769f6;
-  --primary-2: #3659e3;
-  --primary-soft: #eef4ff;
-  --success: #2fad62;
-  --warning: #e79015;
-  --danger: #e4473a;
+  --surface-2: #f5f7fa;
+  --text: #0f1b3d;
+  --muted: #5e6e82;
+  --border: #d6dde6;
+  --primary: #1e3a5f;
+  --primary-2: #3b6fa0;
+  --primary-soft: #e8edf3;
+  --success: #2f7d5a;
+  --warning: #b97918;
+  --danger: #c64b4b;
   --purple: #7e57d8;
   --teal: #14a9a0;
-  --shadow: 0 1px 5px rgba(19, 31, 55, 0.022);
-  --radius: 10px;
+  --shadow: 0 1px 5px rgba(15, 27, 61, 0.022);
+  --radius: 20px;
 
   min-height: 100vh;
   background: var(--bg);
@@ -26,17 +26,17 @@
   font-synthesis: none;
 }
 
-/* DASH-03 */
+/* DASH-03 — dark navy */
 .caritas-ui[data-theme="dark"] {
-  --bg: #05080c;
-  --surface: #091019;
-  --surface-2: #0c141e;
-  --text: #f6f8fa;
-  --muted: #98a2ae;
+  --bg: #070b12;
+  --surface: #0d131d;
+  --surface-2: #111925;
+  --text: #f5f7fa;
+  --muted: #98a4b3;
   --border: #202a36;
-  --primary: #1769f6;
-  --primary-2: #7e95f5;
-  --primary-soft: #101b3b;
+  --primary: #3b6fa0;
+  --primary-2: #5a78ec;
+  --primary-soft: #17202e;
   --shadow: 0 10px 30px rgba(0, 0, 0, 0.22);
 }
 
