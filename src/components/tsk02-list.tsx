@@ -25,6 +25,9 @@ export type TskTask = {
   comments_count?: number;
   attachments_count?: number;
   archived_at?: string | null;
+  stage?: "briefing" | "creation" | "review" | "approval" | "delivery" | null;
+  current_stage_id?: string | null;
+
 };
 
 
