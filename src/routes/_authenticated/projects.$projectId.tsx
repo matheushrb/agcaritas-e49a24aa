@@ -17,7 +17,7 @@ import {
 
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { TaskModal } from "./tasks";
+import { TaskWindow } from "@/components/new-task-window";
 import { EditProjectDialog, type EditableProject } from "@/components/edit-project-dialog";
 import { ProjectCostsTab } from "@/components/project-costs-tab";
 import { Prj02Overview, p2Initials } from "@/components/prj02-overview";
@@ -496,7 +496,11 @@ function ProjectDetail() {
       {activeTab === "campaigns" && <div style={{ marginTop: 18 }}><ComingSoon icon={Rocket} title="Campanhas" description="Lançamentos e campanhas dentro do projeto." /></div>}
       {activeTab === "docs" && <Prj06Files />}
 
-      <TaskModal task={selectedTask} onClose={() => setSelectedTaskId(null)} />
+      <TaskWindow
+        open={!!selectedTaskId}
+        taskId={selectedTaskId}
+        onOpenChange={(o: boolean) => { if (!o) setSelectedTaskId(null); }}
+      />
       <EditProjectDialog
         project={project as EditableProject}
         open={editOpen}

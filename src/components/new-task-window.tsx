@@ -1,11 +1,11 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import {
   X, Plus, Trash2, Check, Info, ChevronDown, ListChecks, DollarSign,
-  Paperclip, Save, Clock, CalendarDays, Layers,
+  Paperclip, Save, Clock, CalendarDays, Layers, Trash,
 } from "lucide-react";
 import "@/windows.css";
 
@@ -26,24 +26,35 @@ const PRIORITIES = [
   { value: "critical", label: "Crítica" },
 ];
 
+const STATUSES = [
+  { value: "todo", label: "A fazer" },
+  { value: "in_progress", label: "Em andamento" },
+  { value: "review", label: "Revisão" },
+  { value: "done", label: "Concluída" },
+];
+
 type DeliverableDraft = {
   id: string; platform: string; type: string;
   billing_enabled: boolean; billing_value: number | null; delivered: boolean;
+  invoiced?: boolean;
 };
 type ChecklistDraft = { id: string; title: string; done: boolean };
 
 const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 const uid = () => Math.random().toString(36).slice(2, 9);
 
-export function NewTaskWindow({
-  open, onOpenChange, defaultProjectId = null, onCreated,
+export function TaskWindow({
+  open, onOpenChange, taskId = null, defaultProjectId = null, onCreated,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
+  /** Quando informado, a janela abre no modo edição da tarefa existente. */
+  taskId?: string | null;
   defaultProjectId?: string | null;
   onCreated?: (id: string) => void;
 }) {
   const qc = useQueryClient();
+  const isEdit = !!taskId;
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -52,25 +63,27 @@ export function NewTaskWindow({
   const [assigneeId, setAssigneeId] = useState<string | null>(null);
   const [dueDate, setDueDate] = useState("");
   const [priority, setPriority] = useState("medium");
+  const [status, setStatus] = useState("todo");
   const [stage, setStage] = useState<Stage>("briefing");
   const [estimated, setEstimated] = useState<string>("");
   const [billingEnabled, setBillingEnabled] = useState(true);
+  const [baseValue, setBaseValue] = useState<string>("");
   const [deliverables, setDeliverables] = useState<DeliverableDraft[]>([]);
   const [checklist, setChecklist] = useState<ChecklistDraft[]>([]);
   const [platformsSel, setPlatformsSel] = useState<string[]>([]);
   const [notes, setNotes] = useState("");
 
   const { data: projects = [] } = useQuery({
-    queryKey: ["projects_min"],
+    queryKey: ["projects_min_platforms"],
     queryFn: async () => {
-      const { data } = await supabase.from("projects").select("id,name").order("name");
-      return (data ?? []) as { id: string; name: string }[];
+      const { data } = await supabase.from("projects").select("id,name,social_platforms").order("name");
+      return (data ?? []) as { id: string; name: string; social_platforms: any }[];
     },
   });
   const { data: taskTypes = [] } = useQuery({
     queryKey: ["task_types_min"],
     queryFn: async () => {
-      const { data } = await (supabase as any).from("task_types").select("id,name,default_value,active").order("name");
+      const { data } = await (supabase as any).from("task_types").select("id,name,default_price,active").order("name");
       return ((data ?? []) as any[]).filter(t => t.active !== false);
     },
   });
@@ -81,7 +94,7 @@ export function NewTaskWindow({
       return (data ?? []) as { id: string; full_name: string; display_name: string | null }[];
     },
   });
-  const { data: platforms = [] } = useQuery({
+  const { data: allPlatforms = [] } = useQuery({
     queryKey: ["platforms"],
     queryFn: async () => {
       const { data } = await (supabase as any).from("platforms").select("id,name,active").order("sort_order");
@@ -89,53 +102,147 @@ export function NewTaskWindow({
     },
   });
 
-  const billableTotal = useMemo(
+  /* Plataformas disponíveis: apenas as do projeto; todas se a tarefa for avulsa. */
+  const projectPlatformNames = useMemo(() => {
+    const proj = projects.find(p => p.id === projectId);
+    const raw = proj?.social_platforms;
+    const arr: string[] = Array.isArray(raw)
+      ? raw.map((x: any) => (typeof x === "string" ? x : x?.name ?? x?.platform ?? "")).filter(Boolean)
+      : [];
+    return arr;
+  }, [projects, projectId]);
+
+  const platforms = useMemo(() => {
+    if (!projectId || projectPlatformNames.length === 0) return allPlatforms;
+    const set = new Set(projectPlatformNames.map(n => n.toLowerCase()));
+    const filtered = allPlatforms.filter((p: any) =>
+      set.has(String(p.name).toLowerCase()) || set.has(String(p.id).toLowerCase()));
+    return filtered.length ? filtered : allPlatforms;
+  }, [allPlatforms, projectId, projectPlatformNames]);
+
+  /* ---------- Carregar tarefa existente ---------- */
+  const { data: existing } = useQuery({
+    queryKey: ["task-window", taskId],
+    enabled: !!taskId && open,
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("tasks")
+        .select("*")
+        .eq("id", taskId!)
+        .maybeSingle();
+      if (error) throw error;
+      return data as any;
+    },
+  });
+
+  useEffect(() => {
+    if (!open) return;
+    if (!isEdit) return;
+    if (!existing) return;
+    setTitle(existing.title ?? "");
+    setDescription(existing.description ?? "");
+    setProjectId(existing.project_id ?? null);
+    setTaskTypeId(existing.task_type_id ?? null);
+    setAssigneeId(existing.assignee_id ?? null);
+    setDueDate(existing.due_date ?? "");
+    setPriority(existing.priority ?? "medium");
+    setStatus(existing.status ?? "todo");
+    setStage((existing.stage as Stage) ?? "briefing");
+    setEstimated(existing.estimated_hours != null ? String(existing.estimated_hours) : "");
+    setBillingEnabled(existing.billing_enabled !== false);
+    setBaseValue(existing.billing_base_value != null ? String(existing.billing_base_value) : "");
+    setDeliverables(
+      (Array.isArray(existing.deliverables) ? existing.deliverables : []).map((d: any) => ({
+        id: d.id ?? uid(),
+        platform: d.platform ?? "",
+        type: d.type ?? "",
+        billing_enabled: d.billing_enabled !== false,
+        billing_value: d.billing_value ?? null,
+        delivered: !!d.delivered,
+        invoiced: !!d.invoiced,
+      })),
+    );
+    setChecklist(
+      (Array.isArray(existing.subtasks) ? existing.subtasks : []).map((s: any) => ({
+        id: s.id ?? uid(), title: s.title ?? "", done: !!s.done,
+      })),
+    );
+    setPlatformsSel(existing.platform ? String(existing.platform).split(",").map((s: string) => s.trim()).filter(Boolean) : []);
+    setNotes("");
+  }, [existing, open, isEdit]);
+
+  const deliverablesTotal = useMemo(
     () => deliverables.filter(d => d.billing_enabled).reduce((s, d) => s + (d.billing_value ?? 0), 0),
     [deliverables],
   );
+  const baseNum = baseValue ? Number(baseValue) || 0 : 0;
+  const billableTotal = baseNum + deliverablesTotal;
   const doneCount = checklist.filter(c => c.done).length;
 
   const reset = () => {
     setTitle(""); setDescription(""); setProjectId(defaultProjectId); setTaskTypeId(null);
-    setAssigneeId(null); setDueDate(""); setPriority("medium"); setStage("briefing");
-    setEstimated(""); setBillingEnabled(true); setDeliverables([]); setChecklist([]);
+    setAssigneeId(null); setDueDate(""); setPriority("medium"); setStatus("todo"); setStage("briefing");
+    setEstimated(""); setBillingEnabled(true); setBaseValue(""); setDeliverables([]); setChecklist([]);
     setPlatformsSel([]); setNotes("");
   };
   const close = (o: boolean) => { onOpenChange(o); if (!o) reset(); };
 
-  const create = useMutation({
-    mutationFn: async (asDraft: boolean) => {
+  const payload = () => ({
+    title: title.trim(),
+    description: [description.trim(), notes.trim() && `\n\nObservações: ${notes.trim()}`].filter(Boolean).join("") || null,
+    status: status as any,
+    priority: priority as any,
+    project_id: projectId,
+    assignee_id: assigneeId,
+    due_date: dueDate || null,
+    stage: stage as any,
+    task_type_id: taskTypeId,
+    estimated_hours: estimated ? Number(estimated) : null,
+    billing_enabled: billingEnabled,
+    billing_base_value: baseValue ? Number(baseValue) : null,
+    billing_value: billableTotal || null,
+    platform: platformsSel.join(", ") || null,
+    deliverables: deliverables.map(d => ({
+      id: d.id, platform: d.platform, type: d.type,
+      billing_enabled: d.billing_enabled, billing_model: "per_task",
+      billing_value: d.billing_value, delivered: d.delivered, invoiced: !!d.invoiced,
+    })) as any,
+    subtasks: checklist as any,
+  });
+
+  const save = useMutation({
+    mutationFn: async () => {
+      if (isEdit) {
+        const { error } = await (supabase as any).from("tasks").update(payload()).eq("id", taskId!);
+        if (error) throw error;
+        return taskId!;
+      }
       const { data: profile } = await supabase.from("profiles").select("organization_id").maybeSingle();
       if (!profile?.organization_id) throw new Error("Sem organização");
-      const { data, error } = await supabase.from("tasks").insert({
-        title: title.trim(),
-        description: [description.trim(), notes.trim() && `\n\nObservações: ${notes.trim()}`].filter(Boolean).join("") || null,
-        status: asDraft ? "todo" : "todo",
-        priority: priority as any,
-        project_id: projectId,
-        assignee_id: assigneeId,
-        due_date: dueDate || null,
-        stage: stage as any,
-        task_type_id: taskTypeId,
-        estimated_hours: estimated ? Number(estimated) : null,
-        billing_enabled: billingEnabled,
-        billing_value: billableTotal || null,
-        platform: platformsSel[0] ?? null,
-        organization_id: profile.organization_id,
-        deliverables: deliverables.map(d => ({
-          id: d.id, platform: d.platform, type: d.type,
-          billing_enabled: d.billing_enabled, billing_model: "per_task",
-          billing_value: d.billing_value, delivered: d.delivered, invoiced: false,
-        })) as any,
-        subtasks: checklist as any,
-      }).select("id").single();
+      const { data, error } = await (supabase as any).from("tasks")
+        .insert({ ...payload(), organization_id: profile.organization_id })
+        .select("id").single();
       if (error) throw error;
       return data.id as string;
     },
     onSuccess: (id) => {
       qc.invalidateQueries({ queryKey: ["tasks"] });
-      toast.success("Tarefa criada");
-      onCreated?.(id);
+      qc.invalidateQueries({ queryKey: ["task-window", taskId] });
+      toast.success(isEdit ? "Tarefa atualizada" : "Tarefa criada");
+      if (!isEdit) onCreated?.(id);
+      close(false);
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const remove = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.from("tasks").delete().eq("id", taskId!);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["tasks"] });
+      toast.success("Tarefa excluída");
       close(false);
     },
     onError: (e: Error) => toast.error(e.message),
@@ -154,8 +261,10 @@ export function NewTaskWindow({
           <div className="cw-header">
             <span className="cw-title-icon"><ListChecks size={17} /></span>
             <div className="min-w-0 flex-1">
-              <DialogTitle asChild><h2>Nova Tarefa</h2></DialogTitle>
-              <p>Crie a tarefa, defina os entregáveis e acompanhe o fluxo de produção</p>
+              <DialogTitle asChild><h2>{isEdit ? (title || "Tarefa") : "Nova Tarefa"}</h2></DialogTitle>
+              <p>{isEdit
+                ? "Edite a tarefa, os entregáveis e acompanhe o fluxo de produção"
+                : "Crie a tarefa, defina os entregáveis e acompanhe o fluxo de produção"}</p>
             </div>
             <button type="button" className="cw-close" onClick={() => close(false)} aria-label="Fechar"><X size={18} /></button>
           </div>
@@ -327,7 +436,16 @@ export function NewTaskWindow({
 
               {/* PLATAFORMAS / CANAIS */}
               <div className="cw-section">
-                <div className="cw-section-head"><div><h4>Plataformas e canais</h4></div></div>
+                <div className="cw-section-head">
+                  <div>
+                    <h4>Plataformas e canais</h4>
+                    <p>{projectId && projectPlatformNames.length > 0
+                      ? "Apenas as plataformas cadastradas no projeto."
+                      : projectId
+                        ? "Projeto sem plataformas cadastradas — exibindo todas."
+                        : "Tarefa avulsa: todas as plataformas disponíveis."}</p>
+                  </div>
+                </div>
                 <div className="flex flex-wrap gap-2">
                   {platforms.map((p: any) => {
                     const on = platformsSel.includes(p.name);
@@ -348,7 +466,7 @@ export function NewTaskWindow({
                 <div className="cw-card cw-card-pad flex items-center gap-3" style={{ borderStyle: "dashed" }}>
                   <Paperclip size={16} style={{ color: "var(--cw-muted)" }} />
                   <span style={{ fontSize: 11.5, color: "var(--cw-muted)" }}>
-                    Os arquivos podem ser anexados na aba Arquivos do projeto após criar a tarefa.
+                    Os arquivos podem ser anexados na aba Arquivos do projeto.
                   </span>
                 </div>
               </div>
@@ -358,6 +476,12 @@ export function NewTaskWindow({
             <div className="cw-side">
               <div className="cw-side-card">
                 <h5><Layers size={15} /> Resumo</h5>
+                <div className="cw-field" style={{ marginBottom: 8 }}>
+                  <span className="cw-label">Status</span>
+                  <select className="cw-input" value={status} onChange={e => setStatus(e.target.value)}>
+                    {STATUSES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+                  </select>
+                </div>
                 <div className="cw-side-line"><span>Etapa atual</span><span>{STAGES.find(s => s.id === stage)?.label}</span></div>
                 <div className="cw-side-line"><span>Entregáveis</span><span>{deliverables.length}</span></div>
                 <div className="cw-side-line"><span>Checklist</span><span>{doneCount}/{checklist.length}</span></div>
@@ -369,6 +493,15 @@ export function NewTaskWindow({
                 <div className="cw-switch-row" style={{ padding: 0 }}>
                   <span className="cw-sw-title" style={{ fontSize: 11.5 }}>Tarefa faturável</span>
                   <button type="button" className={`cw-switch${billingEnabled ? " is-on" : ""}`} onClick={() => setBillingEnabled(b => !b)} />
+                </div>
+                <div className="cw-field" style={{ marginTop: 10 }}>
+                  <span className="cw-label">Valor base da tarefa</span>
+                  <input className="cw-input" type="number" step="0.01" value={baseValue}
+                    onChange={e => setBaseValue(e.target.value)} placeholder="0,00" />
+                  <span className="cw-hint">Os entregáveis faturáveis somam a este valor.</span>
+                </div>
+                <div className="cw-side-line" style={{ marginTop: 6 }}>
+                  <span>Entregáveis</span><span>{brl(deliverablesTotal)}</span>
                 </div>
                 <div className="cw-side-total">
                   <div className="cw-side-line" style={{ padding: 0 }}>
@@ -395,15 +528,19 @@ export function NewTaskWindow({
           <div className="cw-footer">
             <div className="cw-foot-group">
               <button type="button" className="cw-btn cw-btn-secondary" onClick={() => close(false)}>Cancelar</button>
+              {isEdit && (
+                <button type="button" className="cw-btn cw-btn-ghost" style={{ color: "var(--cw-danger)" }}
+                  disabled={remove.isPending}
+                  onClick={() => { if (confirm("Excluir esta tarefa?")) remove.mutate(); }}>
+                  <Trash /> Excluir
+                </button>
+              )}
             </div>
             <div className="cw-foot-group">
-              <button type="button" className="cw-btn cw-btn-secondary" disabled={!canSave || create.isPending}
-                onClick={() => create.mutate(true)}>
-                <Save /> Salvar rascunho
-              </button>
-              <button type="button" className="cw-btn cw-btn-primary" disabled={!canSave || create.isPending}
-                onClick={() => create.mutate(false)}>
-                {create.isPending ? "Criando…" : "Criar tarefa"} <Check />
+              <button type="button" className="cw-btn cw-btn-primary" disabled={!canSave || save.isPending}
+                onClick={() => save.mutate()}>
+                {save.isPending ? "Salvando…" : isEdit ? "Salvar alterações" : "Criar tarefa"}{" "}
+                {isEdit ? <Save /> : <Check />}
               </button>
             </div>
           </div>
@@ -411,4 +548,14 @@ export function NewTaskWindow({
       </DialogContent>
     </Dialog>
   );
+}
+
+/** Compatibilidade: janela de criação. */
+export function NewTaskWindow(props: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  defaultProjectId?: string | null;
+  onCreated?: (id: string) => void;
+}) {
+  return <TaskWindow {...props} taskId={null} />;
 }

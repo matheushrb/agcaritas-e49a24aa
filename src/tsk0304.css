@@ -152,3 +152,7 @@
   display: inline-flex; align-items: center; justify-content: center;
 }
 .tsk2 .g-zoom button:hover { border-color: var(--k-primary); color: var(--k-primary); }
+
+.dark .tsk2 .b-card,
+.dark .tsk2 .g-row,
+.dark .tsk2 .b-panel { background: var(--card); border-color: var(--border); }

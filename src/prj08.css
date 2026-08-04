@@ -6,7 +6,7 @@
   --p8-text: #1a2138;
   --p8-muted: #7b879a;
   font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  background: #fff;
+  background: var(--card);
   border: 1px solid var(--p8-border);
   border-radius: 14px;
   overflow: hidden;
@@ -101,7 +101,7 @@
   font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   color: var(--p8-text);
   display: flex; flex-direction: column; height: 100%;
-  background: #fff;
+  background: var(--card);
 }
 .prj08-panel * { box-sizing: border-box; }
 .prj08-panel .p8-body { flex: 1; overflow-y: auto; padding: 22px 24px 18px; }
@@ -145,7 +145,21 @@
   font-family: inherit;
 }
 .prj08-panel .p8-btn svg { width: 15px; height: 15px; }
-.prj08-panel .p8-btn.ghost { background: #fff; color: var(--p8-text); border: 1px solid var(--p8-border); }
+.prj08-panel .p8-btn.ghost { background: var(--card); color: var(--p8-text); border: 1px solid var(--p8-border); }
 .prj08-panel .p8-btn.ghost:hover { background: #f7f9fc; }
 .prj08-panel .p8-btn.primary { background: var(--p8-primary); color: #fff; border: none; }
 .prj08-panel .p8-btn.primary:hover { background: #2559d0; }
+
+.dark .prj08-table, .dark .prj08-panel {
+  --p8-border: var(--border);
+  --p8-text: var(--foreground);
+  --p8-muted: var(--muted-foreground);
+}
+.dark .prj08-table tbody tr { border-bottom-color: var(--border); }
+.dark .prj08-table tbody tr:hover { background: rgba(255,255,255,.05); }
+.dark .prj08-table tbody tr.selected { background: rgba(47,107,239,.16); }
+.dark .p8-badge.ok { background: rgba(31,169,113,.18); }
+.dark .p8-badge.warn { background: rgba(224,145,46,.18); }
+.dark .p8-badge.danger { background: rgba(225,69,69,.18); }
+.dark .p8-badge.neutral { background: rgba(255,255,255,.08); color: var(--muted-foreground); }
+.dark .p8-badge.info { background: rgba(47,107,239,.2); }

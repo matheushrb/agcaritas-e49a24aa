@@ -41,7 +41,7 @@
 }
 .prj05 .p5-ghost {
   width: 26px; height: 26px; border-radius: 7px; border: 1px solid var(--p5-border);
-  background: #fff; display: inline-flex; align-items: center; justify-content: center;
+  background: var(--card); display: inline-flex; align-items: center; justify-content: center;
   cursor: pointer; color: var(--p5-muted); flex: none;
 }
 .prj05 .p5-ghost:hover { background: #F5F7FA; color: var(--p5-ink); }
@@ -67,7 +67,7 @@
 .prj05 .p5-bt { font-size: 11.5px; line-height: 1.55; color: var(--p5-muted); }
 .prj05 .p5-chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .prj05 .p5-chip {
-  font-size: 10.5px; color: var(--p5-muted); background: #fff;
+  font-size: 10.5px; color: var(--p5-muted); background: var(--card);
   border: 1px solid var(--p5-border); border-radius: 6px; padding: 3px 8px;
 }
 .prj05 .p5-ta {
@@ -123,7 +123,7 @@
 .prj05 .p5-nav { position: absolute; right: -6px; bottom: 46%; display: flex; gap: 6px; }
 .prj05 .p5-nav button {
   width: 24px; height: 24px; border-radius: 999px; border: 1px solid var(--p5-border);
-  background: #fff; display: inline-flex; align-items: center; justify-content: center;
+  background: var(--card); display: inline-flex; align-items: center; justify-content: center;
   cursor: pointer; color: var(--p5-muted); box-shadow: 0 1px 3px rgba(16,24,40,.06);
 }
 .prj05 .p5-nav button svg { width: 12px; height: 12px; }
@@ -167,7 +167,7 @@
 }
 .prj05 .p5-step:hover { background: #F7F9FC; }
 .prj05 .p5-check {
-  width: 17px; height: 17px; border-radius: 999px; border: 1.5px solid #CFD6E1; background: #fff;
+  width: 17px; height: 17px; border-radius: 999px; border: 1.5px solid #CFD6E1; background: var(--card);
   display: inline-flex; align-items: center; justify-content: center; cursor: pointer; flex: none; padding: 0;
 }
 .prj05 .p5-check.on { background: var(--p5-green); border-color: var(--p5-green); }
@@ -188,3 +188,13 @@
   color: var(--p5-primary); font-size: 11.5px; font-weight: 500; cursor: pointer;
 }
 .prj05 .p5-foot button svg { width: 13px; height: 13px; }
+
+.dark .prj05 {
+  --p5-card: var(--card);
+  --p5-border: var(--border);
+  --p5-border-soft: var(--border);
+  --p5-ink: var(--foreground);
+  --p5-muted: var(--muted-foreground);
+  --p5-muted-2: var(--muted-foreground);
+}
+.dark .prj05 .p5-ghost:hover { background: rgba(255,255,255,.06); }

@@ -21,12 +21,12 @@
   -webkit-font-smoothing: antialiased;
 }
 .dark .tskv {
-  --t-card: hsl(var(--card));
-  --t-border: hsl(var(--border));
-  --t-border-soft: hsl(var(--border));
-  --t-ink: hsl(var(--foreground));
-  --t-muted: hsl(var(--muted-foreground));
-  --t-muted-2: hsl(var(--muted-foreground));
+  --t-card: var(--card);
+  --t-border: var(--border);
+  --t-border-soft: var(--border);
+  --t-ink: var(--foreground);
+  --t-muted: var(--muted-foreground);
+  --t-muted-2: var(--muted-foreground);
   --t-primary-soft: rgba(47, 107, 239, .18);
 }
 

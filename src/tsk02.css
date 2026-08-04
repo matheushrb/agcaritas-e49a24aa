@@ -25,12 +25,12 @@
   -webkit-font-smoothing: antialiased;
 }
 .dark .tsk2 {
-  --k-card: hsl(var(--card));
-  --k-border: hsl(var(--border));
-  --k-border-soft: hsl(var(--border));
-  --k-ink: hsl(var(--foreground));
-  --k-muted: hsl(var(--muted-foreground));
-  --k-muted-2: hsl(var(--muted-foreground));
+  --k-card: var(--card);
+  --k-border: var(--border);
+  --k-border-soft: var(--border);
+  --k-ink: var(--foreground);
+  --k-muted: var(--muted-foreground);
+  --k-muted-2: var(--muted-foreground);
   --k-primary-soft: rgba(23, 105, 246, .18);
   --k-slate-soft: rgba(255, 255, 255, .06);
   --k-green-soft: rgba(18, 183, 106, .16);
