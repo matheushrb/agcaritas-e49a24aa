@@ -21,6 +21,8 @@ import {
   Plus,
   Search,
   User,
+  Archive,
+  ArchiveRestore,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -57,6 +59,7 @@ type Project = {
   fixed_value: number | null;
   monthly_value: number | null;
   created_at: string;
+  archived_at?: string | null;
 };
 
 type Client = { id: string; name: string };
@@ -87,6 +90,7 @@ function ProjectsPage() {
   const [clientFilter, setClientFilter] = useState("all");
   const [ownerFilter, setOwnerFilter] = useState("all");
   const [sort, setSort] = useState("recent");
+  const [archivedFilter, setArchivedFilter] = useState<"hide" | "show" | "only">("hide");
   const [view, setView] = useState<"cards" | "list" | "kanban">("cards");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(8);
@@ -106,7 +110,7 @@ function ProjectsPage() {
       const { data, error } = await supabase
         .from("projects")
         .select(
-          "id,name,description,status,client_id,start_date,end_date,project_type,billing_model,urgency,fixed_value,monthly_value,created_at",
+          "id,name,description,status,client_id,start_date,end_date,project_type,billing_model,urgency,fixed_value,monthly_value,created_at,archived_at",
         )
         .order("created_at", { ascending: false });
       if (error) throw error;
@@ -230,13 +234,16 @@ function ProjectsPage() {
           doneTasks: count.done,
           revenue: tasksAgg.projected[project.id] ?? 0,
           progress: count.total > 0 ? Math.round((count.done / count.total) * 100) : 0,
-        } as ProjectPreviewData & { doneTasks: number };
+          archivedAt: project.archived_at ?? null,
+        } as ProjectPreviewData & { doneTasks: number; archivedAt: string | null };
       }),
     [projects, tasksAgg, clientById, projectTypes],
   );
 
   const filtered = useMemo(() => {
     let result = rows;
+    if (archivedFilter === "hide") result = result.filter((p) => !(p as any).archivedAt);
+    else if (archivedFilter === "only") result = result.filter((p) => !!(p as any).archivedAt);
     const term = search.trim().toLowerCase();
     if (term) {
       result = result.filter((p) =>
@@ -257,24 +264,43 @@ function ProjectsPage() {
       sorted.sort((a, b) => (a.endDate ?? "9999").localeCompare(b.endDate ?? "9999"));
     if (sort === "revenue") sorted.sort((a, b) => b.revenue - a.revenue);
     return sorted;
-  }, [rows, search, statusFilter, clientFilter, ownerFilter, sort, clientById, membersByProject]);
+  }, [rows, search, statusFilter, clientFilter, ownerFilter, sort, archivedFilter, clientById, membersByProject]);
 
-  useEffect(() => setPage(1), [search, statusFilter, clientFilter, ownerFilter, sort, pageSize]);
+  useEffect(() => setPage(1), [search, statusFilter, clientFilter, ownerFilter, sort, archivedFilter, pageSize]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const currentPage = Math.min(page, totalPages);
   const paged = filtered.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
   const kpis = useMemo(() => {
-    const total = rows.length;
-    const active = rows.filter((p) => p.status === "active").length;
-    const done = rows.filter((p) => p.status === "done").length;
-    const paused = rows.filter((p) => p.status === "paused").length;
-    const risk = rows.filter((p) => p.overdueTasks > 0 && p.status !== "done").length;
+    const base = rows.filter((p) => !(p as any).archivedAt);
+    const rowsRef = rows;
+    void rowsRef;
+    const rowsForKpi = base;
+    const total = rowsForKpi.length;
+    const active = rowsForKpi.filter((p) => p.status === "active").length;
+    const done = rowsForKpi.filter((p) => p.status === "done").length;
+    const paused = rowsForKpi.filter((p) => p.status === "paused").length;
+    const risk = rowsForKpi.filter((p) => p.overdueTasks > 0 && p.status !== "done").length;
     return { total, active, done, paused, risk };
   }, [rows]);
 
   const selectedProject = rows.find((p) => p.id === selectedProjectId) ?? null;
+
+  const archiveProject = useMutation({
+    mutationFn: async ({ id, archived }: { id: string; archived: boolean }) => {
+      const { error } = await (supabase as any)
+        .from("projects")
+        .update({ archived_at: archived ? new Date().toISOString() : null })
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: (_d, v) => {
+      qc.invalidateQueries({ queryKey: ["projects"] });
+      toast.success(v.archived ? "Projeto arquivado" : "Projeto desarquivado");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
 
   const createProject = useMutation({
     mutationFn: async (input: ProjectWizardValue) => {
@@ -385,6 +411,15 @@ function ProjectsPage() {
             </select>
           </div>
 
+          <div className="dropdown-pill">
+            Arquivados:
+            <select value={archivedFilter} onChange={(e) => setArchivedFilter(e.target.value as "hide" | "show" | "only")}>
+              <option value="hide">Ocultar</option>
+              <option value="show">Mostrar</option>
+              <option value="only">Somente arquivados</option>
+            </select>
+          </div>
+
           <div className="sort-control">
             <ArrowUpDown />
             Ordenar por:
@@ -414,6 +449,7 @@ function ProjectsPage() {
                 project={project}
                 members={membersByProject[project.id] ?? []}
                 onOpen={() => setSelectedProjectId(project.id)}
+                onArchive={(archived) => archiveProject.mutate({ id: project.id, archived })}
               />
             ))}
           </div>
@@ -552,10 +588,12 @@ function ProjectCard({
   project,
   members,
   onOpen,
+  onArchive,
 }: {
-  project: ProjectPreviewData & { doneTasks?: number };
+  project: ProjectPreviewData & { doneTasks?: number; archivedAt?: string | null };
   members: Member[];
   onOpen: () => void;
+  onArchive?: (archived: boolean) => void;
 }) {
   const health = healthOf(project);
   const due = dueInfo(project.endDate, project.status);
@@ -564,7 +602,12 @@ function ProjectCard({
 
   return (
     <div className="card" role="button" tabIndex={0} onClick={onOpen} onKeyDown={(e) => (e.key === "Enter" ? onOpen() : undefined)}>
-      <div className="card-title">{project.name}</div>
+      <div className="card-title">
+        {project.archivedAt && (
+          <span className="tag" style={{ marginRight: 6 }}>Arquivado</span>
+        )}
+        {project.name}
+      </div>
       <div className="card-row1">
         <div className="client-tags">
           <User className="person-ic" />
@@ -613,8 +656,16 @@ function ProjectCard({
         <span className="fin-label">Receita prevista</span>
         <div className="fin-value-wrap">
           <span className="fin-value">{formatMoney(project.revenue)}</span>
-          <button type="button" className="more-btn" onClick={(e) => e.stopPropagation()}>
-            ···
+          <button
+            type="button"
+            className="more-btn"
+            title={project.archivedAt ? "Desarquivar projeto" : "Arquivar projeto"}
+            onClick={(e) => {
+              e.stopPropagation();
+              onArchive?.(!project.archivedAt);
+            }}
+          >
+            {project.archivedAt ? <ArchiveRestore size={14} /> : <Archive size={14} />}
           </button>
         </div>
       </div>

@@ -158,7 +158,7 @@ function TasksPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("tasks")
-        .select("id,title,description,status,priority,project_id,client_id,assignee_id,due_date,billing_model,billing_value,billing_enabled,progress,start_date,platform,delivery_type,estimated_hours,stage,task_type_id,current_stage_id,deliverables,subtasks,broadcast_kind,recorded_at,aired_at,recorded_dates,aired_dates,created_at")
+        .select("id,title,description,status,priority,project_id,client_id,assignee_id,due_date,billing_model,billing_value,billing_enabled,progress,start_date,platform,delivery_type,estimated_hours,stage,task_type_id,current_stage_id,deliverables,subtasks,broadcast_kind,recorded_at,aired_at,recorded_dates,aired_dates,created_at,archived_at")
         .order("created_at", { ascending: false });
       if (error) throw error;
       return ((data ?? []) as any[]).map(t => ({
@@ -195,6 +195,21 @@ function TasksPage() {
     return { name: p.name, role: p.role ?? "" };
   };
 
+
+  const archiveTask = useMutation({
+    mutationFn: async ({ id, archived }: { id: string; archived: boolean }) => {
+      const { error } = await (supabase as any)
+        .from("tasks")
+        .update({ archived_at: archived ? new Date().toISOString() : null })
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: (_d, v) => {
+      qc.invalidateQueries({ queryKey: ["tasks"] });
+      toast.success(v.archived ? "Tarefa arquivada" : "Tarefa desarquivada");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
 
   const updateStatus = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: TaskStatus }) => {
@@ -295,6 +310,7 @@ function TasksPage() {
         onNew={handleNew}
         onQuickCreate={(title) => createTask.mutate({ title, status: "todo" })}
         onStatusChange={(id, status) => updateStatus.mutate({ id, status: status as TaskStatus })}
+        onArchiveChange={(id, archived) => archiveTask.mutate({ id, archived })}
       >
         {(rows) =>
           isLoading ? (

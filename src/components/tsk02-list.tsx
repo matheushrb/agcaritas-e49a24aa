@@ -22,6 +22,7 @@ export type TskTask = {
   subtasks?: { id: string; title: string; done: boolean }[];
   comments_count?: number;
   attachments_count?: number;
+  archived_at?: string | null;
 };
 
 
@@ -77,12 +78,13 @@ type Props = {
   onNew: () => void;
   onQuickCreate: (title: string) => void;
   onStatusChange: (id: string, status: TskTask["status"]) => void;
+  onArchiveChange?: (id: string, archived: boolean) => void;
   children?: (rows: TskTask[]) => React.ReactNode;
 };
 
 export function Tsk02List({
   view, onViewChange, tasks, projects, people, projectSub,
-  onOpen, onNew, onQuickCreate, onStatusChange, children,
+  onOpen, onNew, onQuickCreate, onStatusChange, onArchiveChange, children,
 }: Props) {
   const [q, setQ] = useState("");
   const [status, setStatus] = useState("all");
@@ -90,13 +92,14 @@ export function Tsk02List({
   const [priority, setPriority] = useState("all");
   const [project, setProject] = useState("all");
   const [deadline, setDeadline] = useState("all");
+  const [archived, setArchived] = useState<"hide" | "show" | "only">("hide");
   const [page, setPage] = useState(1);
   const [perPage, setPerPage] = useState(10);
   const [menu, setMenu] = useState<string | null>(null);
   const [sel, setSel] = useState<Record<string, boolean>>({});
   const [quick, setQuick] = useState("");
 
-  useEffect(() => { setPage(1); }, [q, status, assignee, priority, project, deadline, perPage]);
+  useEffect(() => { setPage(1); }, [q, status, assignee, priority, project, deadline, archived, perPage]);
   useEffect(() => {
     const close = () => setMenu(null);
     if (menu) { window.addEventListener("click", close); return () => window.removeEventListener("click", close); }
@@ -115,6 +118,8 @@ export function Tsk02List({
 
   const filtered = useMemo(() => {
     let arr = tasks;
+    if (archived === "hide") arr = arr.filter(t => !t.archived_at);
+    else if (archived === "only") arr = arr.filter(t => !!t.archived_at);
     const s = q.trim().toLowerCase();
     if (s) arr = arr.filter(t =>
       t.title.toLowerCase().includes(s) ||
@@ -137,9 +142,15 @@ export function Tsk02List({
       });
     }
     return arr;
-  }, [tasks, q, status, assignee, priority, project, deadline, projects, people]);
+  }, [tasks, q, status, assignee, priority, project, deadline, archived, projects, people]);
+
+  const kpiBase = useMemo(
+    () => (archived === "only" ? tasks.filter(t => !!t.archived_at) : tasks.filter(t => !t.archived_at)),
+    [tasks, archived],
+  );
 
   const kpis = useMemo(() => {
+    const tasks = kpiBase;
     const total = tasks.length || 0;
     const pct = (n: number) => total ? `${(n / total * 100).toFixed(1).replace(".", ",")}% do total` : "0% do total";
     const inProgress = tasks.filter(t => t.status === "in_progress").length;
@@ -153,7 +164,7 @@ export function Tsk02List({
       { key: "done", label: "Concluídas", value: done, sub: pct(done), icon: CheckCircle2, color: "#12B76A", bg: "#E7F8F0" },
       { key: "late", label: "Atrasadas", value: late, sub: pct(late), icon: AlertTriangle, color: "#E23A3A", bg: "#FDECEC", danger: late > 0 },
     ];
-  }, [tasks]);
+  }, [kpiBase]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / perPage));
   const current = Math.min(page, totalPages);
@@ -162,7 +173,7 @@ export function Tsk02List({
   const to = Math.min(current * perPage, filtered.length);
 
   const clearFilters = () => {
-    setQ(""); setStatus("all"); setAssignee("all"); setPriority("all"); setProject("all"); setDeadline("all");
+    setQ(""); setStatus("all"); setAssignee("all"); setPriority("all"); setProject("all"); setDeadline("all"); setArchived("hide");
   };
 
   const exportCsv = () => {
@@ -263,6 +274,14 @@ export function Tsk02List({
             <option value="today">Hoje</option>
             <option value="week">Próximos 7 dias</option>
             <option value="month">Próximos 30 dias</option>
+          </select>
+        </div>
+        <div className="k-fgroup">
+          <span className="k-flabel">Arquivadas</span>
+          <select className="k-select" value={archived} onChange={e => setArchived(e.target.value as "hide" | "show" | "only")}>
+            <option value="hide">Ocultar</option>
+            <option value="show">Mostrar</option>
+            <option value="only">Somente arquivadas</option>
           </select>
         </div>
         <button className="k-clear" onClick={clearFilters}><FilterX size={15} /> Limpar filtros</button>
@@ -369,6 +388,11 @@ export function Tsk02List({
                       <button onClick={() => { setMenu(null); onStatusChange(t.id, "in_progress"); }}>Marcar em andamento</button>
                       <button onClick={() => { setMenu(null); onStatusChange(t.id, "review"); }}>Enviar para revisão</button>
                       <button onClick={() => { setMenu(null); onStatusChange(t.id, "done"); }}>Marcar como concluída</button>
+                      {onArchiveChange && (
+                        t.archived_at
+                          ? <button onClick={() => { setMenu(null); onArchiveChange(t.id, false); }}>Desarquivar</button>
+                          : <button onClick={() => { setMenu(null); onArchiveChange(t.id, true); }}>Arquivar</button>
+                      )}
                     </div>
                   )}
                 </div>
