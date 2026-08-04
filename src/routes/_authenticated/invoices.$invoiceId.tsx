@@ -13,7 +13,9 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
+import { PaymentMethodTags, parsePaymentMethods, serializePaymentMethods } from "@/components/invoices/payment-methods";
 import "@/fin03.css";
+
 
 
 export const Route = createFileRoute("/_authenticated/invoices/$invoiceId")({
