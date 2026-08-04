@@ -133,7 +133,9 @@ export function Prj03Tasks({ tasks, people, onOpen, onQuickCreate, pending }: {
   onQuickCreate: () => void;
   pending?: boolean;
 }) {
+  const { data: stageIndex } = useStageIndex();
   const [q, setQ] = useState("");
+
   const [status, setStatus] = useState("all");
   const [assignee, setAssignee] = useState("all");
   const [priority, setPriority] = useState("all");
