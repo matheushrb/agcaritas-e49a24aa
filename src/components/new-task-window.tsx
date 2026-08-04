@@ -503,7 +503,7 @@ export function TaskWindow({
     priority: priority as any,
     project_id: projectId,
     // Cliente herdado automaticamente do projeto selecionado.
-    client_id: (projectId ? projects.find(p => p.id === projectId)?.client_id ?? null : null),
+    ...(projectId ? { client_id: projects.find(p => p.id === projectId)?.client_id ?? null } : {}),
     assignee_id: assigneeId,
     start_date: startDate || null,
     due_date: dueDate || null,
