@@ -144,7 +144,13 @@ export function Tsk02List({
     return arr;
   }, [tasks, q, status, assignee, priority, project, deadline, archived, projects, people]);
 
+  const kpiBase = useMemo(
+    () => (archived === "only" ? tasks.filter(t => !!t.archived_at) : tasks.filter(t => !t.archived_at)),
+    [tasks, archived],
+  );
+
   const kpis = useMemo(() => {
+    const tasks = kpiBase;
     const total = tasks.length || 0;
     const pct = (n: number) => total ? `${(n / total * 100).toFixed(1).replace(".", ",")}% do total` : "0% do total";
     const inProgress = tasks.filter(t => t.status === "in_progress").length;
@@ -158,7 +164,7 @@ export function Tsk02List({
       { key: "done", label: "Concluídas", value: done, sub: pct(done), icon: CheckCircle2, color: "#12B76A", bg: "#E7F8F0" },
       { key: "late", label: "Atrasadas", value: late, sub: pct(late), icon: AlertTriangle, color: "#E23A3A", bg: "#FDECEC", danger: late > 0 },
     ];
-  }, [tasks]);
+  }, [kpiBase]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / perPage));
   const current = Math.min(page, totalPages);
