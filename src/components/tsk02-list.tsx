@@ -70,7 +70,7 @@ type Props = {
   onNew: () => void;
   onQuickCreate: (title: string) => void;
   onStatusChange: (id: string, status: TskTask["status"]) => void;
-  children?: React.ReactNode;
+  children?: (rows: TskTask[]) => React.ReactNode;
 };
 
 export function Tsk02List({
