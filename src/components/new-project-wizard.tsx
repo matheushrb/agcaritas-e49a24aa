@@ -277,7 +277,9 @@ export function NewProjectWizard({
                 <StepBasics
                   v={v} patch={patch} errors={errors} clients={clients}
                   typeOptions={typeOptions} people={people} applyTypeStages={applyTypeStages}
+                  platforms={platforms}
                 />
+
               )}
               {step === 2 && <StepPlanning v={v} patch={patch} errors={errors} selectedTypeLabel={selectedType?.label ?? null} />}
               {step === 3 && <StepTeam v={v} patch={patch} people={people} />}
