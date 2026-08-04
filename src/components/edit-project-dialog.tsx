@@ -40,6 +40,7 @@ export type EditableProject = {
   has_timeline: boolean;
   traffic_budget: { enabled?: boolean; amount?: number | null; platforms?: string[] } | null;
   scope_flags: Record<string, boolean> | null;
+  social_platforms?: unknown;
 };
 
 type Client = { id: string; name: string; trade_name: string | null };
@@ -176,6 +177,18 @@ export function EditProjectDialog({
     setForm(prev => (prev ? { ...prev, [k]: v } : prev));
 
   const scope = form.scope_flags ?? {};
+  const selectedPlatforms: string[] = (() => {
+    const raw = (form as any).social_platforms;
+    if (Array.isArray(raw)) {
+      return raw.map((x: any) => (typeof x === "string" ? x : x?.name ?? "")).filter(Boolean);
+    }
+    const legacy = (scope as any).tools;
+    return Array.isArray(legacy) ? legacy : [];
+  })();
+  const togglePlatform = (name: string) =>
+    set("social_platforms" as any, (selectedPlatforms.includes(name)
+      ? selectedPlatforms.filter(x => x !== name)
+      : [...selectedPlatforms, name]) as any);
   const traffic = form.traffic_budget ?? { enabled: false, amount: null, platforms: [] };
   const clientName = clients.find(c => c.id === form.client_id)?.trade_name
     || clients.find(c => c.id === form.client_id)?.name
@@ -202,6 +215,7 @@ export function EditProjectDialog({
       has_timeline: form.has_timeline,
       traffic_budget: form.traffic_budget,
       scope_flags: form.scope_flags,
+      social_platforms: selectedPlatforms as unknown as EditableProject["social_platforms"],
     });
   };
 
@@ -419,22 +433,18 @@ export function EditProjectDialog({
                 </div>
               </Section>
 
-              <Section icon={<Megaphone className="h-4 w-4" />} title="Plataformas do projeto" description="Redes, canais e mídias envolvidas neste projeto.">
+              <Section icon={<Megaphone className="h-4 w-4" />} title="Plataformas do projeto" description="Só estas plataformas ficam disponíveis nas tarefas deste projeto.">
                 {platformsCatalog.length === 0 ? (
                   <p className="text-xs text-muted-foreground">Nenhuma plataforma cadastrada. Gerencie em Configurações → Plataformas.</p>
                 ) : (
                   <div className="flex flex-wrap gap-2">
                     {platformsCatalog.map(p => {
-                      const current: string[] = Array.isArray((scope as any).tools) ? (scope as any).tools : [];
-                      const on = current.includes(p.name);
+                      const on = selectedPlatforms.includes(p.name);
                       return (
                         <button
                           key={p.id}
                           type="button"
-                          onClick={() => set("scope_flags", {
-                            ...scope,
-                            tools: on ? current.filter(x => x !== p.name) : [...current, p.name],
-                          } as any)}
+                          onClick={() => togglePlatform(p.name)}
                           className={cn(
                             "rounded-full pl-1 pr-3 py-1 text-xs font-medium border transition-colors flex items-center gap-1.5",
                             on ? "border-primary bg-primary text-primary-foreground" : "border-border hover:bg-muted",

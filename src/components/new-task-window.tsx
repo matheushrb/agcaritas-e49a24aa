@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import {
   X, Plus, Trash2, Check, Info, ChevronDown, ListChecks, DollarSign,
   Paperclip, Save, Clock, CalendarDays, Layers, Trash, Minus, Maximize2, PanelRight,
+  Play, Square,
 } from "lucide-react";
 import { useTaskTypeStages } from "@/lib/task-types";
 import "@/windows.css";
@@ -126,10 +127,16 @@ export function TaskWindow({
   const platforms = useMemo(() => {
     if (!projectId || projectPlatformNames.length === 0) return allPlatforms;
     const set = new Set(projectPlatformNames.map(n => n.toLowerCase()));
-    const filtered = allPlatforms.filter((p: any) =>
+    return allPlatforms.filter((p: any) =>
       set.has(String(p.name).toLowerCase()) || set.has(String(p.id).toLowerCase()));
-    return filtered.length ? filtered : allPlatforms;
   }, [allPlatforms, projectId, projectPlatformNames]);
+
+  /* Remove seleções que não pertencem mais às plataformas do projeto. */
+  useEffect(() => {
+    if (!projectId || projectPlatformNames.length === 0) return;
+    const allowed = new Set(platforms.map((p: any) => String(p.name)));
+    setPlatformsSel(sel => (sel.every(s => allowed.has(s)) ? sel : sel.filter(s => allowed.has(s))));
+  }, [projectId, platforms, projectPlatformNames.length]);
 
   /* ---------- Etapas: do tipo de tarefa (quando houver) ou padrão ---------- */
   const { data: typeStages = [] } = useTaskTypeStages(taskTypeId);
@@ -310,6 +317,63 @@ export function TaskWindow({
     onSuccess: () => qc.invalidateQueries({ queryKey: ["task-time-entries", taskId] }),
     onError: (e: Error) => toast.error(e.message),
   });
+
+  /* ---------- Cronômetro (play / stop) ---------- */
+  const timerKey = taskId ? `cw-timer:${taskId}` : null;
+  const [timerStart, setTimerStart] = useState<number | null>(null);
+  const [nowTick, setNowTick] = useState(Date.now());
+
+  useEffect(() => {
+    if (!timerKey) { setTimerStart(null); return; }
+    const raw = localStorage.getItem(timerKey);
+    setTimerStart(raw ? Number(raw) : null);
+  }, [timerKey]);
+
+  useEffect(() => {
+    if (timerStart == null) return;
+    const t = setInterval(() => setNowTick(Date.now()), 1000);
+    return () => clearInterval(t);
+  }, [timerStart]);
+
+  const runningSeconds = timerStart == null ? 0 : Math.max(0, Math.floor((nowTick - timerStart) / 1000));
+  const fmtClock = (sec: number) =>
+    [Math.floor(sec / 3600), Math.floor((sec % 3600) / 60), sec % 60]
+      .map(n => String(n).padStart(2, "0")).join(":");
+
+  const startTimer = () => {
+    if (!timerKey) return;
+    const t = Date.now();
+    localStorage.setItem(timerKey, String(t));
+    setTimerStart(t); setNowTick(t);
+  };
+
+  const stopTimer = useMutation({
+    mutationFn: async () => {
+      if (timerStart == null) return;
+      const seconds = Math.max(60, Math.floor((Date.now() - timerStart) / 1000));
+      const { data: profile } = await supabase.from("profiles").select("organization_id").maybeSingle();
+      if (!profile?.organization_id) throw new Error("Sem organização");
+      const { data: auth } = await supabase.auth.getUser();
+      const { error } = await (supabase as any).from("time_entries").insert({
+        organization_id: profile.organization_id,
+        task_id: taskId,
+        user_id: auth.user?.id ?? null,
+        duration_seconds: seconds,
+        started_at: new Date(timerStart).toISOString(),
+        ended_at: new Date().toISOString(),
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      if (timerKey) localStorage.removeItem(timerKey);
+      setTimerStart(null);
+      qc.invalidateQueries({ queryKey: ["task-time-entries", taskId] });
+      toast.success("Tempo registrado");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+
 
 
   const reset = () => {
@@ -647,7 +711,13 @@ export function TaskWindow({
                       </button>
                     );
                   })}
-                  {platforms.length === 0 && <span style={{ fontSize: 11, color: "var(--cw-muted)" }}>Cadastre plataformas em Configurações.</span>}
+                  {platforms.length === 0 && (
+                    <span style={{ fontSize: 11, color: "var(--cw-muted)" }}>
+                      {projectId
+                        ? "Nenhuma plataforma habilitada neste projeto — edite o projeto para liberar."
+                        : "Cadastre plataformas em Configurações."}
+                    </span>
+                  )}
                 </div>
               </div>
 
@@ -718,6 +788,19 @@ export function TaskWindow({
                   </span>
                 ) : (
                   <>
+                    <div className={`cw-timer${timerStart != null ? " is-running" : ""}`}>
+                      <span className="cw-timer-clock">{fmtClock(runningSeconds)}</span>
+                      {timerStart == null ? (
+                        <button type="button" className="cw-timer-btn is-play" onClick={startTimer} title="Iniciar cronômetro">
+                          <Play size={14} />
+                        </button>
+                      ) : (
+                        <button type="button" className="cw-timer-btn is-stop" disabled={stopTimer.isPending}
+                          onClick={() => stopTimer.mutate()} title="Parar e registrar">
+                          <Square size={13} />
+                        </button>
+                      )}
+                    </div>
                     <div style={{ marginTop: 8 }}>
                       {timeEntries.slice(0, 6).map(e => (
                         <div key={e.id} className="cw-ts-row">
@@ -735,11 +818,12 @@ export function TaskWindow({
                     <div className="cw-ts-form">
                       <input className="cw-input" type="date" value={tsDate} onChange={e => setTsDate(e.target.value)} />
                       <input className="cw-input" type="number" step="0.25" value={tsHours}
-                        onChange={e => setTsHours(e.target.value)} placeholder="Horas" style={{ maxWidth: 78 }} />
-                      <button type="button" className="cw-btn" disabled={addTime.isPending}
+                        onChange={e => setTsHours(e.target.value)} placeholder="Horas" />
+                      <button type="button" className="cw-btn cw-btn-sm" disabled={addTime.isPending}
                         onClick={() => addTime.mutate()}>Lançar</button>
                     </div>
                   </>
+
                 )}
               </div>
 
