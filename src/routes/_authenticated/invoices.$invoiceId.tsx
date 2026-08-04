@@ -430,7 +430,7 @@ function InvoiceDetailPage() {
 
   const steps = [
     { name: "Fatura criada", at: invoice.created_at, done: true },
-    { name: "Enviada ao cliente", at: invoice.issue_date, done: invoice.status !== "draft" },
+    { name: "Enviada ao cliente", at: invoice.sent_at ?? invoice.issue_date, done: invoice.status !== "draft" },
     { name: invoice.status === "paid" ? "Pagamento em conta" : "A receber", at: invoice.due_date, done: invoice.status === "paid", current: invoice.status !== "draft" && invoice.status !== "paid" },
     { name: "Pagamento recebido", at: invoice.paid_at, done: invoice.status === "paid", current: false },
     { name: "Fatura concluída", at: invoice.paid_at, done: invoice.status === "paid", current: false },
