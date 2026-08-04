@@ -264,6 +264,8 @@ export function TaskWindow({
   const totalSeconds = timeEntries.reduce((s, e) => s + (e.duration_seconds ?? 0), 0);
   const fmtHours = (sec: number) => `${Math.floor(sec / 3600)}h ${String(Math.round((sec % 3600) / 60)).padStart(2, "0")}m`;
   const [tsHours, setTsHours] = useState("");
+  const [tsDate, setTsDate] = useState(() => new Date().toISOString().slice(0, 10));
+
 
   const addTime = useMutation({
     mutationFn: async () => {
