@@ -31,11 +31,13 @@ const PRIORITIES = [
 ];
 
 const STATUSES = [
-  { value: "todo", label: "A fazer" },
-  { value: "in_progress", label: "Em andamento" },
-  { value: "review", label: "Revisão" },
-  { value: "done", label: "Concluída" },
+  { value: "todo", label: "A fazer", color: "#7F8C9E" },
+  { value: "in_progress", label: "Em andamento", color: "#2F6BEF" },
+  { value: "review", label: "Revisão", color: "#E0912F" },
+  { value: "done", label: "Concluída", color: "#1FA971" },
 ];
+const statusColor = (v: string) => STATUSES.find(s => s.value === v)?.color ?? "#7F8C9E";
+
 
 type DeliverableDraft = {
   id: string; platform: string; type: string;
