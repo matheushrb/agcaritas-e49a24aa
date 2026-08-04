@@ -133,9 +133,17 @@ export function TaskWindow({
 
   const flowSteps = useMemo(() => {
     if (typeStages.length) {
-      return typeStages.map(s => ({ key: s.id, label: s.name, status: s.status_group as StatusGroup, stageId: s.id, stage: null as Stage | null }));
+      return typeStages.map((s, i) => ({
+        key: s.id, label: s.name, status: s.status_group as StatusGroup,
+        stageId: s.id, stage: null as Stage | null,
+        color: s.color || STAGE_PALETTE[i % STAGE_PALETTE.length],
+      }));
     }
-    return STAGES.map(s => ({ key: s.id, label: s.label, status: s.status, stageId: null as string | null, stage: s.id }));
+    return STAGES.map((s, i) => ({
+      key: s.id, label: s.label, status: s.status,
+      stageId: null as string | null, stage: s.id,
+      color: STAGE_PALETTE[i % STAGE_PALETTE.length],
+    }));
   }, [typeStages]);
 
   const activeIdx = useMemo(() => {
