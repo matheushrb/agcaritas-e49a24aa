@@ -18,6 +18,7 @@ import { toast } from "sonner";
 import { generateInvoicePDF, DEFAULT_PAYMENT_TERMS, DEFAULT_LEGAL_NOTES } from "@/lib/pdf/invoice-pdf";
 import { cn } from "@/lib/utils";
 import QRCode from "qrcode";
+import "@/fat01.css";
 
 export const Route = createFileRoute("/_authenticated/invoices/")({
   component: InvoicesPage,
