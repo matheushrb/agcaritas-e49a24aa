@@ -505,3 +505,8 @@
 .cw-ts-row .cw-ts-when { color: var(--cw-muted); }
 .cw-ts-form { display: flex; gap: 6px; margin-top: 8px; }
 .cw-ts-form .cw-input { height: 34px; font-size: 11.5px; }
+
+/* Etapa clicável no fluxo da janela de tarefa */
+.cw-flow-step.is-click { cursor: pointer; }
+.cw-flow-step.is-click:hover .cw-flow-label { color: var(--cw-primary, #2F6BEF); }
+.cw-flow-step.is-click:focus-visible { outline: 2px solid var(--cw-primary, #2F6BEF); outline-offset: 3px; border-radius: 10px; }
