@@ -233,6 +233,70 @@ export function TaskWindow({
   const billableTotal = baseNum + deliverablesTotal;
   const doneCount = checklist.filter(c => c.done).length;
 
+  /* ---------- Progresso: 50% etapa + 50% checklist ---------- */
+  const stagePct = useMemo(() => {
+    const total = flowSteps.length || 1;
+    if (status === "done") return 100;
+    return Math.round((activeIdx / Math.max(1, total - 1)) * 100);
+  }, [flowSteps.length, activeIdx, status]);
+  const checklistPct = checklist.length ? Math.round((doneCount / checklist.length) * 100) : null;
+  const progress = useMemo(() => {
+    if (status === "done") return 100;
+    if (checklistPct === null) return stagePct;
+    return Math.round(stagePct * 0.5 + checklistPct * 0.5);
+  }, [status, stagePct, checklistPct]);
+
+  /* ---------- Timesheet ---------- */
+  const { data: timeEntries = [] } = useQuery({
+    queryKey: ["task-time-entries", taskId],
+    enabled: !!taskId && open,
+    queryFn: async () => {
+      const { data } = await (supabase as any)
+        .from("time_entries")
+        .select("id,duration_seconds,started_at,created_at")
+        .eq("task_id", taskId!)
+        .order("created_at", { ascending: false });
+      return (data ?? []) as { id: string; duration_seconds: number; started_at: string | null; created_at: string }[];
+    },
+  });
+  const totalSeconds = timeEntries.reduce((s, e) => s + (e.duration_seconds ?? 0), 0);
+  const fmtHours = (sec: number) => `${Math.floor(sec / 3600)}h ${String(Math.round((sec % 3600) / 60)).padStart(2, "0")}m`;
+  const [tsHours, setTsHours] = useState("");
+
+  const addTime = useMutation({
+    mutationFn: async () => {
+      const h = Number(tsHours.replace(",", "."));
+      if (!h || h <= 0) throw new Error("Informe as horas");
+      const { data: profile } = await supabase.from("profiles").select("organization_id").maybeSingle();
+      if (!profile?.organization_id) throw new Error("Sem organização");
+      const { data: auth } = await supabase.auth.getUser();
+      const { error } = await (supabase as any).from("time_entries").insert({
+        organization_id: profile.organization_id,
+        task_id: taskId,
+        user_id: auth.user?.id ?? null,
+        duration_seconds: Math.round(h * 3600),
+        started_at: new Date().toISOString(),
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      setTsHours("");
+      qc.invalidateQueries({ queryKey: ["task-time-entries", taskId] });
+      toast.success("Horas lançadas");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const removeTime = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await (supabase as any).from("time_entries").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["task-time-entries", taskId] }),
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+
   const reset = () => {
     setTitle(""); setDescription(""); setProjectId(defaultProjectId); setTaskTypeId(null);
     setAssigneeId(null); setDueDate(""); setPriority("medium"); setStatus("todo"); setStage("briefing"); setCurrentStageId(null);
