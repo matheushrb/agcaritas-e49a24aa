@@ -183,6 +183,10 @@ function InvoiceDetailPage() {
       ].filter(Boolean).join("\n") || null : null;
       const doc = await generateInvoicePDF({
         number: pdfNumber,
+        competence: (invoice.issue_date || invoice.created_at)
+          ? new Date(String(invoice.issue_date || invoice.created_at).slice(0, 10) + "T12:00:00")
+              .toLocaleDateString("pt-BR", { month: "short", year: "numeric" }).replace(".", "")
+          : undefined,
         issue_date: invoice.issue_date || invoice.created_at || new Date().toISOString().slice(0, 10),
         due_date: invoice.due_date,
         client: c ? {
@@ -197,14 +201,22 @@ function InvoiceDetailPage() {
           phone: organization.phone ?? null, address: organization.address ?? null,
           website: organization.website ?? null, bank_info: organization.bank_info ?? null,
         } : undefined,
-        lines: items.map(it => ({
-          key: it.id, title: it.description, amount: num(it.amount),
-          reference_date: it.due_date, reference_label: "Referência",
-        })),
+        lines: [...items]
+          .sort((x, y) => (x.project_id ?? "").localeCompare(y.project_id ?? ""))
+          .map(it => ({
+            title: it.description,
+            amount: num(it.amount),
+            reference_date: it.due_date,
+            group: allProjects.find(p => p.id === it.project_id)?.name ?? project?.name ?? null,
+            service: it.deliverable_id ? "Entregável" : it.task_id ? "Tarefa" : "Lançamento",
+          })),
         discount: num(invoice.discount) || undefined,
         notes: invoice.notes || undefined,
         payment_terms: invoice.payment_terms || DEFAULT_PAYMENT_TERMS,
         payment_link: invoice.payment_link || undefined,
+        pix_code: invoice.payment_link || undefined,
+        payment_method: invoice.payment_method || undefined,
+        status_label: STATUS[invoice.status]?.label,
         is_preview: invoice.status === "draft",
       });
       const url = doc.output("bloburl") as unknown as string;
