@@ -24,7 +24,7 @@ export const Route = createFileRoute("/_authenticated/invoices/$invoiceId")({
 
 type Inv = {
   id: string; number: string | null; client_id: string | null; project_id: string | null;
-  status: string; issue_date: string | null; due_date: string | null; paid_at: string | null;
+  status: string; issue_date: string | null; due_date: string | null; paid_at: string | null; sent_at?: string | null;
   total: number | string | null; amount: number | string | null; discount: number | string | null;
   notes: string | null; payment_method: string | null; payment_terms: string | null;
   payment_link: string | null; created_at: string | null;
@@ -99,7 +99,7 @@ function InvoiceDetailPage() {
     queryKey: ["invoice", invoiceId],
     queryFn: async () => {
       const { data, error } = await supabase.from("invoices")
-        .select("id,number,client_id,project_id,status,issue_date,due_date,paid_at,total,amount,discount,notes,payment_method,payment_terms,payment_link,created_at")
+        .select("id,number,client_id,project_id,status,issue_date,due_date,paid_at,sent_at,total,amount,discount,notes,payment_method,payment_terms,payment_link,created_at")
         .eq("id", invoiceId).maybeSingle();
       if (error) throw error;
       return (data ?? null) as Inv | null;
@@ -255,7 +255,7 @@ function InvoiceDetailPage() {
 
   const sendInvoice = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase.from("invoices").update({ status: "issued" }).eq("id", invoiceId);
+      const { error } = await supabase.from("invoices").update({ status: "issued", sent_at: new Date().toISOString() }).eq("id", invoiceId);
       if (error) throw error;
       await supabase.from("charges").update({ status: "pending" }).eq("invoice_id", invoiceId);
     },
