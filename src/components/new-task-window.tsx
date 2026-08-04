@@ -6,8 +6,9 @@ import { toast } from "sonner";
 import {
   X, Plus, Trash2, Check, Info, ChevronDown, ListChecks, DollarSign,
   Paperclip, Save, Clock, CalendarDays, Layers, Trash, Minus, Maximize2, PanelRight,
-  Play, Square,
+  Play, Square, Radio, SlidersHorizontal,
 } from "lucide-react";
+
 import { useTaskTypeStages } from "@/lib/task-types";
 import "@/windows.css";
 
@@ -51,6 +52,50 @@ type DeliverableDraft = {
 };
 type ChecklistDraft = { id: string; title: string; done: boolean };
 
+/** Ao Vivo / Estreia — transmissões ligadas à tarefa. */
+type LiveDraft = {
+  id: string; title: string; kind: "live" | "premiere"; platform: string;
+  date: string | null; time: string; duration_min: number | null;
+  status: "scheduled" | "live" | "aired" | "cancelled";
+  url: string; notes: string;
+};
+const LIVE_KINDS = [
+  { value: "live", label: "Ao Vivo" },
+  { value: "premiere", label: "Estreia" },
+];
+const LIVE_STATUS = [
+  { value: "scheduled", label: "Agendado", color: "#7F8C9E" },
+  { value: "live", label: "No ar", color: "#E5484D" },
+  { value: "aired", label: "Exibido", color: "#1FA971" },
+  { value: "cancelled", label: "Cancelado", color: "#F97316" },
+];
+
+/** Ficha técnica — informações técnicas de captação, edição e arte. */
+type TechSheet = {
+  category: string;
+  aspect_ratio: string; resolution: string; fps: string; codec: string; duration: string;
+  camera: string; lens: string; lighting: string; audio: string; location: string;
+  edit_notes: string; color_notes: string; subtitles: string; deliver_format: string;
+  art_size: string; art_dpi: string; art_color_mode: string; art_bleed: string;
+  art_usage: string; art_fonts: string; art_palette: string;
+  extra: string;
+};
+const EMPTY_TECH: TechSheet = {
+  category: "video", aspect_ratio: "", resolution: "", fps: "", codec: "", duration: "",
+  camera: "", lens: "", lighting: "", audio: "", location: "",
+  edit_notes: "", color_notes: "", subtitles: "", deliver_format: "",
+  art_size: "", art_dpi: "", art_color_mode: "", art_bleed: "",
+  art_usage: "", art_fonts: "", art_palette: "", extra: "",
+};
+const TECH_CATEGORIES = [
+  { value: "video", label: "Vídeo / Captação" },
+  { value: "broadcast", label: "Transmissão ao vivo" },
+  { value: "graphic", label: "Gráfico / Arte" },
+  { value: "audio", label: "Áudio" },
+  { value: "other", label: "Outro" },
+];
+
+
 const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 const uid = () => Math.random().toString(36).slice(2, 9);
 
@@ -85,6 +130,11 @@ export function TaskWindow({
   const [checklist, setChecklist] = useState<ChecklistDraft[]>([]);
   const [platformsSel, setPlatformsSel] = useState<string[]>([]);
   const [notes, setNotes] = useState("");
+  const [liveItems, setLiveItems] = useState<LiveDraft[]>([]);
+  const [tech, setTech] = useState<TechSheet>(EMPTY_TECH);
+  const [tab, setTab] = useState<"details" | "live" | "tech">("details");
+  const setT = (k: keyof TechSheet, v: string) => setTech(t => ({ ...t, [k]: v }));
+
 
   const { data: projects = [] } = useQuery({
     queryKey: ["projects_min_platforms"],
@@ -244,7 +294,18 @@ export function TaskWindow({
       })),
     );
     setPlatformsSel(existing.platform ? String(existing.platform).split(",").map((s: string) => s.trim()).filter(Boolean) : []);
+    setLiveItems(
+      (Array.isArray(existing.live_items) ? existing.live_items : []).map((l: any) => ({
+        id: l.id ?? uid(), title: l.title ?? "", kind: (l.kind === "premiere" ? "premiere" : "live"),
+        platform: l.platform ?? "", date: l.date ?? null, time: l.time ?? "",
+        duration_min: l.duration_min ?? null,
+        status: (["scheduled", "live", "aired", "cancelled"].includes(l.status) ? l.status : "scheduled"),
+        url: l.url ?? "", notes: l.notes ?? "",
+      })) as LiveDraft[],
+    );
+    setTech({ ...EMPTY_TECH, ...(existing.tech_sheet && typeof existing.tech_sheet === "object" ? existing.tech_sheet : {}) });
     setNotes("");
+
   }, [existing, open, isEdit]);
 
   const deliverablesTotal = useMemo(
@@ -403,7 +464,7 @@ export function TaskWindow({
     setTitle(""); setDescription(""); setProjectId(defaultProjectId); setTaskTypeId(null);
     setAssigneeId(null); setDueDate(""); setPriority("medium"); setStatus("todo"); setStage("briefing"); setCurrentStageId(null);
     setEstimated(""); setBillingEnabled(true); setBaseValue(""); setDeliverables([]); setChecklist([]);
-    setPlatformsSel([]); setNotes("");
+    setPlatformsSel([]); setNotes(""); setLiveItems([]); setTech(EMPTY_TECH); setTab("details");
   };
   const close = (o: boolean) => { onOpenChange(o); if (!o) reset(); };
 
@@ -431,8 +492,11 @@ export function TaskWindow({
       billing_value: d.billing_value, delivered: d.delivered, invoiced: !!d.invoiced,
       due_date: d.due_date || null,
     })) as any,
+    live_items: liveItems as any,
+    tech_sheet: tech as any,
     subtasks: checklist as any,
   });
+
 
   const save = useMutation({
     mutationFn: async () => {
@@ -637,6 +701,20 @@ export function TaskWindow({
           {/* CORPO */}
           <div className="cw-task-body">
             <div>
+              <div className="cw-tabs">
+                <button type="button" className={`cw-tab${tab === "details" ? " is-on" : ""}`} onClick={() => setTab("details")}>
+                  <ListChecks size={14} /> Detalhes
+                </button>
+                <button type="button" className={`cw-tab${tab === "live" ? " is-on" : ""}`} onClick={() => setTab("live")}>
+                  <Radio size={14} /> Ao Vivo / Estreia{liveItems.length > 0 && <span className="cw-tab-count">{liveItems.length}</span>}
+                </button>
+                <button type="button" className={`cw-tab${tab === "tech" ? " is-on" : ""}`} onClick={() => setTab("tech")}>
+                  <SlidersHorizontal size={14} /> Ficha técnica
+                </button>
+              </div>
+
+              <div hidden={tab !== "details"}>
+
               <div className="cw-field">
                 <span className="cw-label">Título da tarefa<span className="req">*</span></span>
                 <input className="cw-input" autoFocus value={title} maxLength={140}
@@ -788,7 +866,206 @@ export function TaskWindow({
                   </span>
                 </div>
               </div>
+              </div>
+
+              {/* AO VIVO / ESTREIA */}
+              <div hidden={tab !== "live"}>
+                <div className="cw-section" style={{ marginTop: 0 }}>
+                  <div className="cw-section-head">
+                    <div>
+                      <h4>Ao Vivo / Estreia</h4>
+                      <p>Transmissões e estreias desta tarefa — aulas, lives e exibições programadas.</p>
+                    </div>
+                    <button type="button" className="cw-btn cw-btn-secondary sm"
+                      onClick={() => setLiveItems(l => [...l, { id: uid(), title: "", kind: "live", platform: platformsSel[0] ?? "", date: null, time: "", duration_min: null, status: "scheduled", url: "", notes: "" }])}>
+                      <Plus /> Adicionar transmissão
+                    </button>
+                  </div>
+                  <table className="cw-table">
+                    <thead>
+                      <tr>
+                        <th>Título / aula</th>
+                        <th style={{ width: 110 }}>Tipo</th>
+                        <th style={{ width: 130 }}>Plataforma</th>
+                        <th style={{ width: 130 }}>Data</th>
+                        <th style={{ width: 90 }}>Hora</th>
+                        <th style={{ width: 80 }}>Duração</th>
+                        <th style={{ width: 130 }}>Status</th>
+                        <th style={{ width: 56 }} />
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {liveItems.length === 0 && (
+                        <tr><td colSpan={8} className="cw-mut" style={{ textAlign: "center" }}>Nenhuma transmissão programada.</td></tr>
+                      )}
+                      {liveItems.map(l => {
+                        const upd = (patch: Partial<LiveDraft>) =>
+                          setLiveItems(list => list.map(x => x.id === l.id ? { ...x, ...patch } : x));
+                        const sc = LIVE_STATUS.find(s => s.value === l.status)?.color ?? "#7F8C9E";
+                        return (
+                          <tr key={l.id}>
+                            <td>
+                              <input className="cw-table-inline-input" value={l.title} placeholder="Ex.: Aula 03 — Fundamentos"
+                                onChange={e => upd({ title: e.target.value })} />
+                            </td>
+                            <td>
+                              <select className="cw-table-inline-input" value={l.kind}
+                                onChange={e => upd({ kind: e.target.value as LiveDraft["kind"] })}>
+                                {LIVE_KINDS.map(k => <option key={k.value} value={k.value}>{k.label}</option>)}
+                              </select>
+                            </td>
+                            <td>
+                              <select className="cw-table-inline-input" value={l.platform}
+                                onChange={e => upd({ platform: e.target.value })}>
+                                <option value="">—</option>
+                                {platforms.map((p: any) => <option key={p.id} value={p.name}>{p.name}</option>)}
+                              </select>
+                            </td>
+                            <td>
+                              <input type="date" className="cw-table-inline-input" value={l.date ?? ""}
+                                onChange={e => upd({ date: e.target.value || null })} />
+                            </td>
+                            <td>
+                              <input type="time" className="cw-table-inline-input" value={l.time}
+                                onChange={e => upd({ time: e.target.value })} />
+                            </td>
+                            <td>
+                              <input type="number" className="cw-table-inline-input" value={l.duration_min ?? ""} placeholder="min"
+                                onChange={e => upd({ duration_min: e.target.value ? Number(e.target.value) : null })} />
+                            </td>
+                            <td>
+                              <select className="cw-table-inline-input" value={l.status}
+                                style={{ color: sc, fontWeight: 600 }}
+                                onChange={e => upd({ status: e.target.value as LiveDraft["status"] })}>
+                                {LIVE_STATUS.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+                              </select>
+                            </td>
+                            <td>
+                              <button type="button" className="cw-row-icon" onClick={() => setLiveItems(list => list.filter(x => x.id !== l.id))}>
+                                <Trash2 size={13} />
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+
+                {liveItems.map(l => (
+                  <div key={l.id} className="cw-section">
+                    <div className="cw-mini-head">
+                      <h5>{l.title || "Transmissão sem título"}</h5>
+                    </div>
+                    <div className="cw-grid-2">
+                      <div className="cw-field">
+                        <span className="cw-label">Link da transmissão</span>
+                        <input className="cw-input" value={l.url} placeholder="https://..."
+                          onChange={e => setLiveItems(list => list.map(x => x.id === l.id ? { ...x, url: e.target.value } : x))} />
+                      </div>
+                      <div className="cw-field">
+                        <span className="cw-label">Observações</span>
+                        <input className="cw-input" value={l.notes} placeholder="Convidados, roteiro, responsável técnico…"
+                          onChange={e => setLiveItems(list => list.map(x => x.id === l.id ? { ...x, notes: e.target.value } : x))} />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* FICHA TÉCNICA */}
+              <div hidden={tab !== "tech"}>
+                <div className="cw-section" style={{ marginTop: 0 }}>
+                  <div className="cw-section-head">
+                    <div>
+                      <h4>Ficha técnica</h4>
+                      <p>Especificações de captação, transmissão, edição e arte.</p>
+                    </div>
+                  </div>
+                  <div className="cw-field" style={{ maxWidth: 280 }}>
+                    <span className="cw-label">Categoria técnica</span>
+                    <select className="cw-input" value={tech.category} onChange={e => setT("category", e.target.value)}>
+                      {TECH_CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+                    </select>
+                  </div>
+                </div>
+
+                {(tech.category === "video" || tech.category === "broadcast" || tech.category === "other") && (
+                  <div className="cw-section">
+                    <div className="cw-mini-head"><h5>Imagem e captação</h5></div>
+                    <div className="cw-grid-2">
+                      <div className="cw-field"><span className="cw-label">Proporção</span>
+                        <input className="cw-input" value={tech.aspect_ratio} placeholder="16:9, 9:16, 1:1, 4:5" onChange={e => setT("aspect_ratio", e.target.value)} /></div>
+                      <div className="cw-field"><span className="cw-label">Definição / resolução</span>
+                        <input className="cw-input" value={tech.resolution} placeholder="1080p, 4K UHD, 2160x3840" onChange={e => setT("resolution", e.target.value)} /></div>
+                      <div className="cw-field"><span className="cw-label">Taxa de quadros (FPS)</span>
+                        <input className="cw-input" value={tech.fps} placeholder="24, 30, 60" onChange={e => setT("fps", e.target.value)} /></div>
+                      <div className="cw-field"><span className="cw-label">Codec / bitrate</span>
+                        <input className="cw-input" value={tech.codec} placeholder="H.264 10 Mbps, ProRes" onChange={e => setT("codec", e.target.value)} /></div>
+                      <div className="cw-field"><span className="cw-label">Câmera</span>
+                        <input className="cw-input" value={tech.camera} placeholder="Sony A7 III, iPhone 15 Pro" onChange={e => setT("camera", e.target.value)} /></div>
+                      <div className="cw-field"><span className="cw-label">Lente</span>
+                        <input className="cw-input" value={tech.lens} placeholder="24-70mm f/2.8" onChange={e => setT("lens", e.target.value)} /></div>
+                      <div className="cw-field"><span className="cw-label">Iluminação</span>
+                        <input className="cw-input" value={tech.lighting} placeholder="Key + fill, softbox, luz natural" onChange={e => setT("lighting", e.target.value)} /></div>
+                      <div className="cw-field"><span className="cw-label">Áudio</span>
+                        <input className="cw-input" value={tech.audio} placeholder="Lapela, boom, mesa digital" onChange={e => setT("audio", e.target.value)} /></div>
+                      <div className="cw-field"><span className="cw-label">Local / cenário</span>
+                        <input className="cw-input" value={tech.location} placeholder="Estúdio, externa, home office" onChange={e => setT("location", e.target.value)} /></div>
+                      <div className="cw-field"><span className="cw-label">Duração prevista</span>
+                        <input className="cw-input" value={tech.duration} placeholder="60s, 20 min" onChange={e => setT("duration", e.target.value)} /></div>
+                    </div>
+                  </div>
+                )}
+
+                {(tech.category === "video" || tech.category === "broadcast" || tech.category === "audio" || tech.category === "other") && (
+                  <div className="cw-section">
+                    <div className="cw-mini-head"><h5>Edição e entrega</h5></div>
+                    <div className="cw-grid-2">
+                      <div className="cw-field"><span className="cw-label">Formato de entrega</span>
+                        <input className="cw-input" value={tech.deliver_format} placeholder="MP4, MOV, WAV" onChange={e => setT("deliver_format", e.target.value)} /></div>
+                      <div className="cw-field"><span className="cw-label">Legendas</span>
+                        <input className="cw-input" value={tech.subtitles} placeholder="Queimada, SRT, sem legenda" onChange={e => setT("subtitles", e.target.value)} /></div>
+                      <div className="cw-field"><span className="cw-label">Notas de edição</span>
+                        <input className="cw-input" value={tech.edit_notes} placeholder="Cortes secos, trilha, lettering" onChange={e => setT("edit_notes", e.target.value)} /></div>
+                      <div className="cw-field"><span className="cw-label">Cor / color grading</span>
+                        <input className="cw-input" value={tech.color_notes} placeholder="LUT, tom quente, Rec.709" onChange={e => setT("color_notes", e.target.value)} /></div>
+                    </div>
+                  </div>
+                )}
+
+                {(tech.category === "graphic" || tech.category === "other") && (
+                  <div className="cw-section">
+                    <div className="cw-mini-head"><h5>Arte / peça gráfica</h5></div>
+                    <div className="cw-grid-2">
+                      <div className="cw-field"><span className="cw-label">Proporção / dimensões</span>
+                        <input className="cw-input" value={tech.art_size} placeholder="1080x1350 px, A4, 90x50 mm" onChange={e => setT("art_size", e.target.value)} /></div>
+                      <div className="cw-field"><span className="cw-label">Resolução (DPI)</span>
+                        <input className="cw-input" value={tech.art_dpi} placeholder="72 (social) / 300 (impressão)" onChange={e => setT("art_dpi", e.target.value)} /></div>
+                      <div className="cw-field"><span className="cw-label">Modo de cor</span>
+                        <input className="cw-input" value={tech.art_color_mode} placeholder="RGB ou CMYK" onChange={e => setT("art_color_mode", e.target.value)} /></div>
+                      <div className="cw-field"><span className="cw-label">Sangria / margem</span>
+                        <input className="cw-input" value={tech.art_bleed} placeholder="3 mm de sangria" onChange={e => setT("art_bleed", e.target.value)} /></div>
+                      <div className="cw-field"><span className="cw-label">Uso</span>
+                        <input className="cw-input" value={tech.art_usage} placeholder="Impresso, social, digital" onChange={e => setT("art_usage", e.target.value)} /></div>
+                      <div className="cw-field"><span className="cw-label">Fontes</span>
+                        <input className="cw-input" value={tech.art_fonts} placeholder="Tipografias usadas" onChange={e => setT("art_fonts", e.target.value)} /></div>
+                      <div className="cw-field"><span className="cw-label">Paleta de cores</span>
+                        <input className="cw-input" value={tech.art_palette} placeholder="#2F6BEF, #101B2E" onChange={e => setT("art_palette", e.target.value)} /></div>
+                    </div>
+                  </div>
+                )}
+
+                <div className="cw-section">
+                  <div className="cw-field">
+                    <span className="cw-label">Observações técnicas</span>
+                    <textarea className="cw-textarea" rows={4} value={tech.extra}
+                      onChange={e => setT("extra", e.target.value)} placeholder="Qualquer detalhe técnico adicional (equipe, equipamentos, requisitos da plataforma…)" />
+                  </div>
+                </div>
+              </div>
             </div>
+
 
             {/* COLUNA LATERAL */}
             <div className="cw-side">

@@ -2354,6 +2354,7 @@ export type Database = {
           due_date: string | null
           estimated_hours: number | null
           id: string
+          live_items: Json
           organization_id: string
           platform: string | null
           priority: Database["public"]["Enums"]["task_priority"]
@@ -2366,6 +2367,7 @@ export type Database = {
           status: Database["public"]["Enums"]["task_status"]
           subtasks: Json
           task_type_id: string | null
+          tech_sheet: Json
           title: string
           updated_at: string
         }
@@ -2392,6 +2394,7 @@ export type Database = {
           due_date?: string | null
           estimated_hours?: number | null
           id?: string
+          live_items?: Json
           organization_id: string
           platform?: string | null
           priority?: Database["public"]["Enums"]["task_priority"]
@@ -2404,6 +2407,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["task_status"]
           subtasks?: Json
           task_type_id?: string | null
+          tech_sheet?: Json
           title: string
           updated_at?: string
         }
@@ -2430,6 +2434,7 @@ export type Database = {
           due_date?: string | null
           estimated_hours?: number | null
           id?: string
+          live_items?: Json
           organization_id?: string
           platform?: string | null
           priority?: Database["public"]["Enums"]["task_priority"]
@@ -2442,6 +2447,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["task_status"]
           subtasks?: Json
           task_type_id?: string | null
+          tech_sheet?: Json
           title?: string
           updated_at?: string
         }
