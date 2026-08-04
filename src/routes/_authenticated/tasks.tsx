@@ -33,7 +33,7 @@ import { Link } from "@tanstack/react-router";
 import { CostConfirmDialog, type CostSuggestion } from "@/components/cost-confirm-dialog";
 import { suggestTaskCost, type CostMode } from "@/components/team-cost-fields";
 import { useCalendarBlocks, BLOCK_META, type CalendarBlock } from "@/lib/calendar-blocks";
-import { NewTaskWindow } from "@/components/new-task-window";
+import { TaskWindow } from "@/components/new-task-window";
 import { TaskViews, type TskView } from "@/components/tsk-views";
 import { Tsk02List, type TskView2, type TskTask } from "@/components/tsk02-list";
 import { Tsk03Board } from "@/components/tsk03-board";
