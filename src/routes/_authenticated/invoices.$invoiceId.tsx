@@ -476,8 +476,15 @@ function InvoiceDetailPage() {
           {client && <Link to="/clients/$clientId" params={{ clientId: client.id }} className="f3-slink">Ver cliente <ArrowRight size={11} /></Link>}
         </div>
         <div>
-          <div className="f3-slabel">Projeto</div>
-          <div className="f3-svalue">{project?.name ?? "Múltiplos"}</div>
+          <div className="f3-slabel">Projeto(s)</div>
+          <div className="f3-svalue">
+            {(() => {
+              const ids = Array.from(new Set(items.map(i => i.project_id).filter(Boolean))) as string[];
+              if (ids.length === 0) return project?.name ?? "—";
+              return ids.map(id => allProjects.find(p => p.id === id)?.name ?? "Projeto").join(" · ");
+            })()}
+          </div>
+
           {project && <Link to="/projects/$projectId" params={{ projectId: project.id }} className="f3-slink">Ver projeto <ArrowRight size={11} /></Link>}
         </div>
         <div>
