@@ -46,6 +46,7 @@ const STAGE_PALETTE = ["#7F8C9E", "#8B5CF6", "#EF4444", "#0EA5E9", "#F97316", "#
 type DeliverableDraft = {
   id: string; platform: string; type: string;
   billing_enabled: boolean; billing_value: number | null; delivered: boolean;
+  due_date?: string | null;
   invoiced?: boolean;
 };
 type ChecklistDraft = { id: string; title: string; done: boolean };
