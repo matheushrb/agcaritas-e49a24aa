@@ -297,7 +297,7 @@ export function FinanceEntryWindow({
       </div>
 
       <div className="cw-footer">
-        <span className="cw-foot-note">{isEdit ? "Editando lançamento existente" : "Novo lançamento"}</span>
+        <span style={{ fontSize: 11, color: "var(--cw-muted)" }}>{isEdit ? "Editando lançamento existente" : "Novo lançamento"}</span>
         <div style={{ display: "flex", gap: 8, marginLeft: "auto" }}>
           <button type="button" className="cw-btn cw-btn-secondary" onClick={() => onOpenChange(false)}>Cancelar</button>
           <button type="button" className="cw-btn cw-btn-primary" disabled={!canSave || save.isPending}
