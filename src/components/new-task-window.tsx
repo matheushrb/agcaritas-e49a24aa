@@ -52,6 +52,50 @@ type DeliverableDraft = {
 };
 type ChecklistDraft = { id: string; title: string; done: boolean };
 
+/** Ao Vivo / Estreia — transmissões ligadas à tarefa. */
+type LiveDraft = {
+  id: string; title: string; kind: "live" | "premiere"; platform: string;
+  date: string | null; time: string; duration_min: number | null;
+  status: "scheduled" | "live" | "aired" | "cancelled";
+  url: string; notes: string;
+};
+const LIVE_KINDS = [
+  { value: "live", label: "Ao Vivo" },
+  { value: "premiere", label: "Estreia" },
+];
+const LIVE_STATUS = [
+  { value: "scheduled", label: "Agendado", color: "#7F8C9E" },
+  { value: "live", label: "No ar", color: "#E5484D" },
+  { value: "aired", label: "Exibido", color: "#1FA971" },
+  { value: "cancelled", label: "Cancelado", color: "#F97316" },
+];
+
+/** Ficha técnica — informações técnicas de captação, edição e arte. */
+type TechSheet = {
+  category: string;
+  aspect_ratio: string; resolution: string; fps: string; codec: string; duration: string;
+  camera: string; lens: string; lighting: string; audio: string; location: string;
+  edit_notes: string; color_notes: string; subtitles: string; deliver_format: string;
+  art_size: string; art_dpi: string; art_color_mode: string; art_bleed: string;
+  art_usage: string; art_fonts: string; art_palette: string;
+  extra: string;
+};
+const EMPTY_TECH: TechSheet = {
+  category: "video", aspect_ratio: "", resolution: "", fps: "", codec: "", duration: "",
+  camera: "", lens: "", lighting: "", audio: "", location: "",
+  edit_notes: "", color_notes: "", subtitles: "", deliver_format: "",
+  art_size: "", art_dpi: "", art_color_mode: "", art_bleed: "",
+  art_usage: "", art_fonts: "", art_palette: "", extra: "",
+};
+const TECH_CATEGORIES = [
+  { value: "video", label: "Vídeo / Captação" },
+  { value: "broadcast", label: "Transmissão ao vivo" },
+  { value: "graphic", label: "Gráfico / Arte" },
+  { value: "audio", label: "Áudio" },
+  { value: "other", label: "Outro" },
+];
+
+
 const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 const uid = () => Math.random().toString(36).slice(2, 9);
 
