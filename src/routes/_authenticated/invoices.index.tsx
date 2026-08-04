@@ -379,8 +379,10 @@ function NewInvoiceWizard({
   const effClient = (cid: string | null, pid: string | null) => cid ?? (pid ? clientOfProject[pid] ?? null : null);
   const matchesClient = (cid: string | null, pid: string | null) =>
     !filterClient || effClient(cid, pid) === filterClient;
-  // Itens sem projeto ficam sempre disponíveis; o filtro restringe apenas itens vinculados a projeto.
-  const inProjects = (pid: string | null) => !pid || !projectFilterActive || selectedProjects.has(pid);
+  // Itens sem projeto ficam sempre disponíveis; projetos já vinculados a outra fatura são ocultados.
+  const inProjects = (pid: string | null) =>
+    !pid || (!invoicedProjectIds.has(pid) && (!projectFilterActive || selectedProjects.has(pid)));
+
 
   // Pending charges + billable tasks
   const { data: charges = [] } = useQuery<PendingCharge[]>({
