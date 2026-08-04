@@ -234,6 +234,7 @@ export function TaskWindow({
         billing_enabled: d.billing_enabled !== false,
         billing_value: d.billing_value ?? null,
         delivered: !!d.delivered,
+        due_date: d.due_date ?? null,
         invoiced: !!d.invoiced,
       })),
     );
