@@ -38,9 +38,9 @@ export function PrjTeamTab({ projectId, tasks }: { projectId: string; tasks: Tab
     queryFn: async () => {
       const { data } = await supabase
         .from("project_members")
-        .select("id,user_id,role,allocation_pct")
+        .select("id,user_id,role")
         .eq("project_id", projectId);
-      return (data ?? []) as { id: string; user_id: string; role: string | null; allocation_pct: number | null }[];
+      return (data ?? []) as { id: string; user_id: string; role: string | null }[];
     },
   });
 
@@ -60,13 +60,19 @@ export function PrjTeamTab({ projectId, tasks }: { projectId: string; tasks: Tab
     },
   });
 
+  const taskIds = useMemo(() => tasks.map(t => t.id), [tasks]);
   const { data: entries = [] } = useQuery({
-    queryKey: ["prj-team-time", projectId],
+    queryKey: ["prj-team-time", projectId, taskIds.length],
+    enabled: taskIds.length > 0,
     queryFn: async () => {
-      const { data } = await supabase.from("time_entries").select("id,user_id,minutes,task_id").eq("project_id", projectId);
-      return (data ?? []) as { id: string; user_id: string | null; minutes: number | null; task_id: string | null }[];
+      const { data } = await supabase
+        .from("time_entries")
+        .select("id,user_id,duration_seconds,task_id")
+        .in("task_id", taskIds);
+      return (data ?? []) as { id: string; user_id: string | null; duration_seconds: number | null; task_id: string | null }[];
     },
   });
+
 
   const rows = ids.map(id => {
     const p = profiles.find(x => x.id === id);
