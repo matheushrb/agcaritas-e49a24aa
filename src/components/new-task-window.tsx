@@ -117,6 +117,7 @@ export function TaskWindow({
   const [projectId, setProjectId] = useState<string | null>(defaultProjectId);
   const [taskTypeId, setTaskTypeId] = useState<string | null>(null);
   const [assigneeId, setAssigneeId] = useState<string | null>(null);
+  const [startDate, setStartDate] = useState("");
   const [dueDate, setDueDate] = useState("");
   const [priority, setPriority] = useState("medium");
   const [status, setStatus] = useState("todo");
