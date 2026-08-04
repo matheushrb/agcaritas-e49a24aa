@@ -845,33 +845,50 @@ export function TaskWindow({
                   </span>
                 ) : (
                   <>
-                    <div className={`cw-timer${timerStart != null ? " is-running" : ""}`}>
-                      <span className="cw-timer-clock">{fmtClock(runningSeconds)}</span>
-                      {timerStart == null ? (
-                        <button type="button" className="cw-timer-btn is-play" onClick={startTimer} title="Iniciar cronômetro">
-                          <Play size={14} />
-                        </button>
-                      ) : (
+                    {timerStart != null && (
+                      <div className="cw-timer is-running">
+                        <span className="cw-timer-clock">{fmtClock(runningSeconds)}</span>
                         <button type="button" className="cw-timer-btn is-stop" disabled={stopTimer.isPending}
                           onClick={() => stopTimer.mutate()} title="Parar e registrar">
                           <Square size={13} />
                         </button>
-                      )}
-                    </div>
+                      </div>
+                    )}
                     <div style={{ marginTop: 8 }}>
                       {timeEntries.slice(0, 6).map(e => (
-                        <div key={e.id} className="cw-ts-row">
-                          <span className="cw-ts-when">
-                            {new Date(e.started_at ?? e.created_at).toLocaleDateString("pt-BR")}
-                          </span>
-                          <span>{fmtHours(e.duration_seconds)}</span>
-                          <button type="button" className="cw-icon-btn" onClick={() => removeTime.mutate(e.id)}>
-                            <Trash2 size={13} />
-                          </button>
-                        </div>
+                        editEntry?.id === e.id ? (
+                          <div key={e.id} className="cw-ts-form" style={{ marginTop: 4 }}>
+                            <input className="cw-input" type="date" value={editEntry.date}
+                              onChange={ev => setEditEntry({ ...editEntry, date: ev.target.value })} />
+                            <input className="cw-input" type="number" step="0.25" value={editEntry.hours}
+                              onChange={ev => setEditEntry({ ...editEntry, hours: ev.target.value })} placeholder="Horas" />
+                            <button type="button" className="cw-btn cw-btn-sm cw-btn-primary" disabled={updateTime.isPending}
+                              onClick={() => updateTime.mutate()}>Salvar</button>
+                            <button type="button" className="cw-icon-btn" onClick={() => setEditEntry(null)} title="Cancelar">
+                              <X size={13} />
+                            </button>
+                          </div>
+                        ) : (
+                          <div key={e.id} className="cw-ts-row">
+                            <span className="cw-ts-when">
+                              {new Date(e.started_at ?? e.created_at).toLocaleDateString("pt-BR")}
+                            </span>
+                            <button type="button" className="cw-ts-edit"
+                              onClick={() => setEditEntry({
+                                id: e.id,
+                                hours: String(Math.round((e.duration_seconds / 3600) * 100) / 100),
+                                date: new Date(e.started_at ?? e.created_at).toISOString().slice(0, 10),
+                              })}
+                              title="Editar lançamento">{fmtHours(e.duration_seconds)}</button>
+                            <button type="button" className="cw-icon-btn" onClick={() => removeTime.mutate(e.id)}>
+                              <Trash2 size={13} />
+                            </button>
+                          </div>
+                        )
                       ))}
                       {timeEntries.length === 0 && <span className="cw-hint">Nenhum apontamento ainda.</span>}
                     </div>
+
                     <div className="cw-ts-form">
                       <input className="cw-input" type="date" value={tsDate} onChange={e => setTsDate(e.target.value)} />
                       <input className="cw-input" type="number" step="0.25" value={tsHours}
