@@ -286,19 +286,37 @@ function TasksPage() {
           </Button>
         </header>
 
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
           <Kpi label="Total" value={kpis.total.toString()} />
           <Kpi label="Em andamento" value={kpis.inProgress.toString()} />
+          <Kpi label="Revisão" value={kpis.review.toString()} />
+          <Kpi label="Concluídas" value={kpis.done.toString()} />
           <Kpi label="Atrasadas" value={kpis.overdue.toString()} tone={kpis.overdue > 0 ? "danger" : "default"} />
-          <Kpi label="Valor total" value={`R$ ${kpis.value.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`} />
         </div>
 
         <Card className="p-3 rounded-2xl">
           <div className="flex flex-wrap items-center gap-2">
             <div className="relative flex-1 min-w-[200px]">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input placeholder="Buscar tarefa..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9 rounded-full" />
+              <Input placeholder="Buscar por tarefa, projeto ou responsável..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9 rounded-full" />
             </div>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-[140px] rounded-full"><SelectValue placeholder="Status" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos status</SelectItem>
+                {STATUS_ORDER.map(s => <SelectItem key={s} value={s}>{STATUS_META[s].label}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            <Select value={assigneeFilter} onValueChange={setAssigneeFilter}>
+              <SelectTrigger className="w-[160px] rounded-full"><SelectValue placeholder="Responsável" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos responsáveis</SelectItem>
+                <SelectItem value="none">Não atribuído</SelectItem>
+                {peopleMin.map(p => (
+                  <SelectItem key={p.id} value={p.id}>{p.display_name || p.full_name || "Sem nome"}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <Select value={priorityFilter} onValueChange={setPriorityFilter}>
               <SelectTrigger className="w-[140px] rounded-full"><SelectValue placeholder="Prioridade" /></SelectTrigger>
               <SelectContent>
@@ -310,11 +328,12 @@ function TasksPage() {
                 <SelectItem value="low">Baixa</SelectItem>
               </SelectContent>
             </Select>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-[140px] rounded-full"><SelectValue placeholder="Status" /></SelectTrigger>
+            <Select value={projectFilter} onValueChange={setProjectFilter}>
+              <SelectTrigger className="w-[160px] rounded-full"><SelectValue placeholder="Projeto" /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Todos status</SelectItem>
-                {STATUS_ORDER.map(s => <SelectItem key={s} value={s}>{STATUS_META[s].label}</SelectItem>)}
+                <SelectItem value="all">Todos projetos</SelectItem>
+                <SelectItem value="none">Sem projeto</SelectItem>
+                {projectsMin.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
               </SelectContent>
             </Select>
             <Button
@@ -339,6 +358,7 @@ function TasksPage() {
             view={view}
             tasks={filtered as any}
             projectName={projectName}
+            assigneeName={assigneeName}
             onOpen={(id) => { setDraftTask(null); setSelectedId(id); }}
             onQuickCreate={(status, title) => createTask.mutate({ title, status })}
             onStatusChange={(id, status) => updateStatus.mutate({ id, status })}
