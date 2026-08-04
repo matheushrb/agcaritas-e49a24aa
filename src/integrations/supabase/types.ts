@@ -2335,6 +2335,7 @@ export type Database = {
           attachments_count: number
           billed: boolean
           billed_invoice_id: string | null
+          billing_base_value: number | null
           billing_enabled: boolean
           billing_model: Database["public"]["Enums"]["billing_model"] | null
           billing_value: number | null
@@ -2371,6 +2372,7 @@ export type Database = {
           attachments_count?: number
           billed?: boolean
           billed_invoice_id?: string | null
+          billing_base_value?: number | null
           billing_enabled?: boolean
           billing_model?: Database["public"]["Enums"]["billing_model"] | null
           billing_value?: number | null
@@ -2407,6 +2409,7 @@ export type Database = {
           attachments_count?: number
           billed?: boolean
           billed_invoice_id?: string | null
+          billing_base_value?: number | null
           billing_enabled?: boolean
           billing_model?: Database["public"]["Enums"]["billing_model"] | null
           billing_value?: number | null
