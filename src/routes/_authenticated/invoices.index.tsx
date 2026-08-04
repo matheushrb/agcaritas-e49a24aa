@@ -370,6 +370,15 @@ function NewInvoiceWizard({
   }, [paymentLink]);
 
   const projectFilterActive = selectedProjects.size > 0;
+  // Cliente efetivo: o do item ou, quando ausente, o do projeto vinculado.
+  const clientOfProject = useMemo(() => {
+    const m: Record<string, string | null> = {};
+    for (const p of projects) m[p.id] = p.client_id;
+    return m;
+  }, [projects]);
+  const effClient = (cid: string | null, pid: string | null) => cid ?? (pid ? clientOfProject[pid] ?? null : null);
+  const matchesClient = (cid: string | null, pid: string | null) =>
+    !filterClient || effClient(cid, pid) === filterClient;
   // Itens sem projeto ficam sempre disponíveis; o filtro restringe apenas itens vinculados a projeto.
   const inProjects = (pid: string | null) => !pid || !projectFilterActive || selectedProjects.has(pid);
 
@@ -438,21 +447,21 @@ function NewInvoiceWizard({
   });
 
   const filteredCharges = useMemo(() => charges.filter(c =>
-    (!filterClient || c.client_id === filterClient) && inProjects(c.project_id),
-  ), [charges, filterClient, selectedProjects]);
+    matchesClient(c.client_id, c.project_id) && inProjects(c.project_id),
+  ), [charges, filterClient, selectedProjects, clientOfProject]);
 
   const filteredTasks = useMemo(() => tasks.filter(t =>
     !invoicedMainTaskIds.has(t.id) &&
     t.status === "done" &&
-    (!filterClient || t.client_id === filterClient) &&
+    matchesClient(t.client_id, t.project_id) &&
     inProjects(t.project_id) &&
     (t.billing_value ?? 0) > 0,
-  ), [tasks, invoicedMainTaskIds, filterClient, selectedProjects]);
+  ), [tasks, invoicedMainTaskIds, filterClient, selectedProjects, clientOfProject]);
 
   const billableDeliverables = useMemo<BillableDeliverable[]>(() => {
     const out: BillableDeliverable[] = [];
     for (const t of tasks) {
-      if (filterClient && t.client_id !== filterClient) continue;
+      if (!matchesClient(t.client_id, t.project_id)) continue;
       if (!inProjects(t.project_id)) continue;
       const list = Array.isArray(t.deliverables) ? t.deliverables : [];
       for (const d of list) {
@@ -472,7 +481,7 @@ function NewInvoiceWizard({
           taskTitle: t.title,
           label: parts ? `Entregável ${parts}` : "Entregável",
           amount,
-          client_id: t.client_id,
+          client_id: effClient(t.client_id, t.project_id),
           project_id: t.project_id,
           reference_date: ref.reference_date,
           reference_label: ref.reference_label,
@@ -480,7 +489,7 @@ function NewInvoiceWizard({
       }
     }
     return out;
-  }, [tasks, invoicedDeliverableIds, filterClient, selectedProjects]);
+  }, [tasks, invoicedDeliverableIds, filterClient, selectedProjects, clientOfProject]);
 
   const subtotal = useMemo(() => {
     let t = 0;
