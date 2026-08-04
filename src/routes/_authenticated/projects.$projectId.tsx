@@ -357,8 +357,8 @@ function ProjectDetail() {
   const revenue = Number(project.fixed_value ?? 0) + Number(project.monthly_value ?? 0) + taskRevenue;
   const health = stats.overdue > 2 ? "bad" : stats.overdue > 0 ? "warn" : "";
   const healthLabel = health === "bad" ? "Crítico" : health === "warn" ? "Atenção" : "Saudável";
-  const ownerName = people[0]?.full_name ?? "Não definido";
-  const ownerRole = people[0]?.role ?? "Responsável";
+  const ownerName = owner?.display_name || owner?.full_name || people[0]?.full_name || "Não definido";
+  const ownerRole = owner?.role_title || people[0]?.role || "Responsável";
 
   const TABS: { id: string; label: string; count?: number }[] = [
     { id: "overview", label: "Geral" },
