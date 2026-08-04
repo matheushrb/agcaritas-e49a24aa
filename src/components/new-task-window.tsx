@@ -150,7 +150,7 @@ export function TaskWindow({
   const { data: taskTypes = [] } = useQuery({
     queryKey: ["task_types_min"],
     queryFn: async () => {
-      const { data } = await (supabase as any).from("task_types").select("id,name,default_price,active").order("name");
+      const { data } = await (supabase as any).from("task_types").select("id,name,default_price,active,has_broadcast,has_live,has_tech_sheet").order("name");
       return ((data ?? []) as any[]).filter(t => t.active !== false);
     },
   });
