@@ -195,6 +195,8 @@ export function TaskWindow({
     setDescription(existing.description ?? "");
     setProjectId(existing.project_id ?? null);
     setTaskTypeId(existing.task_type_id ?? null);
+    setCurrentStageId(existing.current_stage_id ?? null);
+
     setAssigneeId(existing.assignee_id ?? null);
     setDueDate(existing.due_date ?? "");
     setPriority(existing.priority ?? "medium");
