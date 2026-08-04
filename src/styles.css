@@ -4,6 +4,8 @@
 @import "@fontsource-variable/ibm-plex-sans";
 @import "./caritas-ui.css";
 @import "./dark-fixes.css";
+@import "./polish.css";
+
 
 @custom-variant dark (&:is(.dark *));
 
