@@ -667,25 +667,14 @@ export function TaskWindow({
             <div className="cw-side">
               <div className="cw-side-card">
                 <h5><Layers size={15} /> Resumo</h5>
-                <div
-                  className="cw-status-box"
-                  style={{ ["--sc" as string]: statusColor(status) }}
-                >
-                  <div className="cw-status-col">
-                    <span className="cw-label">Status</span>
-                    <select className="cw-input cw-status-select" value={status} onChange={e => changeStatus(e.target.value)}>
-                      {STATUSES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
-                    </select>
-                  </div>
-                  <div className="cw-status-col">
-                    <span className="cw-label">Etapa atual</span>
-                    <span
-                      className="cw-stage-chip"
-                      style={{ ["--sc" as string]: flowSteps[activeIdx]?.color ?? statusColor(status) }}
-                    >
-                      <i /> {flowSteps[activeIdx]?.label ?? "—"}
-                    </span>
-                  </div>
+                <div className="cw-side-line">
+                  <span>Etapa atual</span>
+                  <span
+                    className="cw-stage-chip"
+                    style={{ ["--sc" as string]: flowSteps[activeIdx]?.color ?? statusColor(status) }}
+                  >
+                    <i /> {flowSteps[activeIdx]?.label ?? "—"}
+                  </span>
                 </div>
                 <div className="cw-side-line"><span>Entregáveis</span><span>{deliverables.length}</span></div>
                 <div className="cw-side-line"><span>Checklist</span><span>{doneCount}/{checklist.length}</span></div>
