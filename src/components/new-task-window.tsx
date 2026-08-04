@@ -320,6 +320,27 @@ export function TaskWindow({
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const [editEntry, setEditEntry] = useState<{ id: string; hours: string; date: string } | null>(null);
+  const updateTime = useMutation({
+    mutationFn: async () => {
+      if (!editEntry) return;
+      const h = Number(editEntry.hours.replace(",", "."));
+      if (!h || h <= 0) throw new Error("Informe as horas");
+      const { error } = await (supabase as any).from("time_entries").update({
+        duration_seconds: Math.round(h * 3600),
+        started_at: new Date(`${editEntry.date}T12:00:00`).toISOString(),
+      }).eq("id", editEntry.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      setEditEntry(null);
+      qc.invalidateQueries({ queryKey: ["task-time-entries", taskId] });
+      toast.success("Lançamento atualizado");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+
   /* ---------- Cronômetro (play / stop) ---------- */
   const timerKey = taskId ? `cw-timer:${taskId}` : null;
   const [timerStart, setTimerStart] = useState<number | null>(null);
