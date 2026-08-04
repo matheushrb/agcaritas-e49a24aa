@@ -137,3 +137,31 @@
 .prj07 .p7-brk-row { display: grid; gap: 6px; }
 .prj07 .p7-brk-top { display: flex; align-items: center; justify-content: space-between; font-size: 12.5px; }
 .prj07 .p7-brk-top b { font-weight: 600; color: var(--p7-ink); }
+
+/* extras */
+.prj07 .p7-split { display: block; }
+.prj07 .p7-empty { padding: 26px 16px; font-size: 13px; color: var(--p7-muted-2); display: grid; gap: 4px; }
+.prj07 .p7-empty b { color: var(--p7-ink); font-size: 13.5px; }
+.prj07 .p7-badge {
+  display: inline-flex; align-items: center; height: 22px; padding: 0 9px; border-radius: 999px;
+  font-size: 11.5px; font-weight: 600; white-space: nowrap;
+}
+.prj07 .p7-badge.blue { background: color-mix(in oklab, var(--p7-primary) 14%, transparent); color: var(--p7-primary); }
+.prj07 .p7-badge.green { background: color-mix(in oklab, var(--p7-green) 16%, transparent); color: var(--p7-green); }
+.prj07 .p7-badge.amber { background: color-mix(in oklab, var(--p7-amber) 18%, transparent); color: var(--p7-amber); }
+.prj07 .p7-badge.purple { background: color-mix(in oklab, var(--p7-purple) 16%, transparent); color: var(--p7-purple); }
+.prj07 .p7-badge.gray { background: color-mix(in oklab, var(--p7-muted) 14%, transparent); color: var(--p7-muted); }
+.prj07 .p7-acts { display: flex; gap: 4px; justify-content: flex-end; }
+.prj07 .p7-iconbtn {
+  width: 28px; height: 28px; border-radius: 8px; border: 1px solid transparent;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: transparent; color: var(--p7-muted); cursor: pointer; transition: all .15s ease;
+}
+.prj07 .p7-iconbtn svg { width: 14px; height: 14px; }
+.prj07 .p7-iconbtn:hover { background: color-mix(in oklab, var(--p7-primary) 10%, transparent); color: var(--p7-primary); }
+.prj07 .p7-iconbtn.danger:hover { background: color-mix(in oklab, var(--p7-red) 12%, transparent); color: var(--p7-red); }
+.prj07 .p7-brk { padding: 14px 16px; display: grid; gap: 14px; }
+.prj07 .p7-brk-top { display: flex; align-items: baseline; justify-content: space-between; font-size: 13px; }
+.prj07 .p7-brk-top b { color: var(--p7-ink); font-weight: 600; }
+.prj07 .p7-bar { height: 7px; border-radius: 999px; background: color-mix(in oklab, var(--p7-muted) 15%, transparent); margin: 6px 0 4px; overflow: hidden; }
+.prj07 .p7-bar i { display: block; height: 100%; border-radius: 999px; }
