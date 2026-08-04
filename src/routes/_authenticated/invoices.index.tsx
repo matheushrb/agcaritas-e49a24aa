@@ -884,15 +884,45 @@ function NewInvoiceWizard({
                       g.charges.reduce((s, c) => s + Number(c.amount ?? 0), 0) +
                       g.tasks.reduce((s, t) => s + Number(t.billing_value ?? 0), 0) +
                       g.orphanDelivs.reduce((s, [, l]) => s + l.reduce((ss, d) => ss + d.amount, 0), 0);
+                    const gChargeIds = g.charges.map(c => c.id);
+                    const gTaskIds = g.tasks.map(t => t.id);
+                    const gDelivKeys = [
+                      ...g.tasks.flatMap(t => (delivsByTask.get(t.id) ?? []).map(d => d.key)),
+                      ...g.orphanDelivs.flatMap(([, l]) => l.map(d => d.key)),
+                    ];
+                    const totalCount = gChargeIds.length + gTaskIds.length + gDelivKeys.length;
+                    const selCount =
+                      gChargeIds.filter(id => selectedCharges.has(id)).length +
+                      gTaskIds.filter(id => selectedTasks.has(id)).length +
+                      gDelivKeys.filter(k => selectedDeliverables.has(k)).length;
+                    const allSel = totalCount > 0 && selCount === totalCount;
+                    const toggleGroup = (on: boolean) => {
+                      const nc = new Set(selectedCharges);
+                      const nt = new Set(selectedTasks);
+                      const nd = new Set(selectedDeliverables);
+                      for (const id of gChargeIds) on ? nc.add(id) : nc.delete(id);
+                      for (const id of gTaskIds) on ? nt.add(id) : nt.delete(id);
+                      for (const k of gDelivKeys) on ? nd.add(k) : nd.delete(k);
+                      setSelectedCharges(nc); setSelectedTasks(nt); setSelectedDeliverables(nd);
+                    };
                     return (
                       <section key={g.projectId} className="fat01-group">
                         <header className="fat01-group-head">
+                          <Checkbox
+                            checked={allSel}
+                            onCheckedChange={(v) => toggleGroup(!!v)}
+                            aria-label={`Selecionar tudo de ${g.projectName}`}
+                          />
                           <div className="min-w-0">
                             <div className="fat01-group-name truncate">{g.projectName}</div>
                             {g.clientName && <div className="fat01-group-client truncate">{g.clientName}</div>}
                           </div>
-                          <div className="fat01-group-total">Faturável: <b>{money(groupTotal)}</b></div>
+                          <div className="fat01-group-total">
+                            {selCount > 0 && <span style={{ opacity: .7, marginRight: 8 }}>{selCount}/{totalCount}</span>}
+                            Faturável: <b>{money(groupTotal)}</b>
+                          </div>
                         </header>
+
                         <div className="fat01-group-body">
                           {g.charges.length > 0 && (
                             <>
