@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -8,7 +8,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { EntityDialog, DialogField, DialogCancelButton } from "@/components/entity-dialog";
-import { Users, UserPlus, Plus, Search, Mail, Phone, Pencil } from "lucide-react";
+import { Users, UserPlus, Plus, Search, Mail, Phone, Pencil, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 import { TeamCostFieldsEditor, type TeamCostFields, type CostMode, COST_MODE_LABEL } from "@/components/team-cost-fields";
 
@@ -20,6 +20,7 @@ type Level = "junior" | "mid" | "senior" | "lead";
 type Status = "active" | "inactive" | "away" | "vacation";
 type Member = {
   id: string;
+  user_id: string | null;
   name: string;
   email: string | null;
   phone: string | null;
@@ -64,6 +65,8 @@ const emptyCost: TeamCostFields = {
 
 function TeamPage() {
   const qc = useQueryClient();
+  const [uid, setUid] = useState<string | null>(null);
+  useEffect(() => { supabase.auth.getUser().then(({ data }) => setUid(data.user?.id ?? null)); }, []);
   const [search, setSearch] = useState("");
   const [newOpen, setNewOpen] = useState(false);
   const [editing, setEditing] = useState<Member | null>(null);
@@ -73,7 +76,7 @@ function TeamPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("team_members")
-        .select("id,name,email,phone,role,specialty,level,status,hourly_rate,avatar_url,cost_mode,monthly_salary,monthly_hours,default_task_rate,task_rate_overrides,cost_notes")
+        .select("id,user_id,name,email,phone,role,specialty,level,status,hourly_rate,avatar_url,cost_mode,monthly_salary,monthly_hours,default_task_rate,task_rate_overrides,cost_notes")
         .order("name");
       if (error) throw error;
       return (data ?? []).map((m: any) => ({ ...m, task_rate_overrides: m.task_rate_overrides ?? {} })) as Member[];
@@ -83,6 +86,32 @@ function TeamPage() {
   const filtered = useMemo(() =>
     members.filter(m => !search || m.name?.toLowerCase().includes(search.toLowerCase()) || m.role?.toLowerCase().includes(search.toLowerCase())),
   [members, search]);
+
+  const me = useMemo(() => members.find(m => m.user_id && m.user_id === uid) ?? null, [members, uid]);
+
+  const createMe = useMutation({
+    mutationFn: async () => {
+      const { data: auth } = await supabase.auth.getUser();
+      const user = auth.user;
+      if (!user) throw new Error("Sessão inválida");
+      const { data: profile } = await supabase.from("profiles").select("organization_id,full_name,role_title,avatar_url").maybeSingle();
+      if (!profile?.organization_id) throw new Error("Sem organização");
+      const { error } = await supabase.from("team_members").insert({
+        organization_id: profile.organization_id,
+        user_id: user.id,
+        name: profile.full_name || user.email?.split("@")[0] || "Eu",
+        email: user.email,
+        role: profile.role_title || "Administrador",
+        avatar_url: profile.avatar_url,
+        status: "active",
+        cost_mode: "internal_fixed",
+        monthly_hours: 160,
+      } as any);
+      if (error) throw error;
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["team-members"] }); toast.success("Seu cadastro foi criado na equipe"); },
+    onError: (e: Error) => toast.error(e.message),
+  });
 
   const kpis = useMemo(() => ({
     total: members.length,
@@ -127,6 +156,31 @@ function TeamPage() {
         <Button onClick={() => setNewOpen(true)}><Plus className="size-4 mr-1" />Novo membro</Button>
       </div>
 
+      {uid && !me && (
+        <Card className="p-4 flex items-center justify-between gap-4 border-amber-500/40 bg-amber-500/5">
+          <div className="flex items-start gap-3">
+            <ShieldCheck className="size-5 text-amber-500 mt-0.5" />
+            <div>
+              <div className="text-sm font-medium">Você ainda não tem cadastro na equipe</div>
+              <p className="text-xs text-muted-foreground">Ter login é diferente de ser colaborador. Crie o seu cadastro para registrar salário, custo/hora e entrar nos cálculos de custo dos projetos.</p>
+            </div>
+          </div>
+          <Button className="rounded-full shrink-0" onClick={() => createMe.mutate()} disabled={createMe.isPending}>Criar meu cadastro</Button>
+        </Card>
+      )}
+      {me && (
+        <Card className="p-4 flex items-center justify-between gap-4">
+          <div className="flex items-start gap-3">
+            <ShieldCheck className="size-5 text-emerald-500 mt-0.5" />
+            <div>
+              <div className="text-sm font-medium">Seu cadastro: {me.name}</div>
+              <p className="text-xs text-muted-foreground">{COST_MODE_LABEL[me.cost_mode]} · {costSummary(me)}</p>
+            </div>
+          </div>
+          <Button variant="outline" className="rounded-full shrink-0" onClick={() => setEditing(me)}>Editar meus dados e custo</Button>
+        </Card>
+      )}
+
       <div className="grid grid-cols-3 gap-4">
         <Card className="p-4"><div className="text-xs text-muted-foreground">Total</div><div className="text-xl font-semibold">{kpis.total}</div></Card>
         <Card className="p-4"><div className="text-xs text-muted-foreground">Ativos</div><div className="text-xl font-semibold">{kpis.active}</div></Card>
@@ -155,6 +209,7 @@ function TeamPage() {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
                   <h3 className="font-medium truncate">{m.name}</h3>
+                  {m.user_id && m.user_id === uid && <Badge variant="secondary" className="bg-primary/10 text-primary">Você</Badge>}
                   {m.status && <Badge className={STATUS_LABEL[m.status]?.color}>{STATUS_LABEL[m.status]?.label}</Badge>}
                 </div>
                 <p className="text-sm text-muted-foreground truncate">
