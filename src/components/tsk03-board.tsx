@@ -32,7 +32,9 @@ type Props = {
 
 /** TSK-03 — Quadro (kanban) com painel lateral de detalhe. */
 export function Tsk03Board({ tasks, projectName, person, onOpen, onNew, onStatusChange }: Props) {
+  const { data: stageIndex } = useStageIndex();
   const [drag, setDrag] = useState<string | null>(null);
+
   const [over, setOver] = useState<string | null>(null);
   const [panel, setPanel] = useState<string | null>(null);
 
