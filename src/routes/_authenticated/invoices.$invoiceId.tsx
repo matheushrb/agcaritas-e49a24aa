@@ -325,10 +325,10 @@ function InvoiceDetailPage() {
       const { error } = await supabase.from("invoices").update({
         ...(nextNumber ? { number: nextNumber } : {}),
         client_id: form.client_id || null,
-        project_id: form.project_id || null,
+        project_id: draftProjectIds.length === 1 ? draftProjectIds[0] : null,
         issue_date: form.issue_date || undefined,
         due_date: form.due_date || null,
-        payment_method: form.payment_method || null,
+        payment_method: serializePaymentMethods(methods) || null,
         payment_terms: form.payment_terms || null,
         payment_link: form.payment_link || null,
         discount,
@@ -342,7 +342,30 @@ function InvoiceDetailPage() {
         const { error: delErr } = await supabase.from("charges")
           .update({ invoice_id: null, status: "pending_invoice" }).in("id", removed);
         if (delErr) throw delErr;
+
+        // devolve tarefas/entregáveis removidos ao estado "faturável"
+        const removedItems = items.filter(i => removed.includes(i.id));
+        const delivByTask = new Map<string, Set<string>>();
+        const plainTasks = new Set<string>();
+        for (const it of removedItems) {
+          if (it.task_id && it.deliverable_id) {
+            if (!delivByTask.has(it.task_id)) delivByTask.set(it.task_id, new Set());
+            delivByTask.get(it.task_id)!.add(it.deliverable_id);
+          } else if (it.task_id) {
+            plainTasks.add(it.task_id);
+          }
+        }
+        for (const [taskId, ids] of delivByTask) {
+          const { data: t } = await supabase.from("tasks").select("deliverables").eq("id", taskId).maybeSingle();
+          const list = ((t?.deliverables ?? []) as { id: string; invoiced?: boolean }[]) ?? [];
+          const next = list.map(dd => (ids.has(dd.id) ? { ...dd, invoiced: false } : dd));
+          await supabase.from("tasks").update({ deliverables: next } as never).eq("id", taskId);
+        }
+        if (plainTasks.size) {
+          await supabase.from("tasks").update({ billed_invoice_id: null } as never).in("id", [...plainTasks]);
+        }
       }
+
 
       for (const d of lines) {
         const amount = Number(d.amount) || 0;
