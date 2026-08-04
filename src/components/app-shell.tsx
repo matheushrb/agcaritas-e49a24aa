@@ -5,7 +5,7 @@ import {
   Megaphone, Building2, Receipt, HelpCircle,
   Inbox, MessageSquare, FileSignature, Check, Trash2, Asterisk, ChevronDown,
 } from "lucide-react";
-import { useState, type ReactNode } from "react";
+import { type ReactNode } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useTheme } from "@/components/theme-provider";
