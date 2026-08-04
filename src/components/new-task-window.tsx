@@ -675,7 +675,7 @@ export function TaskWindow({
                     <span className="cw-label">Etapa atual</span>
                     <span
                       className="cw-stage-chip"
-                      style={{ ["--sc" as string]: statusColor(flowSteps[activeIdx]?.status ?? status) }}
+                      style={{ ["--sc" as string]: flowSteps[activeIdx]?.color ?? statusColor(status) }}
                     >
                       <i /> {flowSteps[activeIdx]?.label ?? "—"}
                     </span>
