@@ -53,6 +53,7 @@ export type ProjectWizardValue = {
   due_days: string;
   finance_notes: string;
   /* Escopo complementar (preservado do fluxo anterior) */
+  social_platforms: string[];
   tools: string[];
   strategy_enabled: boolean;
   scope_flags: {
