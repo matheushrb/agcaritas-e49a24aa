@@ -2,11 +2,6 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
-import { EntityDialog, DialogField, DialogCancelButton } from "@/components/entity-dialog";
-import { Button as UIButton } from "@/components/ui/button";
 import { AlertCircle, CheckCircle2, Clock, Receipt } from "lucide-react";
 import { toast } from "sonner";
 import { Fin01Overview, type F1Charge, type F1Cost } from "@/components/fin01-overview";
@@ -104,17 +99,6 @@ function FinancePage() {
   });
 
 
-
-  const updateStatus = useMutation({
-    mutationFn: async ({ id, status }: { id: string; status: ChargeStatus }) => {
-      const { error } = await supabase.from("charges").update({
-        status,
-        paid_at: status === "paid" ? new Date().toISOString() : null,
-      }).eq("id", id);
-      if (error) throw error;
-    },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["charges"] }),
-  });
 
   return (
     <>
