@@ -140,6 +140,27 @@ function useMetrics(data: Data) {
         overdue: !!(t.due_date && new Date(t.due_date) < today),
       }));
 
+    // Entregáveis pendentes (subitens de tarefas) com prazo vencido ou vencendo hoje
+    const todayIso = today.toISOString().slice(0, 10);
+    const pendingDeliverables = open.flatMap(t => {
+      const list = Array.isArray((t as any).deliverables) ? (t as any).deliverables : [];
+      return list
+        .filter((d: any) => !d.delivered && d.due_date && String(d.due_date) <= todayIso)
+        .map((d: any) => ({
+          key: `${t.id}-${d.id}`,
+          taskId: t.id,
+          taskTitle: t.title as string,
+          label: [d.platform, d.type].filter(Boolean).join(" · ") || "Entregável",
+          dueDate: String(d.due_date),
+          overdue: String(d.due_date) < todayIso,
+          projectName: data.projects.find(p => p.id === t.project_id)?.name ?? "Sem projeto",
+          priority: t.priority,
+        }));
+    })
+      .sort((a: any, b: any) => a.dueDate.localeCompare(b.dueDate))
+      .slice(0, 6);
+
+
     // Receita por dia do mês (barras) e categorias de despesa (donut)
     const days = new Date(me.getTime() - 86_400_000).getDate();
     const perDay = Array.from({ length: days }, (_, i) => {
