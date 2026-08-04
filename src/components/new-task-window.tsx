@@ -488,7 +488,13 @@ export function TaskWindow({
     setEstimated(""); setBillingEnabled(true); setBaseValue(""); setDeliverables([]); setChecklist([]);
     setPlatformsSel([]); setNotes(""); setLiveItems([]); setTech(EMPTY_TECH); setTab("details");
   };
-  const close = (o: boolean) => { onOpenChange(o); if (!o) reset(); };
+  const close = (o: boolean) => { setBaseline(""); onOpenChange(o); if (!o) reset(); };
+
+  /* ---------- Alterações não salvas ---------- */
+  const [baseline, setBaseline] = useState("");
+  const [askUnsaved, setAskUnsaved] = useState(false);
+  const [askDelete, setAskDelete] = useState(false);
+
 
   const payload = () => ({
     title: title.trim(),
