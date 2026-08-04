@@ -22,21 +22,6 @@ export type P3Task = {
 };
 export type P3Person = { id: string; full_name: string | null; role: string | null };
 
-const STAGE_LABEL: Record<P3Task["stage"], string> = {
-  briefing: "Briefing",
-  creation: "Criação",
-  review: "Revisão",
-  approval: "Aprovação",
-  delivery: "Entrega",
-};
-const STAGE_ORDER: P3Task["stage"][] = ["briefing", "creation", "review", "approval", "delivery"];
-const STAGE_COLOR: Record<P3Task["stage"], string> = {
-  briefing: "#2F6BEF",
-  creation: "#14B8A6",
-  review: "#F59E0B",
-  approval: "#8B5CF6",
-  delivery: "#10B981",
-};
 const PRIORITY: Record<P3Task["priority"], { label: string; cls: string }> = {
   high: { label: "Alta", cls: "high" },
   medium: { label: "Média", cls: "med" },
@@ -47,6 +32,13 @@ const STATUS_LABEL: Record<P3Task["status"], string> = {
   in_progress: "Em andamento",
   review: "Em revisão",
   done: "Concluída",
+};
+const STATUS_ORDER: P3Task["status"][] = ["todo", "in_progress", "review", "done"];
+const STATUS_COLOR: Record<P3Task["status"], string> = {
+  todo: "#8A93A3",
+  in_progress: "#2F6BEF",
+  review: "#F59E0B",
+  done: "#10B981",
 };
 
 function initials(name: string) {
@@ -187,10 +179,10 @@ export function Prj03Tasks({ tasks, people, onOpen, onQuickCreate, pending }: {
     .sort((a, b) => (toDate(a.due_date)!.getTime() - toDate(b.due_date)!.getTime()))
     .slice(0, 4), [tasks]);
 
-  const byStage = STAGE_ORDER.map((s) => {
-    const n = tasks.filter((t) => t.stage === s).length;
-    return { stage: s, n, pct: tasks.length ? Math.round((n / tasks.length) * 100) : 0 };
-  });
+  const byStatus = useMemo(() => STATUS_ORDER.map((s) => {
+    const n = tasks.filter((t) => t.status === s).length;
+    return { status: s, n, pct: tasks.length ? Math.round((n / tasks.length) * 100) : 0 };
+  }), [tasks]);
 
   const chip = (d: string | null, red = false) => {
     const dt = toDate(d);
@@ -374,16 +366,16 @@ export function Prj03Tasks({ tasks, people, onOpen, onQuickCreate, pending }: {
           </div>
         </div>
 
-        {/* Tarefas por etapa */}
+        {/* Tarefas por status */}
         <div className="p3-card">
           <div className="p3-side-h">
-            <span className="p3-side-t">Tarefas por etapa</span>
+            <span className="p3-side-t">Tarefas por status<span className="n">{tasks.length}</span></span>
             <button type="button" className="p3-side-link" onClick={clearFilters}>Ver relatório</button>
           </div>
-          {byStage.map((s) => (
-            <div className="p3-stagerow" key={s.stage}>
-              <span className="lbl">{STAGE_LABEL[s.stage]}</span>
-              <span className="bar"><i style={{ width: `${s.pct}%`, background: STAGE_COLOR[s.stage] }} /></span>
+          {byStatus.map((s) => (
+            <div className="p3-stagerow" key={s.status}>
+              <span className="lbl">{STATUS_LABEL[s.status]}</span>
+              <span className="bar"><i style={{ width: `${s.pct}%`, background: STATUS_COLOR[s.status] }} /></span>
               <span className="val">{s.n} ({s.pct}%)</span>
             </div>
           ))}
