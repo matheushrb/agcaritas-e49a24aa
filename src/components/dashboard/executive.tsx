@@ -337,7 +337,7 @@ function AttentionBlock({ m, data }: { m: Metrics; data: Data }) {
           <span>Prioridade</span>
           <span />
         </div>
-        {m.critPend.length === 0 && (
+        {m.critPend.length === 0 && m.pendingDeliverables.length === 0 && (
           <p className="py-4 text-center text-[12px] text-muted-foreground">Nenhuma pendência crítica. Bom trabalho.</p>
         )}
         {m.critPend.map(t => (
