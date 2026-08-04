@@ -190,6 +190,23 @@ export function TaskWindow({
     setPlatformsSel(sel => (sel.every(s => allowed.has(s)) ? sel : sel.filter(s => allowed.has(s))));
   }, [projectId, platforms, projectPlatformNames.length]);
 
+  /* ---------- Abas opcionais conforme o tipo de tarefa ---------- */
+  const activeType = useMemo(
+    () => (taskTypes as any[]).find(t => t.id === taskTypeId),
+    [taskTypes, taskTypeId],
+  );
+  const showLiveTab = !!activeType?.has_live || liveItems.length > 0;
+  const showTechTab = !!activeType?.has_tech_sheet;
+  const techFilled = useMemo(
+    () => Object.entries(tech).some(([k, v]) => k !== "category" && String(v ?? "").trim() !== ""),
+    [tech],
+  );
+
+  useEffect(() => {
+    if ((tab === "live" && !showLiveTab) || (tab === "tech" && !showTechTab)) setTab("details");
+  }, [tab, showLiveTab, showTechTab]);
+
+
   /* ---------- Etapas: do tipo de tarefa (quando houver) ou padrão ---------- */
   const { data: typeStages = [] } = useTaskTypeStages(taskTypeId);
 
