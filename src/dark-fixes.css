@@ -115,3 +115,122 @@ html.dark .cw-callout {
   color: #9CBBFF;
 }
 html.dark .prj05 .p5-logo { background: rgba(255, 255, 255, 0.14); color: var(--foreground); }
+
+/* ============================================================
+   Dark pass 2 — fundos claros fixos nos módulos PRJ/TSK/FIN
+   ============================================================ */
+
+/* Chips neutros / trilhos / hovers de linha */
+html.dark .prj03 .p3-stage,
+html.dark .prj02 .p2-tag,
+html.dark .prj02 .p2-file .ext,
+html.dark .prj02 .p2-tab .count,
+html.dark .prj06 .p6-tag,
+html.dark .prj08 .p8-badge.neutral,
+html.dark .prj08 .p8-chip,
+html.dark .tsk2 .k-pill.slate {
+  background: rgba(255, 255, 255, .07) !important;
+  border-color: var(--border) !important;
+  color: var(--foreground) !important;
+}
+html.dark .prj03 .p3-stage svg,
+html.dark .prj06 .p6-tag,
+html.dark .prj02 .p2-tab .count { color: var(--muted-foreground) !important; }
+
+html.dark .prj03 tbody tr:hover td,
+html.dark .prj06 .p6-table tbody tr:hover td,
+html.dark .fin02 .f2-table tbody tr:hover,
+html.dark .fin01 .f1-table tbody tr:hover,
+html.dark .prj08-table tbody tr:hover,
+html.dark .prj08-table tbody tr.selected,
+html.dark .prj03 .p3-page:hover:not(:disabled),
+html.dark .prj05 .p5-ghost:hover,
+html.dark .prj02 .p2-btn:hover,
+html.dark .prj02 .p2-ico-btn:hover,
+html.dark .prj06 .p6-dots:hover,
+html.dark .fin01 .f1-dots:hover,
+html.dark .fin02 .f2-dots:hover,
+html.dark .prj08-table .p8-kebab:hover,
+html.dark .prj08-panel .p8-btn.ghost:hover,
+html.dark .prj03 .p3-mi:hover {
+  background: rgba(255, 255, 255, .06) !important;
+  color: var(--foreground) !important;
+}
+
+/* Cabeçalhos/áreas "quase brancas" */
+html.dark .prj06 .p6-table thead th,
+html.dark .tsk2 .b-col-head,
+html.dark .cw .cw-sub,
+html.dark .cw .cw-foot { background: rgba(255, 255, 255, .04) !important; }
+
+/* Trilhos de progresso */
+html.dark .prj03 .p3-prog .track,
+html.dark .prj03 .p3-stagerow .bar,
+html.dark .prj02 .p2-kpi .track,
+html.dark .prj01 .progress-track,
+html.dark .prj08-table .p8-bar,
+html.dark .tsk2 .k-bar,
+html.dark .tsk2 .b-progress,
+html.dark .cw .cw-step-line { background: rgba(255, 255, 255, .12) !important; }
+
+/* Avatares e iniciais */
+html.dark .prj02 .p2-stack .av,
+html.dark .prj02 .p2-person .av,
+html.dark .prj02 .p2-act .av,
+html.dark .prj05 .p5-avatar,
+html.dark .prj08-table .p8-av,
+html.dark .fin03 .f3-avatar {
+  background: rgba(47, 107, 239, .22) !important;
+  color: #BFD4FF !important;
+  border-color: var(--border) !important;
+}
+
+/* Pills coloridas — versões translúcidas */
+html.dark .prj03 .p3-pill.high,
+html.dark .prj08 .p8-badge.danger,
+html.dark .prj05 .p5-badge.red,
+html.dark .tsk01 .t-pill.high,
+html.dark .tskv .t-pill.high,
+html.dark .tsk2 .k-pill.pr-critical,
+html.dark .fin01 .f1-pill.red,
+html.dark .fin02 .f2-pill.red,
+html.dark .fin03 .f3-pill.red { background: rgba(239, 68, 68, .18) !important; color: #FCA5A5 !important; }
+
+html.dark .prj03 .p3-pill.med,
+html.dark .prj08 .p8-badge.warn,
+html.dark .prj05 .p5-badge.amber,
+html.dark .prj06 .p6-tag.amber,
+html.dark .tskv .t-pill.medium,
+html.dark .tskv .t-pill.review,
+html.dark .tskv .t-pill.urgent,
+html.dark .tsk2 .k-pill.pr-urgent,
+html.dark .fin01 .f1-pill.amber,
+html.dark .fin02 .f2-pill.amber,
+html.dark .fin03 .f3-pill.amber { background: rgba(245, 158, 11, .18) !important; color: #FCD34D !important; }
+
+html.dark .prj03 .p3-pill.low,
+html.dark .prj08 .p8-badge.ok,
+html.dark .prj06 .p6-tag.green,
+html.dark .fin03 .f3-pill.green { background: rgba(16, 185, 129, .18) !important; color: #6EE7B7 !important; }
+
+html.dark .prj03 .p3-pill.blue,
+html.dark .prj08 .p8-badge.info,
+html.dark .prj01 .view-switch button.active,
+html.dark .fin01 .f1-hint,
+html.dark .fin03 .f3-pill.blue { background: rgba(47, 107, 239, .2) !important; color: #9DC0FF !important; }
+
+/* Filtros/menus em azul claro */
+html.dark .prj03 .p3-fbtn,
+html.dark .prj03 .p3-mi.on {
+  background: rgba(47, 107, 239, .18) !important;
+  border-color: rgba(47, 107, 239, .35) !important;
+  color: #9DC0FF !important;
+}
+html.dark .prj03 .p3-fbtn:hover { background: rgba(47, 107, 239, .26) !important; }
+
+/* Badges cinza e divisórias claras */
+html.dark .fat01-badge.muted { background: rgba(255, 255, 255, .08) !important; color: var(--muted-foreground) !important; }
+html.dark .fat01-row { border-bottom-color: var(--border) !important; }
+html.dark .prj01 .skeleton { background: rgba(255, 255, 255, .06) !important; }
+html.dark .prj05 .p5-num { background: rgba(255, 255, 255, .14) !important; color: var(--foreground) !important; }
+html.dark .tsk2 .g-bar.todo { background: rgba(255, 255, 255, .22) !important; }
