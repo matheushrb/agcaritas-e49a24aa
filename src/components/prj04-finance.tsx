@@ -22,6 +22,10 @@ export type P4Cost = {
   occurred_on: string;
 };
 export type P4Task = {
+  id?: string;
+  title?: string | null;
+  status?: string | null;
+  billed?: boolean | null;
   billing_enabled?: boolean | null;
   billing_value?: number | string | null;
   broadcast_kind?: string | null;
@@ -146,6 +150,30 @@ export function Prj04Finance({
   }, [charges, tasks, costs]);
 
   const receivedPct = k.revenue > 0 ? (k.received / k.revenue) * 100 : 0;
+
+  const billableTasks = useMemo(() => {
+    return tasks
+      .map(t => {
+        const mult = t.broadcast_kind && (t.aired_dates?.length ?? 0) > 0 ? (t.aired_dates as string[]).length : 1;
+        const base = t.billing_enabled && t.billing_value != null ? Number(t.billing_value) * mult : 0;
+        const delivs = (t.deliverables ?? []).filter(d => d.billing_enabled && d.billing_value != null);
+        const deliv = delivs.reduce((s, d) => s + Number(d.billing_value ?? 0), 0);
+        return {
+          id: t.id ?? Math.random().toString(36),
+          title: t.title ?? "Tarefa",
+          status: t.status ?? "todo",
+          billed: !!t.billed,
+          mult,
+          delivCount: delivs.length,
+          value: base + deliv,
+        };
+      })
+      .filter(t => t.value > 0)
+      .sort((a, b) => b.value - a.value);
+  }, [tasks]);
+
+  const billableTotal = billableTasks.reduce((s, t) => s + t.value, 0);
+  const billableDone = billableTasks.filter(t => t.status === "done").reduce((s, t) => s + t.value, 0);
 
   const byCategory = useMemo(() => {
     const map = new Map<string, number>();
@@ -365,7 +393,40 @@ export function Prj04Finance({
         {/* coluna lateral */}
         <div className="p4-side">
           <div className="p4-card">
+            <div className="p4-card-h">
+              <span className="p4-card-t">Tarefas que geram receita</span>
+              <span style={{ fontSize: 12, fontWeight: 700, color: "#10B981" }}>{money2(billableTotal)}</span>
+            </div>
+            {billableTasks.length === 0 ? (
+              <div className="p4-empty">Nenhuma tarefa faturável neste projeto.</div>
+            ) : (
+              <>
+                {billableTasks.map(t => (
+                  <div className="p4-item" key={t.id}>
+                    <span className="ic" style={{ background: "#E8F7F0", color: "#10B981" }}><CircleDollarSign /></span>
+                    <span className="tx">
+                      <b>{t.title}</b>
+                      <span>
+                        {t.billed ? "Faturada" : t.status === "done" ? "Concluída · pronta para faturar" : "Em andamento"}
+                        {t.delivCount > 0 ? ` · ${t.delivCount} entregável${t.delivCount > 1 ? "eis" : ""}` : ""}
+                        {t.mult > 1 ? ` · ${t.mult} exibições` : ""}
+                      </span>
+                    </span>
+                    <span className="rt">
+                      <b>{money2(t.value)}</b>
+                    </span>
+                  </div>
+                ))}
+                <div style={{ marginTop: 10, fontSize: 12, color: "#5B6779" }}>
+                  Concluídas: <b style={{ color: "#10B981" }}>{money2(billableDone)}</b> · Pendentes: <b>{money2(billableTotal - billableDone)}</b>
+                </div>
+              </>
+            )}
+          </div>
+
+          <div className="p4-card">
             <div className="p4-card-h"><span className="p4-card-t">Próximos faturamentos</span></div>
+
             {upcoming.length === 0 ? (
               <div className="p4-empty">Nenhuma cobrança em aberto.</div>
             ) : (
