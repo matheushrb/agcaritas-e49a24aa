@@ -492,7 +492,7 @@ function ProjectDetail() {
         <Prj03Tasks
           tasks={tasks as never}
           people={people}
-          onOpen={(id) => setSelectedTaskId(id)}
+          onOpen={(id: string) => setSelectedTaskId(id)}
           onQuickCreate={() => setNewTaskOpen(true)}
           pending={addTask.isPending}
         />
@@ -507,9 +507,9 @@ function ProjectDetail() {
       {activeTab === "finance" && <Prj04Finance charges={charges as never} tasks={tasks as never} costs={costs as never} />}
       {activeTab === "costs" && <div style={{ marginTop: 18 }}><ProjectCostsTab projectId={projectId} organizationId={project.organization_id} /></div>}
       {activeTab === "strategy" && <Prj05Strategy projectId={projectId} organizationId={project.organization_id} description={project.description ?? ""} onSaveDescription={(d) => saveField.mutate({ description: d })} />}
-      {activeTab === "calendar" && <div style={{ marginTop: 18 }}><PrjCalendarTab tasks={tasks as never} onOpen={(id) => setSelectedTaskId(id)} /></div>}
-      {activeTab === "grid" && <div style={{ marginTop: 18 }}><PrjGridTab tasks={tasks as never} onOpen={(id) => setSelectedTaskId(id)} /></div>}
-      {activeTab === "timeline" && <div style={{ marginTop: 18 }}><PrjTimelineTab tasks={tasks as never} startDate={project.start_date} endDate={project.end_date} onOpen={(id) => setSelectedTaskId(id)} /></div>}
+      {activeTab === "calendar" && <div style={{ marginTop: 18 }}><PrjCalendarTab tasks={tasks as never} onOpen={(id: string) => setSelectedTaskId(id)} /></div>}
+      {activeTab === "grid" && <div style={{ marginTop: 18 }}><PrjGridTab tasks={tasks as never} onOpen={(id: string) => setSelectedTaskId(id)} /></div>}
+      {activeTab === "timeline" && <div style={{ marginTop: 18 }}><PrjTimelineTab tasks={tasks as never} startDate={project.start_date} endDate={project.end_date} onOpen={(id: string) => setSelectedTaskId(id)} /></div>}
       {activeTab === "traffic" && <div style={{ marginTop: 18 }}><ComingSoon icon={Megaphone} title="Tráfego Pago" description="Campanhas, orçamento, CPA e ROAS do projeto." /></div>}
       {activeTab === "campaigns" && <div style={{ marginTop: 18 }}><ComingSoon icon={Rocket} title="Campanhas" description="Lançamentos e campanhas dentro do projeto." /></div>}
       {activeTab === "docs" && <Prj06Files />}
