@@ -84,8 +84,12 @@ export function Tsk03Board({ tasks, projectName, person, onOpen, onNew, onStatus
                   <div className="ct">{t.title}</div>
                   <div className="cp"><Folder size={12} /> {pn}</div>
                   <div className="cm">
+                    {(() => { const si = stageInfoOf(t, stageIndex); return (
+                      <span className="k-stagename"><i style={{ background: si.color }} />{si.name}</span>
+                    ); })()}
                     <span className={`k-pill pr-${t.priority}`}>{PRIORITY_LABEL[t.priority]}</span>
                   </div>
+
                   <div className="cm">
                     <span className="av-sm" style={{ background: hashColor(per.name) }}>{initials(per.name)}</span>
                     <span style={{ fontSize: 12, fontWeight: 500 }}>{per.name}</span>
