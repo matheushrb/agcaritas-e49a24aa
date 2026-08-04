@@ -1,0 +1,196 @@
+/* ==========================================================================
+   FAT-01 — Janela "Nova fatura" (wizard 3 etapas)
+   Tokens oficiais V7: primary #1769F6 · soft #E9EDFC · bg #F5F6F7
+   surface #FFFFFF · text #1C2026 · muted #6B7280 · border #DDE1E6
+   raio controle 8px · raio card 12px · IBM Plex Sans
+   ========================================================================== */
+
+.fat01 {
+  --f1-primary: #1769F6;
+  --f1-primary-dark: #0F55CC;
+  --f1-soft: #E9EDFC;
+  --f1-bg: #F5F6F7;
+  --f1-surface: #FFFFFF;
+  --f1-text: #1C2026;
+  --f1-muted: #6B7280;
+  --f1-border: #DDE1E6;
+  --f1-green: #15803D;
+  --f1-green-soft: #E6F4EA;
+  --f1-red: #B91C1C;
+  --f1-red-soft: #FDECEC;
+
+  font-family: "IBM Plex Sans", system-ui, sans-serif;
+  color: var(--f1-text);
+  background: var(--f1-surface);
+}
+
+/* ---------- Cabeçalho ---------- */
+.fat01-head {
+  padding: 18px 24px 14px;
+  border-bottom: 1px solid var(--f1-border);
+}
+.fat01-title {
+  display: flex; align-items: center; gap: 10px;
+  font-size: 18px; font-weight: 600; letter-spacing: -0.01em;
+}
+.fat01-sub { font-size: 12px; color: var(--f1-muted); margin-top: 2px; }
+
+/* ---------- Stepper ---------- */
+.fat01-stepper {
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px 24px;
+  background: var(--f1-bg);
+  border-bottom: 1px solid var(--f1-border);
+}
+.fat01-step { display: flex; align-items: center; gap: 8px; }
+.fat01-step-dot {
+  width: 24px; height: 24px; border-radius: 999px;
+  display: grid; place-items: center;
+  font-size: 12px; font-weight: 600;
+  background: #FFFFFF; color: var(--f1-muted);
+  border: 1px solid var(--f1-border);
+}
+.fat01-step[data-state="active"] .fat01-step-dot {
+  background: var(--f1-primary); color: #fff; border-color: var(--f1-primary);
+}
+.fat01-step[data-state="done"] .fat01-step-dot {
+  background: var(--f1-green-soft); color: var(--f1-green); border-color: #BFE1CB;
+}
+.fat01-step-label { font-size: 13px; color: var(--f1-muted); }
+.fat01-step[data-state="active"] .fat01-step-label { color: var(--f1-text); font-weight: 600; }
+.fat01-step-line { width: 44px; height: 1px; background: var(--f1-border); margin: 0 6px; }
+
+/* ---------- Corpo ---------- */
+.fat01-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 312px;
+  gap: 0;
+  flex: 1; min-height: 0;
+}
+.fat01-main { padding: 18px 22px; overflow-y: auto; min-height: 0; }
+.fat01-aside {
+  border-left: 1px solid var(--f1-border);
+  background: var(--f1-bg);
+  padding: 18px;
+  overflow-y: auto; min-height: 0;
+}
+
+/* ---------- Campos ---------- */
+.fat01-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 16px; }
+.fat01-field { display: flex; flex-direction: column; gap: 6px; }
+.fat01-field.full { grid-column: 1 / -1; }
+.fat01-label { font-size: 12px; font-weight: 600; color: var(--f1-text); }
+.fat01-label span { color: var(--f1-primary); }
+.fat01-hint { font-size: 11px; color: var(--f1-muted); }
+.fat01-counter { font-size: 11px; color: var(--f1-muted); text-align: right; }
+
+.fat01-input,
+.fat01 .fat01-input {
+  height: 38px; border-radius: 8px;
+  border: 1px solid var(--f1-border);
+  background: #fff; font-size: 13px;
+}
+.fat01-textarea { border-radius: 8px; border: 1px solid var(--f1-border); font-size: 13px; }
+
+/* ---------- Seletor múltiplo de projetos ---------- */
+.fat01-projects {
+  border: 1px solid var(--f1-border); border-radius: 8px;
+  background: #fff; max-height: 168px; overflow-y: auto;
+}
+.fat01-proj {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 12px; font-size: 13px; cursor: pointer;
+  border-bottom: 1px solid #F0F1F3;
+}
+.fat01-proj:last-child { border-bottom: 0; }
+.fat01-proj:hover { background: var(--f1-soft); }
+.fat01-proj[data-checked="true"] { background: var(--f1-soft); }
+.fat01-proj-client { font-size: 11px; color: var(--f1-muted); }
+
+/* ---------- Grupos de itens ---------- */
+.fat01-group {
+  border: 1px solid var(--f1-border); border-radius: 12px;
+  background: #fff; margin-bottom: 12px; overflow: hidden;
+}
+.fat01-group-head {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 10px 14px; background: var(--f1-bg);
+  border-bottom: 1px solid var(--f1-border);
+}
+.fat01-group-name { font-size: 13px; font-weight: 600; }
+.fat01-group-client { font-size: 11px; color: var(--f1-muted); }
+.fat01-group-total { font-size: 12px; color: var(--f1-muted); }
+.fat01-group-total b { color: var(--f1-text); font-size: 13px; }
+.fat01-group-body { padding: 8px 10px; }
+
+.fat01-sec { font-size: 10px; font-weight: 700; letter-spacing: .06em;
+  text-transform: uppercase; color: var(--f1-muted); padding: 6px 4px 4px; }
+
+.fat01-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 10px; border-radius: 8px; cursor: pointer;
+  border: 1px solid transparent;
+}
+.fat01-row:hover { background: var(--f1-bg); }
+.fat01-row[data-checked="true"] { background: var(--f1-soft); border-color: #CBD9F9; }
+.fat01-row-title { font-size: 13px; }
+.fat01-row-amount { font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.fat01-row.child { margin-left: 26px; border-style: dashed; border-color: var(--f1-border); }
+
+.fat01-badge {
+  font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 999px;
+  background: var(--f1-soft); color: var(--f1-primary); white-space: nowrap;
+}
+.fat01-badge.green { background: var(--f1-green-soft); color: var(--f1-green); }
+.fat01-badge.amber { background: #FEF3C7; color: #92400E; }
+.fat01-badge.muted { background: #EEF0F2; color: var(--f1-muted); }
+
+/* ---------- Ajustes (desconto / acréscimo) ---------- */
+.fat01-adjust {
+  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px;
+  border: 1px solid var(--f1-border); border-radius: 12px; padding: 14px;
+  background: #fff;
+}
+
+/* ---------- Resumo lateral ---------- */
+.fat01-sum-card {
+  background: #fff; border: 1px solid var(--f1-border); border-radius: 12px;
+  overflow: hidden;
+}
+.fat01-sum-head {
+  padding: 10px 14px; border-bottom: 1px solid var(--f1-border);
+  font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
+  color: var(--f1-muted);
+}
+.fat01-sum-body { padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; }
+.fat01-sum-line { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; font-size: 12px; }
+.fat01-sum-line span { color: var(--f1-muted); }
+.fat01-sum-line b { font-weight: 600; font-variant-numeric: tabular-nums; }
+.fat01-sum-line.neg b { color: var(--f1-red); }
+.fat01-sum-line.pos b { color: var(--f1-green); }
+.fat01-sum-div { height: 1px; background: var(--f1-border); margin: 4px 0; }
+.fat01-sum-total { display: flex; align-items: baseline; justify-content: space-between; }
+.fat01-sum-total span { font-size: 12px; font-weight: 600; }
+.fat01-sum-total b { font-size: 20px; font-weight: 700; color: var(--f1-primary); font-variant-numeric: tabular-nums; }
+.fat01-sum-number {
+  margin-top: 10px; padding: 8px 12px; border-radius: 8px;
+  background: var(--f1-soft); color: var(--f1-primary);
+  font-size: 12px; display: flex; align-items: center; justify-content: space-between;
+}
+.fat01-sum-number b { font-family: ui-monospace, "IBM Plex Mono", monospace; font-size: 13px; }
+
+/* ---------- Rodapé ---------- */
+.fat01-foot {
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px 20px; border-top: 1px solid var(--f1-border);
+  background: #fff;
+}
+
+/* ---------- Prévia (etapa 3) ---------- */
+.fat01-preview { border: 1px solid #CBD9F9; border-radius: 12px; overflow: hidden; background: #fff; }
+.fat01-preview-head {
+  background: var(--f1-primary); color: #fff;
+  padding: 8px 14px; display: flex; align-items: center; justify-content: space-between;
+  font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
+}
+.fat01-preview-head b { font-family: ui-monospace, "IBM Plex Mono", monospace; letter-spacing: 0; font-size: 13px; }

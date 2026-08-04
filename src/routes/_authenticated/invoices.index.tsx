@@ -18,6 +18,7 @@ import { toast } from "sonner";
 import { generateInvoicePDF, DEFAULT_PAYMENT_TERMS, DEFAULT_LEGAL_NOTES } from "@/lib/pdf/invoice-pdf";
 import { cn } from "@/lib/utils";
 import QRCode from "qrcode";
+import "@/fat01.css";
 
 export const Route = createFileRoute("/_authenticated/invoices/")({
   component: InvoicesPage,
@@ -272,7 +273,26 @@ function exportInvoicesCsv(
 
 
 
-/* ----------------------------------- Wizard ------------------------------ */
+/* ------------------------- FAT-01 · Wizard Nova fatura -------------------- */
+const PAYMENT_CONDITIONS: Array<{ value: string; label: string; days: number | null }> = [
+  { value: "a_vista", label: "À vista", days: 0 },
+  { value: "7", label: "7 dias", days: 7 },
+  { value: "14", label: "14 dias", days: 14 },
+  { value: "15", label: "15 dias", days: 15 },
+  { value: "28", label: "28 dias", days: 28 },
+  { value: "30", label: "30 dias", days: 30 },
+  { value: "45", label: "45 dias", days: 45 },
+  { value: "60", label: "60 dias", days: 60 },
+  { value: "custom", label: "Personalizada", days: null },
+];
+const PAYMENT_METHODS = ["PIX", "Boleto", "Transferência bancária", "Cartão de crédito", "Dinheiro", "Outro"];
+
+function addDays(base: string, days: number) {
+  const d = new Date(`${base}T00:00:00`);
+  d.setDate(d.getDate() + days);
+  return d.toISOString().slice(0, 10);
+}
+
 function NewInvoiceWizard({
   initialProjectId, clients, projects, organization, onClose, onCreated,
 }: {
@@ -284,18 +304,26 @@ function NewInvoiceWizard({
   const initialClient = initialProjectId ? projects.find(p => p.id === initialProjectId)?.client_id ?? "" : "";
   const [step, setStep] = useState(1);
   const [filterClient, setFilterClient] = useState<string>(initialClient);
-  const [filterProject, setFilterProject] = useState<string>(initialProjectId ?? "");
+  const [selectedProjects, setSelectedProjects] = useState<Set<string>>(
+    new Set(initialProjectId ? [initialProjectId] : []),
+  );
   const [selectedCharges, setSelectedCharges] = useState<Set<string>>(new Set());
   const [selectedTasks, setSelectedTasks] = useState<Set<string>>(new Set());
   const [payerClient, setPayerClient] = useState<string>(initialClient);
   const [issueDate, setIssueDate] = useState(new Date().toISOString().slice(0, 10));
   const [dueDate, setDueDate] = useState<string>("");
+  const [paymentCondition, setPaymentCondition] = useState<string>("30");
+  const [paymentMethod, setPaymentMethod] = useState<string>("PIX");
+  const [discount, setDiscount] = useState<number>(0);
+  const [surcharge, setSurcharge] = useState<number>(0);
   const [notes, setNotes] = useState(DEFAULT_LEGAL_NOTES);
   const [paymentTerms, setPaymentTerms] = useState(DEFAULT_PAYMENT_TERMS);
   const [paymentLink, setPaymentLink] = useState("");
   const [paymentQrPreview, setPaymentQrPreview] = useState<string | null>(null);
   const [previewNumber, setPreviewNumber] = useState("—");
   const [submitting, setSubmitting] = useState(false);
+  const [selectedDeliverables, setSelectedDeliverables] = useState<Set<string>>(new Set());
+  const [lineDateOverrides, setLineDateOverrides] = useState<Record<string, string>>({});
 
   // Número previsto da fatura (mesma regra do banco: AAAAMM + sequencial contínuo)
   useEffect(() => {
@@ -315,8 +343,12 @@ function NewInvoiceWizard({
     return () => { active = false; };
   }, [issueDate]);
 
-
-
+  // Vencimento derivado da condição de pagamento
+  useEffect(() => {
+    const cond = PAYMENT_CONDITIONS.find(c => c.value === paymentCondition);
+    if (!cond || cond.days === null || !issueDate) return;
+    setDueDate(addDays(issueDate, cond.days));
+  }, [paymentCondition, issueDate]);
 
   useEffect(() => {
     let active = true;
@@ -325,7 +357,6 @@ function NewInvoiceWizard({
       setPaymentQrPreview(null);
       return () => { active = false; };
     }
-
     QRCode.toDataURL(payload, {
       errorCorrectionLevel: "M",
       margin: 1,
@@ -334,20 +365,11 @@ function NewInvoiceWizard({
     })
       .then((url) => { if (active) setPaymentQrPreview(url); })
       .catch(() => { if (active) setPaymentQrPreview(null); });
-
     return () => { active = false; };
   }, [paymentLink]);
 
-
-  const [selectedDeliverables, setSelectedDeliverables] = useState<Set<string>>(new Set());
-  const [lineDateOverrides, setLineDateOverrides] = useState<Record<string, string>>({});
-
-  // Sincroniza o cliente pagador com o filtro (ou com o cliente do projeto filtrado)
-  useEffect(() => {
-    const derived = filterClient
-      || (filterProject ? projects.find(p => p.id === filterProject)?.client_id ?? "" : "");
-    if (derived && derived !== payerClient) setPayerClient(derived);
-  }, [filterClient, filterProject, projects, payerClient]);
+  const projectFilterActive = selectedProjects.size > 0;
+  const inProjects = (pid: string | null) => !projectFilterActive || (!!pid && selectedProjects.has(pid));
 
   // Pending charges + billable tasks
   const { data: charges = [] } = useQuery<PendingCharge[]>({
@@ -371,7 +393,6 @@ function NewInvoiceWizard({
         .select("id,title,billing_value,billing_enabled,client_id,project_id,status,deliverables,due_date,aired_at,aired_dates,recorded_at,recorded_dates")
         .eq("billing_enabled", true);
       const ts = (data ?? []) as BillableTask[];
-      // Cobranças já existentes (main sem deliverable_id, e por entregável)
       const { data: existingCharges } = await supabase
         .from("charges")
         .select("task_id,deliverable_id")
@@ -392,22 +413,21 @@ function NewInvoiceWizard({
   const invoicedDeliverableIds = tasksData.invoicedDeliverableIds;
 
   const filteredCharges = useMemo(() => charges.filter(c =>
-    (!filterClient || c.client_id === filterClient) &&
-    (!filterProject || c.project_id === filterProject),
-  ), [charges, filterClient, filterProject]);
+    (!filterClient || c.client_id === filterClient) && inProjects(c.project_id),
+  ), [charges, filterClient, selectedProjects]);
 
   const filteredTasks = useMemo(() => tasks.filter(t =>
     !invoicedMainTaskIds.has(t.id) &&
     (!filterClient || t.client_id === filterClient) &&
-    (!filterProject || t.project_id === filterProject) &&
+    inProjects(t.project_id) &&
     (t.billing_value ?? 0) > 0,
-  ), [tasks, invoicedMainTaskIds, filterClient, filterProject]);
+  ), [tasks, invoicedMainTaskIds, filterClient, selectedProjects]);
 
   const billableDeliverables = useMemo<BillableDeliverable[]>(() => {
     const out: BillableDeliverable[] = [];
     for (const t of tasks) {
       if (filterClient && t.client_id !== filterClient) continue;
-      if (filterProject && t.project_id !== filterProject) continue;
+      if (!inProjects(t.project_id)) continue;
       const list = Array.isArray(t.deliverables) ? t.deliverables : [];
       for (const d of list) {
         if (!d?.id) continue;
@@ -425,7 +445,6 @@ function NewInvoiceWizard({
           deliverableId: d.id,
           taskTitle: t.title,
           label: parts ? `Entregável ${parts}` : "Entregável",
-
           amount,
           client_id: t.client_id,
           project_id: t.project_id,
@@ -435,9 +454,9 @@ function NewInvoiceWizard({
       }
     }
     return out;
-  }, [tasks, invoicedDeliverableIds, filterClient, filterProject]);
+  }, [tasks, invoicedDeliverableIds, filterClient, selectedProjects]);
 
-  const total = useMemo(() => {
+  const subtotal = useMemo(() => {
     let t = 0;
     for (const c of filteredCharges) if (selectedCharges.has(c.id)) t += Number(c.amount ?? 0);
     for (const tk of filteredTasks) if (selectedTasks.has(tk.id)) t += Number(tk.billing_value ?? 0);
@@ -445,9 +464,12 @@ function NewInvoiceWizard({
     return t;
   }, [filteredCharges, filteredTasks, billableDeliverables, selectedCharges, selectedTasks, selectedDeliverables]);
 
+  const total = Math.max(0, subtotal - (discount || 0) + (surcharge || 0));
+  const itemCount = selectedCharges.size + selectedTasks.size + selectedDeliverables.size;
+
   const canGoNext = step === 1
-    ? true
-    : step === 2 ? (selectedCharges.size + selectedTasks.size + selectedDeliverables.size) > 0
+    ? !!payerClient && !!issueDate
+    : step === 2 ? itemCount > 0
     : !!payerClient && !!issueDate;
 
   const previewLines = useMemo(() => {
@@ -513,7 +535,6 @@ function NewInvoiceWizard({
         });
       }
     }
-    // agrupa por projeto mantendo a ordem de aparição (pais + entregáveis juntos)
     const order: string[] = [];
     const buckets = new Map<string, typeof lines>();
     for (const l of lines) {
@@ -524,6 +545,13 @@ function NewInvoiceWizard({
     return order.flatMap(g => buckets.get(g)!);
   }, [filteredCharges, filteredTasks, billableDeliverables, selectedCharges, selectedTasks, selectedDeliverables, lineDateOverrides, projects]);
 
+  const adjustmentLines = useMemo(() => {
+    const extra: typeof previewLines = [];
+    if (discount > 0) extra.push({ key: "adj:discount", title: "Desconto concedido", amount: -discount, group: null });
+    if (surcharge > 0) extra.push({ key: "adj:surcharge", title: "Acréscimo / taxa", amount: surcharge, group: null });
+    return [...previewLines, ...extra];
+  }, [previewLines, discount, surcharge]);
+
   async function openPreviewPDF() {
     const client = clients.find(c => c.id === payerClient);
     const issue = issueDate || new Date().toISOString().slice(0, 10);
@@ -533,7 +561,7 @@ function NewInvoiceWizard({
       due_date: dueDate || null,
       client: buildClientParty(client),
       agency: buildAgencyParty(organization),
-      lines: previewLines,
+      lines: adjustmentLines,
       notes: notes || undefined,
       payment_terms: paymentTerms || undefined,
       payment_link: paymentLink.trim() || undefined,
@@ -549,7 +577,6 @@ function NewInvoiceWizard({
       const { data: profile } = await supabase.from("profiles").select("organization_id").maybeSingle();
       if (!profile?.organization_id) throw new Error("Sem organização");
 
-      // Cria as charges para as tarefas escolhidas (ainda sem invoice_id — vamos linkar depois)
       const newCharges: string[] = [];
       for (const tk of filteredTasks) {
         if (!selectedTasks.has(tk.id)) continue;
@@ -571,7 +598,6 @@ function NewInvoiceWizard({
         if (inserted) newCharges.push(inserted.id);
       }
 
-      // Cria charges para os entregáveis selecionados e marca invoiced=true na tarefa
       const deliverablesByTask = new Map<string, Set<string>>();
       for (const d of billableDeliverables) {
         if (!selectedDeliverables.has(d.key)) continue;
@@ -595,7 +621,6 @@ function NewInvoiceWizard({
         deliverablesByTask.get(d.taskId)!.add(d.deliverableId);
       }
 
-      // Atualiza a data das cobranças já existentes quando o usuário editou manualmente
       for (const c of filteredCharges) {
         if (!selectedCharges.has(c.id)) continue;
         const ov = lineDateOverrides[`charge:${c.id}`];
@@ -603,7 +628,6 @@ function NewInvoiceWizard({
           await supabase.from("charges").update({ due_date: ov }).eq("id", c.id);
         }
       }
-      // Marcar deliverables como invoiced na coluna JSONB da task
       for (const [taskId, delIds] of deliverablesByTask) {
         const task = tasks.find(t => t.id === taskId);
         if (!task) continue;
@@ -615,19 +639,9 @@ function NewInvoiceWizard({
 
       const chargeIds = [...selectedCharges, ...newCharges];
       const projectIds = new Set<string>();
-      const clientIds = new Set<string>();
-      for (const c of filteredCharges) if (selectedCharges.has(c.id)) {
-        if (c.project_id) projectIds.add(c.project_id);
-        if (c.client_id) clientIds.add(c.client_id);
-      }
-      for (const tk of filteredTasks) if (selectedTasks.has(tk.id)) {
-        if (tk.project_id) projectIds.add(tk.project_id);
-        if (tk.client_id) clientIds.add(tk.client_id);
-      }
-      for (const d of billableDeliverables) if (selectedDeliverables.has(d.key)) {
-        if (d.project_id) projectIds.add(d.project_id);
-        if (d.client_id) clientIds.add(d.client_id);
-      }
+      for (const c of filteredCharges) if (selectedCharges.has(c.id) && c.project_id) projectIds.add(c.project_id);
+      for (const tk of filteredTasks) if (selectedTasks.has(tk.id) && tk.project_id) projectIds.add(tk.project_id);
+      for (const d of billableDeliverables) if (selectedDeliverables.has(d.key) && d.project_id) projectIds.add(d.project_id);
       const singleProject = projectIds.size === 1 ? [...projectIds][0] : null;
 
       const { data: invoice, error: invErr } = await supabase.from("invoices").insert({
@@ -639,7 +653,9 @@ function NewInvoiceWizard({
         due_date: dueDate || null,
         amount: total,
         total,
-        subtotal: total,
+        subtotal,
+        discount: discount || 0,
+        payment_method: paymentMethod || null,
         status: "draft",
         notes: notes || null,
         payment_terms: paymentTerms || null,
@@ -647,7 +663,6 @@ function NewInvoiceWizard({
       }).select("id").single();
       if (invErr) throw invErr;
 
-      // Vincula cobranças à fatura, mas mantém em "draft" — não são lançamentos financeiros até confirmar
       const { error: linkErr } = await supabase.from("charges")
         .update({ invoice_id: invoice.id, status: "draft" } as never)
         .in("id", chargeIds);
@@ -662,415 +677,518 @@ function NewInvoiceWizard({
     }
   }
 
-  const stepLabel = ["Filtros", "Itens", "Confirmação"];
+  const stepLabels = ["Informações", "Itens da fatura", "Revisão"];
+  const clientObj = clients.find(c => c.id === payerClient);
+  const visibleProjects = projects.filter(p => !filterClient || p.client_id === filterClient);
 
   return (
     <Dialog open onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className={cn(step === 3 ? "max-w-[1200px]" : "max-w-4xl", "max-h-[92vh] flex flex-col")}>
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2"><Receipt className="h-5 w-5" />Nova fatura</DialogTitle>
+      <DialogContent className="fat01 max-w-[1180px] w-[96vw] max-h-[92vh] p-0 gap-0 flex flex-col overflow-hidden">
+        <DialogHeader className="fat01-head space-y-0">
+          <DialogTitle className="fat01-title"><Receipt className="h-5 w-5" style={{ color: "var(--f1-primary)" }} />Nova fatura</DialogTitle>
+          <DialogDescription className="fat01-sub">
+            Selecione cliente e projetos, escolha os itens faturáveis e revise antes de emitir.
+          </DialogDescription>
         </DialogHeader>
 
-        <div className="flex items-center gap-2 text-xs mb-2">
-          {stepLabel.map((label, i) => (
-            <div key={label} className="flex items-center gap-2">
-              <div className={cn("grid place-items-center h-6 w-6 rounded-full font-medium",
-                step === i + 1 ? "bg-primary text-primary-foreground" : step > i + 1 ? "bg-emerald-500 text-white" : "bg-muted")}>{i + 1}</div>
-              <span className={cn(step === i + 1 && "font-medium")}>{label}</span>
-              {i < 2 && <div className="w-8 h-px bg-border" />}
+        {/* Stepper */}
+        <div className="fat01-stepper">
+          {stepLabels.map((label, i) => (
+            <div key={label} className="fat01-step" data-state={step === i + 1 ? "active" : step > i + 1 ? "done" : "idle"}>
+              <div className="fat01-step-dot">{step > i + 1 ? <CheckCircle2 className="h-3.5 w-3.5" /> : i + 1}</div>
+              <span className="fat01-step-label">{label}</span>
+              {i < stepLabels.length - 1 && <div className="fat01-step-line" />}
             </div>
           ))}
         </div>
 
-        {step === 1 && (
-          <div className="space-y-3">
-            <div>
-              <label className="text-xs font-medium text-muted-foreground">Cliente (opcional)</label>
-              <Select value={filterClient || "all"} onValueChange={(v) => { setFilterClient(v === "all" ? "" : v); setFilterProject(""); }}>
-                <SelectTrigger><SelectValue placeholder="Todos" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos os clientes</SelectItem>
-                  {clients.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <label className="text-xs font-medium text-muted-foreground">Projeto (opcional)</label>
-              <Select value={filterProject || "all"} onValueChange={(v) => setFilterProject(v === "all" ? "" : v)}>
-                <SelectTrigger><SelectValue placeholder="Todos" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos os projetos</SelectItem>
-                  {projects.filter(p => !filterClient || p.client_id === filterClient).map(p => (
-                    <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <p className="text-xs text-muted-foreground">Deixe em branco para ver tudo pendente na próxima etapa. Você pode misturar clientes e projetos.</p>
-          </div>
-        )}
+        <div className="fat01-body">
+          {/* ------------------------------ Conteúdo ------------------------------ */}
+          <div className="fat01-main">
+            {step === 1 && (
+              <div className="fat01-grid">
+                <div className="fat01-field">
+                  <label className="fat01-label">Cliente <span>*</span></label>
+                  <Select value={payerClient} onValueChange={(v) => { setPayerClient(v); setFilterClient(v); setSelectedProjects(new Set()); }}>
+                    <SelectTrigger className="fat01-input"><SelectValue placeholder="Escolha o cliente" /></SelectTrigger>
+                    <SelectContent>
+                      {clients.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                  <span className="fat01-hint">O cliente define quais projetos e itens podem ser faturados.</span>
+                </div>
 
-        {step === 2 && (
-          <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
-            {(() => {
-              const delivsByTask = new Map<string, BillableDeliverable[]>();
-              for (const d of billableDeliverables) {
-                if (!delivsByTask.has(d.taskId)) delivsByTask.set(d.taskId, []);
-                delivsByTask.get(d.taskId)!.push(d);
-              }
-              const shownTaskIds = new Set(filteredTasks.map(t => t.id));
-              const orphanDelivEntries = Array.from(delivsByTask.entries())
-                .filter(([taskId]) => !shownTaskIds.has(taskId));
+                <div className="fat01-field">
+                  <label className="fat01-label">Data de emissão <span>*</span></label>
+                  <Input type="date" className="fat01-input" value={issueDate} onChange={e => setIssueDate(e.target.value)} />
+                </div>
 
-              // Agrupamento por projeto
-              type ProjectGroup = {
-                projectId: string | "none";
-                projectName: string;
-                clientName: string;
-                charges: typeof filteredCharges;
-                tasks: typeof filteredTasks;
-                orphanDelivs: Array<[string, BillableDeliverable[]]>;
-              };
-              const groups = new Map<string, ProjectGroup>();
-              const ensureGroup = (pid: string | null, cid: string | null): ProjectGroup => {
-                const key = pid ?? "none";
-                if (!groups.has(key)) {
-                  const proj = pid ? projects.find(p => p.id === pid) : null;
-                  const client = cid ? clients.find(c => c.id === cid) : null;
-                  groups.set(key, {
-                    projectId: key as string | "none",
-                    projectName: proj?.name ?? "Sem projeto",
-                    clientName: client?.name ?? (proj?.client_id ? clients.find(c => c.id === proj.client_id)?.name ?? "" : ""),
-                    charges: [], tasks: [], orphanDelivs: [],
-                  });
-                }
-                return groups.get(key)!;
-              };
-              for (const c of filteredCharges) ensureGroup(c.project_id, c.client_id).charges.push(c);
-              for (const t of filteredTasks)  ensureGroup(t.project_id, t.client_id).tasks.push(t);
-              for (const entry of orphanDelivEntries) {
-                const first = entry[1][0];
-                ensureGroup(first.project_id, first.client_id).orphanDelivs.push(entry);
-              }
+                <div className="fat01-field full">
+                  <label className="fat01-label">Projeto(s) <span>*</span></label>
+                  <div className="fat01-projects">
+                    {visibleProjects.length === 0 && (
+                      <div className="px-3 py-4 text-[12px]" style={{ color: "var(--f1-muted)" }}>
+                        Nenhum projeto para este cliente.
+                      </div>
+                    )}
+                    {visibleProjects.map(p => {
+                      const checked = selectedProjects.has(p.id);
+                      return (
+                        <label key={p.id} className="fat01-proj" data-checked={checked}>
+                          <Checkbox
+                            checked={checked}
+                            onCheckedChange={(v) => {
+                              const next = new Set(selectedProjects);
+                              v ? next.add(p.id) : next.delete(p.id);
+                              setSelectedProjects(next);
+                            }}
+                          />
+                          <div className="flex-1 min-w-0">
+                            <div className="truncate">{p.name}</div>
+                            <div className="fat01-proj-client truncate">
+                              {clients.find(c => c.id === p.client_id)?.name ?? "Sem cliente"}
+                            </div>
+                          </div>
+                        </label>
+                      );
+                    })}
+                  </div>
+                  <span className="fat01-hint">
+                    Pode marcar mais de um projeto — os itens ficam agrupados por projeto na fatura.
+                    Sem marcar nenhum, todos os itens pendentes do cliente aparecem.
+                  </span>
+                </div>
 
-              const groupList = Array.from(groups.values()).sort((a, b) => a.projectName.localeCompare(b.projectName, "pt-BR"));
+                <div className="fat01-field">
+                  <label className="fat01-label">Condição de pagamento</label>
+                  <Select value={paymentCondition} onValueChange={setPaymentCondition}>
+                    <SelectTrigger className="fat01-input"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {PAYMENT_CONDITIONS.map(c => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
 
-              if (groupList.length === 0) {
-                return <p className="text-sm text-muted-foreground py-6 text-center">Nada pendente com os filtros escolhidos.</p>;
-              }
+                <div className="fat01-field">
+                  <label className="fat01-label">Forma de pagamento</label>
+                  <Select value={paymentMethod} onValueChange={setPaymentMethod}>
+                    <SelectTrigger className="fat01-input"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {PAYMENT_METHODS.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
 
-              const renderDelivs = (list: BillableDeliverable[]) => list.map(d => (
-                <label key={d.key} className="flex items-center gap-3 px-3 py-1.5 rounded-md border border-dashed hover:bg-muted/40 cursor-pointer ml-6">
-                  <Checkbox
-                    checked={selectedDeliverables.has(d.key)}
-                    onCheckedChange={(v) => {
-                      const next = new Set(selectedDeliverables);
-                      v ? next.add(d.key) : next.delete(d.key);
-                      setSelectedDeliverables(next);
-                    }}
+                <div className="fat01-field">
+                  <label className="fat01-label">Vencimento</label>
+                  <Input type="date" className="fat01-input" value={dueDate}
+                    onChange={e => { setDueDate(e.target.value); setPaymentCondition("custom"); }} />
+                  <span className="fat01-hint">Calculado pela condição de pagamento — pode ajustar manualmente.</span>
+                </div>
+
+                <div className="fat01-field full">
+                  <label className="fat01-label">Observações</label>
+                  <Textarea
+                    className="fat01-textarea"
+                    rows={3}
+                    maxLength={1000}
+                    value={notes}
+                    onChange={e => setNotes(e.target.value.slice(0, 1000))}
+                    placeholder="Ex.: A NF será emitida após confirmação do pagamento."
                   />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm truncate flex items-center gap-2">
-                      <span className="text-muted-foreground">↳</span>
-                      {d.label}
-                      <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium bg-emerald-500/15 text-emerald-600">Entregue</span>
-                    </p>
-                  </div>
-                  <div className="text-sm font-medium">{money(d.amount)}</div>
-                </label>
-              ));
+                  <div className="fat01-counter">{notes.length}/1000</div>
+                </div>
+              </div>
+            )}
 
-              return groupList.map(g => {
-                const groupTotal =
-                  g.charges.reduce((s, c) => s + Number(c.amount ?? 0), 0) +
-                  g.tasks.reduce((s, t) => s + Number(t.billing_value ?? 0), 0) +
-                  g.orphanDelivs.reduce((s, [, l]) => s + l.reduce((ss, d) => ss + d.amount, 0), 0);
-                return (
-                  <section key={g.projectId} className="rounded-xl border bg-muted/10 p-3 space-y-2">
-                    <header className="flex items-center justify-between gap-2 pb-1 border-b">
-                      <div className="min-w-0">
-                        <div className="text-sm font-semibold truncate">{g.projectName}</div>
-                        {g.clientName && <div className="text-[11px] text-muted-foreground truncate">{g.clientName}</div>}
+            {step === 2 && (
+              <div>
+                {(() => {
+                  const delivsByTask = new Map<string, BillableDeliverable[]>();
+                  for (const d of billableDeliverables) {
+                    if (!delivsByTask.has(d.taskId)) delivsByTask.set(d.taskId, []);
+                    delivsByTask.get(d.taskId)!.push(d);
+                  }
+                  const shownTaskIds = new Set(filteredTasks.map(t => t.id));
+                  const orphanDelivEntries = Array.from(delivsByTask.entries())
+                    .filter(([taskId]) => !shownTaskIds.has(taskId));
+
+                  type ProjectGroup = {
+                    projectId: string | "none";
+                    projectName: string;
+                    clientName: string;
+                    charges: typeof filteredCharges;
+                    tasks: typeof filteredTasks;
+                    orphanDelivs: Array<[string, BillableDeliverable[]]>;
+                  };
+                  const groups = new Map<string, ProjectGroup>();
+                  const ensureGroup = (pid: string | null, cid: string | null): ProjectGroup => {
+                    const key = pid ?? "none";
+                    if (!groups.has(key)) {
+                      const proj = pid ? projects.find(p => p.id === pid) : null;
+                      const client = cid ? clients.find(c => c.id === cid) : null;
+                      groups.set(key, {
+                        projectId: key as string | "none",
+                        projectName: proj?.name ?? "Sem projeto",
+                        clientName: client?.name ?? (proj?.client_id ? clients.find(c => c.id === proj.client_id)?.name ?? "" : ""),
+                        charges: [], tasks: [], orphanDelivs: [],
+                      });
+                    }
+                    return groups.get(key)!;
+                  };
+                  for (const c of filteredCharges) ensureGroup(c.project_id, c.client_id).charges.push(c);
+                  for (const t of filteredTasks) ensureGroup(t.project_id, t.client_id).tasks.push(t);
+                  for (const entry of orphanDelivEntries) {
+                    const first = entry[1][0];
+                    ensureGroup(first.project_id, first.client_id).orphanDelivs.push(entry);
+                  }
+
+                  const groupList = Array.from(groups.values()).sort((a, b) => a.projectName.localeCompare(b.projectName, "pt-BR"));
+
+                  if (groupList.length === 0) {
+                    return (
+                      <div className="text-center py-10 text-[13px]" style={{ color: "var(--f1-muted)" }}>
+                        Nada pendente de faturamento com o cliente e os projetos escolhidos.
                       </div>
-                      <div className="text-xs text-muted-foreground">Faturável: <span className="text-foreground font-semibold">{money(groupTotal)}</span></div>
-                    </header>
+                    );
+                  }
 
-                    {g.charges.length > 0 && (
-                      <div className="space-y-1">
-                        <div className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Cobranças</div>
-                        {g.charges.map(c => (
-                          <label key={c.id} className="flex items-center gap-3 px-3 py-2 rounded-lg border hover:bg-muted/40 cursor-pointer bg-background">
-                            <Checkbox
-                              checked={selectedCharges.has(c.id)}
-                              onCheckedChange={(v) => {
-                                const next = new Set(selectedCharges);
-                                v ? next.add(c.id) : next.delete(c.id);
-                                setSelectedCharges(next);
-                              }}
-                            />
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm truncate">{c.description}</p>
-                              <p className="text-[11px] text-muted-foreground">{c.due_date && `Prazo: ${fmtDate(c.due_date)}`}</p>
-                            </div>
-                            <div className="text-sm font-medium">{money(Number(c.amount ?? 0))}</div>
-                          </label>
-                        ))}
+                  const renderDelivs = (list: BillableDeliverable[]) => list.map(d => (
+                    <label key={d.key} className="fat01-row child" data-checked={selectedDeliverables.has(d.key)}>
+                      <Checkbox
+                        checked={selectedDeliverables.has(d.key)}
+                        onCheckedChange={(v) => {
+                          const next = new Set(selectedDeliverables);
+                          v ? next.add(d.key) : next.delete(d.key);
+                          setSelectedDeliverables(next);
+                        }}
+                      />
+                      <div className="flex-1 min-w-0">
+                        <span className="fat01-row-title">↳ {d.label}</span>{" "}
+                        <span className="fat01-badge green">Entregue</span>
                       </div>
-                    )}
+                      <div className="fat01-row-amount">{money(d.amount)}</div>
+                    </label>
+                  ));
 
-                    {(g.tasks.length > 0 || g.orphanDelivs.length > 0) && (
-                      <div className="space-y-1">
-                        <div className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Tarefas</div>
-                        {g.tasks.map(t => {
-                          const done = t.status === "done";
-                          const taskDelivs = delivsByTask.get(t.id) ?? [];
-                          return (
-                            <div key={t.id} className="space-y-1">
-                              <label className="flex items-center gap-3 px-3 py-2 rounded-lg border hover:bg-muted/40 cursor-pointer bg-background">
-                                <Checkbox
-                                  checked={selectedTasks.has(t.id)}
-                                  onCheckedChange={(v) => {
-                                    const next = new Set(selectedTasks);
-                                    const nextD = new Set(selectedDeliverables);
-                                    if (v) {
-                                      next.add(t.id);
-                                      taskDelivs.forEach(d => nextD.add(d.key));
-                                    } else {
-                                      next.delete(t.id);
-                                      taskDelivs.forEach(d => nextD.delete(d.key));
-                                    }
-                                    setSelectedTasks(next);
-                                    setSelectedDeliverables(nextD);
-                                  }}
-                                />
-                                <div className="flex-1 min-w-0">
-                                  <p className="text-sm truncate flex items-center gap-2">
-                                    {t.title}
-                                    <span className={cn(
-                                      "text-[10px] px-1.5 py-0.5 rounded-full font-medium",
-                                      done ? "bg-emerald-500/15 text-emerald-600" : "bg-amber-500/15 text-amber-600"
-                                    )}>
-                                      {done ? "Concluída" : "Em andamento"}
-                                    </span>
-                                    {taskDelivs.length > 0 && (
-                                      <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium bg-primary/10 text-primary">
-                                        +{taskDelivs.length} entregável{taskDelivs.length > 1 ? "eis" : ""}
-                                      </span>
-                                    )}
-                                  </p>
+                  return groupList.map(g => {
+                    const groupTotal =
+                      g.charges.reduce((s, c) => s + Number(c.amount ?? 0), 0) +
+                      g.tasks.reduce((s, t) => s + Number(t.billing_value ?? 0), 0) +
+                      g.orphanDelivs.reduce((s, [, l]) => s + l.reduce((ss, d) => ss + d.amount, 0), 0);
+                    return (
+                      <section key={g.projectId} className="fat01-group">
+                        <header className="fat01-group-head">
+                          <div className="min-w-0">
+                            <div className="fat01-group-name truncate">{g.projectName}</div>
+                            {g.clientName && <div className="fat01-group-client truncate">{g.clientName}</div>}
+                          </div>
+                          <div className="fat01-group-total">Faturável: <b>{money(groupTotal)}</b></div>
+                        </header>
+                        <div className="fat01-group-body">
+                          {g.charges.length > 0 && (
+                            <>
+                              <div className="fat01-sec">Cobranças</div>
+                              {g.charges.map(c => (
+                                <label key={c.id} className="fat01-row" data-checked={selectedCharges.has(c.id)}>
+                                  <Checkbox
+                                    checked={selectedCharges.has(c.id)}
+                                    onCheckedChange={(v) => {
+                                      const next = new Set(selectedCharges);
+                                      v ? next.add(c.id) : next.delete(c.id);
+                                      setSelectedCharges(next);
+                                    }}
+                                  />
+                                  <div className="flex-1 min-w-0">
+                                    <div className="fat01-row-title truncate">{c.description}</div>
+                                    {c.due_date && <div className="fat01-group-client">Prazo: {fmtDate(c.due_date)}</div>}
+                                  </div>
+                                  <div className="fat01-row-amount">{money(Number(c.amount ?? 0))}</div>
+                                </label>
+                              ))}
+                            </>
+                          )}
+
+                          {(g.tasks.length > 0 || g.orphanDelivs.length > 0) && (
+                            <>
+                              <div className="fat01-sec">Tarefas e entregáveis</div>
+                              {g.tasks.map(t => {
+                                const done = t.status === "done";
+                                const taskDelivs = delivsByTask.get(t.id) ?? [];
+                                return (
+                                  <div key={t.id}>
+                                    <label className="fat01-row" data-checked={selectedTasks.has(t.id)}>
+                                      <Checkbox
+                                        checked={selectedTasks.has(t.id)}
+                                        onCheckedChange={(v) => {
+                                          const next = new Set(selectedTasks);
+                                          const nextD = new Set(selectedDeliverables);
+                                          if (v) {
+                                            next.add(t.id);
+                                            taskDelivs.forEach(d => nextD.add(d.key));
+                                          } else {
+                                            next.delete(t.id);
+                                            taskDelivs.forEach(d => nextD.delete(d.key));
+                                          }
+                                          setSelectedTasks(next);
+                                          setSelectedDeliverables(nextD);
+                                        }}
+                                      />
+                                      <div className="flex-1 min-w-0">
+                                        <span className="fat01-row-title">{t.title}</span>{" "}
+                                        <span className={cn("fat01-badge", done ? "green" : "amber")}>
+                                          {done ? "Concluída" : "Em andamento"}
+                                        </span>{" "}
+                                        {taskDelivs.length > 0 && (
+                                          <span className="fat01-badge">
+                                            +{taskDelivs.length} entregável{taskDelivs.length > 1 ? "eis" : ""}
+                                          </span>
+                                        )}
+                                      </div>
+                                      <div className="fat01-row-amount">{money(Number(t.billing_value ?? 0))}</div>
+                                    </label>
+                                    {renderDelivs(taskDelivs)}
+                                  </div>
+                                );
+                              })}
+                              {g.orphanDelivs.map(([taskId, list]) => (
+                                <div key={taskId}>
+                                  <div className="fat01-row" style={{ cursor: "default" }}>
+                                    <div className="flex-1 min-w-0">
+                                      <span className="fat01-row-title" style={{ color: "var(--f1-muted)" }}>{list[0].taskTitle}</span>{" "}
+                                      <span className="fat01-badge muted">Principal já faturado</span>
+                                    </div>
+                                  </div>
+                                  {renderDelivs(list)}
                                 </div>
-                                <div className="text-sm font-medium">{money(Number(t.billing_value ?? 0))}</div>
-                              </label>
-                              {renderDelivs(taskDelivs)}
-                            </div>
-                          );
-                        })}
-                        {g.orphanDelivs.map(([taskId, list]) => (
-                          <div key={taskId} className="space-y-1">
-                            <div className="flex items-center gap-3 px-3 py-2 rounded-lg border bg-muted/20">
-                              <div className="flex-1 min-w-0">
-                                <p className="text-sm truncate flex items-center gap-2 text-muted-foreground">
-                                  {list[0].taskTitle}
-                                  <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium bg-muted text-muted-foreground">Principal já faturado</span>
-                                </p>
-                              </div>
-                            </div>
-                            {renderDelivs(list)}
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </section>
-                );
-              });
-            })()}
+                              ))}
+                            </>
+                          )}
+                        </div>
+                      </section>
+                    );
+                  });
+                })()}
 
-            <div className="sticky bottom-0 bg-background pt-3 border-t flex items-center justify-between">
-              <span className="text-xs text-muted-foreground">
-                {selectedCharges.size + selectedTasks.size + selectedDeliverables.size} item(ns) selecionado(s)
-              </span>
-              <span className="text-lg font-semibold">Total: {money(total)}</span>
-            </div>
-          </div>
-        )}
-
-
-        {step === 3 && (
-          <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,420px)_minmax(0,1fr)] gap-4 flex-1 min-h-0 overflow-hidden">
-           <div className="space-y-3 overflow-y-auto pr-2 min-h-0">
-
-            <div>
-              <label className="text-xs font-medium text-muted-foreground">Cliente pagador *</label>
-              <Select value={payerClient} onValueChange={setPayerClient}>
-                <SelectTrigger><SelectValue placeholder="Escolha o cliente" /></SelectTrigger>
-                <SelectContent>
-                  {clients.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="text-xs font-medium text-muted-foreground">Emissão</label>
-                <Input type="date" value={issueDate} onChange={e => setIssueDate(e.target.value)} />
-              </div>
-              <div>
-                <label className="text-xs font-medium text-muted-foreground">Vencimento</label>
-                <Input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} />
-              </div>
-            </div>
-            <div>
-              <label className="text-xs font-medium text-muted-foreground">Condições de pagamento</label>
-              <Textarea value={paymentTerms} onChange={e => setPaymentTerms(e.target.value)} rows={3}
-                placeholder="Prazo, forma de pagamento, chave PIX, etc." />
-              <p className="text-[10px] text-muted-foreground mt-1">Texto editável. Aparece com destaque no PDF da fatura.</p>
-            </div>
-            <div>
-              <label className="text-xs font-medium text-muted-foreground">Observações legais / Nota Fiscal / Juros</label>
-              <Textarea value={notes} onChange={e => setNotes(e.target.value)} rows={4}
-                placeholder="Ex.: A NF será emitida após confirmação do pagamento. Multa e juros após vencimento." />
-            </div>
-            <div>
-              <label className="text-xs font-medium text-muted-foreground">Link, PIX copia e cola ou chave de pagamento (gera QR Code)</label>
-              <Input type="text" value={paymentLink} onChange={e => setPaymentLink(e.target.value)}
-                placeholder="Cole aqui o PIX copia e cola, link de checkout ou boleto" />
-              <p className="text-[10px] text-muted-foreground mt-1">
-                Se preenchido, o QR Code é gerado no PDF aberto pelo botão de prévia.
-              </p>
-            </div>
-           </div>
-           <div className="overflow-y-auto min-h-0 pr-1">
-            {/* ------- Prévia da fatura ------- */}
-            {(() => {
-
-              const clientObj = clients.find(c => c.id === payerClient);
-              const clientParty = buildClientParty(clientObj);
-              const agencyParty = buildAgencyParty(organization) ?? { name: "Caritas Agência", legal_name: null, document: null, email: null, phone: null, address: null, website: null, bank_info: null };
-
-              return (
-                <div className="rounded-lg border-2 border-primary/20 bg-card overflow-hidden">
-                  <div className="bg-primary text-primary-foreground px-4 py-2 flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <FileText className="h-4 w-4" />
-                      <span className="text-xs font-semibold tracking-wider uppercase">Prévia da fatura</span>
-                    </div>
-                    <span className="font-mono text-sm font-bold">{previewNumber}</span>
+                <div className="fat01-adjust">
+                  <div className="fat01-field">
+                    <label className="fat01-label">Desconto (R$)</label>
+                    <Input type="number" min={0} step="0.01" className="fat01-input"
+                      value={discount || ""} onChange={e => setDiscount(Number(e.target.value) || 0)} placeholder="0,00" />
                   </div>
-                  <div className="p-4 space-y-3 text-xs">
-                    {/* topo: emissão / vencimento / total */}
-                    <div className="grid grid-cols-3 gap-3 pb-3 border-b">
-                      <div>
-                        <div className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">Emitida em</div>
-                        <div className="font-semibold text-sm">{fmtDate(issueDate)}</div>
-                      </div>
-                      <div>
-                        <div className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">Vencimento</div>
-                        <div className="font-semibold text-sm">{dueDate ? fmtDate(dueDate) : "—"}</div>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">Valor total</div>
-                        <div className="font-bold text-base text-primary">{money(total)}</div>
-                      </div>
-                    </div>
-
-                    {/* partes */}
-                    <div className="grid grid-cols-2 gap-4 pb-3 border-b">
-                      <div>
-                        <div className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground mb-1">Faturado para</div>
-                        <div className="font-semibold">{clientParty.legal_name || clientParty.company || clientParty.name || "—"}</div>
-                        {clientParty.document && <div className="text-muted-foreground">CNPJ/CPF: {clientParty.document}</div>}
-                        {clientParty.email && <div className="text-muted-foreground truncate">{clientParty.email}</div>}
-                      </div>
-                      <div>
-                        <div className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground mb-1">Emitido por</div>
-                        <div className="font-semibold">{agencyParty.legal_name || agencyParty.name || "Caritas Agência"}</div>
-                        {agencyParty.document && <div className="text-muted-foreground">CNPJ: {agencyParty.document}</div>}
-                        {agencyParty.email && <div className="text-muted-foreground truncate">{agencyParty.email}</div>}
-                      </div>
-                    </div>
-
-                    {/* itens */}
-                    <div>
-                      <div className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground mb-1">Itens ({previewLines.length})</div>
-                      <div className="rounded border overflow-hidden">
-                        <div className="grid grid-cols-[1fr_110px_100px] gap-2 px-3 py-1 bg-muted/50 text-[9px] font-bold uppercase tracking-wider text-muted-foreground">
-                          <div>Descrição</div><div>Data</div><div className="text-right">Total</div>
-                        </div>
-                        {previewLines.length === 0 && (
-                          <div className="px-2 py-3 text-center text-muted-foreground">Nenhum item selecionado.</div>
-                        )}
-                        {previewLines.map((l, i) => (
-                          <div key={l.key} className={cn(
-                            "grid grid-cols-[1fr_110px_100px] gap-2 px-3 py-1.5 border-t items-center",
-                            i % 2 === 1 && "bg-muted/20",
-                          )}>
-                            <div className={cn("truncate", l.is_child && "pl-4 text-muted-foreground")}>
-                              {l.is_child && "↳ "}{l.title}
-                            </div>
-                            <input
-                              type="date"
-                              value={l.reference_date ?? ""}
-                              onChange={(e) => setLineDateOverrides(prev => ({ ...prev, [l.key]: e.target.value }))}
-                              className="h-6 px-1 text-[10px] rounded border bg-background text-foreground w-full"
-                              title="Data do item (editável)"
-                            />
-                            <div className="text-right font-semibold">{money(l.amount)}</div>
-                          </div>
-                        ))}
-                        <div className="grid grid-cols-[1fr_110px_100px] gap-2 px-3 py-2 border-t bg-primary/5">
-                          <div className="col-span-2 text-right font-bold uppercase text-[10px] tracking-wider">Total a pagar</div>
-                          <div className="text-right font-bold text-primary">{money(total)}</div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* condições / observações / link */}
-                    <div className="grid grid-cols-2 gap-3 pt-2">
-                      <div className="space-y-2">
-                        <div>
-                          <div className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">Condições de pagamento</div>
-                          <div className="text-[11px] leading-relaxed whitespace-pre-wrap">{paymentTerms || "—"}</div>
-                        </div>
-                        <div>
-                          <div className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">Observações legais</div>
-                          <div className="text-[11px] leading-relaxed whitespace-pre-wrap text-muted-foreground">{notes || "—"}</div>
-                        </div>
-                      </div>
-                      <div className="rounded border border-dashed p-3 flex flex-col items-center justify-center text-center bg-muted/20">
-                        <div className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground mb-1">Pagamento</div>
-                        {paymentLink.trim() ? (
-                          <>
-                            <div className="w-20 h-20 bg-background border rounded flex items-center justify-center mb-2 overflow-hidden">
-                              {paymentQrPreview ? (
-                                <img src={paymentQrPreview} alt="QR Code de pagamento" className="h-full w-full object-contain" />
-                              ) : (
-                                <span className="text-[8px] text-primary font-semibold">QR CODE</span>
-                              )}
-                            </div>
-                            <div className="text-[10px] text-primary font-medium truncate max-w-full">{paymentLink.trim()}</div>
-                          </>
-                        ) : (
-                          <div className="text-[10px] text-muted-foreground italic">
-                            Anexe um link de pagamento para gerar o QR Code no PDF.
-                          </div>
-                        )}
-                      </div>
-                    </div>
+                  <div className="fat01-field">
+                    <label className="fat01-label">Acréscimo / taxa (R$)</label>
+                    <Input type="number" min={0} step="0.01" className="fat01-input"
+                      value={surcharge || ""} onChange={e => setSurcharge(Number(e.target.value) || 0)} placeholder="0,00" />
                   </div>
                 </div>
-              );
-            })()}
-           </div>
+              </div>
+            )}
+
+            {step === 3 && (
+              <div className="space-y-4">
+                <div className="fat01-grid">
+                  <div className="fat01-field">
+                    <label className="fat01-label">Emissão</label>
+                    <Input type="date" className="fat01-input" value={issueDate} onChange={e => setIssueDate(e.target.value)} />
+                  </div>
+                  <div className="fat01-field">
+                    <label className="fat01-label">Vencimento</label>
+                    <Input type="date" className="fat01-input" value={dueDate} onChange={e => setDueDate(e.target.value)} />
+                  </div>
+                  <div className="fat01-field full">
+                    <label className="fat01-label">Condições de pagamento</label>
+                    <Textarea className="fat01-textarea" rows={2} value={paymentTerms} onChange={e => setPaymentTerms(e.target.value)}
+                      placeholder="Prazo, forma de pagamento, chave PIX, etc." />
+                  </div>
+                  <div className="fat01-field full">
+                    <label className="fat01-label">Link, PIX copia e cola ou chave de pagamento</label>
+                    <Input type="text" className="fat01-input" value={paymentLink} onChange={e => setPaymentLink(e.target.value)}
+                      placeholder="Cole aqui o PIX copia e cola, link de checkout ou boleto" />
+                    <span className="fat01-hint">Se preenchido, o QR Code é gerado no PDF.</span>
+                  </div>
+                </div>
+
+                {/* ------- Prévia da fatura ------- */}
+                {(() => {
+                  const clientParty = buildClientParty(clientObj);
+                  const agencyParty = buildAgencyParty(organization) ?? { name: "Caritas Agência", legal_name: null, document: null, email: null, phone: null, address: null, website: null, bank_info: null };
+                  return (
+                    <div className="fat01-preview">
+                      <div className="fat01-preview-head">
+                        <span className="flex items-center gap-2"><FileText className="h-4 w-4" />Prévia da fatura</span>
+                        <b>{previewNumber}</b>
+                      </div>
+                      <div className="p-4 space-y-3 text-xs">
+                        <div className="grid grid-cols-3 gap-3 pb-3" style={{ borderBottom: "1px solid var(--f1-border)" }}>
+                          <div>
+                            <div className="text-[9px] font-bold uppercase tracking-wider" style={{ color: "var(--f1-muted)" }}>Emitida em</div>
+                            <div className="font-semibold text-sm">{fmtDate(issueDate)}</div>
+                          </div>
+                          <div>
+                            <div className="text-[9px] font-bold uppercase tracking-wider" style={{ color: "var(--f1-muted)" }}>Vencimento</div>
+                            <div className="font-semibold text-sm">{dueDate ? fmtDate(dueDate) : "—"}</div>
+                          </div>
+                          <div className="text-right">
+                            <div className="text-[9px] font-bold uppercase tracking-wider" style={{ color: "var(--f1-muted)" }}>Valor total</div>
+                            <div className="font-bold text-base" style={{ color: "var(--f1-primary)" }}>{money(total)}</div>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4 pb-3" style={{ borderBottom: "1px solid var(--f1-border)" }}>
+                          <div>
+                            <div className="text-[9px] font-bold uppercase tracking-wider mb-1" style={{ color: "var(--f1-muted)" }}>Faturado para</div>
+                            <div className="font-semibold">{clientParty.legal_name || clientParty.company || clientParty.name || "—"}</div>
+                            {clientParty.document && <div style={{ color: "var(--f1-muted)" }}>CNPJ/CPF: {clientParty.document}</div>}
+                            {clientParty.email && <div className="truncate" style={{ color: "var(--f1-muted)" }}>{clientParty.email}</div>}
+                          </div>
+                          <div>
+                            <div className="text-[9px] font-bold uppercase tracking-wider mb-1" style={{ color: "var(--f1-muted)" }}>Emitido por</div>
+                            <div className="font-semibold">{agencyParty.legal_name || agencyParty.name || "Caritas Agência"}</div>
+                            {agencyParty.document && <div style={{ color: "var(--f1-muted)" }}>CNPJ: {agencyParty.document}</div>}
+                            {agencyParty.email && <div className="truncate" style={{ color: "var(--f1-muted)" }}>{agencyParty.email}</div>}
+                          </div>
+                        </div>
+
+                        <div>
+                          <div className="text-[9px] font-bold uppercase tracking-wider mb-1" style={{ color: "var(--f1-muted)" }}>Itens ({previewLines.length})</div>
+                          <div className="rounded overflow-hidden" style={{ border: "1px solid var(--f1-border)" }}>
+                            <div className="grid grid-cols-[1fr_110px_100px] gap-2 px-3 py-1 text-[9px] font-bold uppercase tracking-wider"
+                              style={{ background: "var(--f1-bg)", color: "var(--f1-muted)" }}>
+                              <div>Descrição</div><div>Data</div><div className="text-right">Total</div>
+                            </div>
+                            {previewLines.length === 0 && (
+                              <div className="px-2 py-3 text-center" style={{ color: "var(--f1-muted)" }}>Nenhum item selecionado.</div>
+                            )}
+                            {previewLines.map((l) => (
+                              <div key={l.key} className="grid grid-cols-[1fr_110px_100px] gap-2 px-3 py-1.5 items-center"
+                                style={{ borderTop: "1px solid var(--f1-border)" }}>
+                                <div className={cn("truncate", l.is_child && "pl-4")} style={l.is_child ? { color: "var(--f1-muted)" } : undefined}>
+                                  {l.is_child && "↳ "}{l.title}
+                                </div>
+                                <input
+                                  type="date"
+                                  value={l.reference_date ?? ""}
+                                  onChange={(e) => setLineDateOverrides(prev => ({ ...prev, [l.key]: e.target.value }))}
+                                  className="h-6 px-1 text-[10px] rounded w-full"
+                                  style={{ border: "1px solid var(--f1-border)" }}
+                                  title="Data do item (editável)"
+                                />
+                                <div className="text-right font-semibold">{money(l.amount)}</div>
+                              </div>
+                            ))}
+                            {discount > 0 && (
+                              <div className="grid grid-cols-[1fr_110px_100px] gap-2 px-3 py-1.5" style={{ borderTop: "1px solid var(--f1-border)" }}>
+                                <div className="col-span-2">Desconto concedido</div>
+                                <div className="text-right font-semibold" style={{ color: "var(--f1-red)" }}>-{money(discount)}</div>
+                              </div>
+                            )}
+                            {surcharge > 0 && (
+                              <div className="grid grid-cols-[1fr_110px_100px] gap-2 px-3 py-1.5" style={{ borderTop: "1px solid var(--f1-border)" }}>
+                                <div className="col-span-2">Acréscimo / taxa</div>
+                                <div className="text-right font-semibold" style={{ color: "var(--f1-green)" }}>{money(surcharge)}</div>
+                              </div>
+                            )}
+                            <div className="grid grid-cols-[1fr_110px_100px] gap-2 px-3 py-2"
+                              style={{ borderTop: "1px solid var(--f1-border)", background: "var(--f1-soft)" }}>
+                              <div className="col-span-2 text-right font-bold uppercase text-[10px] tracking-wider">Total a pagar</div>
+                              <div className="text-right font-bold" style={{ color: "var(--f1-primary)" }}>{money(total)}</div>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-3 pt-2">
+                          <div className="space-y-2">
+                            <div>
+                              <div className="text-[9px] font-bold uppercase tracking-wider" style={{ color: "var(--f1-muted)" }}>Condições de pagamento</div>
+                              <div className="text-[11px] leading-relaxed whitespace-pre-wrap">{paymentTerms || "—"}</div>
+                            </div>
+                            <div>
+                              <div className="text-[9px] font-bold uppercase tracking-wider" style={{ color: "var(--f1-muted)" }}>Observações</div>
+                              <div className="text-[11px] leading-relaxed whitespace-pre-wrap" style={{ color: "var(--f1-muted)" }}>{notes || "—"}</div>
+                            </div>
+                          </div>
+                          <div className="rounded p-3 flex flex-col items-center justify-center text-center"
+                            style={{ border: "1px dashed var(--f1-border)", background: "var(--f1-bg)" }}>
+                            <div className="text-[9px] font-bold uppercase tracking-wider mb-1" style={{ color: "var(--f1-muted)" }}>Pagamento</div>
+                            {paymentLink.trim() ? (
+                              <>
+                                <div className="w-20 h-20 bg-white rounded flex items-center justify-center mb-2 overflow-hidden" style={{ border: "1px solid var(--f1-border)" }}>
+                                  {paymentQrPreview
+                                    ? <img src={paymentQrPreview} alt="QR Code de pagamento" className="h-full w-full object-contain" />
+                                    : <span className="text-[8px] font-semibold" style={{ color: "var(--f1-primary)" }}>QR CODE</span>}
+                                </div>
+                                <div className="text-[10px] font-medium truncate max-w-full" style={{ color: "var(--f1-primary)" }}>{paymentLink.trim()}</div>
+                              </>
+                            ) : (
+                              <div className="text-[10px] italic" style={{ color: "var(--f1-muted)" }}>
+                                Anexe um link de pagamento para gerar o QR Code no PDF.
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
+            )}
           </div>
-        )}
 
+          {/* ------------------------------ Resumo lateral ------------------------------ */}
+          <aside className="fat01-aside">
+            <div className="fat01-sum-card">
+              <div className="fat01-sum-head">Resumo da fatura</div>
+              <div className="fat01-sum-body">
+                <div className="fat01-sum-line"><span>Cliente</span><b className="truncate max-w-[150px]">{clientObj?.name ?? "—"}</b></div>
+                <div className="fat01-sum-line"><span>Projetos</span><b>{selectedProjects.size || "Todos"}</b></div>
+                <div className="fat01-sum-line"><span>Itens</span><b>{itemCount}</b></div>
+                <div className="fat01-sum-line"><span>Emissão</span><b>{fmtDate(issueDate)}</b></div>
+                <div className="fat01-sum-line"><span>Vencimento</span><b>{dueDate ? fmtDate(dueDate) : "—"}</b></div>
+                <div className="fat01-sum-line"><span>Pagamento</span><b>{paymentMethod}</b></div>
+                <div className="fat01-sum-div" />
+                <div className="fat01-sum-line"><span>Subtotal</span><b>{money(subtotal)}</b></div>
+                <div className="fat01-sum-line neg"><span>Desconto</span><b>{discount > 0 ? `-${money(discount)}` : money(0)}</b></div>
+                <div className="fat01-sum-line pos"><span>Acréscimos</span><b>{money(surcharge)}</b></div>
+                <div className="fat01-sum-div" />
+                <div className="fat01-sum-total"><span>Total</span><b>{money(total)}</b></div>
+              </div>
+            </div>
 
-        <DialogFooter className="gap-2">
-          {step > 1 && <Button variant="ghost" onClick={() => setStep(step - 1)}><ArrowLeft className="h-4 w-4 mr-1" />Voltar</Button>}
+            <div className="fat01-sum-number">
+              <span>Número previsto</span><b>{previewNumber}</b>
+            </div>
+
+            <p className="fat01-hint" style={{ marginTop: 12 }}>
+              A fatura é criada como <b>rascunho</b>. O número definitivo é gerado na confirmação e
+              os lançamentos financeiros só aparecem depois disso.
+            </p>
+          </aside>
+        </div>
+
+        <DialogFooter className="fat01-foot sm:justify-start">
+          {step > 1 && (
+            <Button variant="ghost" onClick={() => setStep(step - 1)}>
+              <ArrowLeft className="h-4 w-4 mr-1" />Voltar
+            </Button>
+          )}
           <div className="flex-1" />
           <Button variant="ghost" onClick={onClose}>Cancelar</Button>
-          {step === 3 && <Button variant="outline" disabled={!canGoNext} onClick={openPreviewPDF}><FileText className="h-4 w-4 mr-1" />Ver prévia do PDF</Button>}
-          {step < 3 && <Button disabled={!canGoNext} onClick={() => setStep(step + 1)}>Avançar<ArrowRight className="h-4 w-4 ml-1" /></Button>}
-          {step === 3 && <Button disabled={!canGoNext || submitting} onClick={submit}>{submitting ? "Emitindo..." : "Emitir fatura"}</Button>}
+          {step === 3 && (
+            <Button variant="outline" disabled={!canGoNext} onClick={openPreviewPDF}>
+              <FileText className="h-4 w-4 mr-1" />Ver prévia do PDF
+            </Button>
+          )}
+          {step < 3 && (
+            <Button disabled={!canGoNext} onClick={() => setStep(step + 1)}>
+              Continuar<ArrowRight className="h-4 w-4 ml-1" />
+            </Button>
+          )}
+          {step === 3 && (
+            <Button disabled={!canGoNext || submitting} onClick={submit}>
+              {submitting ? "Emitindo..." : "Emitir fatura"}
+            </Button>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>
