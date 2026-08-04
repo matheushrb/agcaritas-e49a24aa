@@ -78,14 +78,14 @@ export function PrjTeamTab({ projectId, tasks }: { projectId: string; tasks: Tab
     const p = profiles.find(x => x.id === id);
     const mine = tasks.filter(t => t.assignee_id === id);
     const done = mine.filter(t => t.status === "done").length;
-    const hours = entries.filter(e => e.user_id === id).reduce((s, e) => s + Number(e.minutes ?? 0), 0) / 60;
+    const hours = entries.filter(e => e.user_id === id).reduce((s, e) => s + Number(e.duration_seconds ?? 0), 0) / 3600;
     const est = mine.reduce((s, t) => s + Number(t.estimated_hours ?? 0), 0);
     const m = members.find(x => x.user_id === id);
     return {
       id,
       name: p?.display_name || p?.full_name || "Sem nome",
       role: m?.role || p?.role_title || "Colaborador",
-      allocation: m?.allocation_pct ?? null,
+      allocation: null as number | null,
       total: mine.length, done, hours, est,
       isMember: !!m,
     };
