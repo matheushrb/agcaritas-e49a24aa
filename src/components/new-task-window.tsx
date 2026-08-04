@@ -464,7 +464,7 @@ export function TaskWindow({
     setTitle(""); setDescription(""); setProjectId(defaultProjectId); setTaskTypeId(null);
     setAssigneeId(null); setDueDate(""); setPriority("medium"); setStatus("todo"); setStage("briefing"); setCurrentStageId(null);
     setEstimated(""); setBillingEnabled(true); setBaseValue(""); setDeliverables([]); setChecklist([]);
-    setPlatformsSel([]); setNotes("");
+    setPlatformsSel([]); setNotes(""); setLiveItems([]); setTech(EMPTY_TECH); setTab("details");
   };
   const close = (o: boolean) => { onOpenChange(o); if (!o) reset(); };
 
@@ -492,8 +492,11 @@ export function TaskWindow({
       billing_value: d.billing_value, delivered: d.delivered, invoiced: !!d.invoiced,
       due_date: d.due_date || null,
     })) as any,
+    live_items: liveItems as any,
+    tech_sheet: tech as any,
     subtasks: checklist as any,
   });
+
 
   const save = useMutation({
     mutationFn: async () => {
