@@ -28,23 +28,41 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
 const money = (n: number) => `R$ ${Math.round(n).toLocaleString("pt-BR")}`;
 
 function DashboardPage() {
-  const { data = { tasks: [], projects: [], proposals: [], clients: [], charges: [], events: [] } } = useQuery({
+  const { data = { tasks: [], projects: [], proposals: [], clients: [], charges: [], events: [], upcoming: [], leads: [] } } = useQuery({
     queryKey: ["dashboard-v3"],
     queryFn: async () => {
       const now = new Date();
       const dayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
       const dayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1).toISOString();
-      const [tasks, projects, proposals, clients, charges, events] = await Promise.all([
-        supabase.from("tasks").select("id,title,status,priority,due_date,progress,project_id").limit(250),
-        supabase.from("projects").select("id,name,status,end_date,fixed_value,monthly_value").limit(200),
+      const [tasks, projects, proposals, clients, charges, events, upcoming, leads] = await Promise.all([
+        supabase.from("tasks").select("id,title,status,priority,due_date,progress,project_id,client_id").limit(250),
+        supabase.from("projects").select("id,name,status,end_date,fixed_value,monthly_value,client_id,created_at").limit(200),
         supabase.from("proposals").select("id,status,total_value").limit(200),
-        supabase.from("clients").select("id,name").limit(300),
-        supabase.from("charges").select("id,amount,status,due_date,paid_at,type,nature,description").limit(300),
-        supabase.from("calendar_events").select("id,title,starts_at,ends_at").gte("starts_at", dayStart).lt("starts_at", dayEnd).order("starts_at").limit(8),
+        supabase.from("clients").select("id,name,created_at").limit(300),
+        supabase.from("charges").select("id,amount,status,due_date,paid_at,type,nature,category,description").limit(300),
+        supabase.from("calendar_events").select("id,title,starts_at,ends_at,kind,description").gte("starts_at", dayStart).lt("starts_at", dayEnd).order("starts_at").limit(8),
+        supabase.from("calendar_events").select("id,title,starts_at,ends_at,kind,description").gte("starts_at", dayEnd).order("starts_at").limit(6),
+        supabase.from("leads").select("id,stage,estimated_value").limit(400),
       ]);
-      return { tasks: tasks.data ?? [], projects: projects.data ?? [], proposals: proposals.data ?? [], clients: clients.data ?? [], charges: charges.data ?? [], events: events.data ?? [] };
+      return {
+        tasks: tasks.data ?? [], projects: projects.data ?? [], proposals: proposals.data ?? [],
+        clients: clients.data ?? [], charges: charges.data ?? [], events: events.data ?? [],
+        upcoming: upcoming.data ?? [], leads: leads.data ?? [],
+      };
     },
   });
+
+  const { data: me } = useQuery({
+    queryKey: ["dashboard-profile"],
+    queryFn: async () => {
+      const { data: u } = await supabase.auth.getUser();
+      if (!u.user) return null;
+      const { data } = await supabase.from("profiles").select("full_name,display_name,role_title").eq("id", u.user.id).maybeSingle();
+      return { email: u.user.email ?? "", ...(data ?? {}) } as any;
+    },
+  });
+  const firstName = (me?.display_name || me?.full_name || me?.email?.split("@")[0] || "").split(" ")[0] || "Caritas";
+  const roleTitle = me?.role_title || "Direção / Proprietário";
 
   const now = new Date();
   const month = now.getMonth();
@@ -53,6 +71,19 @@ function DashboardPage() {
   const revenue = data.charges.filter((c: any) => c.nature !== "expense" && c.type !== "expense" && inMonth(c.paid_at || c.due_date)).reduce((s: number, c: any) => s + Number(c.amount || 0), 0);
   const expenses = data.charges.filter((c: any) => c.nature === "expense" || c.type === "expense" || c.type === "despesa").filter((c: any) => inMonth(c.paid_at || c.due_date)).reduce((s: number, c: any) => s + Math.abs(Number(c.amount || 0)), 0);
   const margin = revenue > 0 ? Math.max(0, ((revenue - expenses) / revenue) * 100) : 0;
+  const prevDate = new Date(year, month - 1, 1);
+  const inPrevMonth = (d?: string | null) => !!d && new Date(d).getMonth() === prevDate.getMonth() && new Date(d).getFullYear() === prevDate.getFullYear();
+  const prevRevenue = data.charges.filter((c: any) => c.nature !== "expense" && c.type !== "expense" && inPrevMonth(c.paid_at || c.due_date)).reduce((s: number, c: any) => s + Number(c.amount || 0), 0);
+  const prevExpenses = data.charges.filter((c: any) => c.nature === "expense" || c.type === "expense" || c.type === "despesa").filter((c: any) => inPrevMonth(c.paid_at || c.due_date)).reduce((s: number, c: any) => s + Math.abs(Number(c.amount || 0)), 0);
+  const prevMargin = prevRevenue > 0 ? ((prevRevenue - prevExpenses) / prevRevenue) * 100 : 0;
+  const pctDelta = (curr: number, prev: number) => {
+    if (!prev) return curr > 0 ? "▲ novo" : "—";
+    const d = ((curr - prev) / prev) * 100;
+    return `${d >= 0 ? "▲" : "▼"} ${Math.abs(d).toFixed(1).replace(".", ",")}%`;
+  };
+  const newClients = data.clients.filter((c: any) => inMonth(c.created_at)).length;
+  const newProjects = data.projects.filter((p: any) => inMonth(p.created_at)).length;
+
   const activeProjects = data.projects.filter((p: any) => ["active", "review", "planning"].includes(p.status)).length;
   const riskProjects = data.projects.filter((p: any) => p.end_date && new Date(p.end_date) < now && p.status !== "done").length;
   const pipeline = data.proposals.filter((p: any) => !["accepted", "rejected"].includes(p.status)).reduce((s: number, p: any) => s + Number(p.total_value || 0), 0);
@@ -64,31 +95,102 @@ function DashboardPage() {
 
   const [prefs, setPrefs] = useState<UserPref[]>(reconcilePrefs(null, "Direção / Proprietário"));
 
-  const bars = [38, 52, 44, 61, 47, 70, 55, 78, 66, 84, 72, 92];
-  const pipelineStages = [
-    { label: "Novo", v: 100 }, { label: "Qualificação", v: 80 }, { label: "Proposta", v: 64 },
-    { label: "Negociação", v: 47 }, { label: "Fechadas", v: 31 },
+  const clientNameById = Object.fromEntries((data.clients as any[]).map((c: any) => [c.id, c.name]));
+  const projectById = Object.fromEntries((data.projects as any[]).map((p: any) => [p.id, p]));
+
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const bars = Array.from({ length: daysInMonth }, (_, i) => {
+    const day = i + 1;
+    return (data.charges as any[])
+      .filter((c: any) => c.nature !== "expense" && c.type !== "expense")
+      .filter((c: any) => {
+        const d = c.paid_at || c.due_date;
+        return d && new Date(d).getMonth() === month && new Date(d).getFullYear() === year && new Date(d).getDate() === day;
+      })
+      .reduce((sum: number, c: any) => sum + Number(c.amount || 0), 0);
+  });
+  const maxBar = Math.max(1, ...bars);
+
+  const expenseByCategory = (() => {
+    const acc: Record<string, number> = {};
+    for (const c of data.charges as any[]) {
+      const isExpense = c.nature === "expense" || c.type === "expense" || c.type === "despesa";
+      if (!isExpense || !inMonth(c.paid_at || c.due_date)) continue;
+      const key = c.category || "Outros";
+      acc[key] = (acc[key] ?? 0) + Math.abs(Number(c.amount || 0));
+    }
+    const total = Object.values(acc).reduce((a, b) => a + b, 0);
+    const palette = ["var(--primary)", "var(--teal)", "var(--warning)", "var(--purple)", "var(--success)"];
+    return Object.entries(acc)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5)
+      .map(([label, v], i) => ({ label, pct: total ? Math.round((v / total) * 100) : 0, color: palette[i % palette.length] }));
+  })();
+
+  const LEAD_STAGES: { key: string; label: string }[] = [
+    { key: "lead", label: "Novo" },
+    { key: "contact", label: "Qualificação" },
+    { key: "proposal", label: "Proposta" },
+    { key: "negotiation", label: "Negociação" },
+    { key: "closed", label: "Fechadas" },
   ];
-  const critical = (data.tasks as any[]).filter((t: any) => t.status !== "done").slice(0, 3);
-  const criticalRows = critical.length ? critical.map((t: any, i: number) => ({
-    id: t.id, title: t.title, kind: "Tarefa", project: "Projeto ativo", client: "Cliente",
-    due: i < 2 ? "Vence hoje" : "Vence amanhã", priority: i === 0 ? "Crítica" : "Alta",
-  })) : [
-    { id: "r1", title: "Aprovação final de KV e variações", kind: "Aprovação", project: "Campanha Verão 2026", client: "Doodles", due: "Vence hoje", priority: "Crítica" },
-    { id: "r2", title: "Entrega de peças para mídia digital", kind: "Entrega", project: "Lançamento EcoBeleza", client: "EcoBeleza", due: "Vence hoje", priority: "Alta" },
-    { id: "r3", title: "Revisão de identidade visual", kind: "Revisão", project: "Branding Viva+", client: "Viva+", due: "Vence amanhã", priority: "Alta" },
-  ];
+  const pipelineStages = LEAD_STAGES.map(st => ({
+    label: st.label,
+    value: (data.leads as any[])
+      .filter((l: any) => l.stage === st.key)
+      .reduce((sum: number, l: any) => sum + Number(l.estimated_value || 0), 0),
+    count: (data.leads as any[]).filter((l: any) => l.stage === st.key).length,
+  }));
+  const leadsPipeline = pipelineStages.reduce((s, x) => s + x.value, 0);
+
+  const PRIORITY_LABEL: Record<string, string> = {
+    critical: "Crítica", urgent: "Urgente", high: "Alta", medium: "Média", low: "Baixa",
+  };
+  const dueLabel = (due: string | null) => {
+    if (!due) return "Sem prazo";
+    const d = new Date(`${String(due).slice(0, 10)}T12:00:00`);
+    const diff = Math.round((d.getTime() - new Date(now.toDateString()).getTime()) / 86400000);
+    if (diff < 0) return `Atrasada ${Math.abs(diff)}d`;
+    if (diff === 0) return "Vence hoje";
+    if (diff === 1) return "Vence amanhã";
+    return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
+  };
+
+  const criticalRows = (data.tasks as any[])
+    .filter((t: any) => t.status !== "done" && t.due_date)
+    .sort((a: any, b: any) => String(a.due_date).localeCompare(String(b.due_date)))
+    .slice(0, 5)
+    .map((t: any) => {
+      const proj = t.project_id ? projectById[t.project_id] : null;
+      const clientId = t.client_id || proj?.client_id;
+      return {
+        id: t.id,
+        title: t.title,
+        kind: t.status === "review" ? "Aprovação" : "Tarefa",
+        project: proj?.name ?? "Sem projeto",
+        client: clientId ? clientNameById[clientId] ?? "Cliente" : "Sem cliente",
+        due: dueLabel(t.due_date),
+        late: !!t.due_date && new Date(t.due_date) < new Date(now.toDateString()),
+        priority: PRIORITY_LABEL[t.priority] ?? "Média",
+      };
+    });
+
+  const nextTasks = (data.tasks as any[])
+    .filter((t: any) => t.status !== "done")
+    .sort((a: any, b: any) => String(a.due_date ?? "9999").localeCompare(String(b.due_date ?? "9999")))
+    .slice(0, 4)
+    .map((t: any) => ({ id: t.id, title: t.title, when: dueLabel(t.due_date), done: false }));
 
 
   return (
     <>
       <div className="cv-page-head">
         <div>
-          <h1>Olá, Matheus Bunds!</h1>
+          <h1>Olá, {firstName}!</h1>
           <p>Aqui está o panorama da Caritas para hoje, {new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "long", year: "numeric" }).format(now)}.</p>
         </div>
         <div className="cv-page-actions">
-          <DashboardPersonalize value={prefs} onChange={setPrefs} roleTitle="Direção / Proprietário" />
+          <DashboardPersonalize value={prefs} onChange={setPrefs} roleTitle={roleTitle} />
           <QuickCreateButton />
         </div>
       </div>
@@ -96,12 +198,12 @@ function DashboardPage() {
       <div className="cv-dashboard-grid">
         <div className="cv-content">
           <div className="cv-kpi-grid">
-            <Kpi label="Receita do mês" info value={money(revenue)} delta="▲ 18,7%" note="vs. mês anterior" spark="blue" />
-            <Kpi label="Margem" info value={`${margin.toFixed(1).replace(".", ",")}%`} delta="▲ 4,2 p.p." note="vs. mês anterior" spark="green" />
-            <Kpi label="Clientes ativos" value={String(data.clients.length)} delta="▲ 2 novos" icon={<Users className="h-4 w-4" style={{ color: "var(--muted)" }} />} />
-            <Kpi label="Projetos ativos" value={String(activeProjects)} delta="▲ 2 iniciados" icon={<FolderKanban className="h-4 w-4" style={{ color: "var(--muted)" }} />} />
-            <Kpi label="Projetos em risco" value={String(riskProjects)} delta="▲ 2 vs. semana" danger icon={<AlertTriangle className="h-4 w-4" style={{ color: "var(--danger)" }} />} />
-            <Kpi label="Pipeline comercial" value={money(pipeline)} note={`${data.proposals.length} propostas`} icon={<Clock3 className="h-4 w-4" style={{ color: "var(--primary)" }} />} />
+            <Kpi label="Receita do mês" info value={money(revenue)} delta={pctDelta(revenue, prevRevenue)} danger={revenue < prevRevenue} note="vs. mês anterior" spark="blue" />
+            <Kpi label="Margem" info value={`${margin.toFixed(1).replace(".", ",")}%`} delta={`${margin - prevMargin >= 0 ? "▲" : "▼"} ${Math.abs(margin - prevMargin).toFixed(1).replace(".", ",")} p.p.`} danger={margin < prevMargin} note="vs. mês anterior" spark="green" />
+            <Kpi label="Clientes ativos" value={String(data.clients.length)} delta={`▲ ${newClients} novos`} icon={<Users className="h-4 w-4" style={{ color: "var(--muted)" }} />} />
+            <Kpi label="Projetos ativos" value={String(activeProjects)} delta={`▲ ${newProjects} iniciados`} icon={<FolderKanban className="h-4 w-4" style={{ color: "var(--muted)" }} />} />
+            <Kpi label="Projetos em risco" value={String(riskProjects)} note="com prazo estourado" danger icon={<AlertTriangle className="h-4 w-4" style={{ color: "var(--danger)" }} />} />
+            <Kpi label="Pipeline comercial" value={money(leadsPipeline || pipeline)} note={`${data.leads.length} oportunidades · ${data.proposals.length} propostas`} icon={<Clock3 className="h-4 w-4" style={{ color: "var(--primary)" }} />} />
           </div>
 
 
@@ -127,7 +229,10 @@ function DashboardPage() {
               <div className="cv-table-row cv-table-head">
                 <span>Pendências críticas</span><span>Cliente / Projeto</span><span>Vencimento</span><span>Prioridade</span><span />
               </div>
-              {criticalRows.map((row, i) => (
+              {criticalRows.length === 0 && (
+                <div className="cv-table-row"><span style={{ color: "var(--muted)" }}>Nenhuma pendência com prazo definido.</span></div>
+              )}
+              {criticalRows.map((row) => (
                 <div className="cv-table-row" key={row.id}>
                   <span className="cv-issue">
                     <AlertTriangle className="h-3 w-3" />
@@ -135,9 +240,9 @@ function DashboardPage() {
                     <i className="cv-kind">{row.kind}</i>
                   </span>
                   <span><b>{row.project}</b><small>Cliente: {row.client}</small></span>
-                  <span style={i < 2 ? { color: "var(--danger)" } : { color: "var(--muted)" }}>{row.due}</span>
-                  <span><i className={`cv-badge ${row.priority === "Crítica" ? "critical" : "high"}`}>{row.priority}</i></span>
-                  <button type="button" className="cv-row-menu" title="Ações">⋮</button>
+                  <span style={row.late ? { color: "var(--danger)" } : { color: "var(--muted)" }}>{row.due}</span>
+                  <span><i className={`cv-badge ${row.priority === "Crítica" || row.priority === "Urgente" ? "critical" : "high"}`}>{row.priority}</i></span>
+                  <Link to="/tasks" className="cv-row-menu" title="Abrir tarefas">⋮</Link>
                 </div>
               ))}
 
@@ -151,26 +256,35 @@ function DashboardPage() {
                 <Link to="/finance" className="cv-link">Ver relatório <ChevronRight className="h-3 w-3" /></Link>
               </div>
               <div className="cv-finance-values">
-                <div><span>Receita</span><strong>{money(revenue)}</strong><small className="is-positive">▲ 18,7%</small></div>
-                <div><span>Despesas</span><strong>{money(expenses)}</strong><small className="is-positive">▲ 7,7%</small></div>
+                <div><span>Receita</span><strong>{money(revenue)}</strong><small className={revenue >= prevRevenue ? "is-positive" : "is-danger"}>{pctDelta(revenue, prevRevenue)}</small></div>
+                <div><span>Despesas</span><strong>{money(expenses)}</strong><small className={expenses <= prevExpenses ? "is-positive" : "is-danger"}>{pctDelta(expenses, prevExpenses)}</small></div>
               </div>
               <div className="cv-finance-viz">
                 <div className="cv-chart">
-                  <div className="cv-axis-y"><span>400k</span><span>300k</span><span>200k</span><span>100k</span></div>
+                  <div className="cv-axis-y">
+                    {[1, 0.75, 0.5, 0.25].map(f => (
+                      <span key={f}>{Math.round((maxBar * f) / 1000)}k</span>
+                    ))}
+                  </div>
                   <div className="cv-chart-body">
                     <div className="cv-bars">
-                      {bars.map((h, i) => <i key={i} className={i % 2 ? "alt" : ""} style={{ height: `${h}%` }} />)}
+                      {bars.map((v, i) => (
+                        <i key={i} className={i % 2 ? "alt" : ""} title={`Dia ${i + 1}: ${money(v)}`}
+                          style={{ height: `${Math.max(2, (v / maxBar) * 100)}%` }} />
+                      ))}
                     </div>
-                    <div className="cv-axis-x"><span>1</span><span>6</span><span>11</span><span>16</span><span>21</span><span>26</span><span>31</span></div>
+                    <div className="cv-axis-x">
+                      {[1, 6, 11, 16, 21, 26, daysInMonth].map(d => <span key={d}>{d}</span>)}
+                    </div>
                   </div>
                 </div>
                 <div className="cv-donut-wrap">
-                  <div className="cv-donut"><span>{margin > 0 ? `${margin.toFixed(1).replace(".", ",")}%` : "67,7%"}</span></div>
+                  <div className="cv-donut"><span>{`${margin.toFixed(1).replace(".", ",")}%`}</span></div>
                   <ul>
-                    <li><em className="dot" style={{ background: "var(--primary)" }} />Pessoal <b>45%</b></li>
-                    <li><em className="dot" style={{ background: "var(--teal)" }} />Fornecedores <b>28%</b></li>
-                    <li><em className="dot" style={{ background: "var(--warning)" }} />Marketing <b>12%</b></li>
-                    <li><em className="dot" style={{ background: "var(--purple)" }} />Outros <b>15%</b></li>
+                    {expenseByCategory.length === 0 && <li style={{ color: "var(--muted)" }}>Sem despesas no mês</li>}
+                    {expenseByCategory.map(c => (
+                      <li key={c.label}><em className="dot" style={{ background: c.color }} />{c.label} <b>{c.pct}%</b></li>
+                    ))}
                   </ul>
                 </div>
               </div>
@@ -182,8 +296,8 @@ function DashboardPage() {
                 <Link to="/crm" className="cv-link">Ver pipeline <ChevronRight className="h-3 w-3" /></Link>
               </div>
               <span className="cv-micro cv-block">Valor total</span>
-              <strong className="cv-big-value">{money(pipeline)}</strong>
-              <span className="cv-micro cv-block">{data.proposals.length} propostas</span>
+              <strong className="cv-big-value">{money(leadsPipeline)}</strong>
+              <span className="cv-micro cv-block">{data.leads.length} oportunidades ativas</span>
               <div className="cv-pipeline">
                 <div className="cv-funnel" aria-label="Funil comercial">
                   <svg viewBox="0 0 180 110" role="img">
@@ -195,15 +309,17 @@ function DashboardPage() {
                   </svg>
                 </div>
                 <ul>
-                  {pipelineStages.map((s, i) => (
-                    <li key={s.label}>
+                  {pipelineStages.map((st, i) => (
+                    <li key={st.label}>
                       <em className="dot" style={{ background: ["var(--primary)", "var(--teal)", "var(--purple)", "var(--warning)", "var(--success)"][i] }} />
-                      {s.label} <b>{money((pipeline * s.v) / 100)}</b>
+                      {st.label} <b>{money(st.value)}</b> <small style={{ color: "var(--muted)" }}>({st.count})</small>
                     </li>
                   ))}
                 </ul>
               </div>
-              <div className="cv-footnote">Conversão estimada: 24,6% · Ciclo médio: 37 dias</div>
+              <div className="cv-footnote">
+                {`Fechadas: ${pipelineStages[4]?.count ?? 0} de ${data.leads.length} oportunidades · Conversão ${data.leads.length ? Math.round(((pipelineStages[4]?.count ?? 0) / data.leads.length) * 100) : 0}%`}
+              </div>
             </section>
 
             <section className="cv-card cv-panel">
@@ -219,19 +335,8 @@ function DashboardPage() {
               </div>
               <h3>Próximas tarefas</h3>
               <div className="cv-task-list">
-                {((data.tasks as any[]).filter((t: any) => t.status !== "done").slice(0, 4).map((t: any, i: number) => ({
-                  id: t.id, title: t.title, when: i < 2 ? "Hoje" : i === 2 ? "Amanhã" : "03/08", done: i === 0,
-                })).length
-                  ? (data.tasks as any[]).filter((t: any) => t.status !== "done").slice(0, 4).map((t: any, i: number) => ({
-                      id: t.id, title: t.title, when: i < 2 ? "Hoje" : i === 2 ? "Amanhã" : "03/08", done: i === 0,
-                    }))
-                  : [
-                      { id: "t1", title: "Finalizar KV – Campanha Verão 2026", when: "Hoje", done: true },
-                      { id: "t2", title: "Layout Landing page – EcoBeleza", when: "Hoje", done: false },
-                      { id: "t3", title: "Ajustes de copy anúncio – Rebranding Viva+", when: "Amanhã", done: false },
-                      { id: "t4", title: "Social posts – Lançamento Produto X", when: "03/08", done: false },
-                    ]
-                ).map((t) => (
+                {nextTasks.length === 0 && <div style={{ color: "var(--muted)", fontSize: 12 }}>Nenhuma tarefa pendente.</div>}
+                {nextTasks.map((t) => (
                   <div key={t.id}>
                     <i className={t.done ? "done" : ""}>{t.done ? "✓" : ""}</i>
                     <span>{t.title}</span>
@@ -248,37 +353,27 @@ function DashboardPage() {
         <aside className="cv-right-rail">
           <section className="cv-card cv-rail">
             <div className="cv-rail-head">
-              <h2 style={{ textTransform: "capitalize" }}>
-                {`${new Intl.DateTimeFormat("pt-BR", { month: "long" }).format(now)} ${now.getFullYear()}`}
-              </h2>
-              <div><button>‹</button><button>›</button></div>
-            </div>
-            <MiniCalendar now={now} />
-          </section>
-
-          <section className="cv-card cv-rail">
-            <div className="cv-rail-head">
               <h2 style={{ fontSize: 13 }}>Agenda do dia</h2>
               <Link to="/calendar" className="cv-link">Ver agenda <ChevronRight className="h-3 w-3" /></Link>
             </div>
             <div className="cv-agenda">
-              {((data.events as any[]).length
-                ? (data.events as any[]).slice(0, 4).map((e: any, i: number) => ({
-                    time: new Date(e.starts_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }),
-                    title: e.title, tone: ["", "amber", "purple", "teal"][i % 4],
-                  }))
-                : [
-                    { time: "09:30", title: "Daily de Projetos", tone: "" },
-                    { time: "11:00", title: "Revisão campanha Verão 2026", tone: "amber" },
-                    { time: "14:00", title: "Aprovação com cliente", tone: "purple" },
-                    { time: "16:30", title: "Alinhamento de SEO", tone: "teal" },
-                  ]
-              ).map((e, i) => (
-                <div className={`cv-agenda-item ${e.tone}`} key={i}>
-                  <strong>{e.time}</strong>
-                  <div><b>{e.title}</b><span>Sala Caritas · 30 min</span></div>
-                </div>
-              ))}
+              {(data.events as any[]).length === 0 && (
+                <div style={{ color: "var(--muted)", fontSize: 12 }}>Nenhum compromisso hoje.</div>
+              )}
+              {(data.events as any[]).map((e: any, i: number) => {
+                const start = new Date(e.starts_at);
+                const end = e.ends_at ? new Date(e.ends_at) : null;
+                const mins = end ? Math.max(0, Math.round((end.getTime() - start.getTime()) / 60000)) : null;
+                return (
+                  <div className={`cv-agenda-item ${["", "amber", "purple", "teal"][i % 4]}`} key={e.id}>
+                    <strong>{start.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</strong>
+                    <div>
+                      <b>{e.title}</b>
+                      <span>{[e.description || (e.kind ?? "Compromisso"), mins ? `${mins} min` : null].filter(Boolean).join(" · ")}</span>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </section>
 
@@ -287,8 +382,31 @@ function DashboardPage() {
               <h2 style={{ fontSize: 13 }}>Próximas reuniões</h2>
               <Link to="/calendar" className="cv-link">Ver todas <ChevronRight className="h-3 w-3" /></Link>
             </div>
-            <div className="cv-meeting"><time><b>01</b><span>AGO</span></time><div><b>Kickoff EcoPro</b><span>Sex · 10:00 · Sala 1 · 60 min</span></div></div>
-            <div className="cv-meeting"><time><b>03</b><span>AGO</span></time><div><b>Apresentação proposta</b><span>Dom · 11:00 · Google Meet · 45 min</span></div></div>
+            {(data.upcoming as any[]).length === 0 && (
+              <div style={{ color: "var(--muted)", fontSize: 12 }}>Nenhuma reunião agendada.</div>
+            )}
+            {(data.upcoming as any[]).slice(0, 4).map((e: any) => {
+              const start = new Date(e.starts_at);
+              const end = e.ends_at ? new Date(e.ends_at) : null;
+              const mins = end ? Math.max(0, Math.round((end.getTime() - start.getTime()) / 60000)) : null;
+              return (
+                <div className="cv-meeting" key={e.id}>
+                  <time>
+                    <b>{String(start.getDate()).padStart(2, "0")}</b>
+                    <span>{start.toLocaleDateString("pt-BR", { month: "short" }).replace(".", "").toUpperCase()}</span>
+                  </time>
+                  <div>
+                    <b>{e.title}</b>
+                    <span>{[
+                      start.toLocaleDateString("pt-BR", { weekday: "short" }).replace(".", ""),
+                      start.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }),
+                      e.description || null,
+                      mins ? `${mins} min` : null,
+                    ].filter(Boolean).join(" · ")}</span>
+                  </div>
+                </div>
+              );
+            })}
             <Link to="/calendar" className="cv-rail-cta">Ver todas as reuniões</Link>
           </section>
         </aside>
@@ -344,23 +462,3 @@ function Focus({ title, value, sub, icon }: { title: string; value: string | num
   );
 }
 
-function MiniCalendar({ now }: { now: Date }) {
-  const first = new Date(now.getFullYear(), now.getMonth(), 1);
-  const offset = (first.getDay() + 6) % 7;
-  const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-  const prevDays = new Date(now.getFullYear(), now.getMonth(), 0).getDate();
-  const cells: { n: number; muted: boolean }[] = [];
-  for (let i = offset - 1; i >= 0; i--) cells.push({ n: prevDays - i, muted: true });
-  for (let d = 1; d <= daysInMonth; d++) cells.push({ n: d, muted: false });
-  while (cells.length % 7 !== 0) cells.push({ n: cells.length - offset - daysInMonth + 1, muted: true });
-  return (
-    <>
-      <div className="cv-week">{["SEG", "TER", "QUA", "QUI", "SEX", "SÁB", "DOM"].map(d => <span key={d}>{d}</span>)}</div>
-      <div className="cv-days">
-        {cells.map((c, i) => (
-          <span key={i} className={c.muted ? "muted" : !c.muted && c.n === now.getDate() ? "selected" : ""}>{c.n}</span>
-        ))}
-      </div>
-    </>
-  );
-}

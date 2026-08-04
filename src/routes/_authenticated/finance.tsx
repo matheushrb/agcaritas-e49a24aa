@@ -1,15 +1,11 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
-import { EntityDialog, DialogField, DialogCancelButton } from "@/components/entity-dialog";
-import { Button as UIButton } from "@/components/ui/button";
 import { AlertCircle, CheckCircle2, Clock, Receipt } from "lucide-react";
 import { toast } from "sonner";
 import { Fin01Overview, type F1Charge, type F1Cost } from "@/components/fin01-overview";
+import { FinanceEntryWindow } from "@/components/finance-entry-window";
 
 
 export const Route = createFileRoute("/_authenticated/finance")({
@@ -44,12 +40,7 @@ const STATUS_META: Record<ChargeStatus, { label: string; color: string; icon: ty
   draft:           { label: "Rascunho",            color: "bg-muted text-muted-foreground",                     icon: Clock },
 };
 
-function money(n: number) {
-  return n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-}
-
 function FinancePage() {
-  const qc = useQueryClient();
   const navigate = useNavigate();
   const searchParams = Route.useSearch();
   const [tab, setTab] = useState("overview");
@@ -104,41 +95,6 @@ function FinancePage() {
 
 
 
-  const createCharge = useMutation({
-    mutationFn: async (input: Partial<Charge>) => {
-      const { data: profile } = await supabase.from("profiles").select("organization_id").maybeSingle();
-      if (!profile?.organization_id) throw new Error("Sem organização");
-      const { error } = await supabase.from("charges").insert({
-        organization_id: profile.organization_id,
-        description: input.description ?? "",
-        amount: input.amount ?? 0,
-        status: (input.status ?? "pending") as ChargeStatus,
-        due_date: input.due_date ?? new Date().toISOString().slice(0, 10),
-        client_id: input.client_id,
-        project_id: input.project_id,
-        payment_method: input.payment_method,
-      });
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["charges"] });
-      toast.success("Lançamento criado");
-      setNewOpen(false);
-    },
-    onError: (e: Error) => toast.error(e.message),
-  });
-
-  const updateStatus = useMutation({
-    mutationFn: async ({ id, status }: { id: string; status: ChargeStatus }) => {
-      const { error } = await supabase.from("charges").update({
-        status,
-        paid_at: status === "paid" ? new Date().toISOString() : null,
-      }).eq("id", id);
-      if (error) throw error;
-    },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["charges"] }),
-  });
-
   return (
     <>
       <div className="p-6">
@@ -155,8 +111,7 @@ function FinancePage() {
         />
       </div>
 
-      <NewChargeDialog open={newOpen} onOpenChange={setNewOpen} clients={clients} projects={projects}
-        onCreate={(v) => createCharge.mutate(v)} />
+      <FinanceEntryWindow open={newOpen} onOpenChange={setNewOpen} clients={clients} projects={projects} />
     </>
   );
 }
@@ -179,92 +134,4 @@ function exportCsv(charges: Charge[], clients: Client[], projects: Project[]) {
   a.click();
   URL.revokeObjectURL(url);
   toast.success("Exportação gerada");
-}
-
-
-function NewChargeDialog({ open, onOpenChange, clients, projects, onCreate }: {
-  open: boolean; onOpenChange: (v: boolean) => void;
-  clients: Client[]; projects: Project[];
-  onCreate: (v: Partial<Charge>) => void;
-}) {
-  const [description, setDescription] = useState("");
-  const [amount, setAmount] = useState("");
-  const [dueDate, setDueDate] = useState("");
-  const [clientId, setClientId] = useState<string>("");
-  const [projectId, setProjectId] = useState<string>("");
-  const [status, setStatus] = useState<ChargeStatus>("pending");
-  const [notes, setNotes] = useState("");
-
-  const reset = () => { setDescription(""); setAmount(""); setDueDate(""); setClientId(""); setProjectId(""); setStatus("pending"); setNotes(""); };
-  const handleOpenChange = (v: boolean) => { onOpenChange(v); if (!v) reset(); };
-
-  const previewAmount = Number(amount || 0);
-
-  return (
-    <EntityDialog
-      open={open} onOpenChange={handleOpenChange}
-      icon={Receipt} tone="emerald"
-      eyebrow="Financeiro"
-      title="Novo lançamento"
-      subtitle="Registre uma cobrança, recebimento ou faturamento."
-      main={
-        <>
-          <DialogField label="Descrição">
-            <Input placeholder="Ex.: Mensalidade Bella Estética - Nov/25" value={description}
-              onChange={e => setDescription(e.target.value)} autoFocus />
-          </DialogField>
-          <div className="grid grid-cols-2 gap-3">
-            <DialogField label="Valor (R$)">
-              <Input type="number" step="0.01" placeholder="0,00" value={amount} onChange={e => setAmount(e.target.value)} />
-            </DialogField>
-            <DialogField label="Vencimento">
-              <Input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} />
-            </DialogField>
-          </div>
-          <DialogField label="Observações">
-            <Textarea rows={3} placeholder="Notas internas (opcional)" value={notes} onChange={e => setNotes(e.target.value)} />
-          </DialogField>
-          <div className="rounded-xl border bg-emerald-500/5 p-3 flex items-center justify-between">
-            <span className="text-xs text-muted-foreground">Valor previsto</span>
-            <span className="text-lg font-semibold text-emerald-600 dark:text-emerald-400">{money(previewAmount)}</span>
-          </div>
-        </>
-      }
-      sidebar={
-        <>
-          <DialogField label="Status">
-            <Select value={status} onValueChange={(v) => setStatus(v as ChargeStatus)}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {(Object.keys(STATUS_META) as ChargeStatus[]).map(s => (
-                  <SelectItem key={s} value={s}>{STATUS_META[s].label}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </DialogField>
-          <DialogField label="Cliente">
-            <Select value={clientId} onValueChange={setClientId}>
-              <SelectTrigger><SelectValue placeholder="Selecionar…" /></SelectTrigger>
-              <SelectContent>{clients.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
-            </Select>
-          </DialogField>
-          <DialogField label="Projeto">
-            <Select value={projectId} onValueChange={setProjectId}>
-              <SelectTrigger><SelectValue placeholder="Selecionar…" /></SelectTrigger>
-              <SelectContent>{projects.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}</SelectContent>
-            </Select>
-          </DialogField>
-        </>
-      }
-      footer={
-        <>
-          <DialogCancelButton onClick={() => handleOpenChange(false)} />
-          <UIButton className="rounded-full" onClick={() => onCreate({
-            description, amount: previewAmount, due_date: dueDate || null,
-            client_id: clientId || null, project_id: projectId || null, status,
-          })} disabled={!description || !amount}>Criar lançamento</UIButton>
-        </>
-      }
-    />
-  );
 }

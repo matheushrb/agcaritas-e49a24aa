@@ -10,6 +10,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useTheme } from "@/components/theme-provider";
 import { GlobalSearch } from "@/components/global-search";
+import { TopbarCalendar } from "@/components/topbar-calendar";
 import { supabase } from "@/integrations/supabase/client";
 
 type NavItem = { to: string; icon: typeof LayoutGrid; label: string };
@@ -139,6 +140,7 @@ function TopBar({
           <span style={{ fontSize: 12 }}>{theme === "dark" ? "Escuro" : "Claro"}</span>
           <ChevronDown className="h-3.5 w-3.5" />
         </button>
+        <TopbarCalendar />
         <NotificationsBell />
         <a
           href="https://docs.lovable.dev"
