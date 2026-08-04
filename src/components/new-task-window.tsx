@@ -846,9 +846,9 @@ export function TaskWindow({
                             onChange={e => setDeliverables(list => list.map(x => x.id === d.id ? { ...x, type: e.target.value } : x))} />
                         </td>
                         <td>
-                          <input type="date" className="cw-table-inline-input" value={d.due_date ?? ""}
-                            style={late ? { color: "#e14545", fontWeight: 600 } : undefined}
-                            onChange={e => setDeliverables(list => list.map(x => x.id === d.id ? { ...x, due_date: e.target.value || null } : x))} />
+                          <CwDate compact value={d.due_date ?? ""} placeholder="Sem data"
+                            className={late ? "text-[#e14545] font-semibold" : undefined}
+                            onChange={v => setDeliverables(list => list.map(x => x.id === d.id ? { ...x, due_date: v || null } : x))} />
                         </td>
                         <td>
                           <input type="checkbox" checked={d.billing_enabled}
@@ -997,8 +997,8 @@ export function TaskWindow({
                               </select>
                             </td>
                             <td>
-                              <input type="date" className="cw-table-inline-input" value={l.date ?? ""}
-                                onChange={e => upd({ date: e.target.value || null })} />
+                              <CwDate compact value={l.date ?? ""} placeholder="Sem data"
+                                onChange={v => upd({ date: v || null })} />
                             </td>
                             <td>
                               <input type="time" className="cw-table-inline-input" value={l.time}
@@ -1210,8 +1210,9 @@ export function TaskWindow({
                       {timeEntries.slice(0, 6).map(e => (
                         editEntry?.id === e.id ? (
                           <div key={e.id} className="cw-ts-form" style={{ marginTop: 4 }}>
-                            <input className="cw-input" type="date" value={editEntry.date}
-                              onChange={ev => setEditEntry({ ...editEntry, date: ev.target.value })} />
+                            <div className="cw-input" style={{ display: "flex", alignItems: "center" }}>
+                              <CwDate value={editEntry.date} onChange={v => setEditEntry({ ...editEntry, date: v })} />
+                            </div>
                             <input className="cw-input" type="number" step="0.25" value={editEntry.hours}
                               onChange={ev => setEditEntry({ ...editEntry, hours: ev.target.value })} placeholder="Horas" />
                             <button type="button" className="cw-btn cw-btn-sm cw-btn-primary" disabled={updateTime.isPending}
@@ -1242,7 +1243,9 @@ export function TaskWindow({
                     </div>
 
                     <div className="cw-ts-form">
-                      <input className="cw-input" type="date" value={tsDate} onChange={e => setTsDate(e.target.value)} />
+                      <div className="cw-input" style={{ display: "flex", alignItems: "center" }}>
+                        <CwDate value={tsDate} onChange={setTsDate} />
+                      </div>
                       <input className="cw-input" type="number" step="0.25" value={tsHours}
                         onChange={e => setTsHours(e.target.value)} placeholder="Horas" />
                       <button type="button" className="cw-btn cw-btn-sm" disabled={addTime.isPending}
