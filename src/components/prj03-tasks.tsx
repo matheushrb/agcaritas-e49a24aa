@@ -17,6 +17,8 @@ export type P3Task = {
   estimated_hours: number | null;
   progress: number;
   stage: "briefing" | "creation" | "review" | "approval" | "delivery";
+  current_stage_id?: string | null;
+
 };
 export type P3Person = { id: string; full_name: string | null; role: string | null };
 
