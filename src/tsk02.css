@@ -239,3 +239,8 @@
     gap: 10px;
   }
 }
+
+/* Etapa dinâmica + status na coluna "Etapa / Status" */
+.k-stagecell { display: flex; flex-direction: column; gap: 4px; align-items: flex-start; }
+.k-stagename { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; color: var(--ink, #101828); }
+.k-stagename i { width: 7px; height: 7px; border-radius: 999px; display: inline-block; }
