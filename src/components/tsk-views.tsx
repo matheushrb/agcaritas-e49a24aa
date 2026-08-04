@@ -75,62 +75,163 @@ export function TaskViews(props: ViewsProps) {
   );
 }
 
-/* ------------------------------- LISTA ------------------------------- */
-function ListView({ tasks, projectName, onOpen, onQuickCreate }: ViewsProps) {
-  const [draft, setDraft] = useState<Record<string, string>>({});
-  const groups = useMemo(() => {
-    const m: Record<string, TskTask[]> = { todo: [], in_progress: [], review: [], done: [] };
-    tasks.forEach(t => m[t.status].push(t));
-    return m;
-  }, [tasks]);
+/* ------------------------- LISTA (TSK-01 tabela) ------------------------- */
+const initials = (s: string) =>
+  s.trim().split(/\s+/).slice(0, 2).map(w => w[0]?.toUpperCase() ?? "").join("") || "?";
+
+const avatarHue = (s: string) => {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) % 360;
+  return h;
+};
+
+const dueMeta = (t: TskTask) => {
+  if (!t.due_date) return { text: "—", aux: "", late: false };
+  const d = new Date(t.due_date + "T12:00:00");
+  const today = new Date(new Date().toDateString());
+  const days = Math.round((d.getTime() - today.getTime()) / 86400000);
+  const late = days < 0 && t.status !== "done";
+  const aux = t.status === "done" ? "" : late ? `${Math.abs(days)} d de atraso` : days === 0 ? "hoje" : days === 1 ? "amanhã" : `em ${days} d`;
+  return { text: d.toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "2-digit" }), aux, late };
+};
+
+function ListView({ tasks, projectName, assigneeName, onOpen, onQuickCreate, onStatusChange }: ViewsProps) {
+  const [draft, setDraft] = useState("");
+  const [sel, setSel] = useState<Set<string>>(new Set());
+  const [menu, setMenu] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const [perPage, setPerPage] = useState(15);
+
+  const total = tasks.length;
+  const pages = Math.max(1, Math.ceil(total / perPage));
+  const current = Math.min(page, pages);
+  const rows = tasks.slice((current - 1) * perPage, current * perPage);
+  const allChecked = rows.length > 0 && rows.every(t => sel.has(t.id));
+
+  const toggle = (id: string) =>
+    setSel(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
 
   return (
-    <>
-      {ORDER.map(status => (
-        <div key={status} className="t-card t-group">
-          <div className="t-group-h">
-            <span className="t-dot" style={{ background: STATUS_DOT[status] }} />
-            {STATUS_LABEL[status]}
-            <span className="t-count">{groups[status].length}</span>
-            <span className="t-right">
-              {brl(groups[status].reduce((a, t) => a + (t.billing_value ?? 0), 0))}
-            </span>
-          </div>
-          {groups[status].map(t => (
-            <div key={t.id} className="t-row" onClick={() => onOpen(t.id)}>
-              <span className="t-dot" style={{ background: STATUS_DOT[t.status] }} />
+    <div className="t-card t-table" onClick={() => setMenu(null)}>
+      <div className="t-thead">
+        <label className="t-chk">
+          <input
+            type="checkbox"
+            checked={allChecked}
+            onChange={() => setSel(allChecked ? new Set() : new Set(rows.map(t => t.id)))}
+          />
+        </label>
+        <div>Tarefa</div>
+        <div>Projeto</div>
+        <div>Etapa / Status</div>
+        <div>Responsável</div>
+        <div>Prioridade</div>
+        <div>Prazo</div>
+        <div>Progresso</div>
+        <div />
+      </div>
+
+      {rows.length === 0 && <div className="t-empty">Nenhuma tarefa encontrada.</div>}
+
+      {rows.map(t => {
+        const proj = projectName(t.project_id);
+        const who = assigneeName?.(t.assignee_id) ?? { name: "Não atribuído", role: null };
+        const d = dueMeta(t);
+        return (
+          <div key={t.id} className={`t-trow ${sel.has(t.id) ? "on" : ""}`} onClick={() => onOpen(t.id)}>
+            <label className="t-chk" onClick={e => e.stopPropagation()}>
+              <input type="checkbox" checked={sel.has(t.id)} onChange={() => toggle(t.id)} />
+            </label>
+
+            <div className="t-tcell">
+              <div className="t-name" title={t.title}>{t.title}</div>
+              <div className="t-sub">{t.billing_value ? brl(t.billing_value) : "Sem faturamento"}</div>
+            </div>
+
+            <div className="t-tcell t-with-av">
+              <span className="t-av" style={{ background: `hsl(${avatarHue(proj)} 62% 92%)`, color: `hsl(${avatarHue(proj)} 55% 32%)` }}>
+                {initials(proj)}
+              </span>
               <div>
-                <div className="t-name">{t.title}</div>
-                <div className="t-sub">{projectName(t.project_id)}</div>
+                <div className="t-name t-name-sm">{proj}</div>
+                <div className="t-sub">{STATUS_LABEL[t.status]}</div>
               </div>
-              <span className={`t-pill ${t.priority}`}>{PRIORITY_LABEL[t.priority]}</span>
-              <span className={`t-cell ${isLate(t) ? "t-late" : ""}`}>{fmt(t.due_date)}</span>
-              <div>
-                <div className="t-bar"><i style={{ width: `${Math.min(100, t.progress ?? 0)}%` }} /></div>
-              </div>
-              <span className="t-cell t-num">{t.progress ?? 0}%</span>
-              <span className="t-cell t-num" style={{ textAlign: "right" }}>
-                {t.billing_value ? brl(t.billing_value) : "—"}
+            </div>
+
+            <div className="t-tcell">
+              <span className={`t-pill ${t.status}`}>
+                <i className="t-dot" style={{ background: STATUS_DOT[t.status] }} />
+                {STATUS_LABEL[t.status]}
               </span>
             </div>
-          ))}
-          {onQuickCreate && (
-            <input
-              className="t-quick"
-              placeholder="+ Digite e pressione Enter para criar…"
-              value={draft[status] ?? ""}
-              onChange={e => setDraft(p => ({ ...p, [status]: e.target.value }))}
-              onKeyDown={e => {
-                if (e.key === "Enter" && (draft[status] ?? "").trim()) {
-                  onQuickCreate(status, draft[status].trim());
-                  setDraft(p => ({ ...p, [status]: "" }));
-                }
-              }}
-            />
-          )}
+
+            <div className="t-tcell t-with-av">
+              <span className="t-av" style={{ background: `hsl(${avatarHue(who.name)} 62% 92%)`, color: `hsl(${avatarHue(who.name)} 55% 32%)` }}>
+                {initials(who.name)}
+              </span>
+              <div>
+                <div className="t-name t-name-sm">{who.name}</div>
+                {who.role ? <div className="t-sub">{who.role}</div> : null}
+              </div>
+            </div>
+
+            <div className="t-tcell">
+              <span className={`t-pill ${t.priority}`}>{PRIORITY_LABEL[t.priority]}</span>
+            </div>
+
+            <div className="t-tcell">
+              <div className={`t-name t-name-sm ${d.late ? "t-late" : ""}`}>{d.text}</div>
+              {d.aux ? <div className={`t-sub ${d.late ? "t-late" : ""}`}>{d.aux}</div> : null}
+            </div>
+
+            <div className="t-tcell">
+              <div className="t-bar"><i style={{ width: `${Math.min(100, t.progress ?? 0)}%` }} /></div>
+              <div className="t-sub t-num">{t.progress ?? 0}%</div>
+            </div>
+
+            <div className="t-tcell t-actions" onClick={e => e.stopPropagation()}>
+              <button type="button" className="t-iconbtn" onClick={() => setMenu(m => (m === t.id ? null : t.id))}>⋮</button>
+              {menu === t.id && (
+                <div className="t-menu">
+                  <button type="button" onClick={() => { setMenu(null); onOpen(t.id); }}>Abrir tarefa</button>
+                  {ORDER.filter(s => s !== t.status).map(s => (
+                    <button key={s} type="button" onClick={() => { setMenu(null); onStatusChange?.(t.id, s); }}>
+                      Mover para {STATUS_LABEL[s]}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      })}
+
+      {onQuickCreate && (
+        <input
+          className="t-quick"
+          placeholder="+ Digite e pressione Enter para criar uma tarefa…"
+          value={draft}
+          onChange={e => setDraft(e.target.value)}
+          onKeyDown={e => {
+            if (e.key === "Enter" && draft.trim()) { onQuickCreate("todo", draft.trim()); setDraft(""); }
+          }}
+        />
+      )}
+
+      <div className="t-pager">
+        <span className="t-sub">
+          {total === 0 ? "0 tarefas" : `${(current - 1) * perPage + 1}–${Math.min(current * perPage, total)} de ${total} tarefas`}
+        </span>
+        <div className="t-pager-r">
+          <select value={perPage} onChange={e => { setPerPage(Number(e.target.value)); setPage(1); }}>
+            {[10, 15, 25, 50].map(n => <option key={n} value={n}>{n} por página</option>)}
+          </select>
+          <button type="button" disabled={current <= 1} onClick={() => setPage(current - 1)}>Anterior</button>
+          <span className="t-page">{current} / {pages}</span>
+          <button type="button" disabled={current >= pages} onClick={() => setPage(current + 1)}>Próxima</button>
         </div>
-      ))}
-    </>
+      </div>
+    </div>
   );
 }
 
