@@ -28,23 +28,41 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
 const money = (n: number) => `R$ ${Math.round(n).toLocaleString("pt-BR")}`;
 
 function DashboardPage() {
-  const { data = { tasks: [], projects: [], proposals: [], clients: [], charges: [], events: [] } } = useQuery({
+  const { data = { tasks: [], projects: [], proposals: [], clients: [], charges: [], events: [], upcoming: [], leads: [] } } = useQuery({
     queryKey: ["dashboard-v3"],
     queryFn: async () => {
       const now = new Date();
       const dayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
       const dayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1).toISOString();
-      const [tasks, projects, proposals, clients, charges, events] = await Promise.all([
-        supabase.from("tasks").select("id,title,status,priority,due_date,progress,project_id").limit(250),
-        supabase.from("projects").select("id,name,status,end_date,fixed_value,monthly_value").limit(200),
+      const [tasks, projects, proposals, clients, charges, events, upcoming, leads] = await Promise.all([
+        supabase.from("tasks").select("id,title,status,priority,due_date,progress,project_id,client_id").limit(250),
+        supabase.from("projects").select("id,name,status,end_date,fixed_value,monthly_value,client_id").limit(200),
         supabase.from("proposals").select("id,status,total_value").limit(200),
         supabase.from("clients").select("id,name").limit(300),
-        supabase.from("charges").select("id,amount,status,due_date,paid_at,type,nature,description").limit(300),
-        supabase.from("calendar_events").select("id,title,starts_at,ends_at").gte("starts_at", dayStart).lt("starts_at", dayEnd).order("starts_at").limit(8),
+        supabase.from("charges").select("id,amount,status,due_date,paid_at,type,nature,category,description").limit(300),
+        supabase.from("calendar_events").select("id,title,starts_at,ends_at,kind,description").gte("starts_at", dayStart).lt("starts_at", dayEnd).order("starts_at").limit(8),
+        supabase.from("calendar_events").select("id,title,starts_at,ends_at,kind,description").gte("starts_at", dayEnd).order("starts_at").limit(6),
+        supabase.from("leads").select("id,stage,estimated_value").limit(400),
       ]);
-      return { tasks: tasks.data ?? [], projects: projects.data ?? [], proposals: proposals.data ?? [], clients: clients.data ?? [], charges: charges.data ?? [], events: events.data ?? [] };
+      return {
+        tasks: tasks.data ?? [], projects: projects.data ?? [], proposals: proposals.data ?? [],
+        clients: clients.data ?? [], charges: charges.data ?? [], events: events.data ?? [],
+        upcoming: upcoming.data ?? [], leads: leads.data ?? [],
+      };
     },
   });
+
+  const { data: me } = useQuery({
+    queryKey: ["dashboard-profile"],
+    queryFn: async () => {
+      const { data: u } = await supabase.auth.getUser();
+      if (!u.user) return null;
+      const { data } = await supabase.from("profiles").select("full_name,display_name,role_title").eq("id", u.user.id).maybeSingle();
+      return { email: u.user.email ?? "", ...(data ?? {}) } as any;
+    },
+  });
+  const firstName = (me?.display_name || me?.full_name || me?.email?.split("@")[0] || "").split(" ")[0] || "Caritas";
+  const roleTitle = me?.role_title || "Direção / Proprietário";
 
   const now = new Date();
   const month = now.getMonth();
@@ -64,20 +82,91 @@ function DashboardPage() {
 
   const [prefs, setPrefs] = useState<UserPref[]>(reconcilePrefs(null, "Direção / Proprietário"));
 
-  const bars = [38, 52, 44, 61, 47, 70, 55, 78, 66, 84, 72, 92];
-  const pipelineStages = [
-    { label: "Novo", v: 100 }, { label: "Qualificação", v: 80 }, { label: "Proposta", v: 64 },
-    { label: "Negociação", v: 47 }, { label: "Fechadas", v: 31 },
+  const clientNameById = Object.fromEntries((data.clients as any[]).map((c: any) => [c.id, c.name]));
+  const projectById = Object.fromEntries((data.projects as any[]).map((p: any) => [p.id, p]));
+
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const bars = Array.from({ length: daysInMonth }, (_, i) => {
+    const day = i + 1;
+    return (data.charges as any[])
+      .filter((c: any) => c.nature !== "expense" && c.type !== "expense")
+      .filter((c: any) => {
+        const d = c.paid_at || c.due_date;
+        return d && new Date(d).getMonth() === month && new Date(d).getFullYear() === year && new Date(d).getDate() === day;
+      })
+      .reduce((sum: number, c: any) => sum + Number(c.amount || 0), 0);
+  });
+  const maxBar = Math.max(1, ...bars);
+
+  const expenseByCategory = (() => {
+    const acc: Record<string, number> = {};
+    for (const c of data.charges as any[]) {
+      const isExpense = c.nature === "expense" || c.type === "expense" || c.type === "despesa";
+      if (!isExpense || !inMonth(c.paid_at || c.due_date)) continue;
+      const key = c.category || "Outros";
+      acc[key] = (acc[key] ?? 0) + Math.abs(Number(c.amount || 0));
+    }
+    const total = Object.values(acc).reduce((a, b) => a + b, 0);
+    const palette = ["var(--primary)", "var(--teal)", "var(--warning)", "var(--purple)", "var(--success)"];
+    return Object.entries(acc)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5)
+      .map(([label, v], i) => ({ label, pct: total ? Math.round((v / total) * 100) : 0, color: palette[i % palette.length] }));
+  })();
+
+  const LEAD_STAGES: { key: string; label: string }[] = [
+    { key: "lead", label: "Novo" },
+    { key: "contact", label: "Qualificação" },
+    { key: "proposal", label: "Proposta" },
+    { key: "negotiation", label: "Negociação" },
+    { key: "closed", label: "Fechadas" },
   ];
-  const critical = (data.tasks as any[]).filter((t: any) => t.status !== "done").slice(0, 3);
-  const criticalRows = critical.length ? critical.map((t: any, i: number) => ({
-    id: t.id, title: t.title, kind: "Tarefa", project: "Projeto ativo", client: "Cliente",
-    due: i < 2 ? "Vence hoje" : "Vence amanhã", priority: i === 0 ? "Crítica" : "Alta",
-  })) : [
-    { id: "r1", title: "Aprovação final de KV e variações", kind: "Aprovação", project: "Campanha Verão 2026", client: "Doodles", due: "Vence hoje", priority: "Crítica" },
-    { id: "r2", title: "Entrega de peças para mídia digital", kind: "Entrega", project: "Lançamento EcoBeleza", client: "EcoBeleza", due: "Vence hoje", priority: "Alta" },
-    { id: "r3", title: "Revisão de identidade visual", kind: "Revisão", project: "Branding Viva+", client: "Viva+", due: "Vence amanhã", priority: "Alta" },
-  ];
+  const pipelineStages = LEAD_STAGES.map(st => ({
+    label: st.label,
+    value: (data.leads as any[])
+      .filter((l: any) => l.stage === st.key)
+      .reduce((sum: number, l: any) => sum + Number(l.estimated_value || 0), 0),
+    count: (data.leads as any[]).filter((l: any) => l.stage === st.key).length,
+  }));
+  const leadsPipeline = pipelineStages.reduce((s, x) => s + x.value, 0);
+
+  const PRIORITY_LABEL: Record<string, string> = {
+    critical: "Crítica", urgent: "Urgente", high: "Alta", medium: "Média", low: "Baixa",
+  };
+  const dueLabel = (due: string | null) => {
+    if (!due) return "Sem prazo";
+    const d = new Date(`${String(due).slice(0, 10)}T12:00:00`);
+    const diff = Math.round((d.getTime() - new Date(now.toDateString()).getTime()) / 86400000);
+    if (diff < 0) return `Atrasada ${Math.abs(diff)}d`;
+    if (diff === 0) return "Vence hoje";
+    if (diff === 1) return "Vence amanhã";
+    return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
+  };
+
+  const criticalRows = (data.tasks as any[])
+    .filter((t: any) => t.status !== "done" && t.due_date)
+    .sort((a: any, b: any) => String(a.due_date).localeCompare(String(b.due_date)))
+    .slice(0, 5)
+    .map((t: any) => {
+      const proj = t.project_id ? projectById[t.project_id] : null;
+      const clientId = t.client_id || proj?.client_id;
+      return {
+        id: t.id,
+        title: t.title,
+        kind: t.status === "review" ? "Aprovação" : "Tarefa",
+        project: proj?.name ?? "Sem projeto",
+        client: clientId ? clientNameById[clientId] ?? "Cliente" : "Sem cliente",
+        due: dueLabel(t.due_date),
+        late: !!t.due_date && new Date(t.due_date) < new Date(now.toDateString()),
+        priority: PRIORITY_LABEL[t.priority] ?? "Média",
+      };
+    });
+
+  const nextTasks = (data.tasks as any[])
+    .filter((t: any) => t.status !== "done")
+    .sort((a: any, b: any) => String(a.due_date ?? "9999").localeCompare(String(b.due_date ?? "9999")))
+    .slice(0, 4)
+    .map((t: any) => ({ id: t.id, title: t.title, when: dueLabel(t.due_date), done: false }));
 
 
   return (
