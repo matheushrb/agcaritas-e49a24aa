@@ -379,8 +379,10 @@ function NewInvoiceWizard({
   const effClient = (cid: string | null, pid: string | null) => cid ?? (pid ? clientOfProject[pid] ?? null : null);
   const matchesClient = (cid: string | null, pid: string | null) =>
     !filterClient || effClient(cid, pid) === filterClient;
-  // Itens sem projeto ficam sempre disponíveis; o filtro restringe apenas itens vinculados a projeto.
-  const inProjects = (pid: string | null) => !pid || !projectFilterActive || selectedProjects.has(pid);
+  // Itens sem projeto ficam sempre disponíveis; projetos já vinculados a outra fatura são ocultados.
+  const inProjects = (pid: string | null) =>
+    !pid || (!invoicedProjectIds.has(pid) && (!projectFilterActive || selectedProjects.has(pid)));
+
 
   // Pending charges + billable tasks
   const { data: charges = [] } = useQuery<PendingCharge[]>({
@@ -448,7 +450,7 @@ function NewInvoiceWizard({
 
   const filteredCharges = useMemo(() => charges.filter(c =>
     matchesClient(c.client_id, c.project_id) && inProjects(c.project_id),
-  ), [charges, filterClient, selectedProjects, clientOfProject]);
+  ), [charges, filterClient, selectedProjects, clientOfProject, invoicedProjectIds]);
 
   const filteredTasks = useMemo(() => tasks.filter(t =>
     !invoicedMainTaskIds.has(t.id) &&
@@ -456,7 +458,7 @@ function NewInvoiceWizard({
     matchesClient(t.client_id, t.project_id) &&
     inProjects(t.project_id) &&
     (t.billing_value ?? 0) > 0,
-  ), [tasks, invoicedMainTaskIds, filterClient, selectedProjects, clientOfProject]);
+  ), [tasks, invoicedMainTaskIds, filterClient, selectedProjects, clientOfProject, invoicedProjectIds]);
 
   const billableDeliverables = useMemo<BillableDeliverable[]>(() => {
     const out: BillableDeliverable[] = [];
@@ -489,7 +491,7 @@ function NewInvoiceWizard({
       }
     }
     return out;
-  }, [tasks, invoicedDeliverableIds, filterClient, selectedProjects, clientOfProject]);
+  }, [tasks, invoicedDeliverableIds, filterClient, selectedProjects, clientOfProject, invoicedProjectIds]);
 
   const subtotal = useMemo(() => {
     let t = 0;
@@ -804,41 +806,12 @@ function NewInvoiceWizard({
 
             {step === 2 && (
               <div>
-                <div className="fat01-field full" style={{ marginBottom: 14 }}>
-                  <label className="fat01-label">Projetos a faturar</label>
-                  <div className="fat01-projects">
-                    {visibleProjects.length === 0 && (
-                      <div className="px-3 py-4 text-[12px]" style={{ color: "var(--f1-muted)" }}>
-                        Nenhum projeto disponível para faturar neste cliente.
-                      </div>
-                    )}
-                    {visibleProjects.map(p => {
-                      const checked = selectedProjects.has(p.id);
-                      return (
-                        <label key={p.id} className="fat01-proj" data-checked={checked}>
-                          <Checkbox
-                            checked={checked}
-                            onCheckedChange={(v) => {
-                              const next = new Set(selectedProjects);
-                              v ? next.add(p.id) : next.delete(p.id);
-                              setSelectedProjects(next);
-                            }}
-                          />
-                          <div className="flex-1 min-w-0">
-                            <div className="truncate">{p.name}</div>
-                            <div className="fat01-proj-client truncate">
-                              {clients.find(c => c.id === p.client_id)?.name ?? "Sem cliente"}
-                            </div>
-                          </div>
-                        </label>
-                      );
-                    })}
-                  </div>
-                  <span className="fat01-hint">
-                    Projetos já vinculados a uma fatura não aparecem aqui. Sem marcar nenhum, todos os
-                    itens pendentes do cliente aparecem. Tarefas concluídas sem projeto ficam sempre disponíveis.
-                  </span>
+                <div className="fat01-hint" style={{ marginBottom: 14, display: "block" }}>
+                  Marque abaixo os itens que entram na fatura. Cada bloco é um projeto com itens
+                  pendentes — use a caixa do cabeçalho para selecionar o projeto inteiro. Projetos já
+                  vinculados a outra fatura não aparecem. Tarefas concluídas sem projeto ficam em "Sem projeto".
                 </div>
+
 
                 {(() => {
                   const delivsByTask = new Map<string, BillableDeliverable[]>();
@@ -913,15 +886,45 @@ function NewInvoiceWizard({
                       g.charges.reduce((s, c) => s + Number(c.amount ?? 0), 0) +
                       g.tasks.reduce((s, t) => s + Number(t.billing_value ?? 0), 0) +
                       g.orphanDelivs.reduce((s, [, l]) => s + l.reduce((ss, d) => ss + d.amount, 0), 0);
+                    const gChargeIds = g.charges.map(c => c.id);
+                    const gTaskIds = g.tasks.map(t => t.id);
+                    const gDelivKeys = [
+                      ...g.tasks.flatMap(t => (delivsByTask.get(t.id) ?? []).map(d => d.key)),
+                      ...g.orphanDelivs.flatMap(([, l]) => l.map(d => d.key)),
+                    ];
+                    const totalCount = gChargeIds.length + gTaskIds.length + gDelivKeys.length;
+                    const selCount =
+                      gChargeIds.filter(id => selectedCharges.has(id)).length +
+                      gTaskIds.filter(id => selectedTasks.has(id)).length +
+                      gDelivKeys.filter(k => selectedDeliverables.has(k)).length;
+                    const allSel = totalCount > 0 && selCount === totalCount;
+                    const toggleGroup = (on: boolean) => {
+                      const nc = new Set(selectedCharges);
+                      const nt = new Set(selectedTasks);
+                      const nd = new Set(selectedDeliverables);
+                      for (const id of gChargeIds) on ? nc.add(id) : nc.delete(id);
+                      for (const id of gTaskIds) on ? nt.add(id) : nt.delete(id);
+                      for (const k of gDelivKeys) on ? nd.add(k) : nd.delete(k);
+                      setSelectedCharges(nc); setSelectedTasks(nt); setSelectedDeliverables(nd);
+                    };
                     return (
                       <section key={g.projectId} className="fat01-group">
                         <header className="fat01-group-head">
+                          <Checkbox
+                            checked={allSel}
+                            onCheckedChange={(v) => toggleGroup(!!v)}
+                            aria-label={`Selecionar tudo de ${g.projectName}`}
+                          />
                           <div className="min-w-0">
                             <div className="fat01-group-name truncate">{g.projectName}</div>
                             {g.clientName && <div className="fat01-group-client truncate">{g.clientName}</div>}
                           </div>
-                          <div className="fat01-group-total">Faturável: <b>{money(groupTotal)}</b></div>
+                          <div className="fat01-group-total">
+                            {selCount > 0 && <span style={{ opacity: .7, marginRight: 8 }}>{selCount}/{totalCount}</span>}
+                            Faturável: <b>{money(groupTotal)}</b>
+                          </div>
                         </header>
+
                         <div className="fat01-group-body">
                           {g.charges.length > 0 && (
                             <>
@@ -1178,7 +1181,7 @@ function NewInvoiceWizard({
               <div className="fat01-sum-head">Resumo da fatura</div>
               <div className="fat01-sum-body">
                 <div className="fat01-sum-line"><span>Cliente</span><b className="truncate max-w-[150px]">{clientObj?.name ?? "—"}</b></div>
-                <div className="fat01-sum-line"><span>Projetos</span><b>{selectedProjects.size || "Todos"}</b></div>
+                <div className="fat01-sum-line"><span>Projetos</span><b>{new Set([...filteredCharges.filter(c=>selectedCharges.has(c.id)).map(c=>c.project_id),...filteredTasks.filter(t=>selectedTasks.has(t.id)).map(t=>t.project_id),...billableDeliverables.filter(d=>selectedDeliverables.has(d.key)).map(d=>d.project_id)].filter(Boolean)).size || "—"}</b></div>
                 <div className="fat01-sum-line"><span>Itens</span><b>{itemCount}</b></div>
                 <div className="fat01-sum-line"><span>Emissão</span><b>{fmtDate(issueDate)}</b></div>
                 <div className="fat01-sum-line"><span>Vencimento</span><b>{dueDate ? fmtDate(dueDate) : "—"}</b></div>
