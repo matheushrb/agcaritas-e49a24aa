@@ -623,10 +623,29 @@ export function TaskWindow({
             </div>
           </div>
         </div>
+  );
+
+  if (mode === "docked") {
+    return (
+      <>
+        <div className="cw-dock-backdrop" onClick={() => setMode("minimized")} />
+        <aside className="cw cw-dock">{windowEl}</aside>
+      </>
+    );
+  }
+
+  return (
+    <Dialog open onOpenChange={close}>
+      <DialogContent
+        className="cw cw-shell p-0 gap-0 border-0 overflow-hidden [&>button:last-of-type]:hidden w-[calc(100vw-2rem)] max-w-[1180px] sm:max-w-[1180px]"
+        style={{ boxShadow: "0 24px 60px rgba(15,25,40,.20)" }}
+      >
+        {windowEl}
       </DialogContent>
     </Dialog>
   );
 }
+
 
 /** Compatibilidade: janela de criação. */
 export function NewTaskWindow(props: {
