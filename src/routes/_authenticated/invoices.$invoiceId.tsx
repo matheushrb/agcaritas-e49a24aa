@@ -739,7 +739,7 @@ function InvoiceDetailPage() {
               </div>
               <div>
                 <label className="text-xs font-medium text-muted-foreground">Cliente pagador</label>
-                <Select value={form.client_id || "none"} onValueChange={v => setForm(f => ({ ...f, client_id: v === "none" ? "" : v, project_id: "" }))}>
+                <Select value={form.client_id || "none"} onValueChange={v => setForm(f => ({ ...f, client_id: v === "none" ? "" : v }))}>
                   <SelectTrigger><SelectValue placeholder="Escolha o cliente" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="none">— Sem cliente —</SelectItem>
@@ -748,17 +748,36 @@ function InvoiceDetailPage() {
                 </Select>
               </div>
               <div>
-                <label className="text-xs font-medium text-muted-foreground">Projeto</label>
-                <Select value={form.project_id || "none"} onValueChange={v => setForm(f => ({ ...f, project_id: v === "none" ? "" : v }))}>
-                  <SelectTrigger><SelectValue placeholder="Sem projeto" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">— Sem projeto —</SelectItem>
-                    {allProjects.filter(p => !form.client_id || p.client_id === form.client_id).map(p => (
-                      <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <label className="text-xs font-medium text-muted-foreground">Projetos faturados</label>
+                <div className="flex flex-wrap gap-1.5 mt-1">
+                  {draftProjectIds.length === 0 && (
+                    <span className="text-[11px] text-muted-foreground">Nenhum projeto vinculado aos itens desta fatura.</span>
+                  )}
+                  {draftProjectIds.map(pid => {
+                    const p = allProjects.find(x => x.id === pid);
+                    const count = drafts.filter(d => d.project_id === pid).length;
+                    return (
+                      <span key={pid} className="inline-flex items-center gap-1 rounded-full border border-primary/40 bg-primary/10 text-primary px-2.5 h-7 text-[11px] font-medium">
+                        {p?.name ?? "Projeto"} · {count}
+                        <button type="button" title="Remover projeto da fatura"
+                          className="ml-0.5 rounded-full hover:bg-primary/20 p-0.5"
+                          onClick={() => removeProjectTag(pid)}>
+                          <XCircle className="h-3 w-3" />
+                        </button>
+                      </span>
+                    );
+                  })}
+                  {drafts.some(d => !d.project_id) && (
+                    <span className="inline-flex items-center rounded-full border px-2.5 h-7 text-[11px] text-muted-foreground">
+                      Sem projeto · {drafts.filter(d => !d.project_id).length}
+                    </span>
+                  )}
+                </div>
+                <p className="text-[10px] text-muted-foreground mt-1">
+                  As tags vêm dos itens da fatura. Ao remover uma tag, os itens daquele projeto saem da fatura e voltam a ficar faturáveis.
+                </p>
               </div>
+
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
