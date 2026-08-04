@@ -5,6 +5,8 @@ import {
   ChevronLeft, ChevronRight, FilterX,
 } from "lucide-react";
 import "@/tsk02.css";
+import { useStageIndex, stageInfoOf } from "@/lib/task-types";
+
 
 export type TskTask = {
   id: string;
@@ -23,6 +25,9 @@ export type TskTask = {
   comments_count?: number;
   attachments_count?: number;
   archived_at?: string | null;
+  stage?: "briefing" | "creation" | "review" | "approval" | "delivery" | null;
+  current_stage_id?: string | null;
+
 };
 
 
@@ -86,7 +91,9 @@ export function Tsk02List({
   view, onViewChange, tasks, projects, people, projectSub,
   onOpen, onNew, onQuickCreate, onStatusChange, onArchiveChange, children,
 }: Props) {
+  const { data: stageIndex } = useStageIndex();
   const [q, setQ] = useState("");
+
   const [status, setStatus] = useState("all");
   const [assignee, setAssignee] = useState("all");
   const [priority, setPriority] = useState("all");
@@ -348,10 +355,16 @@ export function Tsk02List({
                   </div>
                 </div>
                 <div className="k-cell">
-                  <span className={`k-pill ${late ? "st-late" : `st-${t.status}`}`}>
-                    {late ? "Atrasada" : STATUS_LABEL[t.status]}
-                  </span>
+                  {(() => { const si = stageInfoOf(t, stageIndex); return (
+                    <div className="k-stagecell">
+                      <span className="k-stagename"><i style={{ background: si.color }} />{si.name}</span>
+                      <span className={`k-pill ${late ? "st-late" : `st-${t.status}`}`}>
+                        {late ? "Atrasada" : STATUS_LABEL[t.status]}
+                      </span>
+                    </div>
+                  ); })()}
                 </div>
+
                 <div className="k-cell k-user">
                   <span className="k-av" style={{ background: hashColor(per.name) }}>{initials(per.name)}</span>
                   <div style={{ minWidth: 0 }}>

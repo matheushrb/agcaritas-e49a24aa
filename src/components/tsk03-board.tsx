@@ -5,6 +5,8 @@ import {
 } from "lucide-react";
 import { hashColor, initials, daysDiff, fmtDate, type TskTask } from "./tsk02-list";
 import "@/tsk0304.css";
+import { useStageIndex, stageInfoOf } from "@/lib/task-types";
+
 
 const COLS: { key: TskTask["status"]; label: string; color: string }[] = [
   { key: "todo", label: "A fazer", color: "#98A2B3" },
@@ -30,7 +32,9 @@ type Props = {
 
 /** TSK-03 — Quadro (kanban) com painel lateral de detalhe. */
 export function Tsk03Board({ tasks, projectName, person, onOpen, onNew, onStatusChange }: Props) {
+  const { data: stageIndex } = useStageIndex();
   const [drag, setDrag] = useState<string | null>(null);
+
   const [over, setOver] = useState<string | null>(null);
   const [panel, setPanel] = useState<string | null>(null);
 
@@ -84,8 +88,12 @@ export function Tsk03Board({ tasks, projectName, person, onOpen, onNew, onStatus
                   <div className="ct">{t.title}</div>
                   <div className="cp"><Folder size={12} /> {pn}</div>
                   <div className="cm">
+                    {(() => { const si = stageInfoOf(t, stageIndex); return (
+                      <span className="k-stagename"><i style={{ background: si.color }} />{si.name}</span>
+                    ); })()}
                     <span className={`k-pill pr-${t.priority}`}>{PRIORITY_LABEL[t.priority]}</span>
                   </div>
+
                   <div className="cm">
                     <span className="av-sm" style={{ background: hashColor(per.name) }}>{initials(per.name)}</span>
                     <span style={{ fontSize: 12, fontWeight: 500 }}>{per.name}</span>

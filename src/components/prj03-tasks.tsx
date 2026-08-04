@@ -4,6 +4,8 @@ import {
   SlidersHorizontal, Calendar, MoreVertical, Plus, Settings2, Check,
 } from "lucide-react";
 import "@/prj03.css";
+import { useStageIndex, stageInfoOf } from "@/lib/task-types";
+
 
 export type P3Task = {
   id: string;
@@ -15,6 +17,8 @@ export type P3Task = {
   estimated_hours: number | null;
   progress: number;
   stage: "briefing" | "creation" | "review" | "approval" | "delivery";
+  current_stage_id?: string | null;
+
 };
 export type P3Person = { id: string; full_name: string | null; role: string | null };
 
@@ -129,7 +133,9 @@ export function Prj03Tasks({ tasks, people, onOpen, onQuickCreate, pending }: {
   onQuickCreate: () => void;
   pending?: boolean;
 }) {
+  const { data: stageIndex } = useStageIndex();
   const [q, setQ] = useState("");
+
   const [status, setStatus] = useState("all");
   const [assignee, setAssignee] = useState("all");
   const [priority, setPriority] = useState("all");
@@ -275,12 +281,15 @@ export function Prj03Tasks({ tasks, people, onOpen, onQuickCreate, pending }: {
                     </td>
                     <td><span className="p3-tname" onClick={() => onOpen(t.id)}>{t.title}</span></td>
                     <td>
-                      <span className="p3-stage" title={STATUS_LABEL[t.status]}>
-                        <span className="dot" style={{ background: STAGE_COLOR[t.stage] }} />
-                        {STAGE_LABEL[t.stage]}
-                        <ChevronDown />
-                      </span>
+                      {(() => { const si = stageInfoOf(t, stageIndex); return (
+                        <span className="p3-stage" title={`${si.name} · ${STATUS_LABEL[t.status]}`}>
+                          <span className="dot" style={{ background: si.color }} />
+                          {si.name}
+                          <ChevronDown />
+                        </span>
+                      ); })()}
                     </td>
+
                     <td>
                       {name ? (
                         <span className="p3-assignee"><span className="p3-av">{initials(name)}</span>{name}</span>
