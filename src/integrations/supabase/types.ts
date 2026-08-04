@@ -1864,6 +1864,7 @@ export type Database = {
       }
       projects: {
         Row: {
+          archived_at: string | null
           billing_model: string | null
           client_id: string | null
           contract_id: string | null
@@ -1894,6 +1895,7 @@ export type Database = {
           urgency: string | null
         }
         Insert: {
+          archived_at?: string | null
           billing_model?: string | null
           client_id?: string | null
           contract_id?: string | null
@@ -1924,6 +1926,7 @@ export type Database = {
           urgency?: string | null
         }
         Update: {
+          archived_at?: string | null
           billing_model?: string | null
           client_id?: string | null
           contract_id?: string | null
@@ -2331,6 +2334,7 @@ export type Database = {
         Row: {
           aired_at: string | null
           aired_dates: Json
+          archived_at: string | null
           assignee_id: string | null
           attachments_count: number
           billed: boolean
@@ -2368,6 +2372,7 @@ export type Database = {
         Insert: {
           aired_at?: string | null
           aired_dates?: Json
+          archived_at?: string | null
           assignee_id?: string | null
           attachments_count?: number
           billed?: boolean
@@ -2405,6 +2410,7 @@ export type Database = {
         Update: {
           aired_at?: string | null
           aired_dates?: Json
+          archived_at?: string | null
           assignee_id?: string | null
           attachments_count?: number
           billed?: boolean
