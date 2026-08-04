@@ -6,7 +6,7 @@
   --p8-text: #1a2138;
   --p8-muted: #7b879a;
   font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  background: #fff;
+  background: var(--card);
   border: 1px solid var(--p8-border);
   border-radius: 14px;
   overflow: hidden;
@@ -101,7 +101,7 @@
   font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   color: var(--p8-text);
   display: flex; flex-direction: column; height: 100%;
-  background: #fff;
+  background: var(--card);
 }
 .prj08-panel * { box-sizing: border-box; }
 .prj08-panel .p8-body { flex: 1; overflow-y: auto; padding: 22px 24px 18px; }
@@ -145,7 +145,7 @@
   font-family: inherit;
 }
 .prj08-panel .p8-btn svg { width: 15px; height: 15px; }
-.prj08-panel .p8-btn.ghost { background: #fff; color: var(--p8-text); border: 1px solid var(--p8-border); }
+.prj08-panel .p8-btn.ghost { background: var(--card); color: var(--p8-text); border: 1px solid var(--p8-border); }
 .prj08-panel .p8-btn.ghost:hover { background: #f7f9fc; }
 .prj08-panel .p8-btn.primary { background: var(--p8-primary); color: #fff; border: none; }
 .prj08-panel .p8-btn.primary:hover { background: #2559d0; }

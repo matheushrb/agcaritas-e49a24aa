@@ -51,7 +51,7 @@
   display: inline-flex; align-items: center; gap: 8px;
   height: 40px; padding: 0 16px; border-radius: 8px;
   font-size: 13px; font-weight: 600; cursor: pointer;
-  border: 1px solid var(--p2-border); background: #fff; color: var(--p2-ink);
+  border: 1px solid var(--p2-border); background: var(--card); color: var(--p2-ink);
   transition: background .15s, border-color .15s;
 }
 .prj02 .p2-btn:hover { background: #F7F9FC; }
@@ -125,7 +125,7 @@
 .prj02 .p2-person .nm { font-size: 12.5px; font-weight: 600; color: var(--p2-ink); }
 .prj02 .p2-person .rl { font-size: 11px; color: var(--p2-muted); }
 .prj02 .p2-person .sp { margin-left: auto; display: flex; gap: 6px; }
-.prj02 .p2-ico-btn { width: 30px; height: 30px; border-radius: 7px; border: 1px solid var(--p2-border); background: #fff; display: inline-flex; align-items: center; justify-content: center; color: var(--p2-muted); cursor: pointer; }
+.prj02 .p2-ico-btn { width: 30px; height: 30px; border-radius: 7px; border: 1px solid var(--p2-border); background: var(--card); display: inline-flex; align-items: center; justify-content: center; color: var(--p2-muted); cursor: pointer; }
 .prj02 .p2-ico-btn:hover { background: #F7F9FC; color: var(--p2-primary); }
 .prj02 .p2-ico-btn svg { width: 14px; height: 14px; }
 

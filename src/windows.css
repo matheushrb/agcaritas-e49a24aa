@@ -105,7 +105,7 @@
   width: 26px; height: 26px; border-radius: 999px;
   display: grid; place-items: center;
   font-size: 11px; font-weight: 600;
-  background: #fff; border: 1.5px solid #cfd6df; color: var(--cw-muted);
+  background: var(--card); border: 1.5px solid #cfd6df; color: var(--cw-muted);
   flex-shrink: 0;
   z-index: 1;
 }
@@ -160,7 +160,7 @@
   height: 42px;
   border: 1px solid var(--cw-input-border);
   border-radius: 8px;
-  background: #fff;
+  background: var(--card);
   padding: 0 12px;
   font-family: var(--cw-font);
   font-size: 12.5px;
@@ -201,7 +201,7 @@
 .cw-callout.is-green { background: var(--cw-green-soft); border-color: #c8ecd6; color: #17703f; }
 .cw-callout svg { width: 15px; height: 15px; flex-shrink: 0; margin-top: 1px; }
 
-.cw-card { border: 1px solid var(--cw-border); border-radius: 10px; background: #fff; }
+.cw-card { border: 1px solid var(--cw-border); border-radius: 10px; background: var(--card); }
 .cw-card-pad { padding: 14px 16px; }
 .cw-card h5 { font-size: 12.5px; font-weight: 600; margin: 0 0 10px; display: flex; align-items: center; gap: 7px; }
 
@@ -223,7 +223,7 @@
 .cw-table tbody tr:last-child td { border-bottom: none; }
 .cw-table .cw-strong { font-weight: 600; }
 .cw-table .cw-mut { color: var(--cw-muted); }
-.cw-row-icon { width: 30px; height: 30px; border-radius: 7px; border: 1px solid var(--cw-border); background: #fff; display: grid; place-items: center; cursor: pointer; color: var(--cw-muted); }
+.cw-row-icon { width: 30px; height: 30px; border-radius: 7px; border: 1px solid var(--cw-border); background: var(--card); display: grid; place-items: center; cursor: pointer; color: var(--cw-muted); }
 .cw-row-icon:hover { background: var(--cw-neutral-bg); color: var(--cw-ink); }
 .cw-dot { width: 10px; height: 10px; border-radius: 999px; display: inline-block; margin-right: 8px; vertical-align: -1px; }
 .cw-ordem { width: 34px; height: 28px; border: 1px solid var(--cw-input-border); border-radius: 6px; text-align: center; font-size: 11px; font-family: var(--cw-font); }
@@ -239,7 +239,7 @@
 }
 .cw-switch::after {
   content: ""; position: absolute; top: 2.5px; left: 2.5px;
-  width: 16px; height: 16px; border-radius: 999px; background: #fff;
+  width: 16px; height: 16px; border-radius: 999px; background: var(--card);
   box-shadow: 0 1px 2px rgba(0,0,0,.2); transition: transform .16s;
 }
 .cw-switch.is-on { background: var(--cw-cobalt); }
@@ -248,7 +248,7 @@
 /* ---------- Cards de seleção (modelo de cobrança) ---------- */
 .cw-choice {
   border: 1px solid var(--cw-border); border-radius: 10px;
-  padding: 14px; text-align: left; background: #fff; cursor: pointer;
+  padding: 14px; text-align: left; background: var(--card); cursor: pointer;
   transition: border-color .15s, background .15s, box-shadow .15s;
   display: flex; flex-direction: column; gap: 7px; min-height: 116px;
 }
@@ -291,7 +291,7 @@
 .cw-btn svg { width: 15px; height: 15px; }
 .cw-btn-primary { background: var(--cw-cobalt); color: #fff; }
 .cw-btn-primary:hover { background: #1259d8; }
-.cw-btn-secondary { background: #fff; color: var(--cw-ink); border-color: var(--cw-input-border); }
+.cw-btn-secondary { background: var(--card); color: var(--cw-ink); border-color: var(--cw-input-border); }
 .cw-btn-secondary:hover { background: var(--cw-neutral-bg); }
 .cw-btn-ghost { background: transparent; color: var(--cw-cobalt); }
 .cw-btn-ghost:hover { background: var(--cw-cobalt-soft); }
@@ -303,7 +303,7 @@
   display: flex; align-items: center; justify-content: space-between;
   gap: 12px; padding: 16px 24px;
   border-top: 1px solid var(--cw-divider);
-  background: #fff; flex-shrink: 0;
+  background: var(--card); flex-shrink: 0;
 }
 .cw-footer .cw-foot-group { display: flex; gap: 10px; align-items: center; }
 
@@ -345,7 +345,7 @@
 .cw-flow-step { flex: 1; display: flex; flex-direction: column; align-items: center; position: relative; }
 .cw-flow-step .cw-flow-dot {
   width: 26px; height: 26px; border-radius: 999px;
-  background: #fff; border: 1.5px solid #cfd6df; color: var(--cw-muted);
+  background: var(--card); border: 1.5px solid #cfd6df; color: var(--cw-muted);
   display: grid; place-items: center; font-size: 11px; font-weight: 600;
   z-index: 1; cursor: pointer;
 }

@@ -47,7 +47,7 @@
   width: 24px; height: 24px; border-radius: 999px;
   display: grid; place-items: center;
   font-size: 12px; font-weight: 600;
-  background: #FFFFFF; color: var(--f1-muted);
+  background: var(--card); color: var(--f1-muted);
   border: 1px solid var(--f1-border);
 }
 .fat01-step[data-state="active"] .fat01-step-dot {
@@ -88,14 +88,14 @@
 .fat01 .fat01-input {
   height: 38px; border-radius: 8px;
   border: 1px solid var(--f1-border);
-  background: #fff; font-size: 13px;
+  background: var(--card); font-size: 13px;
 }
 .fat01-textarea { border-radius: 8px; border: 1px solid var(--f1-border); font-size: 13px; }
 
 /* ---------- Seletor múltiplo de projetos ---------- */
 .fat01-projects {
   border: 1px solid var(--f1-border); border-radius: 8px;
-  background: #fff; max-height: 168px; overflow-y: auto;
+  background: var(--card); max-height: 168px; overflow-y: auto;
 }
 .fat01-proj {
   display: flex; align-items: center; gap: 10px;
@@ -110,7 +110,7 @@
 /* ---------- Grupos de itens ---------- */
 .fat01-group {
   border: 1px solid var(--f1-border); border-radius: 12px;
-  background: #fff; margin-bottom: 12px; overflow: hidden;
+  background: var(--card); margin-bottom: 12px; overflow: hidden;
 }
 .fat01-group-head {
   display: flex; align-items: center; justify-content: space-between; gap: 12px;
@@ -149,12 +149,12 @@
 .fat01-adjust {
   display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px;
   border: 1px solid var(--f1-border); border-radius: 12px; padding: 14px;
-  background: #fff;
+  background: var(--card);
 }
 
 /* ---------- Resumo lateral ---------- */
 .fat01-sum-card {
-  background: #fff; border: 1px solid var(--f1-border); border-radius: 12px;
+  background: var(--card); border: 1px solid var(--f1-border); border-radius: 12px;
   overflow: hidden;
 }
 .fat01-sum-head {
@@ -183,11 +183,11 @@
 .fat01-foot {
   display: flex; align-items: center; gap: 8px;
   padding: 12px 20px; border-top: 1px solid var(--f1-border);
-  background: #fff;
+  background: var(--card);
 }
 
 /* ---------- Prévia (etapa 3) ---------- */
-.fat01-preview { border: 1px solid #CBD9F9; border-radius: 12px; overflow: hidden; background: #fff; }
+.fat01-preview { border: 1px solid #CBD9F9; border-radius: 12px; overflow: hidden; background: var(--card); }
 .fat01-preview-head {
   background: var(--f1-primary); color: #fff;
   padding: 8px 14px; display: flex; align-items: center; justify-content: space-between;
