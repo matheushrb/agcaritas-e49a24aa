@@ -191,6 +191,17 @@ export async function generateInvoicePDF(data: InvoicePDFData): Promise<jsPDF> {
   const doc = new jsPDF({ unit: "mm", format: "a4", compress: false });
   registerLiberationFonts(doc);
 
+  // A fonte embarcada não possui alguns glifos tipográficos: normaliza antes de desenhar.
+  const sanitize = (v: string) =>
+    v.replace(/[\u2010-\u2015]/g, "-").replace(/[\u2018\u2019]/g, "'")
+     .replace(/[\u201C\u201D]/g, '"').replace(/\u2026/g, "...");
+  const rawText = doc.text.bind(doc);
+  doc.text = ((txt: string | string[], ...rest: unknown[]) =>
+    rawText(
+      Array.isArray(txt) ? txt.map((t) => sanitize(String(t))) : sanitize(String(txt)),
+      ...(rest as [number, number]),
+    )) as typeof doc.text;
+
   const { pageW, pageH } = PDF_LAYOUT;
   const marginX = 15;
   const rightX = pageW - marginX;
