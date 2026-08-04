@@ -275,96 +275,34 @@ function TasksPage() {
 
   return (
     <>
-      <div className="space-y-6">
-        <header className="flex flex-wrap items-end justify-between gap-4">
-          <div>
-            <h1 className="font-display text-3xl font-bold tracking-tight">Tarefas</h1>
-            <p className="text-sm text-muted-foreground">Lista, prioridades, timers e faturamento por tarefa.</p>
-          </div>
-          <Button className="rounded-full gap-1.5" onClick={handleNew} disabled={createTask.isPending}>
-            <Plus className="h-4 w-4" /> Nova tarefa
-          </Button>
-        </header>
-
-        <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
-          <Kpi label="Total" value={kpis.total.toString()} />
-          <Kpi label="Em andamento" value={kpis.inProgress.toString()} />
-          <Kpi label="Revisão" value={kpis.review.toString()} />
-          <Kpi label="Concluídas" value={kpis.done.toString()} />
-          <Kpi label="Atrasadas" value={kpis.overdue.toString()} tone={kpis.overdue > 0 ? "danger" : "default"} />
-        </div>
-
-        <Card className="p-3 rounded-2xl">
-          <div className="flex flex-wrap items-center gap-2">
-            <div className="relative flex-1 min-w-[200px]">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input placeholder="Buscar por tarefa, projeto ou responsável..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9 rounded-full" />
-            </div>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-[140px] rounded-full"><SelectValue placeholder="Status" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos status</SelectItem>
-                {STATUS_ORDER.map(s => <SelectItem key={s} value={s}>{STATUS_META[s].label}</SelectItem>)}
-              </SelectContent>
-            </Select>
-            <Select value={assigneeFilter} onValueChange={setAssigneeFilter}>
-              <SelectTrigger className="w-[160px] rounded-full"><SelectValue placeholder="Responsável" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos responsáveis</SelectItem>
-                <SelectItem value="none">Não atribuído</SelectItem>
-                {peopleMin.map(p => (
-                  <SelectItem key={p.id} value={p.id}>{p.display_name || p.full_name || "Sem nome"}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select value={priorityFilter} onValueChange={setPriorityFilter}>
-              <SelectTrigger className="w-[140px] rounded-full"><SelectValue placeholder="Prioridade" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todas prioridades</SelectItem>
-                <SelectItem value="critical">Crítica</SelectItem>
-                <SelectItem value="urgent">Urgente</SelectItem>
-                <SelectItem value="high">Alta</SelectItem>
-                <SelectItem value="medium">Média</SelectItem>
-                <SelectItem value="low">Baixa</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={projectFilter} onValueChange={setProjectFilter}>
-              <SelectTrigger className="w-[160px] rounded-full"><SelectValue placeholder="Projeto" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos projetos</SelectItem>
-                <SelectItem value="none">Sem projeto</SelectItem>
-                {projectsMin.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
-              </SelectContent>
-            </Select>
-            <Button
-              variant={turbo ? "default" : "outline"}
-              size="sm"
-              className="rounded-full gap-1.5"
-              onClick={() => setTurbo(t => !t)}
-              title="Ordenar por valor decrescente"
-            >
-              <Zap className="h-4 w-4" /> Turbo
-            </Button>
-            <div className="ml-auto">
-              <TaskViewSwitcher view={view} onChange={setView} />
-            </div>
-          </div>
-        </Card>
-
+      <Tsk02List
+        view={view}
+        onViewChange={setView}
+        tasks={tasks as any}
+        projects={projectsMin}
+        people={peopleMin}
+        onOpen={(id) => { setDraftTask(null); setSelectedId(id); }}
+        onNew={handleNew}
+        onQuickCreate={(title) => createTask.mutate({ title, status: "todo" })}
+        onStatusChange={(id, status) => updateStatus.mutate({ id, status: status as TaskStatus })}
+      >
         {isLoading ? (
-          <div className="text-sm text-muted-foreground">Carregando…</div>
+          <div className="mt-5 text-sm text-muted-foreground">Carregando…</div>
         ) : (
-          <TaskViews
-            view={view}
-            tasks={filtered as any}
-            projectName={projectName}
-            assigneeName={assigneeName}
-            onOpen={(id) => { setDraftTask(null); setSelectedId(id); }}
-            onQuickCreate={(status, title) => createTask.mutate({ title, status })}
-            onStatusChange={(id, status) => updateStatus.mutate({ id, status })}
-          />
+          <div className="mt-5">
+            <TaskViews
+              view={view === "board" ? "kanban" : "gantt"}
+              tasks={filtered as any}
+              projectName={projectName}
+              assigneeName={assigneeName}
+              onOpen={(id) => { setDraftTask(null); setSelectedId(id); }}
+              onQuickCreate={(status, title) => createTask.mutate({ title, status })}
+              onStatusChange={(id, status) => updateStatus.mutate({ id, status })}
+            />
+          </div>
         )}
-      </div>
+      </Tsk02List>
+
 
       <TaskModal
         task={selected}
