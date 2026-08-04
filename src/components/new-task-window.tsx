@@ -235,7 +235,7 @@ export function TaskWindow({
 
   const reset = () => {
     setTitle(""); setDescription(""); setProjectId(defaultProjectId); setTaskTypeId(null);
-    setAssigneeId(null); setDueDate(""); setPriority("medium"); setStatus("todo"); setStage("briefing");
+    setAssigneeId(null); setDueDate(""); setPriority("medium"); setStatus("todo"); setStage("briefing"); setCurrentStageId(null);
     setEstimated(""); setBillingEnabled(true); setBaseValue(""); setDeliverables([]); setChecklist([]);
     setPlatformsSel([]); setNotes("");
   };
