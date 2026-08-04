@@ -156,9 +156,11 @@ function TopBar({
 
   return (
     <header className="cv-topbar">
-      <Link to="/dashboard" className="cv-brand" style={{ textDecoration: "none", color: "inherit" }}>
-        <img src={caritasLogo.url} alt="Agência Caritas" style={{ height: 26, width: "auto" }} />
-      </Link>
+      <div className="flex items-center gap-3">
+        <span className="text-xs font-semibold tracking-wider uppercase text-muted-foreground hidden lg:block">
+          {getSectionTitle(pathname)}
+        </span>
+      </div>
 
       <GlobalSearch />
 
