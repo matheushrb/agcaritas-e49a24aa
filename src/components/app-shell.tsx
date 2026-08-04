@@ -11,6 +11,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { useTheme } from "@/components/theme-provider";
 import { GlobalSearch } from "@/components/global-search";
 import { TopbarCalendar } from "@/components/topbar-calendar";
+import { TopbarWeather } from "@/components/topbar-weather";
 import { supabase } from "@/integrations/supabase/client";
 
 type NavItem = { to: string; icon: typeof LayoutGrid; label: string };
@@ -23,7 +24,6 @@ const primaryNav: NavItem[] = [
   { to: "/proposals", icon: FileText, label: "Propostas" },
   { to: "/finance", icon: DollarSign, label: "Financeiro" },
   { to: "/invoices", icon: Receipt, label: "Faturas" },
-  { to: "/calendar", icon: Calendar, label: "Agenda" },
   { to: "/team", icon: UsersRound, label: "RH" },
 ];
 
@@ -140,6 +140,7 @@ function TopBar({
           <span style={{ fontSize: 12 }}>{theme === "dark" ? "Escuro" : "Claro"}</span>
           <ChevronDown className="h-3.5 w-3.5" />
         </button>
+        <TopbarWeather />
         <TopbarCalendar />
         <NotificationsBell />
         <a
