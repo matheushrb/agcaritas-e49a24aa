@@ -538,7 +538,7 @@ export function TaskWindow({
                     {STATUSES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
                   </select>
                 </div>
-                <div className="cw-side-line"><span>Etapa atual</span><span>{STAGES.find(s => s.id === stage)?.label}</span></div>
+                <div className="cw-side-line"><span>Etapa atual</span><span>{flowSteps[activeIdx]?.label ?? "—"}</span></div>
                 <div className="cw-side-line"><span>Entregáveis</span><span>{deliverables.length}</span></div>
                 <div className="cw-side-line"><span>Checklist</span><span>{doneCount}/{checklist.length}</span></div>
                 <div className="cw-side-line"><span>Plataformas</span><span>{platformsSel.length}</span></div>
