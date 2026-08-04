@@ -157,7 +157,6 @@ function InvoiceDetailPage() {
 
   const { data: allProjects = [] } = useQuery({
     queryKey: ["projects-min"],
-    enabled: editOpen,
     queryFn: async () => {
       const { data } = await supabase.from("projects").select("id,name,client_id").order("name");
       return (data ?? []) as { id: string; name: string; client_id: string | null }[];
@@ -381,7 +380,7 @@ function InvoiceDetailPage() {
             organization_id: prof.organization_id,
             invoice_id: invoiceId,
             client_id: form.client_id || null,
-            project_id: form.project_id || null,
+            project_id: d.project_id || null,
             description: d.description,
             amount,
             due_date: due,
