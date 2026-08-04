@@ -100,8 +100,9 @@
 
 /* ---------- KPIs ---------- */
 .tsk2 .k-kpis { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 16px; margin-top: 18px; }
-@media (max-width: 1280px) { .tsk2 .k-kpis { grid-template-columns: repeat(3, minmax(0,1fr)); } }
-@media (max-width: 760px) { .tsk2 .k-kpis { grid-template-columns: repeat(2, minmax(0,1fr)); } }
+@media (max-width: 1080px) { .tsk2 .k-kpis { grid-template-columns: repeat(3, minmax(0,1fr)); } }
+@media (max-width: 700px) { .tsk2 .k-kpis { grid-template-columns: repeat(2, minmax(0,1fr)); } }
+
 .tsk2 .k-kpi {
   background: var(--k-card); border: 1px solid var(--k-border); border-radius: 12px;
   padding: 16px 18px; display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
