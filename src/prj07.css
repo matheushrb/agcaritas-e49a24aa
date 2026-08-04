@@ -1,0 +1,139 @@
+/* ===========================================================
+   PRJ-07 — Projeto / Aba Custos
+   Mesma linguagem visual do PRJ-04 (Financeiro).
+   =========================================================== */
+
+.prj07 {
+  --p7-card: #FFFFFF;
+  --p7-border: #DDE1E6;
+  --p7-border-soft: #E9ECF1;
+  --p7-ink: #1A2138;
+  --p7-muted: #5B6779;
+  --p7-muted-2: #8A93A3;
+  --p7-primary: #2F6BEF;
+  --p7-green: #10B981;
+  --p7-amber: #F59E0B;
+  --p7-red: #EF4444;
+  --p7-purple: #8B5CF6;
+
+  font-family: "Inter", "IBM Plex Sans", system-ui, sans-serif;
+  color: var(--p7-ink);
+  margin-top: 18px;
+  -webkit-font-smoothing: antialiased;
+}
+
+.dark .prj07 {
+  --p7-card: rgba(255, 255, 255, 0.03);
+  --p7-border: rgba(255, 255, 255, 0.12);
+  --p7-border-soft: rgba(255, 255, 255, 0.08);
+  --p7-ink: #E8EDF6;
+  --p7-muted: #A9B4C6;
+  --p7-muted-2: #8996AC;
+}
+
+.prj07 .p7-kpis {
+  display: flex; align-items: stretch;
+  background: var(--p7-card);
+  border: 1px solid var(--p7-border);
+  border-radius: 14px;
+  overflow: hidden;
+}
+.prj07 .p7-kpi { flex: 1 1 0; min-width: 0; padding: 14px 16px; border-right: 1px solid var(--p7-border-soft); }
+.prj07 .p7-kpi:last-child { border-right: 0; }
+.prj07 .p7-kpi-h { display: flex; align-items: center; gap: 8px; }
+.prj07 .p7-ico { width: 24px; height: 24px; border-radius: 7px; flex: none; display: inline-flex; align-items: center; justify-content: center; }
+.prj07 .p7-ico svg { width: 13px; height: 13px; }
+.prj07 .p7-kpi-l { font-size: 12px; color: var(--p7-muted); font-weight: 500; white-space: nowrap; }
+.prj07 .p7-kpi-v { font-size: 19px; font-weight: 700; letter-spacing: -0.4px; margin-top: 8px; font-variant-numeric: tabular-nums; }
+.prj07 .p7-kpi-s { font-size: 11px; color: var(--p7-muted-2); margin-top: 4px; }
+
+.prj07 .p7-card {
+  background: var(--p7-card);
+  border: 1px solid var(--p7-border);
+  border-radius: 14px;
+  margin-top: 14px;
+  overflow: hidden;
+}
+.prj07 .p7-card-h {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--p7-border-soft);
+}
+.prj07 .p7-ht { display: flex; align-items: center; gap: 8px; }
+.prj07 .p7-ht svg { width: 15px; height: 15px; color: var(--p7-primary); }
+.prj07 .p7-card-t { font-size: 14px; font-weight: 600; letter-spacing: -0.1px; }
+.prj07 .p7-card-s { font-size: 11.5px; color: var(--p7-muted-2); margin-top: 2px; }
+
+.prj07 .p7-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  height: 32px; padding: 0 12px; border-radius: 9px;
+  border: 1px solid var(--p7-border); background: transparent;
+  font-size: 12.5px; font-weight: 600; color: var(--p7-ink); cursor: pointer;
+  transition: background .15s ease, border-color .15s ease;
+}
+.prj07 .p7-btn:hover { background: color-mix(in oklab, var(--p7-primary) 8%, transparent); border-color: color-mix(in oklab, var(--p7-primary) 35%, var(--p7-border)); }
+.prj07 .p7-btn.primary { background: var(--p7-primary); border-color: var(--p7-primary); color: #fff; }
+.prj07 .p7-btn.primary:hover { filter: brightness(1.05); }
+.prj07 .p7-btn svg { width: 14px; height: 14px; }
+
+.prj07 .p7-filters { display: flex; gap: 6px; flex-wrap: wrap; padding: 10px 16px; border-bottom: 1px solid var(--p7-border-soft); }
+.prj07 .p7-fchip {
+  height: 28px; padding: 0 11px; border-radius: 999px;
+  border: 1px solid var(--p7-border); background: transparent;
+  font-size: 12px; font-weight: 500; color: var(--p7-muted); cursor: pointer;
+}
+.prj07 .p7-fchip.on { background: color-mix(in oklab, var(--p7-primary) 12%, transparent); border-color: color-mix(in oklab, var(--p7-primary) 45%, transparent); color: var(--p7-primary); font-weight: 600; }
+
+.prj07 .p7-table { width: 100%; border-collapse: collapse; }
+.prj07 .p7-table th {
+  text-align: left; font-size: 11px; font-weight: 600; text-transform: uppercase;
+  letter-spacing: .4px; color: var(--p7-muted-2);
+  padding: 10px 16px; border-bottom: 1px solid var(--p7-border-soft); white-space: nowrap;
+}
+.prj07 .p7-table td { padding: 12px 16px; font-size: 13px; color: var(--p7-muted); border-bottom: 1px solid var(--p7-border-soft); vertical-align: middle; }
+.prj07 .p7-table tr:last-child td { border-bottom: 0; }
+.prj07 .p7-table tbody tr:hover td { background: color-mix(in oklab, var(--p7-primary) 4%, transparent); }
+.prj07 .p7-strong { color: var(--p7-ink); font-weight: 600; }
+.prj07 .p7-num { font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
+
+.prj07 .p7-who { display: flex; align-items: center; gap: 9px; min-width: 0; }
+.prj07 .p7-av {
+  width: 28px; height: 28px; border-radius: 9px; flex: none;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: color-mix(in oklab, var(--p7-primary) 14%, transparent);
+  color: var(--p7-primary); font-size: 11px; font-weight: 700;
+}
+.prj07 .p7-sub { font-size: 11.5px; color: var(--p7-muted-2); }
+
+.prj07 .p7-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  height: 22px; padding: 0 9px; border-radius: 999px;
+  font-size: 11px; font-weight: 600; white-space: nowrap;
+}
+.prj07 .p7-badge.blue { background: color-mix(in oklab, var(--p7-primary) 14%, transparent); color: var(--p7-primary); }
+.prj07 .p7-badge.green { background: color-mix(in oklab, var(--p7-green) 16%, transparent); color: var(--p7-green); }
+.prj07 .p7-badge.amber { background: color-mix(in oklab, var(--p7-amber) 18%, transparent); color: var(--p7-amber); }
+.prj07 .p7-badge.gray { background: color-mix(in oklab, var(--p7-muted-2) 16%, transparent); color: var(--p7-muted); }
+.prj07 .p7-badge.purple { background: color-mix(in oklab, var(--p7-purple) 16%, transparent); color: var(--p7-purple); }
+
+.prj07 .p7-acts { display: flex; align-items: center; justify-content: flex-end; gap: 4px; }
+.prj07 .p7-iconbtn {
+  width: 28px; height: 28px; border-radius: 8px; border: 1px solid transparent;
+  background: transparent; color: var(--p7-muted-2); cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.prj07 .p7-iconbtn:hover { background: color-mix(in oklab, var(--p7-primary) 10%, transparent); color: var(--p7-primary); }
+.prj07 .p7-iconbtn.danger:hover { background: color-mix(in oklab, var(--p7-red) 12%, transparent); color: var(--p7-red); }
+.prj07 .p7-iconbtn svg { width: 15px; height: 15px; }
+
+.prj07 .p7-empty { padding: 42px 16px; text-align: center; color: var(--p7-muted-2); font-size: 13px; }
+.prj07 .p7-empty b { display: block; color: var(--p7-ink); font-size: 14px; margin-bottom: 4px; }
+
+.prj07 .p7-split { display: grid; grid-template-columns: 1fr 320px; gap: 14px; align-items: start; }
+@media (max-width: 1100px) { .prj07 .p7-split { grid-template-columns: 1fr; } }
+.prj07 .p7-bar { height: 8px; border-radius: 999px; background: color-mix(in oklab, var(--p7-muted-2) 18%, transparent); overflow: hidden; }
+.prj07 .p7-bar i { display: block; height: 100%; border-radius: 999px; }
+.prj07 .p7-brk { padding: 14px 16px; display: grid; gap: 12px; }
+.prj07 .p7-brk-row { display: grid; gap: 6px; }
+.prj07 .p7-brk-top { display: flex; align-items: center; justify-content: space-between; font-size: 12.5px; }
+.prj07 .p7-brk-top b { font-weight: 600; color: var(--p7-ink); }
