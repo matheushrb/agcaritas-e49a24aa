@@ -270,6 +270,7 @@ export function TaskWindow({
     setCurrentStageId(existing.current_stage_id ?? null);
 
     setAssigneeId(existing.assignee_id ?? null);
+    setStartDate(existing.start_date ?? "");
     setDueDate(existing.due_date ?? "");
     setPriority(existing.priority ?? "medium");
     setStatus(existing.status ?? "todo");
