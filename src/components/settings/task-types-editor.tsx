@@ -497,6 +497,46 @@ function TypeEditorPanel({ type, stages, onDelete, onDuplicate }:{
         />
       </div>
 
+      {/* Ao Vivo / Estreia (aba na janela da tarefa) */}
+      <div className="rounded-xl border p-3 flex items-start justify-between gap-3">
+        <div className="flex items-start gap-2.5 min-w-0">
+          <span className="h-8 w-8 rounded-lg bg-primary/10 text-primary inline-flex items-center justify-center shrink-0">
+            <Radio className="h-4 w-4" />
+          </span>
+          <div className="min-w-0">
+            <div className="text-sm font-medium">Aba "Ao Vivo / Estreia"</div>
+            <p className="text-[11px] text-muted-foreground leading-snug">
+              Exibe na janela da tarefa a aba para programar lives, aulas e estreias.
+            </p>
+          </div>
+        </div>
+        <Switch
+          checked={type.has_live}
+          onCheckedChange={v => updateType.mutate({ has_live: v })}
+        />
+      </div>
+
+      {/* Ficha técnica */}
+      <div className="rounded-xl border p-3 flex items-start justify-between gap-3">
+        <div className="flex items-start gap-2.5 min-w-0">
+          <span className="h-8 w-8 rounded-lg bg-primary/10 text-primary inline-flex items-center justify-center shrink-0">
+            <SlidersHorizontal className="h-4 w-4" />
+          </span>
+          <div className="min-w-0">
+            <div className="text-sm font-medium">Aba "Ficha técnica"</div>
+            <p className="text-[11px] text-muted-foreground leading-snug">
+              Exibe na janela da tarefa os campos técnicos (proporção, definição, luz, câmera, edição, arte).
+            </p>
+          </div>
+        </div>
+        <Switch
+          checked={type.has_tech_sheet}
+          onCheckedChange={v => updateType.mutate({ has_tech_sheet: v })}
+        />
+      </div>
+
+
+
       {/* Stages */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
