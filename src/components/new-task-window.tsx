@@ -6,8 +6,9 @@ import { toast } from "sonner";
 import {
   X, Plus, Trash2, Check, Info, ChevronDown, ListChecks, DollarSign,
   Paperclip, Save, Clock, CalendarDays, Layers, Trash, Minus, Maximize2, PanelRight,
-  Play, Square,
+  Play, Square, Radio, SlidersHorizontal,
 } from "lucide-react";
+
 import { useTaskTypeStages } from "@/lib/task-types";
 import "@/windows.css";
 
