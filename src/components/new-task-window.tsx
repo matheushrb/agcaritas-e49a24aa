@@ -127,10 +127,16 @@ export function TaskWindow({
   const platforms = useMemo(() => {
     if (!projectId || projectPlatformNames.length === 0) return allPlatforms;
     const set = new Set(projectPlatformNames.map(n => n.toLowerCase()));
-    const filtered = allPlatforms.filter((p: any) =>
+    return allPlatforms.filter((p: any) =>
       set.has(String(p.name).toLowerCase()) || set.has(String(p.id).toLowerCase()));
-    return filtered.length ? filtered : allPlatforms;
   }, [allPlatforms, projectId, projectPlatformNames]);
+
+  /* Remove seleções que não pertencem mais às plataformas do projeto. */
+  useEffect(() => {
+    if (!projectId || projectPlatformNames.length === 0) return;
+    const allowed = new Set(platforms.map((p: any) => String(p.name)));
+    setPlatformsSel(sel => (sel.every(s => allowed.has(s)) ? sel : sel.filter(s => allowed.has(s))));
+  }, [projectId, platforms, projectPlatformNames.length]);
 
   /* ---------- Etapas: do tipo de tarefa (quando houver) ou padrão ---------- */
   const { data: typeStages = [] } = useTaskTypeStages(taskTypeId);
