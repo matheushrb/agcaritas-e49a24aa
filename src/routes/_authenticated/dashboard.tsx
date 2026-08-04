@@ -353,16 +353,6 @@ function DashboardPage() {
         <aside className="cv-right-rail">
           <section className="cv-card cv-rail">
             <div className="cv-rail-head">
-              <h2 style={{ textTransform: "capitalize" }}>
-                {`${new Intl.DateTimeFormat("pt-BR", { month: "long" }).format(now)} ${now.getFullYear()}`}
-              </h2>
-              <div><button>‹</button><button>›</button></div>
-            </div>
-            <MiniCalendar now={now} />
-          </section>
-
-          <section className="cv-card cv-rail">
-            <div className="cv-rail-head">
               <h2 style={{ fontSize: 13 }}>Agenda do dia</h2>
               <Link to="/calendar" className="cv-link">Ver agenda <ChevronRight className="h-3 w-3" /></Link>
             </div>
@@ -472,23 +462,3 @@ function Focus({ title, value, sub, icon }: { title: string; value: string | num
   );
 }
 
-function MiniCalendar({ now }: { now: Date }) {
-  const first = new Date(now.getFullYear(), now.getMonth(), 1);
-  const offset = (first.getDay() + 6) % 7;
-  const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-  const prevDays = new Date(now.getFullYear(), now.getMonth(), 0).getDate();
-  const cells: { n: number; muted: boolean }[] = [];
-  for (let i = offset - 1; i >= 0; i--) cells.push({ n: prevDays - i, muted: true });
-  for (let d = 1; d <= daysInMonth; d++) cells.push({ n: d, muted: false });
-  while (cells.length % 7 !== 0) cells.push({ n: cells.length - offset - daysInMonth + 1, muted: true });
-  return (
-    <>
-      <div className="cv-week">{["SEG", "TER", "QUA", "QUI", "SEX", "SÁB", "DOM"].map(d => <span key={d}>{d}</span>)}</div>
-      <div className="cv-days">
-        {cells.map((c, i) => (
-          <span key={i} className={c.muted ? "muted" : !c.muted && c.n === now.getDate() ? "selected" : ""}>{c.n}</span>
-        ))}
-      </div>
-    </>
-  );
-}
