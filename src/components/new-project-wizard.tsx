@@ -373,13 +373,19 @@ type Patch = <K extends keyof ProjectWizardValue>(k: K, val: ProjectWizardValue[
 /* ============================================================
    NP-01 — Informações básicas
    ============================================================ */
-function StepBasics({ v, patch, errors, clients, typeOptions, people, applyTypeStages }: {
+function StepBasics({ v, patch, errors, clients, typeOptions, people, applyTypeStages, platforms }: {
   v: ProjectWizardValue; patch: Patch; errors: Record<string, boolean>;
   clients: { id: string; name: string }[];
   typeOptions: { value: string; label: string }[];
   people: Person[];
   applyTypeStages: (t: string) => void;
+  platforms: CatalogItem[];
 }) {
+  const togglePlatformName = (name: string) =>
+    patch("social_platforms", v.social_platforms.includes(name)
+      ? v.social_platforms.filter(x => x !== name)
+      : [...v.social_platforms, name]);
+
   return (
     <>
       <h3>Informações básicas</h3>
