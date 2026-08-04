@@ -665,3 +665,27 @@
   color: var(--cw-primary, #2F6BEF);
 }
 .cw-grid-2 { display: grid; gap: 12px 16px; }
+
+/* Aba Ao Vivo piscando (luz de "no ar") */
+.cw-tab.is-live { color: #E5484D; }
+.cw-tab.is-live::before {
+  content: ""; width: 7px; height: 7px; border-radius: 999px; background: #E5484D;
+  box-shadow: 0 0 0 0 rgba(229, 72, 77, .6);
+  animation: cw-live-pulse 1.4s ease-out infinite;
+}
+.cw-tab.is-live .cw-tab-count {
+  background: color-mix(in oklab, #E5484D 18%, transparent); color: #E5484D;
+}
+.cw-tab.is-live.is-on { border-bottom-color: #E5484D; }
+@keyframes cw-live-pulse {
+  0%   { box-shadow: 0 0 0 0 rgba(229,72,77,.55); opacity: 1; }
+  70%  { box-shadow: 0 0 0 6px rgba(229,72,77,0); opacity: .45; }
+  100% { box-shadow: 0 0 0 0 rgba(229,72,77,0); opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) { .cw-tab.is-live::before { animation: none; } }
+
+/* Ficha técnica preenchida */
+.cw-tab.is-filled { color: #D9911A; }
+.cw-tab.is-filled.is-on { color: #D9911A; border-bottom-color: #D9911A; }
+:root.dark .cw-tab.is-filled, .dark .cw-tab.is-filled { color: #F2B441; }
+:root.dark .cw-tab.is-filled.is-on, .dark .cw-tab.is-filled.is-on { border-bottom-color: #F2B441; }
