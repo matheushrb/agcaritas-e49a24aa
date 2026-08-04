@@ -143,8 +143,8 @@ export function TaskWindow({
   const { data: projects = [] } = useQuery({
     queryKey: ["projects_min_platforms"],
     queryFn: async () => {
-      const { data } = await supabase.from("projects").select("id,name,social_platforms").order("name");
-      return (data ?? []) as { id: string; name: string; social_platforms: any }[];
+      const { data } = await supabase.from("projects").select("id,name,client_id,social_platforms").order("name");
+      return (data ?? []) as { id: string; name: string; client_id: string | null; social_platforms: any }[];
     },
   });
   const { data: taskTypes = [] } = useQuery({
@@ -502,6 +502,8 @@ export function TaskWindow({
     status: status as any,
     priority: priority as any,
     project_id: projectId,
+    // Cliente herdado automaticamente do projeto selecionado.
+    ...(projectId ? { client_id: projects.find(p => p.id === projectId)?.client_id ?? null } : {}),
     assignee_id: assigneeId,
     start_date: startDate || null,
     due_date: dueDate || null,
