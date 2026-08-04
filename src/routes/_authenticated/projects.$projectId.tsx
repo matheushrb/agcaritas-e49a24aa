@@ -139,7 +139,7 @@ function ProjectDetail() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("projects")
-        .select("id,organization_id,name,description,status,client_id,start_date,end_date,created_at,project_type,billing_model,urgency,fixed_value,monthly_value,hourly_rate,printing_budget,notes,has_content_calendar,has_content_grid,has_timeline,traffic_budget,scope_flags")
+        .select("id,organization_id,name,description,status,client_id,owner_id,start_date,end_date,created_at,project_type,billing_model,urgency,fixed_value,monthly_value,hourly_rate,printing_budget,notes,has_content_calendar,has_content_grid,has_timeline,traffic_budget,scope_flags,social_platforms")
         .eq("id", projectId)
         .maybeSingle();
       if (error) throw error;
