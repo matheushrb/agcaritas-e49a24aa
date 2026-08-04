@@ -524,6 +524,8 @@ export function TaskWindow({
                 : "Crie a tarefa, defina os entregáveis e acompanhe o fluxo de produção"}</p>
             </div>
             <div className="cw-head-actions">
+              {timerChip}
+
               <div className="cw-head-status" style={{ ["--sc" as string]: statusColor(status) }}>
                 <i />
                 <select value={status} onChange={e => changeStatus(e.target.value)} aria-label="Status">
