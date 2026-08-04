@@ -370,7 +370,8 @@ function NewInvoiceWizard({
   }, [paymentLink]);
 
   const projectFilterActive = selectedProjects.size > 0;
-  const inProjects = (pid: string | null) => !projectFilterActive || (!!pid && selectedProjects.has(pid));
+  // Itens sem projeto ficam sempre disponíveis; o filtro restringe apenas itens vinculados a projeto.
+  const inProjects = (pid: string | null) => !pid || !projectFilterActive || selectedProjects.has(pid);
 
   // Pending charges + billable tasks
   const { data: charges = [] } = useQuery<PendingCharge[]>({
@@ -413,12 +414,36 @@ function NewInvoiceWizard({
   const invoicedMainTaskIds = tasksData.invoicedMainTaskIds;
   const invoicedDeliverableIds = tasksData.invoicedDeliverableIds;
 
+  // Projetos que já estão vinculados a alguma fatura não podem ser faturados de novo
+  const { data: invoicedProjectIds = new Set<string>() } = useQuery({
+    queryKey: ["invoices-invoiced-projects"],
+    queryFn: async () => {
+      const out = new Set<string>();
+      const { data: inv } = await supabase
+        .from("invoices")
+        .select("project_id,status")
+        .not("project_id", "is", null);
+      for (const r of (inv ?? []) as Array<{ project_id: string | null; status: string | null }>) {
+        if (r.project_id && r.status !== "canceled") out.add(r.project_id);
+      }
+      const { data: ch } = await supabase
+        .from("charges")
+        .select("project_id,invoice_id")
+        .not("invoice_id", "is", null);
+      for (const r of (ch ?? []) as Array<{ project_id: string | null }>) {
+        if (r.project_id) out.add(r.project_id);
+      }
+      return out;
+    },
+  });
+
   const filteredCharges = useMemo(() => charges.filter(c =>
     (!filterClient || c.client_id === filterClient) && inProjects(c.project_id),
   ), [charges, filterClient, selectedProjects]);
 
   const filteredTasks = useMemo(() => tasks.filter(t =>
     !invoicedMainTaskIds.has(t.id) &&
+    t.status === "done" &&
     (!filterClient || t.client_id === filterClient) &&
     inProjects(t.project_id) &&
     (t.billing_value ?? 0) > 0,
@@ -683,7 +708,10 @@ function NewInvoiceWizard({
 
   const stepLabels = ["Informações", "Itens da fatura", "Revisão"];
   const clientObj = clients.find(c => c.id === payerClient);
-  const visibleProjects = projects.filter(p => !filterClient || p.client_id === filterClient);
+  const visibleProjects = projects.filter(p =>
+    (!filterClient || p.client_id === filterClient) &&
+    (!invoicedProjectIds.has(p.id) || selectedProjects.has(p.id)),
+  );
 
   return (
     <Dialog open onOpenChange={(v) => !v && onClose()}>
@@ -727,41 +755,6 @@ function NewInvoiceWizard({
                   <Input type="date" className="fat01-input" value={issueDate} onChange={e => setIssueDate(e.target.value)} />
                 </div>
 
-                <div className="fat01-field full">
-                  <label className="fat01-label">Projeto(s) <span>*</span></label>
-                  <div className="fat01-projects">
-                    {visibleProjects.length === 0 && (
-                      <div className="px-3 py-4 text-[12px]" style={{ color: "var(--f1-muted)" }}>
-                        Nenhum projeto para este cliente.
-                      </div>
-                    )}
-                    {visibleProjects.map(p => {
-                      const checked = selectedProjects.has(p.id);
-                      return (
-                        <label key={p.id} className="fat01-proj" data-checked={checked}>
-                          <Checkbox
-                            checked={checked}
-                            onCheckedChange={(v) => {
-                              const next = new Set(selectedProjects);
-                              v ? next.add(p.id) : next.delete(p.id);
-                              setSelectedProjects(next);
-                            }}
-                          />
-                          <div className="flex-1 min-w-0">
-                            <div className="truncate">{p.name}</div>
-                            <div className="fat01-proj-client truncate">
-                              {clients.find(c => c.id === p.client_id)?.name ?? "Sem cliente"}
-                            </div>
-                          </div>
-                        </label>
-                      );
-                    })}
-                  </div>
-                  <span className="fat01-hint">
-                    Pode marcar mais de um projeto — os itens ficam agrupados por projeto na fatura.
-                    Sem marcar nenhum, todos os itens pendentes do cliente aparecem.
-                  </span>
-                </div>
 
                 <div className="fat01-field">
                   <label className="fat01-label">Condição de pagamento</label>
@@ -802,6 +795,42 @@ function NewInvoiceWizard({
 
             {step === 2 && (
               <div>
+                <div className="fat01-field full" style={{ marginBottom: 14 }}>
+                  <label className="fat01-label">Projetos a faturar</label>
+                  <div className="fat01-projects">
+                    {visibleProjects.length === 0 && (
+                      <div className="px-3 py-4 text-[12px]" style={{ color: "var(--f1-muted)" }}>
+                        Nenhum projeto disponível para faturar neste cliente.
+                      </div>
+                    )}
+                    {visibleProjects.map(p => {
+                      const checked = selectedProjects.has(p.id);
+                      return (
+                        <label key={p.id} className="fat01-proj" data-checked={checked}>
+                          <Checkbox
+                            checked={checked}
+                            onCheckedChange={(v) => {
+                              const next = new Set(selectedProjects);
+                              v ? next.add(p.id) : next.delete(p.id);
+                              setSelectedProjects(next);
+                            }}
+                          />
+                          <div className="flex-1 min-w-0">
+                            <div className="truncate">{p.name}</div>
+                            <div className="fat01-proj-client truncate">
+                              {clients.find(c => c.id === p.client_id)?.name ?? "Sem cliente"}
+                            </div>
+                          </div>
+                        </label>
+                      );
+                    })}
+                  </div>
+                  <span className="fat01-hint">
+                    Projetos já vinculados a uma fatura não aparecem aqui. Sem marcar nenhum, todos os
+                    itens pendentes do cliente aparecem. Tarefas concluídas sem projeto ficam sempre disponíveis.
+                  </span>
+                </div>
+
                 {(() => {
                   const delivsByTask = new Map<string, BillableDeliverable[]>();
                   for (const d of billableDeliverables) {
