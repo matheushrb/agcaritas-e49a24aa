@@ -29,8 +29,9 @@ type Inv = {
 };
 type Item = {
   id: string; description: string; amount: number | string | null; due_date: string | null;
-  deliverable_id: string | null; task_id: string | null;
+  deliverable_id: string | null; task_id: string | null; project_id: string | null;
 };
+
 
 const money = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 const num = (v: unknown) => Number(v ?? 0) || 0;
