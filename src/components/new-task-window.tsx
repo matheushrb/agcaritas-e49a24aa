@@ -718,13 +718,23 @@ export function TaskWindow({
                 <button type="button" className={`cw-tab${tab === "details" ? " is-on" : ""}`} onClick={() => setTab("details")}>
                   <ListChecks size={14} /> Detalhes
                 </button>
-                <button type="button" className={`cw-tab${tab === "live" ? " is-on" : ""}`} onClick={() => setTab("live")}>
-                  <Radio size={14} /> Ao Vivo / Estreia{liveItems.length > 0 && <span className="cw-tab-count">{liveItems.length}</span>}
-                </button>
-                <button type="button" className={`cw-tab${tab === "tech" ? " is-on" : ""}`} onClick={() => setTab("tech")}>
-                  <SlidersHorizontal size={14} /> Ficha técnica
-                </button>
+                {showLiveTab && (
+                  <button type="button"
+                    className={`cw-tab${tab === "live" ? " is-on" : ""}${liveItems.length > 0 ? " is-live" : ""}`}
+                    onClick={() => setTab("live")}>
+                    <Radio size={14} /> Ao Vivo / Estreia
+                    {liveItems.length > 0 && <span className="cw-tab-count">{liveItems.length}</span>}
+                  </button>
+                )}
+                {showTechTab && (
+                  <button type="button"
+                    className={`cw-tab${tab === "tech" ? " is-on" : ""}${techFilled ? " is-filled" : ""}`}
+                    onClick={() => setTab("tech")}>
+                    <SlidersHorizontal size={14} /> Ficha técnica
+                  </button>
+                )}
               </div>
+
 
               <div hidden={tab !== "details"}>
 
