@@ -559,6 +559,7 @@ function NewInvoiceWizard({
     const doc = await generateInvoicePDF({
       number: previewNumber,
       issue_date: issue,
+      competence: new Date(issue + "T12:00:00").toLocaleDateString("pt-BR", { month: "short", year: "numeric" }).replace(".", ""),
       due_date: dueDate || null,
       client: buildClientParty(client),
       agency: buildAgencyParty(organization),
@@ -566,6 +567,8 @@ function NewInvoiceWizard({
       notes: notes || undefined,
       payment_terms: paymentTerms || undefined,
       payment_link: paymentLink.trim() || undefined,
+      pix_code: paymentLink.trim() || undefined,
+      status_label: "Rascunho",
       is_preview: true,
     });
     const url = doc.output("bloburl") as unknown as string;

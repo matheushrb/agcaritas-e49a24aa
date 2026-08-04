@@ -17,6 +17,7 @@ import { AutomationsTab } from "@/components/settings/automations-tab";
 import { AgencyPricingTab } from "@/components/settings/agency-pricing";
 import { CatalogEditor } from "@/components/settings/catalog-editor";
 import { ProjectTypesEditor } from "@/components/settings/project-types-editor";
+import { ProfileTab } from "@/components/settings/profile-tab";
 
 
 
@@ -26,6 +27,7 @@ export const Route = createFileRoute("/_authenticated/settings")({
 });
 
 const TABS = [
+  { value: "profile",      label: "Meu Perfil",        icon: UserCog },
   { value: "agency",       label: "Dados da Agência",  icon: Building2 },
   { value: "pricing",      label: "Precificação",      icon: DollarSign },
   { value: "project-types",label: "Tipos de Projeto",  icon: FolderKanban },
@@ -47,7 +49,7 @@ function SettingsPage() {
         <p className="text-sm text-muted-foreground">Configurações globais da agência — dados cadastrais, serviços, plataformas, tipos de tarefa, funil, usuários e integrações.</p>
       </header>
 
-      <Tabs defaultValue="agency">
+      <Tabs defaultValue="profile">
         <div className="overflow-x-auto">
           <TabsList className="rounded-full bg-muted/60 h-auto flex-wrap">
             {TABS.map(t => {
@@ -61,6 +63,7 @@ function SettingsPage() {
           </TabsList>
         </div>
 
+        <TabsContent value="profile" className="mt-4"><ProfileTab /></TabsContent>
         <TabsContent value="agency" className="mt-4"><AgencyTab /></TabsContent>
         <TabsContent value="pricing" className="mt-4"><AgencyPricingTab /></TabsContent>
         <TabsContent value="project-types" className="mt-4">

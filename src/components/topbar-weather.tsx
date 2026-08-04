@@ -1,10 +1,13 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Cloud, CloudRain, CloudSnow, Sun, CloudSun, CloudLightning, CloudFog, MapPin } from "lucide-react";
+import { Cloud, CloudRain, CloudSnow, Sun, CloudSun, CloudLightning, CloudFog, MapPin, Loader2 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
-const STORAGE_KEY = "caritas.weather.city";
-const DEFAULT_CITY = "São Paulo";
+const STORAGE_KEY = "caritas.weather.place";
+
+type Place = { name: string; region: string; latitude: number; longitude: number };
+
+const DEFAULT_PLACE: Place = { name: "São Paulo", region: "São Paulo · BR", latitude: -23.5475, longitude: -46.63611 };
 
 function iconFor(code: number) {
   if (code === 0) return Sun;
@@ -29,31 +32,55 @@ function labelFor(code: number) {
 }
 
 export function TopbarWeather() {
-  const [city, setCity] = useState<string>(() => {
-    if (typeof window === "undefined") return DEFAULT_CITY;
-    return window.localStorage.getItem(STORAGE_KEY) || DEFAULT_CITY;
+  const [place, setPlace] = useState<Place>(DEFAULT_PLACE);
+  const [query, setQuery] = useState("");
+  const [debounced, setDebounced] = useState("");
+
+  useEffect(() => {
+    try {
+      const raw = window.localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw) as Place;
+        if (typeof parsed?.latitude === "number" && typeof parsed?.longitude === "number") setPlace(parsed);
+      }
+    } catch { /* ignore */ }
+  }, []);
+
+  useEffect(() => {
+    const t = setTimeout(() => setDebounced(query.trim()), 350);
+    return () => clearTimeout(t);
+  }, [query]);
+
+  const { data: results = [], isFetching: searching } = useQuery({
+    queryKey: ["weather-search", debounced],
+    enabled: debounced.length >= 2,
+    staleTime: 10 * 60 * 1000,
+    queryFn: async (): Promise<Place[]> => {
+      const res = await fetch(
+        `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(debounced)}&count=6&language=pt&format=json`,
+      );
+      const json = await res.json();
+      return (json?.results ?? []).map((p: Record<string, unknown>) => ({
+        name: String(p.name),
+        region: [p.admin1, p.country_code].filter(Boolean).join(" · "),
+        latitude: Number(p.latitude),
+        longitude: Number(p.longitude),
+      }));
+    },
   });
-  const [draft, setDraft] = useState(city);
 
   const { data, isLoading, isError } = useQuery({
-    queryKey: ["weather", city],
+    queryKey: ["weather", place.latitude, place.longitude],
     staleTime: 15 * 60 * 1000,
     queryFn: async () => {
-      const geoRes = await fetch(
-        `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(city)}&count=1&language=pt&format=json`,
-      );
-      const geo = await geoRes.json();
-      const place = geo?.results?.[0];
-      if (!place) throw new Error("Cidade não encontrada");
       const wRes = await fetch(
         `https://api.open-meteo.com/v1/forecast?latitude=${place.latitude}&longitude=${place.longitude}` +
           `&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code` +
           `&daily=temperature_2m_max,temperature_2m_min&forecast_days=1&timezone=auto`,
       );
+      if (!wRes.ok) throw new Error("Falha ao buscar o clima");
       const w = await wRes.json();
       return {
-        name: place.name as string,
-        region: [place.admin1, place.country_code].filter(Boolean).join(" · "),
         temp: Math.round(w.current.temperature_2m),
         feels: Math.round(w.current.apparent_temperature),
         humidity: Math.round(w.current.relative_humidity_2m),
@@ -66,25 +93,25 @@ export function TopbarWeather() {
 
   const Icon = iconFor(data?.code ?? 3);
 
-  const apply = () => {
-    const next = draft.trim();
-    if (!next) return;
-    setCity(next);
-    window.localStorage.setItem(STORAGE_KEY, next);
+  const choose = (p: Place) => {
+    setPlace(p);
+    setQuery("");
+    setDebounced("");
+    try { window.localStorage.setItem(STORAGE_KEY, JSON.stringify(p)); } catch { /* ignore */ }
   };
 
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <button type="button" className="cv-theme" title={`Clima em ${city}`}>
+        <button type="button" className="cv-theme" title={`Clima em ${place.name}`}>
           <Icon className="h-4 w-4" style={{ color: "var(--primary)" }} />
           <span style={{ fontSize: 12 }}>
             {isLoading ? "..." : isError ? "--" : `${data?.temp}°`}
           </span>
         </button>
       </PopoverTrigger>
-      <PopoverContent align="end" className="w-[268px] p-3">
-        {isError && <p style={{ fontSize: 12, color: "var(--danger)" }}>Não encontramos essa cidade.</p>}
+      <PopoverContent align="end" className="w-[280px] p-3">
+        {isError && <p style={{ fontSize: 12, color: "var(--danger)" }}>Não foi possível carregar o clima.</p>}
         {data && (
           <>
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -96,34 +123,52 @@ export function TopbarWeather() {
             </div>
             <div style={{ marginTop: 6, fontSize: 12, display: "flex", alignItems: "center", gap: 4 }}>
               <MapPin className="h-3 w-3" style={{ color: "var(--muted)" }} />
-              <span><b>{data.name}</b> <span style={{ color: "var(--muted)" }}>{data.region}</span></span>
+              <span><b>{place.name}</b> <span style={{ color: "var(--muted)" }}>{place.region}</span></span>
             </div>
             <div style={{ marginTop: 6, fontSize: 12, color: "var(--muted)" }}>
               {`Máx ${data.max}° · Mín ${data.min}° · Sensação ${data.feels}° · Umidade ${data.humidity}%`}
             </div>
           </>
         )}
-        <div style={{ marginTop: 10, borderTop: "1px solid var(--border)", paddingTop: 8, display: "flex", gap: 6 }}>
-          <input
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            onKeyDown={(e) => { if (e.key === "Enter") apply(); }}
-            placeholder="Trocar cidade"
-            style={{
-              flex: 1, fontSize: 12, padding: "6px 8px", borderRadius: 8,
-              border: "1px solid var(--border)", background: "transparent", color: "inherit",
-            }}
-          />
-          <button
-            type="button"
-            onClick={apply}
-            style={{
-              fontSize: 12, padding: "6px 10px", borderRadius: 8,
-              background: "var(--primary)", color: "#fff", fontWeight: 500,
-            }}
-          >
-            Ok
-          </button>
+
+        <div style={{ marginTop: 10, borderTop: "1px solid var(--border)", paddingTop: 8 }}>
+          <div style={{ position: "relative" }}>
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Buscar cidade..."
+              style={{
+                width: "100%", fontSize: 12, padding: "6px 8px", borderRadius: 8,
+                border: "1px solid var(--border)", background: "transparent", color: "inherit",
+              }}
+            />
+            {searching && (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" style={{ position: "absolute", right: 8, top: 8, color: "var(--muted)" }} />
+            )}
+          </div>
+
+          {debounced.length >= 2 && (
+            <div style={{ marginTop: 6, maxHeight: 168, overflowY: "auto", display: "grid", gap: 2 }}>
+              {results.length === 0 && !searching && (
+                <p style={{ fontSize: 12, color: "var(--muted)", padding: "4px 2px" }}>Nenhuma cidade encontrada.</p>
+              )}
+              {results.map((p) => (
+                <button
+                  key={`${p.latitude},${p.longitude}`}
+                  type="button"
+                  onClick={() => choose(p)}
+                  style={{
+                    textAlign: "left", fontSize: 12, padding: "6px 8px", borderRadius: 8,
+                    background: "transparent", color: "inherit",
+                  }}
+                  onMouseEnter={(e) => { e.currentTarget.style.background = "var(--surface-2)"; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
+                >
+                  <b>{p.name}</b> <span style={{ color: "var(--muted)" }}>{p.region}</span>
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       </PopoverContent>
     </Popover>

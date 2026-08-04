@@ -13,6 +13,9 @@ import { GlobalSearch } from "@/components/global-search";
 import { TopbarCalendar } from "@/components/topbar-calendar";
 import { TopbarWeather } from "@/components/topbar-weather";
 import { supabase } from "@/integrations/supabase/client";
+import caritasLogo from "@/assets/caritas-logo-horizontal.png.asset.json";
+import caritasSymbol from "@/assets/caritas-symbol.png.asset.json";
+import { resolveAvatarUrl } from "@/components/settings/profile-tab";
 
 type NavItem = { to: string; icon: typeof LayoutGrid; label: string };
 
@@ -69,7 +72,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     <div className="caritas-ui" data-theme={theme}>
       <aside className="cv-sidebar">
         <div className="cv-sidebar-logo">
-          <Asterisk className="h-[28px] w-[28px]" strokeWidth={2.4} />
+          <img src={caritasSymbol.url} alt="Caritas" style={{ width: 26, height: "auto" }} />
         </div>
 
         <nav className="cv-sidebar-nav">
@@ -104,10 +107,11 @@ function TopBar({
       if (!userRes.user) return null;
       const { data } = await supabase
         .from("profiles")
-        .select("full_name, display_name, role_title")
+        .select("full_name, display_name, role_title, avatar_url")
         .eq("id", userRes.user.id)
         .maybeSingle();
-      return { email: userRes.user.email ?? "", profile: data as any };
+      const avatar = await resolveAvatarUrl((data as { avatar_url?: string | null } | null)?.avatar_url);
+      return { email: userRes.user.email ?? "", profile: data as any, avatar };
     },
   });
 
@@ -124,8 +128,7 @@ function TopBar({
   return (
     <header className="cv-topbar">
       <Link to="/dashboard" className="cv-brand" style={{ textDecoration: "none", color: "inherit" }}>
-        <span><Asterisk className="h-[30px] w-[30px]" strokeWidth={2.5} /></span>
-        <strong style={{ fontWeight: 600 }}>Caritas</strong>
+        <img src={caritasLogo.url} alt="Agência Caritas" style={{ height: 26, width: "auto" }} />
       </Link>
 
       <GlobalSearch />
@@ -161,7 +164,11 @@ function TopBar({
           <Settings className="h-4 w-4" />
         </Link>
         <Link to="/settings" className="cv-profile" title="Meu perfil" style={{ textDecoration: "none", color: "inherit" }}>
-          <span className="cv-avatar">{initials}</span>
+          <span className="cv-avatar">
+            {me?.avatar
+              ? <img src={me.avatar} alt="Minha foto" style={{ width: "100%", height: "100%", borderRadius: "50%", objectFit: "cover" }} />
+              : initials}
+          </span>
           <div>
             <strong>{name}</strong>
             <span>{roleTitle}</span>

@@ -1,4 +1,5 @@
 import { createFileRoute, useNavigate, redirect } from "@tanstack/react-router";
+import caritasLogo from "@/assets/caritas-logo-horizontal.png.asset.json";
 import { useEffect, useState } from "react";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
@@ -121,11 +122,8 @@ function AuthPage() {
         {/* Left — brand storytelling */}
         <div className="hidden lg:flex flex-col justify-between p-12 xl:p-16">
           <div className="flex items-center gap-3">
-            <div className="grid h-11 w-11 place-items-center rounded-2xl bg-primary text-primary-foreground shadow-lg shadow-primary/30">
-              <Sparkles className="h-5 w-5" />
-            </div>
+            <img src={caritasLogo.url} alt="Agência Caritas" className="h-11 w-auto" />
             <div className="leading-tight">
-              <div className="font-display text-xl font-bold">Caritas Agência</div>
               <div className="text-xs text-muted-foreground">Sistema interno</div>
             </div>
           </div>
@@ -174,10 +172,7 @@ function AuthPage() {
         <div className="flex items-center justify-center p-6 sm:p-10">
           <div className="w-full max-w-md">
             <div className="lg:hidden mb-8 flex items-center gap-3">
-              <div className="grid h-10 w-10 place-items-center rounded-xl bg-primary text-primary-foreground">
-                <Sparkles className="h-5 w-5" />
-              </div>
-              <span className="font-display text-xl font-bold">Caritas Agência</span>
+              <img src={caritasLogo.url} alt="Agência Caritas" className="h-9 w-auto" />
             </div>
 
             <div className="rounded-3xl border border-border/60 bg-card/80 p-8 shadow-2xl shadow-primary/5 backdrop-blur-xl sm:p-10">
