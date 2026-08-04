@@ -294,7 +294,18 @@ export function TaskWindow({
       })),
     );
     setPlatformsSel(existing.platform ? String(existing.platform).split(",").map((s: string) => s.trim()).filter(Boolean) : []);
+    setLiveItems(
+      (Array.isArray(existing.live_items) ? existing.live_items : []).map((l: any) => ({
+        id: l.id ?? uid(), title: l.title ?? "", kind: (l.kind === "premiere" ? "premiere" : "live"),
+        platform: l.platform ?? "", date: l.date ?? null, time: l.time ?? "",
+        duration_min: l.duration_min ?? null,
+        status: (["scheduled", "live", "aired", "cancelled"].includes(l.status) ? l.status : "scheduled"),
+        url: l.url ?? "", notes: l.notes ?? "",
+      })) as LiveDraft[],
+    );
+    setTech({ ...EMPTY_TECH, ...(existing.tech_sheet && typeof existing.tech_sheet === "object" ? existing.tech_sheet : {}) });
     setNotes("");
+
   }, [existing, open, isEdit]);
 
   const deliverablesTotal = useMemo(
