@@ -57,6 +57,7 @@ type ViewsProps = {
   view: TskView;
   tasks: TskTask[];
   projectName: (id: string | null) => string;
+  assigneeName?: (id: string | null | undefined) => { name: string; role?: string | null };
   onOpen: (id: string) => void;
   onQuickCreate?: (status: TskTask["status"], title: string) => void;
   onStatusChange?: (id: string, status: TskTask["status"]) => void;
