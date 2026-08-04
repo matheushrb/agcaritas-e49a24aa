@@ -5,6 +5,8 @@ import {
 } from "lucide-react";
 import { hashColor, initials, daysDiff, fmtDate, type TskTask } from "./tsk02-list";
 import "@/tsk0304.css";
+import { useStageIndex, stageInfoOf } from "@/lib/task-types";
+
 
 const COLS: { key: TskTask["status"]; label: string; color: string }[] = [
   { key: "todo", label: "A fazer", color: "#98A2B3" },
