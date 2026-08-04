@@ -119,6 +119,8 @@ function TasksPage() {
   const [search, setSearch] = useState("");
   const [priorityFilter, setPriorityFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [assigneeFilter, setAssigneeFilter] = useState<string>("all");
+  const [projectFilter, setProjectFilter] = useState<string>("all");
   const [view, setView] = useState<TskView>("list");
   const [turbo, setTurbo] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
