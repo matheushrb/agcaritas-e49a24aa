@@ -52,6 +52,8 @@ type Project = {
   description: string | null;
   status: ProjectStatus;
   client_id: string | null;
+  owner_id: string | null;
+  social_platforms?: unknown;
   start_date: string | null;
   end_date: string | null;
   created_at: string;
