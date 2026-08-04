@@ -264,6 +264,8 @@ export function TaskWindow({
   const totalSeconds = timeEntries.reduce((s, e) => s + (e.duration_seconds ?? 0), 0);
   const fmtHours = (sec: number) => `${Math.floor(sec / 3600)}h ${String(Math.round((sec % 3600) / 60)).padStart(2, "0")}m`;
   const [tsHours, setTsHours] = useState("");
+  const [tsDate, setTsDate] = useState(() => new Date().toISOString().slice(0, 10));
+
 
   const addTime = useMutation({
     mutationFn: async () => {
@@ -277,7 +279,7 @@ export function TaskWindow({
         task_id: taskId,
         user_id: auth.user?.id ?? null,
         duration_seconds: Math.round(h * 3600),
-        started_at: new Date().toISOString(),
+        started_at: new Date(`${tsDate}T12:00:00`).toISOString(),
       });
       if (error) throw error;
     },
@@ -672,6 +674,55 @@ export function TaskWindow({
                 </div>
               </div>
 
+              <div className="cw-side-card">
+                <h5><Clock size={15} /> Timesheet</h5>
+                <div className="cw-field" style={{ marginBottom: 8 }}>
+                  <span className="cw-label">Horas estimadas</span>
+                  <input className="cw-input" type="number" step="0.5" value={estimated}
+                    onChange={e => setEstimated(e.target.value)} placeholder="0" />
+                </div>
+                <div className="cw-side-line" style={{ padding: 0 }}>
+                  <span>Total apontado</span><span>{fmtHours(totalSeconds)}</span>
+                </div>
+                {estimated && Number(estimated) > 0 && (
+                  <div className="cw-side-line" style={{ padding: 0 }}>
+                    <span>Da estimativa</span>
+                    <span>{Math.round((totalSeconds / 3600 / Number(estimated)) * 100)}%</span>
+                  </div>
+                )}
+                {!taskId ? (
+                  <span className="cw-hint" style={{ display: "block", marginTop: 8 }}>
+                    Salve a tarefa para lançar horas trabalhadas.
+                  </span>
+                ) : (
+                  <>
+                    <div style={{ marginTop: 8 }}>
+                      {timeEntries.slice(0, 6).map(e => (
+                        <div key={e.id} className="cw-ts-row">
+                          <span className="cw-ts-when">
+                            {new Date(e.started_at ?? e.created_at).toLocaleDateString("pt-BR")}
+                          </span>
+                          <span>{fmtHours(e.duration_seconds)}</span>
+                          <button type="button" className="cw-icon-btn" onClick={() => removeTime.mutate(e.id)}>
+                            <Trash2 size={13} />
+                          </button>
+                        </div>
+                      ))}
+                      {timeEntries.length === 0 && <span className="cw-hint">Nenhum apontamento ainda.</span>}
+                    </div>
+                    <div className="cw-ts-form">
+                      <input className="cw-input" type="date" value={tsDate} onChange={e => setTsDate(e.target.value)} />
+                      <input className="cw-input" type="number" step="0.25" value={tsHours}
+                        onChange={e => setTsHours(e.target.value)} placeholder="Horas" style={{ maxWidth: 78 }} />
+                      <button type="button" className="cw-btn" disabled={addTime.isPending}
+                        onClick={() => addTime.mutate()}>Lançar</button>
+                    </div>
+                  </>
+                )}
+              </div>
+
+
+
 
               <div className="cw-side-card">
                 <h5><DollarSign size={15} /> Faturamento</h5>
@@ -695,50 +746,6 @@ export function TaskWindow({
                 </div>
               </div>
 
-              <div className="cw-side-card">
-                <h5><Clock size={15} /> Estimativa</h5>
-                <input className="cw-input" type="number" step="0.5" value={estimated}
-                  onChange={e => setEstimated(e.target.value)} placeholder="Horas estimadas" />
-              </div>
-
-              <div className="cw-side-card">
-                <h5><Clock size={15} /> Timesheet</h5>
-                {!taskId ? (
-                  <span className="cw-hint">Salve a tarefa para lançar horas trabalhadas.</span>
-                ) : (
-                  <>
-                    <div className="cw-side-line" style={{ padding: 0 }}>
-                      <span>Total apontado</span><span>{fmtHours(totalSeconds)}</span>
-                    </div>
-                    {estimated && Number(estimated) > 0 && (
-                      <div className="cw-side-line" style={{ padding: 0 }}>
-                        <span>Da estimativa</span>
-                        <span>{Math.round((totalSeconds / 3600 / Number(estimated)) * 100)}%</span>
-                      </div>
-                    )}
-                    <div style={{ marginTop: 8 }}>
-                      {timeEntries.slice(0, 6).map(e => (
-                        <div key={e.id} className="cw-ts-row">
-                          <span className="cw-ts-when">
-                            {new Date(e.started_at ?? e.created_at).toLocaleDateString("pt-BR")}
-                          </span>
-                          <span>{fmtHours(e.duration_seconds)}</span>
-                          <button type="button" className="cw-icon-btn" onClick={() => removeTime.mutate(e.id)}>
-                            <Trash2 size={13} />
-                          </button>
-                        </div>
-                      ))}
-                      {timeEntries.length === 0 && <span className="cw-hint">Nenhum apontamento ainda.</span>}
-                    </div>
-                    <div className="cw-ts-form">
-                      <input className="cw-input" type="number" step="0.25" value={tsHours}
-                        onChange={e => setTsHours(e.target.value)} placeholder="Horas" />
-                      <button type="button" className="cw-btn" disabled={addTime.isPending}
-                        onClick={() => addTime.mutate()}>Lançar</button>
-                    </div>
-                  </>
-                )}
-              </div>
 
 
 
