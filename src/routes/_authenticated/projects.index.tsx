@@ -335,7 +335,7 @@ function ProjectsPage() {
     mutationFn: async (input: ProjectWizardValue) => {
       const { data: profile } = await supabase.from("profiles").select("organization_id").maybeSingle();
       if (!profile?.organization_id) throw new Error("Sem organização");
-      const { error } = await supabase.from("projects").insert({
+      const { data: created, error } = await supabase.from("projects").insert({
         organization_id: profile.organization_id,
         name: input.name,
         client_id: input.client_id,
@@ -352,11 +352,29 @@ function ProjectsPage() {
         scope_flags: { ...input.scope_flags, tools: input.tools } as any,
         traffic_budget: input.traffic_budget as any,
         other_budgets: input.other_budgets as any,
-      });
+      }).select("id").single();
       if (error) throw error;
+
+      const memberIds = [
+        ...(input.owner_id ? [{ user_id: input.owner_id, role: "owner" }] : []),
+        ...((input.participants ?? []) as { user_id: string; role?: string | null }[])
+          .filter((p) => p.user_id && p.user_id !== input.owner_id)
+          .map((p) => ({ user_id: p.user_id, role: p.role ?? null })),
+      ];
+      if (memberIds.length) {
+        await supabase.from("project_members").insert(
+          memberIds.map((m) => ({
+            organization_id: profile.organization_id,
+            project_id: created.id,
+            user_id: m.user_id,
+            role: m.role,
+          })),
+        );
+      }
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["projects"] });
+      qc.invalidateQueries({ queryKey: ["project-members-min"] });
       toast.success("Projeto criado");
       setNewOpen(false);
     },
