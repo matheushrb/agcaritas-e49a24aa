@@ -433,22 +433,18 @@ export function EditProjectDialog({
                 </div>
               </Section>
 
-              <Section icon={<Megaphone className="h-4 w-4" />} title="Plataformas do projeto" description="Redes, canais e mídias envolvidas neste projeto.">
+              <Section icon={<Megaphone className="h-4 w-4" />} title="Plataformas do projeto" description="Só estas plataformas ficam disponíveis nas tarefas deste projeto.">
                 {platformsCatalog.length === 0 ? (
                   <p className="text-xs text-muted-foreground">Nenhuma plataforma cadastrada. Gerencie em Configurações → Plataformas.</p>
                 ) : (
                   <div className="flex flex-wrap gap-2">
                     {platformsCatalog.map(p => {
-                      const current: string[] = Array.isArray((scope as any).tools) ? (scope as any).tools : [];
-                      const on = current.includes(p.name);
+                      const on = selectedPlatforms.includes(p.name);
                       return (
                         <button
                           key={p.id}
                           type="button"
-                          onClick={() => set("scope_flags", {
-                            ...scope,
-                            tools: on ? current.filter(x => x !== p.name) : [...current, p.name],
-                          } as any)}
+                          onClick={() => togglePlatform(p.name)}
                           className={cn(
                             "rounded-full pl-1 pr-3 py-1 text-xs font-medium border transition-colors flex items-center gap-1.5",
                             on ? "border-primary bg-primary text-primary-foreground" : "border-border hover:bg-muted",
