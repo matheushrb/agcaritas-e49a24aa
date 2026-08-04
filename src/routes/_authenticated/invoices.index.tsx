@@ -15,6 +15,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Receipt, Plus, Download, CheckCircle2, XCircle, ArrowLeft, ArrowRight, FileText, Building2, Pencil, Trash2, RotateCcw, Save, X } from "lucide-react";
 import { toast } from "sonner";
+import { PaymentMethodTags, serializePaymentMethods } from "@/components/invoices/payment-methods";
 import { generateInvoicePDF, DEFAULT_PAYMENT_TERMS, DEFAULT_LEGAL_NOTES } from "@/lib/pdf/invoice-pdf";
 import { cn } from "@/lib/utils";
 import QRCode from "qrcode";
@@ -285,7 +286,7 @@ const PAYMENT_CONDITIONS: Array<{ value: string; label: string; days: number | n
   { value: "60", label: "60 dias", days: 60 },
   { value: "custom", label: "Personalizada", days: null },
 ];
-const PAYMENT_METHODS = ["PIX", "Boleto", "Transferência bancária", "Cartão de crédito", "Dinheiro", "Outro"];
+
 
 function addDays(base: string, days: number) {
   const d = new Date(`${base}T00:00:00`);
@@ -313,7 +314,7 @@ function NewInvoiceWizard({
   const [issueDate, setIssueDate] = useState(new Date().toISOString().slice(0, 10));
   const [dueDate, setDueDate] = useState<string>("");
   const [paymentCondition, setPaymentCondition] = useState<string>("30");
-  const [paymentMethod, setPaymentMethod] = useState<string>("PIX");
+  const [paymentMethods, setPaymentMethods] = useState<string[]>(["PIX"]);
   const [discount, setDiscount] = useState<number>(0);
   const [surcharge, setSurcharge] = useState<number>(0);
   const [notes, setNotes] = useState(DEFAULT_LEGAL_NOTES);
@@ -655,7 +656,7 @@ function NewInvoiceWizard({
         total,
         subtotal,
         discount: discount || 0,
-        payment_method: paymentMethod || null,
+        payment_method: serializePaymentMethods(paymentMethods) || null,
         status: "draft",
         notes: notes || null,
         payment_terms: paymentTerms || null,
@@ -770,13 +771,8 @@ function NewInvoiceWizard({
                 </div>
 
                 <div className="fat01-field">
-                  <label className="fat01-label">Forma de pagamento</label>
-                  <Select value={paymentMethod} onValueChange={setPaymentMethod}>
-                    <SelectTrigger className="fat01-input"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {PAYMENT_METHODS.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
+                  <label className="fat01-label">Formas de pagamento aceitas</label>
+                  <PaymentMethodTags value={paymentMethods} onChange={setPaymentMethods} />
                 </div>
 
                 <div className="fat01-field">
@@ -1145,7 +1141,7 @@ function NewInvoiceWizard({
                 <div className="fat01-sum-line"><span>Itens</span><b>{itemCount}</b></div>
                 <div className="fat01-sum-line"><span>Emissão</span><b>{fmtDate(issueDate)}</b></div>
                 <div className="fat01-sum-line"><span>Vencimento</span><b>{dueDate ? fmtDate(dueDate) : "—"}</b></div>
-                <div className="fat01-sum-line"><span>Pagamento</span><b>{paymentMethod}</b></div>
+                <div className="fat01-sum-line"><span>Pagamento</span><b>{paymentMethods.join(", ") || "—"}</b></div>
                 <div className="fat01-sum-div" />
                 <div className="fat01-sum-line"><span>Subtotal</span><b>{money(subtotal)}</b></div>
                 <div className="fat01-sum-line neg"><span>Desconto</span><b>{discount > 0 ? `-${money(discount)}` : money(0)}</b></div>

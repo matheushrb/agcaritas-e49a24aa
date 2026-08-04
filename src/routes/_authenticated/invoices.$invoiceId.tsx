@@ -13,7 +13,9 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
+import { PaymentMethodTags, parsePaymentMethods, serializePaymentMethods } from "@/components/invoices/payment-methods";
 import "@/fin03.css";
+
 
 
 export const Route = createFileRoute("/_authenticated/invoices/$invoiceId")({
@@ -29,8 +31,9 @@ type Inv = {
 };
 type Item = {
   id: string; description: string; amount: number | string | null; due_date: string | null;
-  deliverable_id: string | null; task_id: string | null;
+  deliverable_id: string | null; task_id: string | null; project_id: string | null;
 };
+
 
 const money = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 const num = (v: unknown) => Number(v ?? 0) || 0;
@@ -80,10 +83,12 @@ function InvoiceDetailPage() {
     number: "", client_id: "", project_id: "", issue_date: "", due_date: "",
     payment_method: "", payment_terms: "", payment_link: "", discount: "0", notes: "",
   });
-  const [drafts, setDrafts] = useState<{ id?: string; description: string; amount: string; due_date: string }[]>([]);
+  const [drafts, setDrafts] = useState<{ id?: string; description: string; amount: string; due_date: string; project_id: string | null }[]>([]);
   const [removed, setRemoved] = useState<string[]>([]);
   const [pay, setPay] = useState({ date: new Date().toISOString().slice(0, 10), method: "", amount: "" });
+  const [methods, setMethods] = useState<string[]>([]);
   const editTotal = Math.max(0, drafts.reduce((a, d) => a + (Number(d.amount) || 0), 0) - (Number(form.discount) || 0));
+
 
 
 
@@ -102,11 +107,12 @@ function InvoiceDetailPage() {
     queryKey: ["invoice-charges", invoiceId],
     queryFn: async () => {
       const { data } = await supabase.from("charges")
-        .select("id,description,amount,due_date,deliverable_id,task_id")
+        .select("id,description,amount,due_date,deliverable_id,task_id,project_id")
         .eq("invoice_id", invoiceId);
       return (data ?? []) as unknown as Item[];
     },
   });
+
 
   const { data: client } = useQuery({
     queryKey: ["invoice-client", invoice?.client_id],
@@ -151,7 +157,6 @@ function InvoiceDetailPage() {
 
   const { data: allProjects = [] } = useQuery({
     queryKey: ["projects-min"],
-    enabled: editOpen,
     queryFn: async () => {
       const { data } = await supabase.from("projects").select("id,name,client_id").order("name");
       return (data ?? []) as { id: string; name: string; client_id: string | null }[];
@@ -284,10 +289,24 @@ function InvoiceDetailPage() {
       discount: String(num(invoice.discount)),
       notes: invoice.notes ?? "",
     });
-    setDrafts(items.map(i => ({ id: i.id, description: i.description, amount: String(num(i.amount)), due_date: (i.due_date ?? "").slice(0, 10) })));
+    setDrafts(items.map(i => ({ id: i.id, description: i.description, amount: String(num(i.amount)), due_date: (i.due_date ?? "").slice(0, 10), project_id: i.project_id ?? null })));
+    setMethods(parsePaymentMethods(invoice.payment_method));
     setRemoved([]);
     setEditOpen(true);
   }
+
+  // projetos vinculados à fatura (derivados dos itens)
+  const draftProjectIds = useMemo(
+    () => Array.from(new Set(drafts.map(d => d.project_id).filter(Boolean))) as string[],
+    [drafts]
+  );
+
+  function removeProjectTag(projectId: string) {
+    const ids = drafts.filter(d => d.project_id === projectId && d.id).map(d => d.id!) as string[];
+    setRemoved(r => [...r, ...ids]);
+    setDrafts(a => a.filter(d => d.project_id !== projectId));
+  }
+
 
   const saveInvoice = useMutation({
     mutationFn: async () => {
@@ -305,10 +324,10 @@ function InvoiceDetailPage() {
       const { error } = await supabase.from("invoices").update({
         ...(nextNumber ? { number: nextNumber } : {}),
         client_id: form.client_id || null,
-        project_id: form.project_id || null,
+        project_id: draftProjectIds.length === 1 ? draftProjectIds[0] : null,
         issue_date: form.issue_date || undefined,
         due_date: form.due_date || null,
-        payment_method: form.payment_method || null,
+        payment_method: serializePaymentMethods(methods) || null,
         payment_terms: form.payment_terms || null,
         payment_link: form.payment_link || null,
         discount,
@@ -322,7 +341,30 @@ function InvoiceDetailPage() {
         const { error: delErr } = await supabase.from("charges")
           .update({ invoice_id: null, status: "pending_invoice" }).in("id", removed);
         if (delErr) throw delErr;
+
+        // devolve tarefas/entregáveis removidos ao estado "faturável"
+        const removedItems = items.filter(i => removed.includes(i.id));
+        const delivByTask = new Map<string, Set<string>>();
+        const plainTasks = new Set<string>();
+        for (const it of removedItems) {
+          if (it.task_id && it.deliverable_id) {
+            if (!delivByTask.has(it.task_id)) delivByTask.set(it.task_id, new Set());
+            delivByTask.get(it.task_id)!.add(it.deliverable_id);
+          } else if (it.task_id) {
+            plainTasks.add(it.task_id);
+          }
+        }
+        for (const [taskId, ids] of delivByTask) {
+          const { data: t } = await supabase.from("tasks").select("deliverables").eq("id", taskId).maybeSingle();
+          const list = (t?.deliverables ?? []) as { id: string; invoiced?: boolean }[];
+          const next = list.map(dd => (ids.has(dd.id) ? { ...dd, invoiced: false } : dd));
+          await supabase.from("tasks").update({ deliverables: next } as never).eq("id", taskId);
+        }
+        if (plainTasks.size) {
+          await supabase.from("tasks").update({ billed_invoice_id: null } as never).in("id", [...plainTasks]);
+        }
       }
+
 
       for (const d of lines) {
         const amount = Number(d.amount) || 0;
@@ -338,7 +380,7 @@ function InvoiceDetailPage() {
             organization_id: prof.organization_id,
             invoice_id: invoiceId,
             client_id: form.client_id || null,
-            project_id: form.project_id || null,
+            project_id: d.project_id || null,
             description: d.description,
             amount,
             due_date: due,
@@ -434,8 +476,15 @@ function InvoiceDetailPage() {
           {client && <Link to="/clients/$clientId" params={{ clientId: client.id }} className="f3-slink">Ver cliente <ArrowRight size={11} /></Link>}
         </div>
         <div>
-          <div className="f3-slabel">Projeto</div>
-          <div className="f3-svalue">{project?.name ?? "Múltiplos"}</div>
+          <div className="f3-slabel">Projeto(s)</div>
+          <div className="f3-svalue">
+            {(() => {
+              const ids = Array.from(new Set(items.map(i => i.project_id).filter(Boolean))) as string[];
+              if (ids.length === 0) return project?.name ?? "—";
+              return ids.map(id => allProjects.find(p => p.id === id)?.name ?? "Projeto").join(" · ");
+            })()}
+          </div>
+
           {project && <Link to="/projects/$projectId" params={{ projectId: project.id }} className="f3-slink">Ver projeto <ArrowRight size={11} /></Link>}
         </div>
         <div>
@@ -696,7 +745,7 @@ function InvoiceDetailPage() {
               </div>
               <div>
                 <label className="text-xs font-medium text-muted-foreground">Cliente pagador</label>
-                <Select value={form.client_id || "none"} onValueChange={v => setForm(f => ({ ...f, client_id: v === "none" ? "" : v, project_id: "" }))}>
+                <Select value={form.client_id || "none"} onValueChange={v => setForm(f => ({ ...f, client_id: v === "none" ? "" : v }))}>
                   <SelectTrigger><SelectValue placeholder="Escolha o cliente" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="none">— Sem cliente —</SelectItem>
@@ -705,17 +754,36 @@ function InvoiceDetailPage() {
                 </Select>
               </div>
               <div>
-                <label className="text-xs font-medium text-muted-foreground">Projeto</label>
-                <Select value={form.project_id || "none"} onValueChange={v => setForm(f => ({ ...f, project_id: v === "none" ? "" : v }))}>
-                  <SelectTrigger><SelectValue placeholder="Sem projeto" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">— Sem projeto —</SelectItem>
-                    {allProjects.filter(p => !form.client_id || p.client_id === form.client_id).map(p => (
-                      <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <label className="text-xs font-medium text-muted-foreground">Projetos faturados</label>
+                <div className="flex flex-wrap gap-1.5 mt-1">
+                  {draftProjectIds.length === 0 && (
+                    <span className="text-[11px] text-muted-foreground">Nenhum projeto vinculado aos itens desta fatura.</span>
+                  )}
+                  {draftProjectIds.map(pid => {
+                    const p = allProjects.find(x => x.id === pid);
+                    const count = drafts.filter(d => d.project_id === pid).length;
+                    return (
+                      <span key={pid} className="inline-flex items-center gap-1 rounded-full border border-primary/40 bg-primary/10 text-primary px-2.5 h-7 text-[11px] font-medium">
+                        {p?.name ?? "Projeto"} · {count}
+                        <button type="button" title="Remover projeto da fatura"
+                          className="ml-0.5 rounded-full hover:bg-primary/20 p-0.5"
+                          onClick={() => removeProjectTag(pid)}>
+                          <XCircle className="h-3 w-3" />
+                        </button>
+                      </span>
+                    );
+                  })}
+                  {drafts.some(d => !d.project_id) && (
+                    <span className="inline-flex items-center rounded-full border px-2.5 h-7 text-[11px] text-muted-foreground">
+                      Sem projeto · {drafts.filter(d => !d.project_id).length}
+                    </span>
+                  )}
+                </div>
+                <p className="text-[10px] text-muted-foreground mt-1">
+                  As tags vêm dos itens da fatura. Ao remover uma tag, os itens daquele projeto saem da fatura e voltam a ficar faturáveis.
+                </p>
               </div>
+
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
@@ -728,13 +796,14 @@ function InvoiceDetailPage() {
                 </div>
               </div>
 
+              <div>
+                <label className="text-xs font-medium text-muted-foreground">Formas de pagamento aceitas</label>
+                <PaymentMethodTags className="mt-1" value={methods} onChange={setMethods} />
+              </div>
+
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs font-medium text-muted-foreground">Forma de pagamento</label>
-                  <Input value={form.payment_method} placeholder="PIX, boleto, transferência…"
-                    onChange={e => setForm(f => ({ ...f, payment_method: e.target.value }))} />
-                </div>
-                <div>
+
                   <label className="text-xs font-medium text-muted-foreground">Desconto (R$)</label>
                   <Input type="number" step="0.01" value={form.discount}
                     onChange={e => setForm(f => ({ ...f, discount: e.target.value }))} />
@@ -794,8 +863,15 @@ function InvoiceDetailPage() {
                       <div className="font-semibold">{allClients.find(c => c.id === form.client_id)?.name ?? "—"}</div>
                     </div>
                     <div>
-                      <div className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground mb-1">Projeto</div>
-                      <div className="font-semibold">{allProjects.find(p => p.id === form.project_id)?.name ?? "—"}</div>
+                      <div className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground mb-1">Projeto(s)</div>
+                      <div className="flex flex-wrap gap-1">
+                        {draftProjectIds.length === 0 && <span className="font-semibold">—</span>}
+                        {draftProjectIds.map(pid => (
+                          <span key={pid} className="rounded-full bg-primary/10 text-primary px-2 py-0.5 text-[10px] font-semibold">
+                            {allProjects.find(p => p.id === pid)?.name ?? "Projeto"}
+                          </span>
+                        ))}
+                      </div>
                     </div>
                   </div>
 
@@ -803,7 +879,8 @@ function InvoiceDetailPage() {
                     <div className="flex items-center justify-between mb-1">
                       <div className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">Itens ({drafts.length})</div>
                       <Button type="button" size="sm" variant="outline" className="h-6 px-2 text-[10px]"
-                        onClick={() => setDrafts(d => [...d, { description: "", amount: "0", due_date: form.due_date }])}>
+                        onClick={() => setDrafts(d => [...d, { description: "", amount: "0", due_date: form.due_date, project_id: draftProjectIds.length === 1 ? draftProjectIds[0] : null }])}>
+
                         <Plus className="h-3 w-3 mr-1" /> Adicionar item
                       </Button>
                     </div>
