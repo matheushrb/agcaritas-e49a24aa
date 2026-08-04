@@ -605,8 +605,27 @@ export function TaskWindow({
     </div>
   ) : null;
 
+  const confirmDialogs = (
+    <>
+      <UnsavedChangesDialog
+        open={askUnsaved} onOpenChange={setAskUnsaved}
+        saving={save.isPending}
+        onDiscard={() => { setAskUnsaved(false); close(false); }}
+        onSave={() => { setAskUnsaved(false); save.mutate(); }}
+      />
+      <ConfirmDeleteDialog
+        open={askDelete} onOpenChange={setAskDelete}
+        pending={remove.isPending}
+        title="Excluir esta tarefa?"
+        description="A tarefa, seus entregáveis e lançamentos serão removidos permanentemente."
+        onConfirm={() => { setAskDelete(false); remove.mutate(); }}
+      />
+    </>
+  );
+
   if (mode === "minimized") {
     return (
+      <>
       <div className="cw cw-mini">
         <span className="cw-title-icon"><ListChecks size={15} /></span>
         <span className="cw-mini-title">{title || (isEdit ? "Tarefa" : "Nova Tarefa")}</span>
@@ -614,6 +633,8 @@ export function TaskWindow({
         <button type="button" className="cw-close" onClick={() => setMode("modal")} aria-label="Restaurar"><Maximize2 size={16} /></button>
         <button type="button" className="cw-close" onClick={requestClose} aria-label="Fechar"><X size={16} /></button>
       </div>
+      {confirmDialogs}
+      </>
     );
   }
 
@@ -1296,6 +1317,7 @@ export function TaskWindow({
       <>
         <div className="cw-dock-backdrop" onClick={() => setMode("minimized")} />
         <aside className="cw cw-dock">{windowEl}</aside>
+        {confirmDialogs}
       </>
     );
   }
@@ -1308,6 +1330,7 @@ export function TaskWindow({
       >
         {windowEl}
       </DialogContent>
+      {confirmDialogs}
     </Dialog>
   );
 }
