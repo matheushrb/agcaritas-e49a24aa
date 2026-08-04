@@ -81,10 +81,12 @@ function InvoiceDetailPage() {
     number: "", client_id: "", project_id: "", issue_date: "", due_date: "",
     payment_method: "", payment_terms: "", payment_link: "", discount: "0", notes: "",
   });
-  const [drafts, setDrafts] = useState<{ id?: string; description: string; amount: string; due_date: string }[]>([]);
+  const [drafts, setDrafts] = useState<{ id?: string; description: string; amount: string; due_date: string; project_id: string | null }[]>([]);
   const [removed, setRemoved] = useState<string[]>([]);
   const [pay, setPay] = useState({ date: new Date().toISOString().slice(0, 10), method: "", amount: "" });
+  const [methods, setMethods] = useState<string[]>([]);
   const editTotal = Math.max(0, drafts.reduce((a, d) => a + (Number(d.amount) || 0), 0) - (Number(form.discount) || 0));
+
 
 
 
