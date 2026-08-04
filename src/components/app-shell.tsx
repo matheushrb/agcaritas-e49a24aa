@@ -126,6 +126,20 @@ export function AppShell({ children }: { children: ReactNode }) {
 }
 
 
+function getSectionTitle(pathname: string) {
+  if (pathname.startsWith("/dashboard")) return "Dashboard";
+  if (pathname.startsWith("/projects")) return "Projetos";
+  if (pathname.startsWith("/tasks")) return "Tarefas";
+  if (pathname.startsWith("/crm")) return "CRM";
+  if (pathname.startsWith("/proposals")) return "Propostas";
+  if (pathname.startsWith("/finance")) return "Financeiro";
+  if (pathname.startsWith("/invoices")) return "Faturas";
+  if (pathname.startsWith("/team")) return "RH";
+  if (pathname.startsWith("/clients")) return "Clientes";
+  if (pathname.startsWith("/settings")) return "Configurações";
+  return "Caritas";
+}
+
 function TopBar({
   theme, onToggleTheme, pathname,
 }: { theme: "light" | "dark"; onToggleTheme: (t: "light" | "dark") => void; pathname: string }) {
