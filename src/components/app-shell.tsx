@@ -1,6 +1,6 @@
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
 import {
-  LayoutGrid, Home, ClipboardList, Users, FileText, Briefcase, DollarSign, Calendar, UsersRound,
+  LayoutGrid, Home, ClipboardList, Users, FileText, Briefcase, DollarSign, UsersRound,
   Settings, Moon, Sun, LogOut, Bell, CheckSquare, Target, Truck, Lightbulb,
   Megaphone, Building2, Receipt, HelpCircle,
   Inbox, MessageSquare, FileSignature, Check, Trash2, Asterisk, ChevronDown,
