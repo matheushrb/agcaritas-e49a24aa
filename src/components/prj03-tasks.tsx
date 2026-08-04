@@ -22,21 +22,6 @@ export type P3Task = {
 };
 export type P3Person = { id: string; full_name: string | null; role: string | null };
 
-const STAGE_LABEL: Record<P3Task["stage"], string> = {
-  briefing: "Briefing",
-  creation: "Criação",
-  review: "Revisão",
-  approval: "Aprovação",
-  delivery: "Entrega",
-};
-const STAGE_ORDER: P3Task["stage"][] = ["briefing", "creation", "review", "approval", "delivery"];
-const STAGE_COLOR: Record<P3Task["stage"], string> = {
-  briefing: "#2F6BEF",
-  creation: "#14B8A6",
-  review: "#F59E0B",
-  approval: "#8B5CF6",
-  delivery: "#10B981",
-};
 const PRIORITY: Record<P3Task["priority"], { label: string; cls: string }> = {
   high: { label: "Alta", cls: "high" },
   medium: { label: "Média", cls: "med" },
