@@ -5,6 +5,8 @@ import {
   ChevronLeft, ChevronRight, FilterX,
 } from "lucide-react";
 import "@/tsk02.css";
+import { useStageIndex, stageInfoOf } from "@/lib/task-types";
+
 
 export type TskTask = {
   id: string;
