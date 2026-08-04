@@ -279,7 +279,7 @@ export function TaskWindow({
         task_id: taskId,
         user_id: auth.user?.id ?? null,
         duration_seconds: Math.round(h * 3600),
-        started_at: new Date().toISOString(),
+        started_at: new Date(`${tsDate}T12:00:00`).toISOString(),
       });
       if (error) throw error;
     },
