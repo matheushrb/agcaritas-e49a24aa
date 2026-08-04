@@ -123,7 +123,7 @@ function TasksPage() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [assigneeFilter, setAssigneeFilter] = useState<string>("all");
   const [projectFilter, setProjectFilter] = useState<string>("all");
-  const [view, setView] = useState<TskView>("list");
+  const [view, setView] = useState<TskView2>("list");
   const [turbo, setTurbo] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [draftTask, setDraftTask] = useState<Task | null>(null);
