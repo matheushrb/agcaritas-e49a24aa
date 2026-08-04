@@ -321,15 +321,17 @@ function TasksPage() {
 
 
 
-      <TaskModal
-        task={selected}
-        onClose={handleCloseModal}
+      <TaskWindow
+        open={!!selectedId}
+        taskId={selectedId}
+        onOpenChange={(o: boolean) => { if (!o) handleCloseModal(); }}
       />
 
-      <NewTaskWindow
+      <TaskWindow
         open={newOpen}
+        taskId={null}
         onOpenChange={setNewOpen}
-        onCreated={(id) => setSelectedId(id)}
+        onCreated={(id: string) => setSelectedId(id)}
       />
     </>
   );
