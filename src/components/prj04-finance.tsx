@@ -151,6 +151,30 @@ export function Prj04Finance({
 
   const receivedPct = k.revenue > 0 ? (k.received / k.revenue) * 100 : 0;
 
+  const billableTasks = useMemo(() => {
+    return tasks
+      .map(t => {
+        const mult = t.broadcast_kind && (t.aired_dates?.length ?? 0) > 0 ? (t.aired_dates as string[]).length : 1;
+        const base = t.billing_enabled && t.billing_value != null ? Number(t.billing_value) * mult : 0;
+        const delivs = (t.deliverables ?? []).filter(d => d.billing_enabled && d.billing_value != null);
+        const deliv = delivs.reduce((s, d) => s + Number(d.billing_value ?? 0), 0);
+        return {
+          id: t.id ?? Math.random().toString(36),
+          title: t.title ?? "Tarefa",
+          status: t.status ?? "todo",
+          billed: !!t.billed,
+          mult,
+          delivCount: delivs.length,
+          value: base + deliv,
+        };
+      })
+      .filter(t => t.value > 0)
+      .sort((a, b) => b.value - a.value);
+  }, [tasks]);
+
+  const billableTotal = billableTasks.reduce((s, t) => s + t.value, 0);
+  const billableDone = billableTasks.filter(t => t.status === "done").reduce((s, t) => s + t.value, 0);
+
   const byCategory = useMemo(() => {
     const map = new Map<string, number>();
     costs.forEach(c => map.set(c.kind, (map.get(c.kind) ?? 0) + Number(c.amount ?? 0)));
