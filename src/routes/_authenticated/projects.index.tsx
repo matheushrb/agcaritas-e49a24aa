@@ -21,6 +21,8 @@ import {
   Plus,
   Search,
   User,
+  Archive,
+  ArchiveRestore,
 } from "lucide-react";
 import { toast } from "sonner";
 
