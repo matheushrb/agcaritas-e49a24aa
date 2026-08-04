@@ -114,5 +114,4 @@ html.dark .cw-callout {
   border-color: rgba(47, 107, 239, 0.3);
   color: #9CBBFF;
 }
-html.dark .prj05 .p5-num { background: rgba(255, 255, 255, 0.14); color: var(--foreground); }
-html.dark .fat01 .f1-chip { border-color: rgba(16, 185, 129, 0.32); }
+html.dark .prj05 .p5-logo { background: rgba(255, 255, 255, 0.14); color: var(--foreground); }
