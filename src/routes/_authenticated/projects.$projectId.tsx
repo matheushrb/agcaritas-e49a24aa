@@ -52,6 +52,8 @@ type Project = {
   description: string | null;
   status: ProjectStatus;
   client_id: string | null;
+  owner_id: string | null;
+  social_platforms?: unknown;
   start_date: string | null;
   end_date: string | null;
   created_at: string;
@@ -139,7 +141,7 @@ function ProjectDetail() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("projects")
-        .select("id,organization_id,name,description,status,client_id,start_date,end_date,created_at,project_type,billing_model,urgency,fixed_value,monthly_value,hourly_rate,printing_budget,notes,has_content_calendar,has_content_grid,has_timeline,traffic_budget,scope_flags")
+        .select("id,organization_id,name,description,status,client_id,owner_id,start_date,end_date,created_at,project_type,billing_model,urgency,fixed_value,monthly_value,hourly_rate,printing_budget,notes,has_content_calendar,has_content_grid,has_timeline,traffic_budget,scope_flags,social_platforms")
         .eq("id", projectId)
         .maybeSingle();
       if (error) throw error;
@@ -311,7 +313,22 @@ function ProjectDetail() {
     },
   });
 
+  const { data: owner } = useQuery({
+    queryKey: ["project-owner", project?.owner_id],
+    enabled: !!project?.owner_id,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("id,full_name,display_name,role_title")
+        .eq("id", project!.owner_id!)
+        .maybeSingle();
+      return (data ?? null) as { id: string; full_name: string | null; display_name: string | null; role_title: string | null } | null;
+    },
+  });
+
   const [activeTab, setActiveTab] = useState("overview");
+  const [newTaskOpen, setNewTaskOpen] = useState(false);
+
 
   if (!project) {
     return <div className="text-sm text-muted-foreground">Carregando projeto…</div>;
@@ -340,8 +357,8 @@ function ProjectDetail() {
   const revenue = Number(project.fixed_value ?? 0) + Number(project.monthly_value ?? 0) + taskRevenue;
   const health = stats.overdue > 2 ? "bad" : stats.overdue > 0 ? "warn" : "";
   const healthLabel = health === "bad" ? "Crítico" : health === "warn" ? "Atenção" : "Saudável";
-  const ownerName = people[0]?.full_name ?? "Não definido";
-  const ownerRole = people[0]?.role ?? "Responsável";
+  const ownerName = owner?.display_name || owner?.full_name || people[0]?.full_name || "Não definido";
+  const ownerRole = owner?.role_title || people[0]?.role || "Responsável";
 
   const TABS: { id: string; label: string; count?: number }[] = [
     { id: "overview", label: "Geral" },
@@ -380,7 +397,7 @@ function ProjectDetail() {
             <Share2 /> Compartilhar
           </button>
           <button className="p2-btn" type="button" onClick={() => setEditOpen(true)}><Pencil /> Editar projeto</button>
-          <button className="p2-btn primary" type="button" onClick={() => addTask.mutate("Nova tarefa")}><Plus /> Novo item</button>
+          <button className="p2-btn primary" type="button" onClick={() => setNewTaskOpen(true)}><Plus /> Nova tarefa</button>
           {isClosed ? (
             <button className="p2-btn icon" type="button" title="Reabrir" onClick={() => setStatus.mutate("active")}><RotateCcw /></button>
           ) : (
@@ -475,7 +492,7 @@ function ProjectDetail() {
           tasks={tasks as never}
           people={people}
           onOpen={(id) => setSelectedTaskId(id)}
-          onQuickCreate={() => addTask.mutate("Nova tarefa")}
+          onQuickCreate={() => setNewTaskOpen(true)}
           pending={addTask.isPending}
         />
       )}
@@ -496,6 +513,13 @@ function ProjectDetail() {
       {activeTab === "campaigns" && <div style={{ marginTop: 18 }}><ComingSoon icon={Rocket} title="Campanhas" description="Lançamentos e campanhas dentro do projeto." /></div>}
       {activeTab === "docs" && <Prj06Files />}
 
+      <TaskWindow
+        open={newTaskOpen}
+        taskId={null}
+        defaultProjectId={projectId}
+        onOpenChange={(o: boolean) => setNewTaskOpen(o)}
+        onCreated={() => { qc.invalidateQueries({ queryKey: ["project-tasks", projectId] }); }}
+      />
       <TaskWindow
         open={!!selectedTaskId}
         taskId={selectedTaskId}

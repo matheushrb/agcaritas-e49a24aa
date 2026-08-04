@@ -451,3 +451,57 @@
 }
 .cw-dock > .cw-window { height: 100%; border-radius: 16px; overflow: hidden; }
 .dark .cw-dock { background: rgba(255,255,255,.03); }
+
+/* ---------- Dark: selects nativos e itens que sumiam ---------- */
+.dark .cw,
+.dark .cw-mini,
+.dark .cw-dock { color-scheme: dark; }
+
+.cw select option,
+.cw select optgroup {
+  background-color: var(--popover);
+  color: var(--popover-foreground);
+}
+
+.dark .cw select,
+.dark .cw .cw-prop-value select,
+.dark .cw .cw-table-inline-input,
+.dark .cw .cw-check-item input[type="text"] { color: var(--foreground); }
+
+.dark .cw .cw-prop-value select { background: transparent; }
+.dark .cw .cw-prop-value input { color: var(--foreground); background: transparent; }
+
+/* Selects usados como chip dentro de tabelas */
+.dark .cw select.cw-chip { background: rgba(23,105,246,.20); color: #BFD4FF; }
+.dark .cw select.cw-table-inline-input { background: transparent; }
+
+/* Caixas de seleção / checkboxes */
+.dark .cw input[type="checkbox"],
+.dark .cw input[type="radio"],
+.dark .cw input[type="range"] { accent-color: var(--cw-cobalt); }
+
+/* Datas com ícone nativo invisível no escuro */
+.dark .cw input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(1) opacity(.7); }
+
+/* Chips neutros e avatares */
+.dark .cw .cw-chip.is-neutral {
+  background: rgba(255,255,255,.08);
+  border-color: var(--border);
+  color: var(--foreground);
+}
+.dark .cw .cw-avatar { background: rgba(47,107,239,.24); color: #BFD4FF; }
+.dark .cw .cw-card,
+.dark .cw .cw-side-card { background: rgba(255,255,255,.03); }
+.dark .cw .cw-side-total { background: rgba(255,255,255,.06); }
+.dark .cw .cw-row-icon { background: transparent; color: var(--muted-foreground); }
+.dark .cw .cw-row-icon:hover { background: rgba(255,255,255,.08); color: var(--foreground); }
+.dark .cw .cw-choice { background: rgba(255,255,255,.03); }
+.dark .cw .cw-choice.is-on { background: rgba(23,105,246,.16); }
+.dark .cw .cw-ordem { background: rgba(255,255,255,.05); color: var(--foreground); }
+
+/* Timesheet */
+.cw-ts-row { display: grid; grid-template-columns: 1fr auto auto; gap: 8px; align-items: center; font-size: 11px; padding: 5px 0; border-bottom: 1px solid var(--cw-divider); }
+.cw-ts-row:last-child { border-bottom: none; }
+.cw-ts-row .cw-ts-when { color: var(--cw-muted); }
+.cw-ts-form { display: flex; gap: 6px; margin-top: 8px; }
+.cw-ts-form .cw-input { height: 34px; font-size: 11.5px; }

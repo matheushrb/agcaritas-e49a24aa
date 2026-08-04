@@ -53,6 +53,7 @@ export type ProjectWizardValue = {
   due_days: string;
   finance_notes: string;
   /* Escopo complementar (preservado do fluxo anterior) */
+  social_platforms: string[];
   tools: string[];
   strategy_enabled: boolean;
   scope_flags: {
@@ -110,7 +111,7 @@ export const defaultProjectWizardValue: ProjectWizardValue = {
   bill_per_task_default: true, bill_per_deliverable: true,
   use_task_type_value: false, allow_value_override: true,
   finance_owner_id: null, payment_terms: "30 dias", due_days: "30 dias", finance_notes: "",
-  tools: [], strategy_enabled: false,
+  social_platforms: [], tools: [], strategy_enabled: false,
   scope_flags: { swot: false, personas: false, competitors: false, roadmap: false, kpis: false, action_plan: false },
   traffic_budget: { enabled: false, amount: null, platforms: [] },
   other_budgets: [],
@@ -276,7 +277,9 @@ export function NewProjectWizard({
                 <StepBasics
                   v={v} patch={patch} errors={errors} clients={clients}
                   typeOptions={typeOptions} people={people} applyTypeStages={applyTypeStages}
+                  platforms={platforms}
                 />
+
               )}
               {step === 2 && <StepPlanning v={v} patch={patch} errors={errors} selectedTypeLabel={selectedType?.label ?? null} />}
               {step === 3 && <StepTeam v={v} patch={patch} people={people} />}
@@ -370,13 +373,19 @@ type Patch = <K extends keyof ProjectWizardValue>(k: K, val: ProjectWizardValue[
 /* ============================================================
    NP-01 — Informações básicas
    ============================================================ */
-function StepBasics({ v, patch, errors, clients, typeOptions, people, applyTypeStages }: {
+function StepBasics({ v, patch, errors, clients, typeOptions, people, applyTypeStages, platforms }: {
   v: ProjectWizardValue; patch: Patch; errors: Record<string, boolean>;
   clients: { id: string; name: string }[];
   typeOptions: { value: string; label: string }[];
   people: Person[];
   applyTypeStages: (t: string) => void;
+  platforms: CatalogItem[];
 }) {
+  const togglePlatformName = (name: string) =>
+    patch("social_platforms", v.social_platforms.includes(name)
+      ? v.social_platforms.filter(x => x !== name)
+      : [...v.social_platforms, name]);
+
   return (
     <>
       <h3>Informações básicas</h3>
@@ -458,6 +467,33 @@ function StepBasics({ v, patch, errors, clients, typeOptions, people, applyTypeS
         <input type="checkbox" checked={v.create_default_tasks} onChange={e => patch("create_default_tasks", e.target.checked)} />
         Criar tarefas padrão para este projeto
       </label>
+
+      <div className="cw-section">
+        <div className="cw-section-head">
+          <div>
+            <h4>Plataformas do projeto</h4>
+            <p>Selecione os canais em que a agência vai trabalhar. Eles filtram as plataformas das tarefas.</p>
+          </div>
+          {v.social_platforms.length > 0 && (
+            <span className="cw-chip">{v.social_platforms.length} selecionada(s)</span>
+          )}
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {platforms.map(p => {
+            const on = v.social_platforms.includes(p.name);
+            return (
+              <button key={p.id} type="button" className={`cw-chip${on ? "" : " is-neutral"}`}
+                onClick={() => togglePlatformName(p.name)}>
+                {on && <Check size={12} />} {p.name}
+              </button>
+            );
+          })}
+          {platforms.length === 0 && (
+            <span style={{ fontSize: 11, color: "var(--cw-muted)" }}>Cadastre plataformas em Configurações → Plataformas.</span>
+          )}
+        </div>
+      </div>
+
 
       <div className="cw-section">
         <div className="cw-section-head">
