@@ -425,5 +425,5 @@
   border-radius: 12px;
   overflow: hidden;
 }
-.dark .cw .cw-shell { background: rgba(255,255,255,.03); }
-.dark .cw .cw-shell > .cw-window { border-color: var(--border); }
+.dark .cw-shell { background: rgba(255,255,255,.03); }
+.dark .cw-shell > .cw-window { border-color: var(--border); }
