@@ -177,13 +177,13 @@ function TasksPage() {
   const { data: peopleMin = [] } = useQuery({
     queryKey: ["profiles-min-tasks"],
     queryFn: async () => {
-      const { data } = await supabase.from("profiles").select("id,full_name,job_title").order("full_name");
-      return (data ?? []) as { id: string; full_name: string | null; job_title: string | null }[];
+      const { data } = await supabase.from("profiles").select("id,full_name,display_name,role_title").order("full_name");
+      return (data ?? []) as { id: string; full_name: string | null; display_name: string | null; role_title: string | null }[];
     },
   });
   const assigneeName = (id: string | null | undefined) => {
     const p = id ? peopleMin.find(x => x.id === id) : null;
-    return { name: p?.full_name || (id ? "Responsável" : "Não atribuído"), role: p?.job_title ?? null };
+    return { name: p?.display_name || p?.full_name || (id ? "Responsável" : "Não atribuído"), role: p?.role_title ?? null };
   };
 
   const updateStatus = useMutation({
