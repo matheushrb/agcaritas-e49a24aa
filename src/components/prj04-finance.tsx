@@ -22,6 +22,10 @@ export type P4Cost = {
   occurred_on: string;
 };
 export type P4Task = {
+  id?: string;
+  title?: string | null;
+  status?: string | null;
+  billed?: boolean | null;
   billing_enabled?: boolean | null;
   billing_value?: number | string | null;
   broadcast_kind?: string | null;
