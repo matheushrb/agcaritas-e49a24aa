@@ -534,7 +534,7 @@ export function TaskWindow({
                 <h5><Layers size={15} /> Resumo</h5>
                 <div className="cw-field" style={{ marginBottom: 8 }}>
                   <span className="cw-label">Status</span>
-                  <select className="cw-input" value={status} onChange={e => setStatus(e.target.value)}>
+                  <select className="cw-input" value={status} onChange={e => changeStatus(e.target.value)}>
                     {STATUSES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
                   </select>
                 </div>
