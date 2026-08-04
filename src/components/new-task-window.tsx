@@ -124,6 +124,52 @@ export function TaskWindow({
     return filtered.length ? filtered : allPlatforms;
   }, [allPlatforms, projectId, projectPlatformNames]);
 
+  /* ---------- Etapas: do tipo de tarefa (quando houver) ou padrão ---------- */
+  const { data: typeStages = [] } = useTaskTypeStages(taskTypeId);
+
+  const flowSteps = useMemo(() => {
+    if (typeStages.length) {
+      return typeStages.map(s => ({ key: s.id, label: s.name, status: s.status_group as StatusGroup, stageId: s.id, stage: null as Stage | null }));
+    }
+    return STAGES.map(s => ({ key: s.id, label: s.label, status: s.status, stageId: null as string | null, stage: s.id }));
+  }, [typeStages]);
+
+  const activeIdx = useMemo(() => {
+    const byId = typeStages.length
+      ? flowSteps.findIndex(s => s.stageId === currentStageId)
+      : flowSteps.findIndex(s => s.stage === stage);
+    if (byId >= 0) return byId;
+    const byStatus = flowSteps.findIndex(s => s.status === status);
+    return byStatus >= 0 ? byStatus : 0;
+  }, [flowSteps, typeStages.length, currentStageId, stage, status]);
+
+  /* Selecionar uma etapa move o status condicionado a ela. */
+  const selectStep = (i: number) => {
+    const s = flowSteps[i];
+    if (!s) return;
+    setStatus(s.status);
+    if (s.stageId) {
+      setCurrentStageId(s.stageId);
+      const eq = STAGES.find(x => x.status === s.status);
+      if (eq) setStage(eq.id);
+    } else if (s.stage) {
+      setStage(s.stage);
+      setCurrentStageId(null);
+    }
+  };
+
+  /* Alterar o status leva a etapa para a primeira condicionada àquele status. */
+  const changeStatus = (value: string) => {
+    setStatus(value);
+    const i = flowSteps.findIndex(s => s.status === value);
+    if (i >= 0) {
+      const s = flowSteps[i];
+      if (s.stageId) setCurrentStageId(s.stageId);
+      else if (s.stage) { setStage(s.stage); setCurrentStageId(null); }
+    }
+  };
+
+
   /* ---------- Carregar tarefa existente ---------- */
   const { data: existing } = useQuery({
     queryKey: ["task-window", taskId],
