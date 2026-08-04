@@ -364,6 +364,33 @@ function AttentionBlock({ m, data }: { m: Metrics; data: Data }) {
             <MoreVertical className="h-3.5 w-3.5 text-muted-foreground" />
           </Link>
         ))}
+
+        {m.pendingDeliverables.map((d: any) => (
+          <Link
+            key={d.key}
+            to="/tasks"
+            search={{ open: d.taskId } as any}
+            className="grid grid-cols-[minmax(0,1fr)_150px_110px_90px_24px] items-center gap-3 border-b border-border py-2 text-[13px] last:border-0 hover:bg-muted/50"
+          >
+            <span className="flex min-w-0 items-center gap-2 pl-5">
+              <Circle className={`h-2.5 w-2.5 shrink-0 ${d.overdue ? "text-destructive" : "text-warning"}`} />
+              <span className="min-w-0">
+                <span className="block truncate text-[12px]">{d.label}</span>
+                <span className="block truncate text-[11px] text-muted-foreground">Entregável de: {d.taskTitle}</span>
+              </span>
+            </span>
+            <span className="min-w-0 text-[12px] text-muted-foreground">
+              <span className="block truncate">{d.projectName}</span>
+            </span>
+            <span className={`text-[12px] ${d.overdue ? "text-destructive" : ""}`}>
+              {d.overdue ? "Atrasado" : "Entrega hoje"}
+            </span>
+            <span>
+              <PriorityBadge value={d.priority} />
+            </span>
+            <MoreVertical className="h-3.5 w-3.5 text-muted-foreground" />
+          </Link>
+        ))}
       </div>
     </Panel>
   );
