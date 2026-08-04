@@ -711,7 +711,13 @@ export function TaskWindow({
                       </button>
                     );
                   })}
-                  {platforms.length === 0 && <span style={{ fontSize: 11, color: "var(--cw-muted)" }}>Cadastre plataformas em Configurações.</span>}
+                  {platforms.length === 0 && (
+                    <span style={{ fontSize: 11, color: "var(--cw-muted)" }}>
+                      {projectId
+                        ? "Nenhuma plataforma habilitada neste projeto — edite o projeto para liberar."
+                        : "Cadastre plataformas em Configurações."}
+                    </span>
+                  )}
                 </div>
               </div>
 
