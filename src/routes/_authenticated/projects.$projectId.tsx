@@ -17,7 +17,7 @@ import {
 
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { TaskModal } from "./tasks";
+import { TaskWindow } from "@/components/new-task-window";
 import { EditProjectDialog, type EditableProject } from "@/components/edit-project-dialog";
 import { ProjectCostsTab } from "@/components/project-costs-tab";
 import { Prj02Overview, p2Initials } from "@/components/prj02-overview";
