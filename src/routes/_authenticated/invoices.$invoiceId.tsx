@@ -857,8 +857,15 @@ function InvoiceDetailPage() {
                       <div className="font-semibold">{allClients.find(c => c.id === form.client_id)?.name ?? "—"}</div>
                     </div>
                     <div>
-                      <div className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground mb-1">Projeto</div>
-                      <div className="font-semibold">{allProjects.find(p => p.id === form.project_id)?.name ?? "—"}</div>
+                      <div className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground mb-1">Projeto(s)</div>
+                      <div className="flex flex-wrap gap-1">
+                        {draftProjectIds.length === 0 && <span className="font-semibold">—</span>}
+                        {draftProjectIds.map(pid => (
+                          <span key={pid} className="rounded-full bg-primary/10 text-primary px-2 py-0.5 text-[10px] font-semibold">
+                            {allProjects.find(p => p.id === pid)?.name ?? "Projeto"}
+                          </span>
+                        ))}
+                      </div>
                     </div>
                   </div>
 
@@ -866,7 +873,8 @@ function InvoiceDetailPage() {
                     <div className="flex items-center justify-between mb-1">
                       <div className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">Itens ({drafts.length})</div>
                       <Button type="button" size="sm" variant="outline" className="h-6 px-2 text-[10px]"
-                        onClick={() => setDrafts(d => [...d, { description: "", amount: "0", due_date: form.due_date }])}>
+                        onClick={() => setDrafts(d => [...d, { description: "", amount: "0", due_date: form.due_date, project_id: draftProjectIds.length === 1 ? draftProjectIds[0] : null }])}>
+
                         <Plus className="h-3 w-3 mr-1" /> Adicionar item
                       </Button>
                     </div>
