@@ -165,7 +165,7 @@ function ProjectDetail() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("tasks")
-        .select("id,title,description,status,priority,due_date,billing_value,billing_model,billing_enabled,project_id,client_id,assignee_id,platform,delivery_type,estimated_hours,progress,stage,task_type_id,current_stage_id,deliverables,subtasks,broadcast_kind,recorded_at,aired_at,recorded_dates,aired_dates,created_at")
+        .select("id,title,description,status,priority,due_date,billing_value,billing_model,billing_enabled,billed,project_id,client_id,assignee_id,platform,delivery_type,estimated_hours,progress,stage,task_type_id,current_stage_id,deliverables,subtasks,broadcast_kind,recorded_at,aired_at,recorded_dates,aired_dates,created_at")
         .eq("project_id", projectId)
         .order("created_at", { ascending: false });
       if (error) throw error;
