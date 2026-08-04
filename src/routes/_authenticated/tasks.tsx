@@ -34,7 +34,9 @@ import { CostConfirmDialog, type CostSuggestion } from "@/components/cost-confir
 import { suggestTaskCost, type CostMode } from "@/components/team-cost-fields";
 import { useCalendarBlocks, BLOCK_META, type CalendarBlock } from "@/lib/calendar-blocks";
 import { NewTaskWindow } from "@/components/new-task-window";
-import { TaskViews, TaskViewSwitcher, type TskView } from "@/components/tsk-views";
+import { TaskViews, type TskView } from "@/components/tsk-views";
+import { Tsk02List, type TskView2 } from "@/components/tsk02-list";
+
 
 export const Route = createFileRoute("/_authenticated/tasks")({
   validateSearch: (s: Record<string, unknown>) => ({
