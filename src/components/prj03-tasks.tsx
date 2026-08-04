@@ -279,12 +279,15 @@ export function Prj03Tasks({ tasks, people, onOpen, onQuickCreate, pending }: {
                     </td>
                     <td><span className="p3-tname" onClick={() => onOpen(t.id)}>{t.title}</span></td>
                     <td>
-                      <span className="p3-stage" title={STATUS_LABEL[t.status]}>
-                        <span className="dot" style={{ background: STAGE_COLOR[t.stage] }} />
-                        {STAGE_LABEL[t.stage]}
-                        <ChevronDown />
-                      </span>
+                      {(() => { const si = stageInfoOf(t, stageIndex); return (
+                        <span className="p3-stage" title={`${si.name} · ${STATUS_LABEL[t.status]}`}>
+                          <span className="dot" style={{ background: si.color }} />
+                          {si.name}
+                          <ChevronDown />
+                        </span>
+                      ); })()}
                     </td>
+
                     <td>
                       {name ? (
                         <span className="p3-assignee"><span className="p3-av">{initials(name)}</span>{name}</span>
