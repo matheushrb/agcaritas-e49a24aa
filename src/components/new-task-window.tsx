@@ -320,6 +320,27 @@ export function TaskWindow({
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const [editEntry, setEditEntry] = useState<{ id: string; hours: string; date: string } | null>(null);
+  const updateTime = useMutation({
+    mutationFn: async () => {
+      if (!editEntry) return;
+      const h = Number(editEntry.hours.replace(",", "."));
+      if (!h || h <= 0) throw new Error("Informe as horas");
+      const { error } = await (supabase as any).from("time_entries").update({
+        duration_seconds: Math.round(h * 3600),
+        started_at: new Date(`${editEntry.date}T12:00:00`).toISOString(),
+      }).eq("id", editEntry.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      setEditEntry(null);
+      qc.invalidateQueries({ queryKey: ["task-time-entries", taskId] });
+      toast.success("Lançamento atualizado");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+
   /* ---------- Cronômetro (play / stop) ---------- */
   const timerKey = taskId ? `cw-timer:${taskId}` : null;
   const [timerStart, setTimerStart] = useState<number | null>(null);
@@ -461,16 +482,35 @@ export function TaskWindow({
 
   if (!open) return null;
 
+  const timerChip = taskId ? (
+    <div className={`cw-head-timer${timerStart != null ? " is-running" : ""}`}>
+      <Clock size={13} />
+      <span className="cw-head-timer-clock">{fmtClock(runningSeconds)}</span>
+      {timerStart == null ? (
+        <button type="button" className="cw-timer-btn is-play" onClick={startTimer} title="Iniciar cronômetro">
+          <Play size={13} />
+        </button>
+      ) : (
+        <button type="button" className="cw-timer-btn is-stop" disabled={stopTimer.isPending}
+          onClick={() => stopTimer.mutate()} title="Parar e registrar lançamento">
+          <Square size={12} />
+        </button>
+      )}
+    </div>
+  ) : null;
+
   if (mode === "minimized") {
     return (
       <div className="cw cw-mini">
         <span className="cw-title-icon"><ListChecks size={15} /></span>
         <span className="cw-mini-title">{title || (isEdit ? "Tarefa" : "Nova Tarefa")}</span>
+        {timerChip}
         <button type="button" className="cw-close" onClick={() => setMode("modal")} aria-label="Restaurar"><Maximize2 size={16} /></button>
         <button type="button" className="cw-close" onClick={() => close(false)} aria-label="Fechar"><X size={16} /></button>
       </div>
     );
   }
+
 
   const windowEl = (
         <div className="cw-window">
@@ -484,6 +524,8 @@ export function TaskWindow({
                 : "Crie a tarefa, defina os entregáveis e acompanhe o fluxo de produção"}</p>
             </div>
             <div className="cw-head-actions">
+              {timerChip}
+
               <div className="cw-head-status" style={{ ["--sc" as string]: statusColor(status) }}>
                 <i />
                 <select value={status} onChange={e => changeStatus(e.target.value)} aria-label="Status">
@@ -803,33 +845,50 @@ export function TaskWindow({
                   </span>
                 ) : (
                   <>
-                    <div className={`cw-timer${timerStart != null ? " is-running" : ""}`}>
-                      <span className="cw-timer-clock">{fmtClock(runningSeconds)}</span>
-                      {timerStart == null ? (
-                        <button type="button" className="cw-timer-btn is-play" onClick={startTimer} title="Iniciar cronômetro">
-                          <Play size={14} />
-                        </button>
-                      ) : (
+                    {timerStart != null && (
+                      <div className="cw-timer is-running">
+                        <span className="cw-timer-clock">{fmtClock(runningSeconds)}</span>
                         <button type="button" className="cw-timer-btn is-stop" disabled={stopTimer.isPending}
                           onClick={() => stopTimer.mutate()} title="Parar e registrar">
                           <Square size={13} />
                         </button>
-                      )}
-                    </div>
+                      </div>
+                    )}
                     <div style={{ marginTop: 8 }}>
                       {timeEntries.slice(0, 6).map(e => (
-                        <div key={e.id} className="cw-ts-row">
-                          <span className="cw-ts-when">
-                            {new Date(e.started_at ?? e.created_at).toLocaleDateString("pt-BR")}
-                          </span>
-                          <span>{fmtHours(e.duration_seconds)}</span>
-                          <button type="button" className="cw-icon-btn" onClick={() => removeTime.mutate(e.id)}>
-                            <Trash2 size={13} />
-                          </button>
-                        </div>
+                        editEntry?.id === e.id ? (
+                          <div key={e.id} className="cw-ts-form" style={{ marginTop: 4 }}>
+                            <input className="cw-input" type="date" value={editEntry.date}
+                              onChange={ev => setEditEntry({ ...editEntry, date: ev.target.value })} />
+                            <input className="cw-input" type="number" step="0.25" value={editEntry.hours}
+                              onChange={ev => setEditEntry({ ...editEntry, hours: ev.target.value })} placeholder="Horas" />
+                            <button type="button" className="cw-btn cw-btn-sm cw-btn-primary" disabled={updateTime.isPending}
+                              onClick={() => updateTime.mutate()}>Salvar</button>
+                            <button type="button" className="cw-icon-btn" onClick={() => setEditEntry(null)} title="Cancelar">
+                              <X size={13} />
+                            </button>
+                          </div>
+                        ) : (
+                          <div key={e.id} className="cw-ts-row">
+                            <span className="cw-ts-when">
+                              {new Date(e.started_at ?? e.created_at).toLocaleDateString("pt-BR")}
+                            </span>
+                            <button type="button" className="cw-ts-edit"
+                              onClick={() => setEditEntry({
+                                id: e.id,
+                                hours: String(Math.round((e.duration_seconds / 3600) * 100) / 100),
+                                date: new Date(e.started_at ?? e.created_at).toISOString().slice(0, 10),
+                              })}
+                              title="Editar lançamento">{fmtHours(e.duration_seconds)}</button>
+                            <button type="button" className="cw-icon-btn" onClick={() => removeTime.mutate(e.id)}>
+                              <Trash2 size={13} />
+                            </button>
+                          </div>
+                        )
                       ))}
                       {timeEntries.length === 0 && <span className="cw-hint">Nenhum apontamento ainda.</span>}
                     </div>
+
                     <div className="cw-ts-form">
                       <input className="cw-input" type="date" value={tsDate} onChange={e => setTsDate(e.target.value)} />
                       <input className="cw-input" type="number" step="0.25" value={tsHours}
