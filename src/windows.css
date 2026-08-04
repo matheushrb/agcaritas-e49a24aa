@@ -689,3 +689,25 @@
 .cw-tab.is-filled.is-on { color: #D9911A; border-bottom-color: #D9911A; }
 :root.dark .cw-tab.is-filled, .dark .cw-tab.is-filled { color: #F2B441; }
 :root.dark .cw-tab.is-filled.is-on, .dark .cw-tab.is-filled.is-on { border-bottom-color: #F2B441; }
+
+/* ---------- Campos de data (calendário estilizado) ---------- */
+.cw-datebtn {
+  display: inline-flex; align-items: center; gap: 6px;
+  width: 100%; min-height: 24px; padding: 2px 0;
+  background: transparent; border: none; outline: none; cursor: pointer;
+  font-family: var(--cw-font); font-size: 12.5px; font-weight: 600;
+  color: var(--cw-ink); text-align: left;
+}
+.cw-datebtn:hover { color: var(--cw-primary, #2F6BEF); }
+.cw-datebtn.is-compact { font-size: 11px; font-weight: 500; min-height: 18px; }
+.cw-datebtn-ico { color: var(--cw-muted); flex-shrink: 0; }
+.cw-datebtn-ph { color: var(--cw-muted); font-weight: 500; }
+.cw-datebtn-clear,
+.cw-datebtn-ok {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 11.5px; font-weight: 600; padding: 4px 8px; border-radius: 8px;
+  background: transparent; border: none; cursor: pointer; color: var(--cw-muted);
+}
+.cw-datebtn-ok { color: var(--cw-primary, #2F6BEF); }
+.cw-datebtn-clear:hover, .cw-datebtn-ok:hover { background: rgba(127,140,158,.12); }
+.dark .cw .cw-datebtn { color: var(--foreground); }
