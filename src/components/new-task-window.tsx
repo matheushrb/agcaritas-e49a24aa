@@ -38,6 +38,9 @@ const STATUSES = [
 ];
 const statusColor = (v: string) => STATUSES.find(s => s.value === v)?.color ?? "#7F8C9E";
 
+/** Cor por etapa (usada quando a etapa não define cor própria). */
+const STAGE_PALETTE = ["#7F8C9E", "#8B5CF6", "#EF4444", "#0EA5E9", "#F97316", "#1FA971", "#2F6BEF", "#D946EF"];
+
 
 type DeliverableDraft = {
   id: string; platform: string; type: string;
@@ -133,9 +136,17 @@ export function TaskWindow({
 
   const flowSteps = useMemo(() => {
     if (typeStages.length) {
-      return typeStages.map(s => ({ key: s.id, label: s.name, status: s.status_group as StatusGroup, stageId: s.id, stage: null as Stage | null }));
+      return typeStages.map((s, i) => ({
+        key: s.id, label: s.name, status: s.status_group as StatusGroup,
+        stageId: s.id, stage: null as Stage | null,
+        color: s.color || STAGE_PALETTE[i % STAGE_PALETTE.length],
+      }));
     }
-    return STAGES.map(s => ({ key: s.id, label: s.label, status: s.status, stageId: null as string | null, stage: s.id }));
+    return STAGES.map((s, i) => ({
+      key: s.id, label: s.label, status: s.status,
+      stageId: null as string | null, stage: s.id,
+      color: STAGE_PALETTE[i % STAGE_PALETTE.length],
+    }));
   }, [typeStages]);
 
   const activeIdx = useMemo(() => {
@@ -471,24 +482,40 @@ export function TaskWindow({
           </div>
 
           {/* FLUXO DE ETAPAS */}
-          <div className="cw-flow">
-            {flowSteps.map((s, i) => (
-              <div
-                key={s.key}
-                role="button"
-                tabIndex={0}
-                onClick={() => selectStep(i)}
-                onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); selectStep(i); } }}
-                title={`Etapa: ${s.label} — status: ${STATUSES.find(x => x.value === s.status)?.label ?? s.status}`}
-                className={`cw-flow-step is-click${i === activeIdx ? " is-on" : ""}${i < activeIdx ? " is-done" : ""}`}
-              >
-                <span className="cw-flow-dot">
-                  {i < activeIdx ? <Check size={13} /> : i + 1}
-                </span>
-                <span className="cw-flow-label">{s.label}</span>
-              </div>
-            ))}
+          <div className="cw-stageband">
+            <div className="cw-stageband-head">
+              <Layers size={14} />
+              <strong>ETAPA DA TAREFA</strong>
+              {taskTypes.find((t: any) => t.id === taskTypeId)?.name && (
+                <span className="cw-stageband-type">{taskTypes.find((t: any) => t.id === taskTypeId)?.name}</span>
+              )}
+            </div>
+            <div className="cw-stageband-row">
+              {flowSteps.map((s, i) => (
+                <button
+                  type="button"
+                  key={s.key}
+                  onClick={() => selectStep(i)}
+                  title={`Etapa: ${s.label} — status: ${STATUSES.find(x => x.value === s.status)?.label ?? s.status}`}
+                  className={`cw-stage-step${i === activeIdx ? " is-on" : ""}${i < activeIdx ? " is-done" : ""}`}
+                  style={{ ["--stc" as string]: s.color, ["--stsc" as string]: statusColor(s.status) }}
+                >
+                  <span className="cw-stage-step-top">
+                    <i className="cw-stage-bullet" />
+                    <span className="cw-stage-name">{s.label}</span>
+                    {i < activeIdx ? <Check size={13} /> : <span className="cw-stage-arrow">›</span>}
+                  </span>
+                  <span className="cw-stage-sub">
+                    {STATUSES.find(x => x.value === s.status)?.label ?? s.status}
+                  </span>
+                </button>
+              ))}
+            </div>
+            <p className="cw-stageband-hint">
+              Ao mudar a etapa, o status é sincronizado automaticamente. Você pode mudar livremente entre etapas.
+            </p>
           </div>
+
 
 
 
@@ -648,7 +675,7 @@ export function TaskWindow({
                     <span className="cw-label">Etapa atual</span>
                     <span
                       className="cw-stage-chip"
-                      style={{ ["--sc" as string]: statusColor(flowSteps[activeIdx]?.status ?? status) }}
+                      style={{ ["--sc" as string]: flowSteps[activeIdx]?.color ?? statusColor(status) }}
                     >
                       <i /> {flowSteps[activeIdx]?.label ?? "—"}
                     </span>
