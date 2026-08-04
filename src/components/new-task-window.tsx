@@ -612,7 +612,7 @@ export function TaskWindow({
         <span className="cw-mini-title">{title || (isEdit ? "Tarefa" : "Nova Tarefa")}</span>
         {timerChip}
         <button type="button" className="cw-close" onClick={() => setMode("modal")} aria-label="Restaurar"><Maximize2 size={16} /></button>
-        <button type="button" className="cw-close" onClick={() => close(false)} aria-label="Fechar"><X size={16} /></button>
+        <button type="button" className="cw-close" onClick={requestClose} aria-label="Fechar"><X size={16} /></button>
       </div>
     );
   }
@@ -642,12 +642,12 @@ export function TaskWindow({
                 onClick={() => save.mutate()}><Save /> {save.isPending ? "Salvando…" : "Salvar"}</button>
               {isEdit && (
                 <button type="button" className="cw-close cw-close-danger" aria-label="Excluir" disabled={remove.isPending}
-                  onClick={() => { if (confirm("Excluir esta tarefa?")) remove.mutate(); }}><Trash2 size={17} /></button>
+                  onClick={() => setAskDelete(true)}><Trash2 size={17} /></button>
               )}
               <button type="button" className="cw-close" onClick={() => setMode("minimized")} aria-label="Minimizar"><Minus size={18} /></button>
               <button type="button" className="cw-close" onClick={() => setMode(mode === "docked" ? "modal" : "docked")}
                 aria-label="Lateralizar"><PanelRight size={17} /></button>
-              <button type="button" className="cw-close" onClick={() => close(false)} aria-label="Fechar"><X size={18} /></button>
+              <button type="button" className="cw-close" onClick={requestClose} aria-label="Fechar"><X size={18} /></button>
             </div>
           </div>
 
@@ -1271,11 +1271,11 @@ export function TaskWindow({
           {/* RODAPÉ */}
           <div className="cw-footer">
             <div className="cw-foot-group">
-              <button type="button" className="cw-btn cw-btn-secondary" onClick={() => close(false)}>Cancelar</button>
+              <button type="button" className="cw-btn cw-btn-secondary" onClick={requestClose}>Cancelar</button>
               {isEdit && (
                 <button type="button" className="cw-btn cw-btn-ghost" style={{ color: "var(--cw-danger)" }}
                   disabled={remove.isPending}
-                  onClick={() => { if (confirm("Excluir esta tarefa?")) remove.mutate(); }}>
+                  onClick={() => setAskDelete(true)}>
                   <Trash /> Excluir
                 </button>
               )}
@@ -1301,7 +1301,7 @@ export function TaskWindow({
   }
 
   return (
-    <Dialog open onOpenChange={close}>
+    <Dialog open onOpenChange={(o) => { if (!o) requestClose(); }}>
       <DialogContent
         className="cw cw-shell p-0 gap-0 border-0 overflow-hidden [&>button:last-of-type]:hidden w-[calc(100vw-2rem)] max-w-[1180px] sm:max-w-[1180px]"
         style={{ boxShadow: "0 24px 60px rgba(15,25,40,.20)" }}
