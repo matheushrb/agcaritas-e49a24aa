@@ -450,7 +450,7 @@ function NewInvoiceWizard({
 
   const filteredCharges = useMemo(() => charges.filter(c =>
     matchesClient(c.client_id, c.project_id) && inProjects(c.project_id),
-  ), [charges, filterClient, selectedProjects, clientOfProject]);
+  ), [charges, filterClient, selectedProjects, clientOfProject, invoicedProjectIds]);
 
   const filteredTasks = useMemo(() => tasks.filter(t =>
     !invoicedMainTaskIds.has(t.id) &&
@@ -458,7 +458,7 @@ function NewInvoiceWizard({
     matchesClient(t.client_id, t.project_id) &&
     inProjects(t.project_id) &&
     (t.billing_value ?? 0) > 0,
-  ), [tasks, invoicedMainTaskIds, filterClient, selectedProjects, clientOfProject]);
+  ), [tasks, invoicedMainTaskIds, filterClient, selectedProjects, clientOfProject, invoicedProjectIds]);
 
   const billableDeliverables = useMemo<BillableDeliverable[]>(() => {
     const out: BillableDeliverable[] = [];
@@ -491,7 +491,7 @@ function NewInvoiceWizard({
       }
     }
     return out;
-  }, [tasks, invoicedDeliverableIds, filterClient, selectedProjects, clientOfProject]);
+  }, [tasks, invoicedDeliverableIds, filterClient, selectedProjects, clientOfProject, invoicedProjectIds]);
 
   const subtotal = useMemo(() => {
     let t = 0;
@@ -1181,7 +1181,7 @@ function NewInvoiceWizard({
               <div className="fat01-sum-head">Resumo da fatura</div>
               <div className="fat01-sum-body">
                 <div className="fat01-sum-line"><span>Cliente</span><b className="truncate max-w-[150px]">{clientObj?.name ?? "—"}</b></div>
-                <div className="fat01-sum-line"><span>Projetos</span><b>{selectedProjects.size || "Todos"}</b></div>
+                <div className="fat01-sum-line"><span>Projetos</span><b>{new Set([...filteredCharges.filter(c=>selectedCharges.has(c.id)).map(c=>c.project_id),...filteredTasks.filter(t=>selectedTasks.has(t.id)).map(t=>t.project_id),...billableDeliverables.filter(d=>selectedDeliverables.has(d.key)).map(d=>d.project_id)].filter(Boolean)).size || "—"}</b></div>
                 <div className="fat01-sum-line"><span>Itens</span><b>{itemCount}</b></div>
                 <div className="fat01-sum-line"><span>Emissão</span><b>{fmtDate(issueDate)}</b></div>
                 <div className="fat01-sum-line"><span>Vencimento</span><b>{dueDate ? fmtDate(dueDate) : "—"}</b></div>
