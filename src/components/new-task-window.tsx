@@ -38,6 +38,9 @@ const STATUSES = [
 ];
 const statusColor = (v: string) => STATUSES.find(s => s.value === v)?.color ?? "#7F8C9E";
 
+/** Cor por etapa (usada quando a etapa não define cor própria). */
+const STAGE_PALETTE = ["#7F8C9E", "#8B5CF6", "#EF4444", "#0EA5E9", "#F97316", "#1FA971", "#2F6BEF", "#D946EF"];
+
 
 type DeliverableDraft = {
   id: string; platform: string; type: string;
