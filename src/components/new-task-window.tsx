@@ -568,7 +568,20 @@ export function TaskWindow({
   const [mode, setMode] = useState<"modal" | "docked" | "minimized">("modal");
   useEffect(() => { if (open) setMode("modal"); }, [open]);
 
+  /* snapshot inicial para detectar alterações */
+  useEffect(() => {
+    if (!open) { setBaseline(""); return; }
+    if (isEdit && !existing) return;
+    const t = setTimeout(() => setBaseline(JSON.stringify(payload())), 0);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, isEdit, existing]);
+
+  const isDirty = !!baseline && JSON.stringify(payload()) !== baseline;
+  const requestClose = () => { if (isDirty) setAskUnsaved(true); else close(false); };
+
   const canSave = title.trim().length > 0;
+
 
   const Title = ({ children }: { children: React.ReactElement }) =>
     mode === "modal" ? <DialogTitle asChild>{children}</DialogTitle> : children;
