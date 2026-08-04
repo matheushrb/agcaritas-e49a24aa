@@ -414,12 +414,36 @@ function NewInvoiceWizard({
   const invoicedMainTaskIds = tasksData.invoicedMainTaskIds;
   const invoicedDeliverableIds = tasksData.invoicedDeliverableIds;
 
+  // Projetos que já estão vinculados a alguma fatura não podem ser faturados de novo
+  const { data: invoicedProjectIds = new Set<string>() } = useQuery({
+    queryKey: ["invoices-invoiced-projects"],
+    queryFn: async () => {
+      const out = new Set<string>();
+      const { data: inv } = await supabase
+        .from("invoices")
+        .select("project_id,status")
+        .not("project_id", "is", null);
+      for (const r of (inv ?? []) as Array<{ project_id: string | null; status: string | null }>) {
+        if (r.project_id && r.status !== "canceled") out.add(r.project_id);
+      }
+      const { data: ch } = await supabase
+        .from("charges")
+        .select("project_id,invoice_id")
+        .not("invoice_id", "is", null);
+      for (const r of (ch ?? []) as Array<{ project_id: string | null }>) {
+        if (r.project_id) out.add(r.project_id);
+      }
+      return out;
+    },
+  });
+
   const filteredCharges = useMemo(() => charges.filter(c =>
     (!filterClient || c.client_id === filterClient) && inProjects(c.project_id),
   ), [charges, filterClient, selectedProjects]);
 
   const filteredTasks = useMemo(() => tasks.filter(t =>
     !invoicedMainTaskIds.has(t.id) &&
+    t.status === "done" &&
     (!filterClient || t.client_id === filterClient) &&
     inProjects(t.project_id) &&
     (t.billing_value ?? 0) > 0,
