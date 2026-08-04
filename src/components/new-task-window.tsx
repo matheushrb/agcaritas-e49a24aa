@@ -7,7 +7,9 @@ import {
   X, Plus, Trash2, Check, Info, ChevronDown, ListChecks, DollarSign,
   Paperclip, Save, Clock, CalendarDays, Layers, Trash,
 } from "lucide-react";
+import { useTaskTypeStages } from "@/lib/task-types";
 import "@/windows.css";
+
 
 type Stage = "briefing" | "creation" | "review" | "approval" | "delivery";
 type StatusGroup = "todo" | "in_progress" | "review" | "done";
