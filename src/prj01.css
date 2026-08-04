@@ -201,3 +201,19 @@
   padding: 60px; text-align: center; color: var(--p-muted); font-size: 13px;
 }
 .prj01 .skeleton { height: 230px; border-radius: 14px; background: #eef0f5; }
+
+.dark .prj01 {
+  --p-page-bg: var(--background);
+  --p-card-bg: var(--card);
+  --p-border: var(--border);
+  --p-text: var(--foreground);
+  --p-muted: var(--muted-foreground);
+  --p-muted-2: var(--muted-foreground);
+  --p-badge-bg: rgba(255,255,255,.07);
+  --p-badge-text: var(--muted-foreground);
+  --p-success-bg: rgba(31,169,113,.16);
+  --p-warning-bg: rgba(224,145,46,.16);
+  --p-danger-bg: rgba(225,69,69,.16);
+}
+.dark .prj01 .page-header h1 { color: var(--foreground); }
+.dark .prj01 .view-switch button.active { background: rgba(47,107,239,.2); }

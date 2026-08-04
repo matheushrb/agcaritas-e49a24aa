@@ -330,3 +330,13 @@
   .prj06 { grid-template-columns: minmax(0, 1fr); }
   .prj06 .p6-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
+
+.dark .prj06 {
+  --p6-card: var(--card);
+  --p6-border: var(--border);
+  --p6-border-soft: var(--border);
+  --p6-ink: var(--foreground);
+  --p6-muted: var(--muted-foreground);
+  --p6-muted-2: var(--muted-foreground);
+  --p6-primary-soft: rgba(47,107,239,.2);
+}

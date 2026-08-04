@@ -149,3 +149,17 @@
 .prj08-panel .p8-btn.ghost:hover { background: #f7f9fc; }
 .prj08-panel .p8-btn.primary { background: var(--p8-primary); color: #fff; border: none; }
 .prj08-panel .p8-btn.primary:hover { background: #2559d0; }
+
+.dark .prj08-table, .dark .prj08-panel {
+  --p8-border: var(--border);
+  --p8-text: var(--foreground);
+  --p8-muted: var(--muted-foreground);
+}
+.dark .prj08-table tbody tr { border-bottom-color: var(--border); }
+.dark .prj08-table tbody tr:hover { background: rgba(255,255,255,.05); }
+.dark .prj08-table tbody tr.selected { background: rgba(47,107,239,.16); }
+.dark .p8-badge.ok { background: rgba(31,169,113,.18); }
+.dark .p8-badge.warn { background: rgba(224,145,46,.18); }
+.dark .p8-badge.danger { background: rgba(225,69,69,.18); }
+.dark .p8-badge.neutral { background: rgba(255,255,255,.08); color: var(--muted-foreground); }
+.dark .p8-badge.info { background: rgba(47,107,239,.2); }

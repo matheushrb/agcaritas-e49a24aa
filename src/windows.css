@@ -388,3 +388,28 @@
   .cw-task-body { grid-template-columns: 1fr; }
   .cw-props { grid-template-columns: repeat(2, 1fr); }
 }
+
+/* ---------- Tema escuro ---------- */
+.dark .cw {
+  --cw-surface: var(--card);
+  --cw-border: var(--border);
+  --cw-divider: var(--border);
+  --cw-input-border: var(--input);
+  --cw-ink: var(--foreground);
+  --cw-muted: var(--muted-foreground);
+  --cw-cobalt-soft: rgba(23,105,246,.18);
+  --cw-green-soft: rgba(16,185,129,.16);
+  --cw-neutral-bg: rgba(255,255,255,.06);
+}
+.dark .cw .cw-input,
+.dark .cw .cw-select,
+.dark .cw .cw-textarea { background: rgba(255,255,255,.04); color: var(--cw-ink); }
+.dark .cw .cw-table thead th { background: rgba(255,255,255,.04); }
+.dark .cw .cw-table tbody td { border-bottom-color: var(--border); }
+.dark .cw .cw-flow { background: rgba(255,255,255,.03); }
+.dark .cw .cw-callout { border-color: rgba(23,105,246,.35); color: #9CC0FF; }
+.dark .cw .cw-callout.is-green { border-color: rgba(16,185,129,.3); color: #7FDBAE; }
+.dark .cw .cw-step .cw-step-num,
+.dark .cw .cw-flow-step .cw-flow-dot { border-color: rgba(255,255,255,.2); }
+.dark .cw .cw-switch { background: rgba(255,255,255,.18); }
+.dark .cw .cw-switch::after { background: #E9EEF6; }

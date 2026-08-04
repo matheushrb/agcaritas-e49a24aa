@@ -182,3 +182,15 @@
 .prj02 .p2-file .dt { color: var(--p2-muted-2); font-size: 10.5px; flex: none; }
 
 .prj02 .p2-empty { font-size: 11.5px; color: var(--p2-muted-2); padding: 10px 0; }
+
+.dark .prj02 {
+  --p2-bg: var(--background);
+  --p2-card: var(--card);
+  --p2-border: var(--border);
+  --p2-border-soft: var(--border);
+  --p2-ink: var(--foreground);
+  --p2-ink-2: var(--foreground);
+  --p2-muted: var(--muted-foreground);
+  --p2-muted-2: var(--muted-foreground);
+}
+.dark .prj02 .p2-btn:hover { background: rgba(255,255,255,.06); }

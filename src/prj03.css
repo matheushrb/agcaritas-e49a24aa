@@ -243,3 +243,12 @@
   height: 30px; border: 1px solid var(--p3-border); border-radius: 7px;
   background: var(--card); color: var(--p3-ink); font-size: 12px; padding: 0 6px; cursor: pointer;
 }
+
+.dark .prj03 {
+  --p3-card: var(--card);
+  --p3-border: var(--border);
+  --p3-border-soft: var(--border);
+  --p3-ink: var(--foreground);
+  --p3-muted: var(--muted-foreground);
+  --p3-muted-2: var(--muted-foreground);
+}
