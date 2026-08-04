@@ -632,7 +632,22 @@ export function TaskWindow({
                 <div className="cw-side-line"><span>Entregáveis</span><span>{deliverables.length}</span></div>
                 <div className="cw-side-line"><span>Checklist</span><span>{doneCount}/{checklist.length}</span></div>
                 <div className="cw-side-line"><span>Plataformas</span><span>{platformsSel.length}</span></div>
+
+                <div className="cw-side-total">
+                  <div className="cw-side-line" style={{ padding: 0 }}>
+                    <span>Progresso</span><span>{progress}%</span>
+                  </div>
+                  <div style={{ height: 6, borderRadius: 999, background: "rgba(127,140,158,.25)", marginTop: 6 }}>
+                    <div style={{ width: `${progress}%`, height: "100%", borderRadius: 999, background: "var(--cw-cobalt)" }} />
+                  </div>
+                  <span className="cw-hint" style={{ display: "block", marginTop: 6 }}>
+                    {checklistPct === null
+                      ? `Calculado pela etapa atual (${stagePct}%). Adicione itens ao checklist para refinar.`
+                      : `Média de etapa (${stagePct}%) e checklist (${checklistPct}%). Status "Concluída" fixa em 100%.`}
+                  </span>
+                </div>
               </div>
+
 
               <div className="cw-side-card">
                 <h5><DollarSign size={15} /> Faturamento</h5>
