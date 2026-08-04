@@ -393,7 +393,40 @@ export function Prj04Finance({
         {/* coluna lateral */}
         <div className="p4-side">
           <div className="p4-card">
+            <div className="p4-card-h">
+              <span className="p4-card-t">Tarefas que geram receita</span>
+              <span style={{ fontSize: 12, fontWeight: 700, color: "#10B981" }}>{money2(billableTotal)}</span>
+            </div>
+            {billableTasks.length === 0 ? (
+              <div className="p4-empty">Nenhuma tarefa faturável neste projeto.</div>
+            ) : (
+              <>
+                {billableTasks.map(t => (
+                  <div className="p4-item" key={t.id}>
+                    <span className="ic" style={{ background: "#E8F7F0", color: "#10B981" }}><CircleDollarSign /></span>
+                    <span className="tx">
+                      <b>{t.title}</b>
+                      <span>
+                        {t.billed ? "Faturada" : t.status === "done" ? "Concluída · pronta para faturar" : "Em andamento"}
+                        {t.delivCount > 0 ? ` · ${t.delivCount} entregável${t.delivCount > 1 ? "eis" : ""}` : ""}
+                        {t.mult > 1 ? ` · ${t.mult} exibições` : ""}
+                      </span>
+                    </span>
+                    <span className="rt">
+                      <b>{money2(t.value)}</b>
+                    </span>
+                  </div>
+                ))}
+                <div style={{ marginTop: 10, fontSize: 12, color: "#5B6779" }}>
+                  Concluídas: <b style={{ color: "#10B981" }}>{money2(billableDone)}</b> · Pendentes: <b>{money2(billableTotal - billableDone)}</b>
+                </div>
+              </>
+            )}
+          </div>
+
+          <div className="p4-card">
             <div className="p4-card-h"><span className="p4-card-t">Próximos faturamentos</span></div>
+
             {upcoming.length === 0 ? (
               <div className="p4-empty">Nenhuma cobrança em aberto.</div>
             ) : (
