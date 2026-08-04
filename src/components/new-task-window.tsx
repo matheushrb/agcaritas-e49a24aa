@@ -306,25 +306,47 @@ export function TaskWindow({
 
   const canSave = title.trim().length > 0;
 
-  return (
-    <Dialog open={open} onOpenChange={close}>
-      <DialogContent
-        className="cw cw-shell p-0 gap-0 border-0 overflow-hidden [&>button:last-of-type]:hidden w-[calc(100vw-2rem)] max-w-[1180px] sm:max-w-[1180px]"
-        style={{ boxShadow: "0 24px 60px rgba(15,25,40,.20)" }}
+  const Title = ({ children }: { children: React.ReactElement }) =>
+    mode === "modal" ? <DialogTitle asChild>{children}</DialogTitle> : children;
 
-      >
+  if (!open) return null;
+
+  if (mode === "minimized") {
+    return (
+      <div className="cw cw-mini">
+        <span className="cw-title-icon"><ListChecks size={15} /></span>
+        <span className="cw-mini-title">{title || (isEdit ? "Tarefa" : "Nova Tarefa")}</span>
+        <button type="button" className="cw-close" onClick={() => setMode("modal")} aria-label="Restaurar"><Maximize2 size={16} /></button>
+        <button type="button" className="cw-close" onClick={() => close(false)} aria-label="Fechar"><X size={16} /></button>
+      </div>
+    );
+  }
+
+  const windowEl = (
         <div className="cw-window">
           {/* HEADER */}
           <div className="cw-header">
             <span className="cw-title-icon"><ListChecks size={17} /></span>
             <div className="min-w-0 flex-1">
-              <DialogTitle asChild><h2>{isEdit ? (title || "Tarefa") : "Nova Tarefa"}</h2></DialogTitle>
+              <Title><h2>{isEdit ? (title || "Tarefa") : "Nova Tarefa"}</h2></Title>
               <p>{isEdit
                 ? "Edite a tarefa, os entregáveis e acompanhe o fluxo de produção"
                 : "Crie a tarefa, defina os entregáveis e acompanhe o fluxo de produção"}</p>
             </div>
-            <button type="button" className="cw-close" onClick={() => close(false)} aria-label="Fechar"><X size={18} /></button>
+            <div className="cw-head-actions">
+              <button type="button" className="cw-btn cw-btn-primary cw-btn-sm" disabled={!canSave || save.isPending}
+                onClick={() => save.mutate()}><Save /> {save.isPending ? "Salvando…" : "Salvar"}</button>
+              {isEdit && (
+                <button type="button" className="cw-close cw-close-danger" aria-label="Excluir" disabled={remove.isPending}
+                  onClick={() => { if (confirm("Excluir esta tarefa?")) remove.mutate(); }}><Trash2 size={17} /></button>
+              )}
+              <button type="button" className="cw-close" onClick={() => setMode("minimized")} aria-label="Minimizar"><Minus size={18} /></button>
+              <button type="button" className="cw-close" onClick={() => setMode(mode === "docked" ? "modal" : "docked")}
+                aria-label="Lateralizar"><PanelRight size={17} /></button>
+              <button type="button" className="cw-close" onClick={() => close(false)} aria-label="Fechar"><X size={18} /></button>
+            </div>
           </div>
+
 
           {/* PROPRIEDADES COMPACTAS */}
           <div className="cw-props">
