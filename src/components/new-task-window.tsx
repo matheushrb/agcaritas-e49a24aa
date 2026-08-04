@@ -117,6 +117,7 @@ export function TaskWindow({
   const [projectId, setProjectId] = useState<string | null>(defaultProjectId);
   const [taskTypeId, setTaskTypeId] = useState<string | null>(null);
   const [assigneeId, setAssigneeId] = useState<string | null>(null);
+  const [startDate, setStartDate] = useState("");
   const [dueDate, setDueDate] = useState("");
   const [priority, setPriority] = useState("medium");
   const [status, setStatus] = useState("todo");
@@ -269,6 +270,7 @@ export function TaskWindow({
     setCurrentStageId(existing.current_stage_id ?? null);
 
     setAssigneeId(existing.assignee_id ?? null);
+    setStartDate(existing.start_date ?? "");
     setDueDate(existing.due_date ?? "");
     setPriority(existing.priority ?? "medium");
     setStatus(existing.status ?? "todo");
@@ -475,6 +477,7 @@ export function TaskWindow({
     priority: priority as any,
     project_id: projectId,
     assignee_id: assigneeId,
+    start_date: startDate || null,
     due_date: dueDate || null,
     stage: stage as any,
     current_stage_id: currentStageId,
@@ -643,12 +646,22 @@ export function TaskWindow({
               </div>
             </div>
             <div className="cw-prop">
+              <div className="cw-label">Início</div>
+              <div className="cw-prop-value">
+                <CalendarDays size={14} style={{ color: "var(--cw-muted)", flexShrink: 0 }} />
+                <input type="date" value={startDate} max={dueDate || undefined}
+                  onChange={e => setStartDate(e.target.value)} />
+              </div>
+            </div>
+            <div className="cw-prop">
               <div className="cw-label">Prazo</div>
               <div className="cw-prop-value">
                 <CalendarDays size={14} style={{ color: "var(--cw-muted)", flexShrink: 0 }} />
-                <input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} />
+                <input type="date" value={dueDate} min={startDate || undefined}
+                  onChange={e => setDueDate(e.target.value)} />
               </div>
             </div>
+
             <div className="cw-prop">
               <div className="cw-label">Prioridade</div>
               <div className="cw-prop-value">
