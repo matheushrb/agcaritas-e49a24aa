@@ -804,41 +804,12 @@ function NewInvoiceWizard({
 
             {step === 2 && (
               <div>
-                <div className="fat01-field full" style={{ marginBottom: 14 }}>
-                  <label className="fat01-label">Projetos a faturar</label>
-                  <div className="fat01-projects">
-                    {visibleProjects.length === 0 && (
-                      <div className="px-3 py-4 text-[12px]" style={{ color: "var(--f1-muted)" }}>
-                        Nenhum projeto disponível para faturar neste cliente.
-                      </div>
-                    )}
-                    {visibleProjects.map(p => {
-                      const checked = selectedProjects.has(p.id);
-                      return (
-                        <label key={p.id} className="fat01-proj" data-checked={checked}>
-                          <Checkbox
-                            checked={checked}
-                            onCheckedChange={(v) => {
-                              const next = new Set(selectedProjects);
-                              v ? next.add(p.id) : next.delete(p.id);
-                              setSelectedProjects(next);
-                            }}
-                          />
-                          <div className="flex-1 min-w-0">
-                            <div className="truncate">{p.name}</div>
-                            <div className="fat01-proj-client truncate">
-                              {clients.find(c => c.id === p.client_id)?.name ?? "Sem cliente"}
-                            </div>
-                          </div>
-                        </label>
-                      );
-                    })}
-                  </div>
-                  <span className="fat01-hint">
-                    Projetos já vinculados a uma fatura não aparecem aqui. Sem marcar nenhum, todos os
-                    itens pendentes do cliente aparecem. Tarefas concluídas sem projeto ficam sempre disponíveis.
-                  </span>
+                <div className="fat01-hint" style={{ marginBottom: 14, display: "block" }}>
+                  Marque abaixo os itens que entram na fatura. Cada bloco é um projeto com itens
+                  pendentes — use a caixa do cabeçalho para selecionar o projeto inteiro. Projetos já
+                  vinculados a outra fatura não aparecem. Tarefas concluídas sem projeto ficam em "Sem projeto".
                 </div>
+
 
                 {(() => {
                   const delivsByTask = new Map<string, BillableDeliverable[]>();
