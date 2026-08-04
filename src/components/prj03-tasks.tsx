@@ -48,6 +48,13 @@ const STATUS_LABEL: Record<P3Task["status"], string> = {
   review: "Em revisão",
   done: "Concluída",
 };
+const STATUS_ORDER: P3Task["status"][] = ["todo", "in_progress", "review", "done"];
+const STATUS_COLOR: Record<P3Task["status"], string> = {
+  todo: "#8A93A3",
+  in_progress: "#2F6BEF",
+  review: "#F59E0B",
+  done: "#10B981",
+};
 
 function initials(name: string) {
   return name.trim().split(/\s+/).slice(0, 2).map((p) => p[0]).join("").toUpperCase() || "?";
