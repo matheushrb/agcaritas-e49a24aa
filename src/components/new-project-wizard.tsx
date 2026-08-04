@@ -111,7 +111,7 @@ export const defaultProjectWizardValue: ProjectWizardValue = {
   bill_per_task_default: true, bill_per_deliverable: true,
   use_task_type_value: false, allow_value_override: true,
   finance_owner_id: null, payment_terms: "30 dias", due_days: "30 dias", finance_notes: "",
-  tools: [], strategy_enabled: false,
+  social_platforms: [], tools: [], strategy_enabled: false,
   scope_flags: { swot: false, personas: false, competitors: false, roadmap: false, kpis: false, action_plan: false },
   traffic_budget: { enabled: false, amount: null, platforms: [] },
   other_budgets: [],
