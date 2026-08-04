@@ -234,3 +234,5 @@ html.dark .fat01-row { border-bottom-color: var(--border) !important; }
 html.dark .prj01 .skeleton { background: rgba(255, 255, 255, .06) !important; }
 html.dark .prj05 .p5-num { background: rgba(255, 255, 255, .14) !important; color: var(--foreground) !important; }
 html.dark .tsk2 .g-bar.todo { background: rgba(255, 255, 255, .22) !important; }
+
+html.dark .k-stagename { color: #E6EDF7; }
