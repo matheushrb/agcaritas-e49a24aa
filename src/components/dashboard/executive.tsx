@@ -190,6 +190,7 @@ function useMetrics(data: Data) {
       approvals: approvals.length,
       urgentApprovals: approvals.filter(t => t.priority === "urgent" || t.priority === "high").length,
       critPend,
+      pendingDeliverables,
       taskCounts: { todo: byStatus("todo"), doing: byStatus("in_progress"), review: byStatus("review"), done: doneToday.length },
       nextTasks: open
         .filter(t => t.due_date)
