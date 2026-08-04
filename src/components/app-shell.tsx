@@ -78,6 +78,29 @@ export function AppShell({ children }: { children: ReactNode }) {
         <nav className="cv-sidebar-nav">
           {primaryNav.map(railItem)}
           {expanded && secondaryNav.map(railItem)}
+          <Popover>
+            <PopoverTrigger asChild>
+              <button className="cv-nav-item" title="Mais módulos">
+                <LayoutGrid className="h-[18px] w-[18px]" />
+              </button>
+            </PopoverTrigger>
+            <PopoverContent side="right" align="start" className="w-60 p-1.5 rounded-xl">
+              <div className="px-2 py-1.5 text-[11px] uppercase tracking-wider text-muted-foreground">Mais módulos</div>
+              {secondaryNav.map(item => {
+                const Icon = item.icon;
+                return (
+                  <Link
+                    key={item.to}
+                    to={item.to}
+                    className="flex items-center gap-2.5 rounded-lg px-2 py-2 text-sm hover:bg-muted"
+                  >
+                    <Icon className="h-4 w-4 text-muted-foreground" />
+                    {item.label}
+                  </Link>
+                );
+              })}
+            </PopoverContent>
+          </Popover>
         </nav>
 
         <div className="cv-sidebar-bottom">
