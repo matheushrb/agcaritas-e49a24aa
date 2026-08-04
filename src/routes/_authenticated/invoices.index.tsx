@@ -312,6 +312,7 @@ function NewInvoiceWizard({
   const [selectedTasks, setSelectedTasks] = useState<Set<string>>(new Set());
   const [payerClient, setPayerClient] = useState<string>(initialClient);
   const [issueDate, setIssueDate] = useState(new Date().toISOString().slice(0, 10));
+  const [competence, setCompetence] = useState(new Date().toISOString().slice(0, 7));
   const [dueDate, setDueDate] = useState<string>("");
   const [paymentCondition, setPaymentCondition] = useState<string>("30");
   const [paymentMethods, setPaymentMethods] = useState<string[]>(["PIX"]);
@@ -595,7 +596,7 @@ function NewInvoiceWizard({
     const doc = await generateInvoicePDF({
       number: previewNumber,
       issue_date: issue,
-      competence: new Date(issue + "T12:00:00").toLocaleDateString("pt-BR", { month: "short", year: "numeric" }).replace(".", ""),
+      competence: new Date((competence || issue.slice(0, 7)) + "-01T12:00:00").toLocaleDateString("pt-BR", { month: "short", year: "numeric" }).replace(".", ""),
       due_date: dueDate || null,
       client: buildClientParty(client),
       agency: buildAgencyParty(organization),
@@ -690,6 +691,7 @@ function NewInvoiceWizard({
         client_id: payerClient || null,
         project_id: singleProject,
         issue_date: issueDate,
+        competence_month: competence ? `${competence}-01` : null,
         due_date: dueDate || null,
         amount: total,
         total,
@@ -764,6 +766,12 @@ function NewInvoiceWizard({
                 <div className="fat01-field">
                   <label className="fat01-label">Data de emissão <span>*</span></label>
                   <Input type="date" className="fat01-input" value={issueDate} onChange={e => setIssueDate(e.target.value)} />
+                </div>
+
+                <div className="fat01-field">
+                  <label className="fat01-label">Competência</label>
+                  <Input type="month" className="fat01-input" value={competence} onChange={e => setCompetence(e.target.value)} />
+                  <span className="fat01-hint">Mês de referência dos serviços faturados.</span>
                 </div>
 
 
@@ -1035,6 +1043,10 @@ function NewInvoiceWizard({
                   <div className="fat01-field">
                     <label className="fat01-label">Vencimento</label>
                     <Input type="date" className="fat01-input" value={dueDate} onChange={e => setDueDate(e.target.value)} />
+                  </div>
+                  <div className="fat01-field">
+                    <label className="fat01-label">Competência</label>
+                    <Input type="month" className="fat01-input" value={competence} onChange={e => setCompetence(e.target.value)} />
                   </div>
                   <div className="fat01-field full">
                     <label className="fat01-label">Condições de pagamento</label>

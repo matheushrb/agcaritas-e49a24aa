@@ -24,7 +24,7 @@ export const Route = createFileRoute("/_authenticated/invoices/$invoiceId")({
 
 type Inv = {
   id: string; number: string | null; client_id: string | null; project_id: string | null;
-  status: string; issue_date: string | null; due_date: string | null; paid_at: string | null;
+  status: string; issue_date: string | null; competence_month: string | null; due_date: string | null; paid_at: string | null;
   total: number | string | null; amount: number | string | null; discount: number | string | null;
   notes: string | null; payment_method: string | null; payment_terms: string | null;
   payment_link: string | null; created_at: string | null;
@@ -80,7 +80,7 @@ function InvoiceDetailPage() {
   const [editOpen, setEditOpen] = useState(false);
   const [payOpen, setPayOpen] = useState(false);
   const [form, setForm] = useState({
-    number: "", client_id: "", project_id: "", issue_date: "", due_date: "",
+    number: "", client_id: "", project_id: "", issue_date: "", competence: "", due_date: "",
     payment_method: "", payment_terms: "", payment_link: "", discount: "0", notes: "",
   });
   const [drafts, setDrafts] = useState<{ id?: string; description: string; amount: string; due_date: string; project_id: string | null }[]>([]);
@@ -96,7 +96,7 @@ function InvoiceDetailPage() {
     queryKey: ["invoice", invoiceId],
     queryFn: async () => {
       const { data, error } = await supabase.from("invoices")
-        .select("id,number,client_id,project_id,status,issue_date,due_date,paid_at,total,amount,discount,notes,payment_method,payment_terms,payment_link,created_at")
+        .select("id,number,client_id,project_id,status,issue_date,competence_month,due_date,paid_at,total,amount,discount,notes,payment_method,payment_terms,payment_link,created_at")
         .eq("id", invoiceId).maybeSingle();
       if (error) throw error;
       return (data ?? null) as Inv | null;
@@ -183,10 +183,12 @@ function InvoiceDetailPage() {
       ].filter(Boolean).join("\n") || null : null;
       const doc = await generateInvoicePDF({
         number: pdfNumber,
-        competence: (invoice.issue_date || invoice.created_at)
-          ? new Date(String(invoice.issue_date || invoice.created_at).slice(0, 10) + "T12:00:00")
-              .toLocaleDateString("pt-BR", { month: "short", year: "numeric" }).replace(".", "")
-          : undefined,
+        competence: (() => {
+          const src = invoice.competence_month || invoice.issue_date || invoice.created_at;
+          if (!src) return undefined;
+          return new Date(String(src).slice(0, 7) + "-01T12:00:00")
+            .toLocaleDateString("pt-BR", { month: "short", year: "numeric" }).replace(".", "");
+        })(),
         issue_date: invoice.issue_date || invoice.created_at || new Date().toISOString().slice(0, 10),
         due_date: invoice.due_date,
         client: c ? {
@@ -294,6 +296,7 @@ function InvoiceDetailPage() {
       client_id: invoice.client_id ?? "",
       project_id: invoice.project_id ?? "",
       issue_date: (invoice.issue_date ?? "").slice(0, 10),
+      competence: (invoice.competence_month ?? invoice.issue_date ?? "").slice(0, 7),
       due_date: (invoice.due_date ?? "").slice(0, 10),
       payment_method: invoice.payment_method ?? "",
       payment_terms: invoice.payment_terms ?? "",
@@ -338,6 +341,7 @@ function InvoiceDetailPage() {
         client_id: form.client_id || null,
         project_id: draftProjectIds.length === 1 ? draftProjectIds[0] : null,
         issue_date: form.issue_date || undefined,
+        competence_month: form.competence ? `${form.competence}-01` : null,
         due_date: form.due_date || null,
         payment_method: serializePaymentMethods(methods) || null,
         payment_terms: form.payment_terms || null,
@@ -797,7 +801,7 @@ function InvoiceDetailPage() {
               </div>
 
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-3 gap-3">
                 <div>
                   <label className="text-xs font-medium text-muted-foreground">Emissão</label>
                   <Input type="date" value={form.issue_date} onChange={e => setForm(f => ({ ...f, issue_date: e.target.value }))} />
@@ -805,6 +809,10 @@ function InvoiceDetailPage() {
                 <div>
                   <label className="text-xs font-medium text-muted-foreground">Vencimento</label>
                   <Input type="date" value={form.due_date} onChange={e => setForm(f => ({ ...f, due_date: e.target.value }))} />
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground">Competência</label>
+                  <Input type="month" value={form.competence} onChange={e => setForm(f => ({ ...f, competence: e.target.value }))} />
                 </div>
               </div>
 
