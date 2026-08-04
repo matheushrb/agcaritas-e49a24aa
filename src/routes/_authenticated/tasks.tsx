@@ -187,6 +187,11 @@ function TasksPage() {
     const p = id ? peopleMin.find(x => x.id === id) : null;
     return { name: p?.display_name || p?.full_name || (id ? "Responsável" : "Não atribuído"), role: p?.role_title ?? null };
   };
+  const personInfo = (id: string | null) => {
+    const p = assigneeName(id);
+    return { name: p.name, role: p.role ?? "" };
+  };
+
 
   const updateStatus = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: TaskStatus }) => {
