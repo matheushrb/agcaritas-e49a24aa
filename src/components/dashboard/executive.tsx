@@ -27,7 +27,7 @@ export const executiveQuery = {
       supabase.from("charges").select("id,amount,type,status,due_date,paid_at,category,project_id").gte("due_date", prevFrom).lt("due_date", to),
       supabase.from("clients").select("id,name,created_at,status"),
       supabase.from("projects").select("id,name,status,end_date,client_id"),
-      supabase.from("tasks").select("id,title,status,priority,due_date,project_id,client_id,assignee_id,updated_at"),
+      supabase.from("tasks").select("id,title,status,priority,due_date,project_id,client_id,assignee_id,updated_at,deliverables").limit(2000),
       supabase.from("leads").select("id,stage,estimated_value"),
       supabase.from("calendar_events").select("id,title,description,kind,starts_at,ends_at").gte("starts_at", dayStart().toISOString()).order("starts_at").limit(40),
     ]);
