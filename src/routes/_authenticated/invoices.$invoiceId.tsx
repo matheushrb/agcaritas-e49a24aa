@@ -790,13 +790,14 @@ function InvoiceDetailPage() {
                 </div>
               </div>
 
+              <div>
+                <label className="text-xs font-medium text-muted-foreground">Formas de pagamento aceitas</label>
+                <PaymentMethodTags className="mt-1" value={methods} onChange={setMethods} />
+              </div>
+
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs font-medium text-muted-foreground">Forma de pagamento</label>
-                  <Input value={form.payment_method} placeholder="PIX, boleto, transferência…"
-                    onChange={e => setForm(f => ({ ...f, payment_method: e.target.value }))} />
-                </div>
-                <div>
+
                   <label className="text-xs font-medium text-muted-foreground">Desconto (R$)</label>
                   <Input type="number" step="0.01" value={form.discount}
                     onChange={e => setForm(f => ({ ...f, discount: e.target.value }))} />
