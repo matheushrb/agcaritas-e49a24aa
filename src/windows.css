@@ -427,3 +427,27 @@
 }
 .dark .cw-shell { background: rgba(255,255,255,.03); }
 .dark .cw-shell > .cw-window { border-color: var(--border); }
+
+/* ===== Ações do cabeçalho / modos da janela ===== */
+.cw-head-actions { display: flex; align-items: center; gap: 4px; }
+.cw-btn-sm { height: 32px; padding: 0 12px; font-size: 13px; }
+.cw-close-danger:hover { background: color-mix(in oklab, var(--cw-danger) 12%, transparent); color: var(--cw-danger); }
+
+.cw-mini {
+  position: fixed; right: 20px; bottom: 20px; z-index: 60;
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 10px; border-radius: 14px;
+  background: var(--card); border: 1px solid var(--border);
+  box-shadow: 0 12px 32px rgba(15,25,40,.18); max-width: 340px;
+}
+.cw-mini-title { font-size: 13px; font-weight: 600; color: var(--cw-ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.cw-dock-backdrop { position: fixed; inset: 0; z-index: 55; background: rgba(15,25,40,.28); }
+.cw-dock {
+  position: fixed; top: 0; right: 0; bottom: 0; z-index: 56;
+  width: min(760px, 96vw); padding: 10px;
+  background: rgba(15,25,40,.05);
+  box-shadow: -18px 0 48px rgba(15,25,40,.18);
+}
+.cw-dock > .cw-window { height: 100%; border-radius: 16px; overflow: hidden; }
+.dark .cw-dock { background: rgba(255,255,255,.03); }

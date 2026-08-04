@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import {
   X, Plus, Trash2, Check, Info, ChevronDown, ListChecks, DollarSign,
-  Paperclip, Save, Clock, CalendarDays, Layers, Trash,
+  Paperclip, Save, Clock, CalendarDays, Layers, Trash, Minus, Maximize2, PanelRight,
 } from "lucide-react";
 import { useTaskTypeStages } from "@/lib/task-types";
 import "@/windows.css";
@@ -303,6 +303,9 @@ export function TaskWindow({
     },
     onError: (e: Error) => toast.error(e.message),
   });
+
+  const [mode, setMode] = useState<"modal" | "docked" | "minimized">("modal");
+  useEffect(() => { if (open) setMode("modal"); }, [open]);
 
   const canSave = title.trim().length > 0;
 
