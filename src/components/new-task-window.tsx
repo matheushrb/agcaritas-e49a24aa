@@ -67,6 +67,8 @@ export function TaskWindow({
   const [priority, setPriority] = useState("medium");
   const [status, setStatus] = useState("todo");
   const [stage, setStage] = useState<Stage>("briefing");
+  const [currentStageId, setCurrentStageId] = useState<string | null>(null);
+
   const [estimated, setEstimated] = useState<string>("");
   const [billingEnabled, setBillingEnabled] = useState(true);
   const [baseValue, setBaseValue] = useState<string>("");
