@@ -130,6 +130,11 @@ export function TaskWindow({
   const [checklist, setChecklist] = useState<ChecklistDraft[]>([]);
   const [platformsSel, setPlatformsSel] = useState<string[]>([]);
   const [notes, setNotes] = useState("");
+  const [liveItems, setLiveItems] = useState<LiveDraft[]>([]);
+  const [tech, setTech] = useState<TechSheet>(EMPTY_TECH);
+  const [tab, setTab] = useState<"details" | "live" | "tech">("details");
+  const setT = (k: keyof TechSheet, v: string) => setTech(t => ({ ...t, [k]: v }));
+
 
   const { data: projects = [] } = useQuery({
     queryKey: ["projects_min_platforms"],
