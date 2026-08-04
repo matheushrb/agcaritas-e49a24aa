@@ -471,6 +471,33 @@ function StepBasics({ v, patch, errors, clients, typeOptions, people, applyTypeS
       <div className="cw-section">
         <div className="cw-section-head">
           <div>
+            <h4>Plataformas do projeto</h4>
+            <p>Selecione os canais em que a agência vai trabalhar. Eles filtram as plataformas das tarefas.</p>
+          </div>
+          {v.social_platforms.length > 0 && (
+            <span className="cw-chip">{v.social_platforms.length} selecionada(s)</span>
+          )}
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {platforms.map(p => {
+            const on = v.social_platforms.includes(p.name);
+            return (
+              <button key={p.id} type="button" className={`cw-chip${on ? "" : " is-neutral"}`}
+                onClick={() => togglePlatformName(p.name)}>
+                {on && <Check size={12} />} {p.name}
+              </button>
+            );
+          })}
+          {platforms.length === 0 && (
+            <span style={{ fontSize: 11, color: "var(--cw-muted)" }}>Cadastre plataformas em Configurações → Plataformas.</span>
+          )}
+        </div>
+      </div>
+
+
+      <div className="cw-section">
+        <div className="cw-section-head">
+          <div>
             <h4>Escopo estratégico</h4>
             <p>Ative os blocos que serão liberados na aba Estratégia do projeto.</p>
           </div>
