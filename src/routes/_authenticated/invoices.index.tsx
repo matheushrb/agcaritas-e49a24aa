@@ -481,7 +481,7 @@ function NewInvoiceWizard({
           taskTitle: t.title,
           label: parts ? `Entregável ${parts}` : "Entregável",
           amount,
-          client_id: t.client_id,
+          client_id: effClient(t.client_id, t.project_id),
           project_id: t.project_id,
           reference_date: ref.reference_date,
           reference_label: ref.reference_label,
@@ -489,7 +489,7 @@ function NewInvoiceWizard({
       }
     }
     return out;
-  }, [tasks, invoicedDeliverableIds, filterClient, selectedProjects]);
+  }, [tasks, invoicedDeliverableIds, filterClient, selectedProjects, clientOfProject]);
 
   const subtotal = useMemo(() => {
     let t = 0;
