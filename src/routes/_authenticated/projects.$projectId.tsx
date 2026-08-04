@@ -496,7 +496,11 @@ function ProjectDetail() {
       {activeTab === "campaigns" && <div style={{ marginTop: 18 }}><ComingSoon icon={Rocket} title="Campanhas" description="Lançamentos e campanhas dentro do projeto." /></div>}
       {activeTab === "docs" && <Prj06Files />}
 
-      <TaskModal task={selectedTask} onClose={() => setSelectedTaskId(null)} />
+      <TaskWindow
+        open={!!selectedTaskId}
+        taskId={selectedTaskId}
+        onOpenChange={(o) => { if (!o) setSelectedTaskId(null); }}
+      />
       <EditProjectDialog
         project={project as EditableProject}
         open={editOpen}
