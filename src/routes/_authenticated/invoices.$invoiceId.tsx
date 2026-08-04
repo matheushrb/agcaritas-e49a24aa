@@ -357,7 +357,7 @@ function InvoiceDetailPage() {
         }
         for (const [taskId, ids] of delivByTask) {
           const { data: t } = await supabase.from("tasks").select("deliverables").eq("id", taskId).maybeSingle();
-          const list = ((t?.deliverables ?? []) as { id: string; invoiced?: boolean }[]) ?? [];
+          const list = (t?.deliverables ?? []) as { id: string; invoiced?: boolean }[];
           const next = list.map(dd => (ids.has(dd.id) ? { ...dd, invoiced: false } : dd));
           await supabase.from("tasks").update({ deliverables: next } as never).eq("id", taskId);
         }
