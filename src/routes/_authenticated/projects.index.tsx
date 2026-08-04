@@ -60,6 +60,7 @@ type Project = {
   monthly_value: number | null;
   created_at: string;
   archived_at?: string | null;
+  owner_id?: string | null;
 };
 
 type Client = { id: string; name: string };
@@ -110,7 +111,7 @@ function ProjectsPage() {
       const { data, error } = await supabase
         .from("projects")
         .select(
-          "id,name,description,status,client_id,start_date,end_date,project_type,billing_model,urgency,fixed_value,monthly_value,created_at,archived_at",
+          "id,name,description,status,client_id,owner_id,start_date,end_date,project_type,billing_model,urgency,fixed_value,monthly_value,created_at,archived_at",
         )
         .order("created_at", { ascending: false });
       if (error) throw error;
@@ -137,7 +138,7 @@ function ProjectsPage() {
     },
   });
 
-  const { data: membersByProject = {} } = useQuery<Record<string, Member[]>>({
+  const { data: rawMembersByProject = {} } = useQuery<Record<string, Member[]>>({
     queryKey: ["project-members-min"],
     queryFn: async () => {
       const { data: rows, error } = await supabase.from("project_members").select("project_id,user_id");
@@ -203,6 +204,34 @@ function ProjectsPage() {
       return { counts, projected };
     },
   });
+
+  const { data: ownerProfiles = {} } = useQuery<Record<string, Member>>({
+    queryKey: ["project-owner-profiles", projects.map((p) => p.owner_id ?? "").join(",")],
+    queryFn: async () => {
+      const ids = [...new Set(projects.map((p) => p.owner_id).filter(Boolean))] as string[];
+      if (!ids.length) return {};
+      const { data } = await supabase.from("profiles").select("id,full_name,display_name,avatar_url").in("id", ids);
+      return Object.fromEntries(
+        (data ?? []).map((p) => [
+          p.id,
+          { user_id: p.id, name: p.display_name || p.full_name || "—", avatar: p.avatar_url ?? null } as Member,
+        ]),
+      );
+    },
+  });
+
+  const membersByProject = useMemo(() => {
+    const out: Record<string, Member[]> = {};
+    for (const [pid, list] of Object.entries(rawMembersByProject)) out[pid] = [...list];
+    for (const project of projects) {
+      if (!project.owner_id) continue;
+      const owner = ownerProfiles[project.owner_id];
+      if (!owner) continue;
+      const list = (out[project.id] ??= []);
+      if (!list.some((m) => m.user_id === owner.user_id)) list.unshift(owner);
+    }
+    return out;
+  }, [rawMembersByProject, projects, ownerProfiles]);
 
   const clientById = useMemo(() => Object.fromEntries(clients.map((c) => [c.id, c.name])), [clients]);
 
@@ -306,7 +335,7 @@ function ProjectsPage() {
     mutationFn: async (input: ProjectWizardValue) => {
       const { data: profile } = await supabase.from("profiles").select("organization_id").maybeSingle();
       if (!profile?.organization_id) throw new Error("Sem organização");
-      const { error } = await supabase.from("projects").insert({
+      const { data: created, error } = await supabase.from("projects").insert({
         organization_id: profile.organization_id,
         name: input.name,
         client_id: input.client_id,
@@ -323,11 +352,29 @@ function ProjectsPage() {
         scope_flags: { ...input.scope_flags, tools: input.tools } as any,
         traffic_budget: input.traffic_budget as any,
         other_budgets: input.other_budgets as any,
-      });
+      }).select("id").single();
       if (error) throw error;
+
+      const memberIds = [
+        ...(input.owner_id ? [{ user_id: input.owner_id, role: "owner" }] : []),
+        ...((input.participants ?? []) as { user_id: string; role?: string | null }[])
+          .filter((p) => p.user_id && p.user_id !== input.owner_id)
+          .map((p) => ({ user_id: p.user_id, role: p.role ?? null })),
+      ];
+      if (memberIds.length) {
+        await supabase.from("project_members").insert(
+          memberIds.map((m) => ({
+            organization_id: profile.organization_id,
+            project_id: created.id,
+            user_id: m.user_id,
+            role: m.role,
+          })),
+        );
+      }
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["projects"] });
+      qc.invalidateQueries({ queryKey: ["project-members-min"] });
       toast.success("Projeto criado");
       setNewOpen(false);
     },
