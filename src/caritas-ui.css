@@ -779,3 +779,40 @@
 /* cards com leve elevação ao passar o mouse */
 .caritas-ui .cv-card { transition: box-shadow 0.2s ease, border-color 0.2s ease; }
 .caritas-ui .cv-card:hover { border-color: color-mix(in srgb, var(--primary) 16%, var(--border)); }
+
+/* ===== Configurações (SET-01) ===== */
+.cv-settings { color: var(--text); }
+.cv-settings .cv-set-head h1 { color: var(--text); }
+.cv-settings .cv-set-head p { color: var(--muted); }
+.cv-settings .cv-set-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 6px;
+  box-shadow: var(--shadow);
+  height: auto;
+}
+.cv-settings .cv-set-tab {
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--muted);
+  background: transparent;
+  border: 1px solid transparent;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  transition: background .15s, color .15s;
+}
+.cv-settings .cv-set-tab:hover { background: var(--surface-2); color: var(--text); }
+.cv-settings .cv-set-tab[data-state="active"] {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(23,105,246,.25);
+}
+.cv-settings .cv-set-tab[data-state="active"] svg { color: #fff; }

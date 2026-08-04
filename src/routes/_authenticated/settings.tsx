@@ -43,19 +43,19 @@ const TABS = [
 
 function SettingsPage() {
   return (
-    <div className="space-y-6">
-      <header>
+    <div className="cv-settings space-y-6">
+      <header className="cv-set-head">
         <h1 className="font-display text-3xl font-bold tracking-tight">Configurações</h1>
-        <p className="text-sm text-muted-foreground">Configurações globais da agência — dados cadastrais, serviços, plataformas, tipos de tarefa, funil, usuários e integrações.</p>
+        <p className="text-sm">Configurações globais da agência — dados cadastrais, serviços, plataformas, tipos de tarefa, funil, usuários e integrações.</p>
       </header>
 
       <Tabs defaultValue="profile">
         <div className="overflow-x-auto">
-          <TabsList className="rounded-full bg-muted/60 h-auto flex-wrap">
+          <TabsList className="cv-set-tabs">
             {TABS.map(t => {
               const Icon = t.icon;
               return (
-                <TabsTrigger key={t.value} value={t.value} className="rounded-full gap-1.5">
+                <TabsTrigger key={t.value} value={t.value} className="cv-set-tab">
                   <Icon className="h-4 w-4" />{t.label}
                 </TabsTrigger>
               );
