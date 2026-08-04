@@ -40,7 +40,10 @@ const num = (v: unknown) => Number(v ?? 0) || 0;
 const fmtDate = (d?: string | null) =>
   d ? new Date(d.length > 10 ? d : d + "T00:00:00").toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric" }) : "—";
 const fmtDateTime = (d?: string | null) =>
-  d ? new Date(d).toLocaleString("pt-BR", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "—";
+  !d ? "—"
+    : d.length <= 10
+      ? fmtDate(d)
+      : new Date(d).toLocaleString("pt-BR", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit", timeZone: "America/Sao_Paulo" });
 const daysDiff = (d?: string | null) => {
   if (!d) return null;
   const t = new Date(d + "T00:00:00").getTime();
