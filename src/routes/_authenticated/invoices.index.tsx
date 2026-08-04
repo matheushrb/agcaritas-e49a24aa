@@ -752,41 +752,6 @@ function NewInvoiceWizard({
                   <Input type="date" className="fat01-input" value={issueDate} onChange={e => setIssueDate(e.target.value)} />
                 </div>
 
-                <div className="fat01-field full">
-                  <label className="fat01-label">Projeto(s) <span>*</span></label>
-                  <div className="fat01-projects">
-                    {visibleProjects.length === 0 && (
-                      <div className="px-3 py-4 text-[12px]" style={{ color: "var(--f1-muted)" }}>
-                        Nenhum projeto para este cliente.
-                      </div>
-                    )}
-                    {visibleProjects.map(p => {
-                      const checked = selectedProjects.has(p.id);
-                      return (
-                        <label key={p.id} className="fat01-proj" data-checked={checked}>
-                          <Checkbox
-                            checked={checked}
-                            onCheckedChange={(v) => {
-                              const next = new Set(selectedProjects);
-                              v ? next.add(p.id) : next.delete(p.id);
-                              setSelectedProjects(next);
-                            }}
-                          />
-                          <div className="flex-1 min-w-0">
-                            <div className="truncate">{p.name}</div>
-                            <div className="fat01-proj-client truncate">
-                              {clients.find(c => c.id === p.client_id)?.name ?? "Sem cliente"}
-                            </div>
-                          </div>
-                        </label>
-                      );
-                    })}
-                  </div>
-                  <span className="fat01-hint">
-                    Pode marcar mais de um projeto — os itens ficam agrupados por projeto na fatura.
-                    Sem marcar nenhum, todos os itens pendentes do cliente aparecem.
-                  </span>
-                </div>
 
                 <div className="fat01-field">
                   <label className="fat01-label">Condição de pagamento</label>
