@@ -791,12 +791,12 @@ function NewInvoiceWizard({
                   <Textarea
                     className="fat01-textarea"
                     rows={3}
-                    maxLength={500}
+                    maxLength={1000}
                     value={notes}
-                    onChange={e => setNotes(e.target.value.slice(0, 500))}
+                    onChange={e => setNotes(e.target.value.slice(0, 1000))}
                     placeholder="Ex.: A NF será emitida após confirmação do pagamento."
                   />
-                  <div className="fat01-counter">{notes.length}/500</div>
+                  <div className="fat01-counter">{notes.length}/1000</div>
                 </div>
               </div>
             )}
