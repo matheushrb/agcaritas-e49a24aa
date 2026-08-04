@@ -250,6 +250,8 @@ export function TaskWindow({
     assignee_id: assigneeId,
     due_date: dueDate || null,
     stage: stage as any,
+    current_stage_id: currentStageId,
+
     task_type_id: taskTypeId,
     estimated_hours: estimated ? Number(estimated) : null,
     billing_enabled: billingEnabled,
