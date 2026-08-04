@@ -288,22 +288,29 @@ function TasksPage() {
         onQuickCreate={(title) => createTask.mutate({ title, status: "todo" })}
         onStatusChange={(id, status) => updateStatus.mutate({ id, status: status as TaskStatus })}
       >
-        {isLoading ? (
-          <div className="mt-5 text-sm text-muted-foreground">Carregando…</div>
-        ) : (
-          <div className="mt-5">
-            <TaskViews
-              view={view === "board" ? "kanban" : "gantt"}
-              tasks={filtered as any}
+        {(rows) =>
+          isLoading ? (
+            <div className="k-empty" style={{ marginTop: 18 }}>Carregando…</div>
+          ) : view === "board" ? (
+            <Tsk03Board
+              tasks={rows}
               projectName={projectName}
-              assigneeName={assigneeName}
+              person={personInfo}
               onOpen={(id) => { setDraftTask(null); setSelectedId(id); }}
-              onQuickCreate={(status, title) => createTask.mutate({ title, status })}
-              onStatusChange={(id, status) => updateStatus.mutate({ id, status })}
+              onNew={handleNew}
+              onStatusChange={(id, status) => updateStatus.mutate({ id, status: status as TaskStatus })}
             />
-          </div>
-        )}
+          ) : (
+            <Tsk04Gantt
+              tasks={rows}
+              projectName={projectName}
+              person={personInfo}
+              onOpen={(id) => { setDraftTask(null); setSelectedId(id); }}
+            />
+          )
+        }
       </Tsk02List>
+
 
 
       <TaskModal
