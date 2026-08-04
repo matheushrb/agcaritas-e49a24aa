@@ -103,11 +103,12 @@ function InvoiceDetailPage() {
     queryKey: ["invoice-charges", invoiceId],
     queryFn: async () => {
       const { data } = await supabase.from("charges")
-        .select("id,description,amount,due_date,deliverable_id,task_id")
+        .select("id,description,amount,due_date,deliverable_id,task_id,project_id")
         .eq("invoice_id", invoiceId);
       return (data ?? []) as unknown as Item[];
     },
   });
+
 
   const { data: client } = useQuery({
     queryKey: ["invoice-client", invoice?.client_id],
