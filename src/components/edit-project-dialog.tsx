@@ -40,6 +40,7 @@ export type EditableProject = {
   has_timeline: boolean;
   traffic_budget: { enabled?: boolean; amount?: number | null; platforms?: string[] } | null;
   scope_flags: Record<string, boolean> | null;
+  social_platforms?: unknown;
 };
 
 type Client = { id: string; name: string; trade_name: string | null };
