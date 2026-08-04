@@ -708,7 +708,10 @@ function NewInvoiceWizard({
 
   const stepLabels = ["Informações", "Itens da fatura", "Revisão"];
   const clientObj = clients.find(c => c.id === payerClient);
-  const visibleProjects = projects.filter(p => !filterClient || p.client_id === filterClient);
+  const visibleProjects = projects.filter(p =>
+    (!filterClient || p.client_id === filterClient) &&
+    (!invoicedProjectIds.has(p.id) || selectedProjects.has(p.id)),
+  );
 
   return (
     <Dialog open onOpenChange={(v) => !v && onClose()}>
