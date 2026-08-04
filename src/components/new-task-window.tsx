@@ -148,7 +148,7 @@ export function TaskWindow({
     },
   });
   const { data: taskTypes = [] } = useQuery({
-    queryKey: ["task_types_min"],
+    queryKey: ["task_types_min_v2"],
     queryFn: async () => {
       const { data } = await (supabase as any).from("task_types").select("id,name,default_price,active,has_broadcast,has_live,has_tech_sheet").order("name");
       return ((data ?? []) as any[]).filter(t => t.active !== false);
@@ -199,7 +199,7 @@ export function TaskWindow({
     [taskTypes, taskTypeId],
   );
   const showLiveTab = !!activeType?.has_live || liveItems.length > 0;
-  const showTechTab = !!activeType?.has_tech_sheet;
+  const showTechTab = !!activeType?.has_tech_sheet || Object.values(tech ?? {}).some(v => String(v ?? "").trim() !== "");
   const techFilled = useMemo(
     () => Object.entries(tech).some(([k, v]) => k !== "category" && String(v ?? "").trim() !== ""),
     [tech],
