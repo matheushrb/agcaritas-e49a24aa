@@ -91,7 +91,9 @@ export function Tsk02List({
   view, onViewChange, tasks, projects, people, projectSub,
   onOpen, onNew, onQuickCreate, onStatusChange, onArchiveChange, children,
 }: Props) {
+  const { data: stageIndex } = useStageIndex();
   const [q, setQ] = useState("");
+
   const [status, setStatus] = useState("all");
   const [assignee, setAssignee] = useState("all");
   const [priority, setPriority] = useState("all");
