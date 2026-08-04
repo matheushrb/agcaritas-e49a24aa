@@ -482,16 +482,35 @@ export function TaskWindow({
 
   if (!open) return null;
 
+  const timerChip = taskId ? (
+    <div className={`cw-head-timer${timerStart != null ? " is-running" : ""}`}>
+      <Clock size={13} />
+      <span className="cw-head-timer-clock">{fmtClock(runningSeconds)}</span>
+      {timerStart == null ? (
+        <button type="button" className="cw-timer-btn is-play" onClick={startTimer} title="Iniciar cronômetro">
+          <Play size={13} />
+        </button>
+      ) : (
+        <button type="button" className="cw-timer-btn is-stop" disabled={stopTimer.isPending}
+          onClick={() => stopTimer.mutate()} title="Parar e registrar lançamento">
+          <Square size={12} />
+        </button>
+      )}
+    </div>
+  ) : null;
+
   if (mode === "minimized") {
     return (
       <div className="cw cw-mini">
         <span className="cw-title-icon"><ListChecks size={15} /></span>
         <span className="cw-mini-title">{title || (isEdit ? "Tarefa" : "Nova Tarefa")}</span>
+        {timerChip}
         <button type="button" className="cw-close" onClick={() => setMode("modal")} aria-label="Restaurar"><Maximize2 size={16} /></button>
         <button type="button" className="cw-close" onClick={() => close(false)} aria-label="Fechar"><X size={16} /></button>
       </div>
     );
   }
+
 
   const windowEl = (
         <div className="cw-window">
