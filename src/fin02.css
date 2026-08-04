@@ -180,3 +180,13 @@
 
 @media (max-width: 1240px) { .fin02 .f2-kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 @media (max-width: 1200px) { .fin02 .f2-main { grid-template-columns: minmax(0, 1fr); } }
+
+.dark .fin02 {
+  --f2-bg: var(--background);
+  --f2-card: var(--card);
+  --f2-border: var(--border);
+  --f2-soft: rgba(255,255,255,.06);
+  --f2-ink: var(--foreground);
+  --f2-muted: var(--muted-foreground);
+  --f2-muted-2: var(--muted-foreground);
+}

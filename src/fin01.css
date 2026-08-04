@@ -209,3 +209,13 @@
   .fin01 .f1-main { grid-template-columns: minmax(0, 1fr); }
   .fin01 .f1-row2, .fin01 .f1-row2b { grid-template-columns: minmax(0, 1fr); }
 }
+
+.dark .fin01 {
+  --f1-bg: var(--background);
+  --f1-card: var(--card);
+  --f1-border: var(--border);
+  --f1-border-soft: var(--border);
+  --f1-ink: var(--foreground);
+  --f1-muted: var(--muted-foreground);
+  --f1-muted-2: var(--muted-foreground);
+}

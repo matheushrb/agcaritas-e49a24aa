@@ -194,3 +194,14 @@
   font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
 }
 .fat01-preview-head b { font-family: ui-monospace, "IBM Plex Mono", monospace; letter-spacing: 0; font-size: 13px; }
+
+.dark .fat01 {
+  --f1-bg: var(--background);
+  --f1-surface: var(--card);
+  --f1-text: var(--foreground);
+  --f1-muted: var(--muted-foreground);
+  --f1-border: var(--border);
+  --f1-soft: rgba(23,105,246,.18);
+  --f1-green-soft: rgba(21,128,61,.18);
+  --f1-red-soft: rgba(185,28,28,.18);
+}
