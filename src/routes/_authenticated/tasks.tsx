@@ -174,6 +174,18 @@ function TasksPage() {
   const projectName = (id: string | null) =>
     (id && projectsMin.find(p => p.id === id)?.name) || "Sem projeto";
 
+  const { data: peopleMin = [] } = useQuery({
+    queryKey: ["profiles-min-tasks"],
+    queryFn: async () => {
+      const { data } = await supabase.from("profiles").select("id,full_name,job_title").order("full_name");
+      return (data ?? []) as { id: string; full_name: string | null; job_title: string | null }[];
+    },
+  });
+  const assigneeName = (id: string | null | undefined) => {
+    const p = id ? peopleMin.find(x => x.id === id) : null;
+    return { name: p?.full_name || (id ? "Responsável" : "Não atribuído"), role: p?.job_title ?? null };
+  };
+
   const updateStatus = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: TaskStatus }) => {
       const { error } = await supabase.from("tasks").update({ status }).eq("id", id);
@@ -192,13 +204,21 @@ function TasksPage() {
     let arr = tasks;
     if (search.trim()) {
       const s = search.toLowerCase();
-      arr = arr.filter(t => t.title.toLowerCase().includes(s));
+      arr = arr.filter(t =>
+        t.title.toLowerCase().includes(s) ||
+        projectName(t.project_id).toLowerCase().includes(s) ||
+        assigneeName(t.assignee_id).name.toLowerCase().includes(s)
+      );
     }
     if (priorityFilter !== "all") arr = arr.filter(t => t.priority === priorityFilter);
     if (statusFilter !== "all") arr = arr.filter(t => t.status === statusFilter);
+    if (assigneeFilter !== "all")
+      arr = arr.filter(t => (assigneeFilter === "none" ? !t.assignee_id : t.assignee_id === assigneeFilter));
+    if (projectFilter !== "all")
+      arr = arr.filter(t => (projectFilter === "none" ? !t.project_id : t.project_id === projectFilter));
     if (turbo) arr = [...arr].sort((a, b) => (b.billing_value ?? 0) - (a.billing_value ?? 0));
     return arr;
-  }, [tasks, search, priorityFilter, statusFilter, turbo]);
+  }, [tasks, search, priorityFilter, statusFilter, assigneeFilter, projectFilter, turbo, projectsMin, peopleMin]);
 
   const byStatus = useMemo(() => {
     const map: Record<TaskStatus, Task[]> = { todo: [], in_progress: [], review: [], done: [] };
@@ -210,8 +230,10 @@ function TasksPage() {
     const total = tasks.length;
     const overdue = tasks.filter(t => t.due_date && new Date(t.due_date) < new Date() && t.status !== "done").length;
     const inProgress = tasks.filter(t => t.status === "in_progress").length;
+    const review = tasks.filter(t => t.status === "review").length;
+    const done = tasks.filter(t => t.status === "done").length;
     const value = tasks.reduce((s, t) => s + (t.billing_value ?? 0), 0);
-    return { total, overdue, inProgress, value };
+    return { total, overdue, inProgress, review, done, value };
   }, [tasks]);
 
   const createTask = useMutation({
