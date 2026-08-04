@@ -10,13 +10,15 @@ import {
 import "@/windows.css";
 
 type Stage = "briefing" | "creation" | "review" | "approval" | "delivery";
-const STAGES: { id: Stage; label: string }[] = [
-  { id: "briefing", label: "Briefing" },
-  { id: "creation", label: "Criação" },
-  { id: "review", label: "Revisão" },
-  { id: "approval", label: "Aprovação" },
-  { id: "delivery", label: "Entrega" },
+type StatusGroup = "todo" | "in_progress" | "review" | "done";
+const STAGES: { id: Stage; label: string; status: StatusGroup }[] = [
+  { id: "briefing", label: "Briefing", status: "todo" },
+  { id: "creation", label: "Criação", status: "in_progress" },
+  { id: "review", label: "Revisão", status: "review" },
+  { id: "approval", label: "Aprovação", status: "review" },
+  { id: "delivery", label: "Entrega", status: "done" },
 ];
+
 
 const PRIORITIES = [
   { value: "low", label: "Baixa" },
