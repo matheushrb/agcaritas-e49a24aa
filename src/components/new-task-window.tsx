@@ -312,6 +312,63 @@ export function TaskWindow({
     onError: (e: Error) => toast.error(e.message),
   });
 
+  /* ---------- Cronômetro (play / stop) ---------- */
+  const timerKey = taskId ? `cw-timer:${taskId}` : null;
+  const [timerStart, setTimerStart] = useState<number | null>(null);
+  const [nowTick, setNowTick] = useState(Date.now());
+
+  useEffect(() => {
+    if (!timerKey) { setTimerStart(null); return; }
+    const raw = localStorage.getItem(timerKey);
+    setTimerStart(raw ? Number(raw) : null);
+  }, [timerKey]);
+
+  useEffect(() => {
+    if (timerStart == null) return;
+    const t = setInterval(() => setNowTick(Date.now()), 1000);
+    return () => clearInterval(t);
+  }, [timerStart]);
+
+  const runningSeconds = timerStart == null ? 0 : Math.max(0, Math.floor((nowTick - timerStart) / 1000));
+  const fmtClock = (sec: number) =>
+    [Math.floor(sec / 3600), Math.floor((sec % 3600) / 60), sec % 60]
+      .map(n => String(n).padStart(2, "0")).join(":");
+
+  const startTimer = () => {
+    if (!timerKey) return;
+    const t = Date.now();
+    localStorage.setItem(timerKey, String(t));
+    setTimerStart(t); setNowTick(t);
+  };
+
+  const stopTimer = useMutation({
+    mutationFn: async () => {
+      if (timerStart == null) return;
+      const seconds = Math.max(60, Math.floor((Date.now() - timerStart) / 1000));
+      const { data: profile } = await supabase.from("profiles").select("organization_id").maybeSingle();
+      if (!profile?.organization_id) throw new Error("Sem organização");
+      const { data: auth } = await supabase.auth.getUser();
+      const { error } = await (supabase as any).from("time_entries").insert({
+        organization_id: profile.organization_id,
+        task_id: taskId,
+        user_id: auth.user?.id ?? null,
+        duration_seconds: seconds,
+        started_at: new Date(timerStart).toISOString(),
+        ended_at: new Date().toISOString(),
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      if (timerKey) localStorage.removeItem(timerKey);
+      setTimerStart(null);
+      qc.invalidateQueries({ queryKey: ["task-time-entries", taskId] });
+      toast.success("Tempo registrado");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+
+
 
   const reset = () => {
     setTitle(""); setDescription(""); setProjectId(defaultProjectId); setTaskTypeId(null);
