@@ -413,3 +413,17 @@
 .dark .cw .cw-flow-step .cw-flow-dot { border-color: rgba(255,255,255,.2); }
 .dark .cw .cw-switch { background: rgba(255,255,255,.18); }
 .dark .cw .cw-switch::after { background: #E9EEF6; }
+
+/* ---------- Contorno / respiro entre a moldura e a área útil ---------- */
+.cw-shell {
+  background: var(--cw-neutral-bg);
+  padding: 10px;
+  border-radius: 16px;
+}
+.cw-shell > .cw-window {
+  border: 1px solid var(--cw-border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+.dark .cw .cw-shell { background: rgba(255,255,255,.03); }
+.dark .cw .cw-shell > .cw-window { border-color: var(--border); }
