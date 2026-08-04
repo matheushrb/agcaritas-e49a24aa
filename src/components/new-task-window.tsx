@@ -477,6 +477,7 @@ export function TaskWindow({
     priority: priority as any,
     project_id: projectId,
     assignee_id: assigneeId,
+    start_date: startDate || null,
     due_date: dueDate || null,
     stage: stage as any,
     current_stage_id: currentStageId,
