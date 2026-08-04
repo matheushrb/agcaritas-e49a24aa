@@ -13,7 +13,6 @@ import { GlobalSearch } from "@/components/global-search";
 import { TopbarCalendar } from "@/components/topbar-calendar";
 import { TopbarWeather } from "@/components/topbar-weather";
 import { supabase } from "@/integrations/supabase/client";
-import caritasLogo from "@/assets/caritas-logo-horizontal.png.asset.json";
 import caritasSymbol from "@/assets/caritas-symbol.png.asset.json";
 import { resolveAvatarUrl } from "@/components/settings/profile-tab";
 
