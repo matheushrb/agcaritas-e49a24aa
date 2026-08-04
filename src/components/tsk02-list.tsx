@@ -274,7 +274,7 @@ export function Tsk02List({
         ))}
       </div>
 
-      {view !== "list" ? children : (
+      {view !== "list" ? children?.(filtered) : (
         <div className="k-table">
           <div className="k-thead">
             <div className="k-chk">
