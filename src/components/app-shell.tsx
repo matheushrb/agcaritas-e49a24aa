@@ -46,7 +46,6 @@ export function AppShell({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
   const { theme, setTheme } = useTheme();
   const pathname = useRouterState({ select: s => s.location.pathname });
-  const [expanded] = useState(false);
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
