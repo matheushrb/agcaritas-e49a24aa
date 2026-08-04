@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
-import { Plus, Trash2, GripVertical, Layers, Palette, Copy, Pencil, ChevronRight, ChevronDown, ListChecks, Info, Radio } from "lucide-react";
+import { Plus, Trash2, GripVertical, Layers, Palette, Copy, Pencil, ChevronRight, ChevronDown, ListChecks, Info, Radio, SlidersHorizontal } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -29,6 +29,8 @@ export type TaskType = {
   default_price: number | null;
   active: boolean;
   has_broadcast: boolean;
+  has_live: boolean;
+  has_tech_sheet: boolean;
 };
 
 export type TaskTypeStage = {
@@ -70,7 +72,7 @@ export function TaskTypesEditor() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("task_types")
-        .select("id,name,description,color,icon,default_billing_model,default_price,active,has_broadcast")
+        .select("id,name,description,color,icon,default_billing_model,default_price,active,has_broadcast,has_live,has_tech_sheet")
         .order("name");
       if (error) throw error;
       return (data ?? []) as TaskType[];
@@ -496,6 +498,46 @@ function TypeEditorPanel({ type, stages, onDelete, onDuplicate }:{
           onCheckedChange={v => updateType.mutate({ has_broadcast: v })}
         />
       </div>
+
+      {/* Ao Vivo / Estreia (aba na janela da tarefa) */}
+      <div className="rounded-xl border p-3 flex items-start justify-between gap-3">
+        <div className="flex items-start gap-2.5 min-w-0">
+          <span className="h-8 w-8 rounded-lg bg-primary/10 text-primary inline-flex items-center justify-center shrink-0">
+            <Radio className="h-4 w-4" />
+          </span>
+          <div className="min-w-0">
+            <div className="text-sm font-medium">Aba "Ao Vivo / Estreia"</div>
+            <p className="text-[11px] text-muted-foreground leading-snug">
+              Exibe na janela da tarefa a aba para programar lives, aulas e estreias.
+            </p>
+          </div>
+        </div>
+        <Switch
+          checked={type.has_live}
+          onCheckedChange={v => updateType.mutate({ has_live: v })}
+        />
+      </div>
+
+      {/* Ficha técnica */}
+      <div className="rounded-xl border p-3 flex items-start justify-between gap-3">
+        <div className="flex items-start gap-2.5 min-w-0">
+          <span className="h-8 w-8 rounded-lg bg-primary/10 text-primary inline-flex items-center justify-center shrink-0">
+            <SlidersHorizontal className="h-4 w-4" />
+          </span>
+          <div className="min-w-0">
+            <div className="text-sm font-medium">Aba "Ficha técnica"</div>
+            <p className="text-[11px] text-muted-foreground leading-snug">
+              Exibe na janela da tarefa os campos técnicos (proporção, definição, luz, câmera, edição, arte).
+            </p>
+          </div>
+        </div>
+        <Switch
+          checked={type.has_tech_sheet}
+          onCheckedChange={v => updateType.mutate({ has_tech_sheet: v })}
+        />
+      </div>
+
+
 
       {/* Stages */}
       <div className="space-y-2">

@@ -2294,6 +2294,8 @@ export type Database = {
           default_price: number | null
           description: string | null
           has_broadcast: boolean
+          has_live: boolean
+          has_tech_sheet: boolean
           icon: string | null
           id: string
           name: string
@@ -2308,6 +2310,8 @@ export type Database = {
           default_price?: number | null
           description?: string | null
           has_broadcast?: boolean
+          has_live?: boolean
+          has_tech_sheet?: boolean
           icon?: string | null
           id?: string
           name: string
@@ -2322,6 +2326,8 @@ export type Database = {
           default_price?: number | null
           description?: string | null
           has_broadcast?: boolean
+          has_live?: boolean
+          has_tech_sheet?: boolean
           icon?: string | null
           id?: string
           name?: string
