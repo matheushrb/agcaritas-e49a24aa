@@ -381,16 +381,16 @@ export function Prj03Tasks({ tasks, people, onOpen, onQuickCreate, pending }: {
           </div>
         </div>
 
-        {/* Tarefas por etapa */}
+        {/* Tarefas por status */}
         <div className="p3-card">
           <div className="p3-side-h">
-            <span className="p3-side-t">Tarefas por etapa</span>
+            <span className="p3-side-t">Tarefas por status<span className="n">{tasks.length}</span></span>
             <button type="button" className="p3-side-link" onClick={clearFilters}>Ver relatório</button>
           </div>
-          {byStage.map((s) => (
-            <div className="p3-stagerow" key={s.stage}>
-              <span className="lbl">{STAGE_LABEL[s.stage]}</span>
-              <span className="bar"><i style={{ width: `${s.pct}%`, background: STAGE_COLOR[s.stage] }} /></span>
+          {byStatus.map((s) => (
+            <div className="p3-stagerow" key={s.status}>
+              <span className="lbl">{STATUS_LABEL[s.status]}</span>
+              <span className="bar"><i style={{ width: `${s.pct}%`, background: STATUS_COLOR[s.status] }} /></span>
               <span className="val">{s.n} ({s.pct}%)</span>
             </div>
           ))}
