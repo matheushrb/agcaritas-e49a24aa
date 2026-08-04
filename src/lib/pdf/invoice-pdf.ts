@@ -2,7 +2,7 @@ import jsPDF from "jspdf";
 import QRCode from "qrcode";
 import { PDF_LAYOUT, brl, formatDate } from "./theme";
 import { registerLiberationFonts } from "./fonts";
-import caritasLogo from "@/assets/caritas-logo-horizontal.png.asset.json";
+import caritasLogo from "@/assets/caritas-logo-pdf.jpg.asset.json";
 
 /* ---------------------------------------------------------------- paleta */
 const C = {
@@ -94,13 +94,13 @@ export const DEFAULT_LEGAL_NOTES =
 const shortDate = (d: string | Date | null | undefined) => {
   if (!d) return "";
   const full = formatDate(d);
-  if (full === "—") return "";
+  if (full === "-") return "";
   const [dd, mm, yyyy] = full.split("/");
   return `${dd}/${mm}/${(yyyy ?? "").slice(2)}`;
 };
 
 const longDate = (d: string | Date | null | undefined) => {
-  if (!d) return "—";
+  if (!d) return "-";
   const dt = typeof d === "string" && /^\d{4}-\d{2}-\d{2}$/.test(d)
     ? new Date(`${d}T12:00:00`)
     : typeof d === "string" ? new Date(d) : d;
@@ -109,9 +109,33 @@ const longDate = (d: string | Date | null | undefined) => {
   return `${day}/${mon}/${dt.getFullYear()}`;
 };
 
+/** achata transparência sobre branco (jsPDF renderiza alpha como preto) */
+async function flattenOnWhite(dataUrl: string): Promise<string> {
+  if (typeof document === "undefined") return dataUrl;
+  try {
+    const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const el = new Image();
+      el.onload = () => resolve(el);
+      el.onerror = reject;
+      el.src = dataUrl;
+    });
+    const canvas = document.createElement("canvas");
+    canvas.width = img.naturalWidth || img.width;
+    canvas.height = img.naturalHeight || img.height;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return dataUrl;
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(img, 0, 0);
+    return canvas.toDataURL("image/jpeg", 0.94);
+  } catch {
+    return dataUrl;
+  }
+}
+
 async function loadImageAsDataUrl(url: string): Promise<string | null> {
   try {
-    if (url.startsWith("data:")) return url;
+    if (url.startsWith("data:")) return await flattenOnWhite(url);
     const res = await fetch(url);
     if (!res.ok) return null;
     const blob = await res.blob();
@@ -120,7 +144,7 @@ async function loadImageAsDataUrl(url: string): Promise<string | null> {
       reader.onloadend = () => resolve(typeof reader.result === "string" ? reader.result : null);
       reader.onerror = () => resolve(null);
       reader.readAsDataURL(blob);
-    });
+    }).then((d) => (d ? flattenOnWhite(d) : null));
   } catch {
     return null;
   }
@@ -196,7 +220,10 @@ export async function generateInvoicePDF(data: InvoicePDFData): Promise<jsPDF> {
   const drawHeader = (): number => {
     let y = 14;
     if (logoDataUrl) {
-      try { doc.addImage(logoDataUrl, "PNG", marginX, y, 40, 11.2); } catch { /* ignore */ }
+      try {
+        const fmt = /^data:image\/jpe?g/i.test(logoDataUrl) ? "JPEG" : "PNG";
+        doc.addImage(logoDataUrl, fmt, marginX, y, 40, 11.2);
+      } catch { /* ignore */ }
     } else {
       ink(doc, C.deep); F("bold", 19);
       doc.text("Caritas", marginX, y + 9);
@@ -287,7 +314,7 @@ export async function generateInvoicePDF(data: InvoicePDFData): Promise<jsPDF> {
     doc.text(value, x + 7, y + 4.2);
   };
   infoBlock(marginX, "DATA DE EMISSÃO", longDate(data.issue_date));
-  infoBlock(col2X, "COMPETÊNCIA", data.competence || "—");
+  infoBlock(col2X, "COMPETÊNCIA", data.competence || "-");
   y += 10;
 
   draw(doc, C.border); doc.setLineWidth(0.3);
@@ -344,7 +371,7 @@ export async function generateInvoicePDF(data: InvoicePDFData): Promise<jsPDF> {
 
     for (const line of group.lines) {
       const indent = line.is_child ? 9 : 3;
-      const titleText = line.is_child ? `— ${line.title}` : line.title;
+      const titleText = line.is_child ? `- ${line.title}` : line.title;
       const titleLines = doc.splitTextToSize(titleText, itemW - indent);
       const detailLines = line.detail ? doc.splitTextToSize(line.detail, itemW - indent) : [];
       const rowH = Math.max(8.4, titleLines.length * 3.9 + detailLines.length * 3.3 + 4.6);
@@ -466,7 +493,7 @@ export async function generateInvoicePDF(data: InvoicePDFData): Promise<jsPDF> {
       doc.text(value, metaX, my + 5.4);
     }
   };
-  meta("Vencimento", data.due_date ? formatDate(data.due_date) : "—", cardY + 8);
+  meta("Vencimento", data.due_date ? formatDate(data.due_date) : "-", cardY + 8);
   meta("Forma de pagamento", data.payment_method || "Pix", cardY + 21);
   meta("Status", data.status_label || (data.is_preview ? "Rascunho" : "Pendente"), cardY + 33, true);
 

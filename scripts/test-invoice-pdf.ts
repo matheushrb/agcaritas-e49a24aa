@@ -1,7 +1,7 @@
 import { generateInvoicePDF } from "@/lib/pdf/invoice-pdf";
 import fs from "fs";
 
-const logo = "data:image/png;base64," + fs.readFileSync("/mnt/user-uploads/HorizontalAtivo_4.png").toString("base64");
+const logo = "data:image/jpeg;base64," + fs.readFileSync("/tmp/caritas-logo-pdf.jpg").toString("base64");
 
 const item = (t: string, d: string, s: string, v: number, child = false, group?: string) => ({
   title: t, reference_date: d, service: s, amount: v, is_child: child, group: group ?? null,
