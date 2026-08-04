@@ -16,7 +16,14 @@ export type TskTask = {
   due_date: string | null;
   progress: number;
   billing_value?: number | null;
+  description?: string | null;
+  start_date?: string | null;
+  created_at?: string;
+  subtasks?: { id: string; title: string; done: boolean }[];
+  comments_count?: number;
+  attachments_count?: number;
 };
+
 
 export type TskView2 = "list" | "board" | "gantt";
 
