@@ -64,6 +64,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         className={`cv-nav-item${active ? " is-active" : ""}`}
       >
         <Icon className="h-[18px] w-[18px] shrink-0" />
+        <span>{item.label}</span>
       </Link>
     );
   };
