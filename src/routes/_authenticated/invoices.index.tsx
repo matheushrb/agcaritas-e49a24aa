@@ -370,7 +370,8 @@ function NewInvoiceWizard({
   }, [paymentLink]);
 
   const projectFilterActive = selectedProjects.size > 0;
-  const inProjects = (pid: string | null) => !projectFilterActive || (!!pid && selectedProjects.has(pid));
+  // Itens sem projeto ficam sempre disponíveis; o filtro restringe apenas itens vinculados a projeto.
+  const inProjects = (pid: string | null) => !pid || !projectFilterActive || selectedProjects.has(pid);
 
   // Pending charges + billable tasks
   const { data: charges = [] } = useQuery<PendingCharge[]>({
