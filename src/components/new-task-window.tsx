@@ -377,18 +377,17 @@ export function TaskWindow({
 
           {/* FLUXO DE ETAPAS */}
           <div className="cw-flow">
-            {STAGES.map((s, i) => {
-              const activeIdx = STAGES.findIndex(x => x.id === stage);
-              return (
-                <div key={s.id} className={`cw-flow-step${s.id === stage ? " is-on" : ""}${i < activeIdx ? " is-done" : ""}`}>
-                  <button type="button" className="cw-flow-dot" onClick={() => setStage(s.id)}>
-                    {i < activeIdx ? <Check size={13} /> : i + 1}
-                  </button>
-                  <span className="cw-flow-label">{s.label}</span>
-                </div>
-              );
-            })}
+            {flowSteps.map((s, i) => (
+              <div key={s.key} className={`cw-flow-step${i === activeIdx ? " is-on" : ""}${i < activeIdx ? " is-done" : ""}`}>
+                <button type="button" className="cw-flow-dot" onClick={() => selectStep(i)}
+                  title={`Move o status para: ${STATUSES.find(x => x.value === s.status)?.label ?? s.status}`}>
+                  {i < activeIdx ? <Check size={13} /> : i + 1}
+                </button>
+                <span className="cw-flow-label">{s.label}</span>
+              </div>
+            ))}
           </div>
+
 
           {/* CORPO */}
           <div className="cw-task-body">
