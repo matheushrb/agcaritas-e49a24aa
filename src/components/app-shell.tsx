@@ -71,50 +71,56 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="caritas-ui" data-theme={theme}>
-      <aside className="cv-sidebar">
-        <div className="cv-sidebar-logo">
-          <img src={caritasSymbol.url} alt="Caritas" style={{ width: 26, height: "auto" }} />
-        </div>
+      <div className="cv-app-wrapper">
+        <div className="cv-app-card">
+          <aside className="cv-sidebar">
+            <div className="cv-sidebar-logo">
+              <img src={caritasSymbol.url} alt="Caritas" style={{ width: 30, height: "auto" }} />
+              <span>Caritas</span>
+            </div>
 
-        <nav className="cv-sidebar-nav">
-          {primaryNav.map(railItem)}
-          {expanded && secondaryNav.map(railItem)}
-          <Popover>
-            <PopoverTrigger asChild>
-              <button className="cv-nav-item" title="Mais módulos">
-                <LayoutGrid className="h-[18px] w-[18px]" />
+            <nav className="cv-sidebar-nav">
+              {primaryNav.map(railItem)}
+            </nav>
+
+            <div className="cv-sidebar-bottom">
+              <Popover>
+                <PopoverTrigger asChild>
+                  <button className="cv-nav-item" title="Mais módulos">
+                    <LayoutGrid className="h-[18px] w-[18px]" />
+                    <span>Mais módulos</span>
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent side="right" align="start" className="w-60 p-1.5 rounded-xl">
+                  <div className="px-2 py-1.5 text-[11px] uppercase tracking-wider text-muted-foreground">Mais módulos</div>
+                  {secondaryNav.map(item => {
+                    const Icon = item.icon;
+                    return (
+                      <Link
+                        key={item.to}
+                        to={item.to}
+                        className="flex items-center gap-2.5 rounded-lg px-2 py-2 text-sm hover:bg-muted"
+                      >
+                        <Icon className="h-4 w-4 text-muted-foreground" />
+                        {item.label}
+                      </Link>
+                    );
+                  })}
+                </PopoverContent>
+              </Popover>
+              {railItem({ to: "/settings", icon: Settings, label: "Configurações" })}
+              <button onClick={handleSignOut} title="Sair" className="cv-nav-item">
+                <LogOut className="h-[18px] w-[18px]" />
+                <span>Sair</span>
               </button>
-            </PopoverTrigger>
-            <PopoverContent side="right" align="start" className="w-60 p-1.5 rounded-xl">
-              <div className="px-2 py-1.5 text-[11px] uppercase tracking-wider text-muted-foreground">Mais módulos</div>
-              {secondaryNav.map(item => {
-                const Icon = item.icon;
-                return (
-                  <Link
-                    key={item.to}
-                    to={item.to}
-                    className="flex items-center gap-2.5 rounded-lg px-2 py-2 text-sm hover:bg-muted"
-                  >
-                    <Icon className="h-4 w-4 text-muted-foreground" />
-                    {item.label}
-                  </Link>
-                );
-              })}
-            </PopoverContent>
-          </Popover>
-        </nav>
+            </div>
+          </aside>
 
-        <div className="cv-sidebar-bottom">
-          {railItem({ to: "/settings", icon: Settings, label: "Configurações" })}
-          <button onClick={handleSignOut} title="Sair" className="cv-nav-item">
-            <LogOut className="h-[18px] w-[18px]" />
-          </button>
+          <div className="cv-shell">
+            <TopBar theme={theme} onToggleTheme={setTheme} pathname={pathname} />
+            <main className="cv-main">{children}</main>
+          </div>
         </div>
-      </aside>
-
-      <div className="cv-shell">
-        <TopBar theme={theme} onToggleTheme={setTheme} pathname={pathname} />
-        <main className="cv-main">{children}</main>
       </div>
     </div>
   );
