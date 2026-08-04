@@ -203,7 +203,6 @@ export function EditProjectDialog({
       has_timeline: form.has_timeline,
       traffic_budget: form.traffic_budget,
       scope_flags: form.scope_flags,
-      scope_flags: form.scope_flags,
       social_platforms: selectedPlatforms as unknown as EditableProject["social_platforms"],
     });
   };
