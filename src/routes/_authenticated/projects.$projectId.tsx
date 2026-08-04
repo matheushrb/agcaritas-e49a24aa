@@ -499,7 +499,7 @@ function ProjectDetail() {
       <TaskWindow
         open={!!selectedTaskId}
         taskId={selectedTaskId}
-        onOpenChange={(o) => { if (!o) setSelectedTaskId(null); }}
+        onOpenChange={(o: boolean) => { if (!o) setSelectedTaskId(null); }}
       />
       <EditProjectDialog
         project={project as EditableProject}
