@@ -701,6 +701,20 @@ export function TaskWindow({
           {/* CORPO */}
           <div className="cw-task-body">
             <div>
+              <div className="cw-tabs">
+                <button type="button" className={`cw-tab${tab === "details" ? " is-on" : ""}`} onClick={() => setTab("details")}>
+                  <ListChecks size={14} /> Detalhes
+                </button>
+                <button type="button" className={`cw-tab${tab === "live" ? " is-on" : ""}`} onClick={() => setTab("live")}>
+                  <Radio size={14} /> Ao Vivo / Estreia{liveItems.length > 0 && <span className="cw-tab-count">{liveItems.length}</span>}
+                </button>
+                <button type="button" className={`cw-tab${tab === "tech" ? " is-on" : ""}`} onClick={() => setTab("tech")}>
+                  <SlidersHorizontal size={14} /> Ficha técnica
+                </button>
+              </div>
+
+              <div hidden={tab !== "details"}>
+
               <div className="cw-field">
                 <span className="cw-label">Título da tarefa<span className="req">*</span></span>
                 <input className="cw-input" autoFocus value={title} maxLength={140}
