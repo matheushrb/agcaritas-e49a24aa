@@ -119,6 +119,8 @@ function TasksPage() {
   const [search, setSearch] = useState("");
   const [priorityFilter, setPriorityFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [assigneeFilter, setAssigneeFilter] = useState<string>("all");
+  const [projectFilter, setProjectFilter] = useState<string>("all");
   const [view, setView] = useState<TskView>("list");
   const [turbo, setTurbo] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -172,6 +174,18 @@ function TasksPage() {
   const projectName = (id: string | null) =>
     (id && projectsMin.find(p => p.id === id)?.name) || "Sem projeto";
 
+  const { data: peopleMin = [] } = useQuery({
+    queryKey: ["profiles-min-tasks"],
+    queryFn: async () => {
+      const { data } = await supabase.from("profiles").select("id,full_name,display_name,role_title").order("full_name");
+      return (data ?? []) as { id: string; full_name: string | null; display_name: string | null; role_title: string | null }[];
+    },
+  });
+  const assigneeName = (id: string | null | undefined) => {
+    const p = id ? peopleMin.find(x => x.id === id) : null;
+    return { name: p?.display_name || p?.full_name || (id ? "Responsável" : "Não atribuído"), role: p?.role_title ?? null };
+  };
+
   const updateStatus = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: TaskStatus }) => {
       const { error } = await supabase.from("tasks").update({ status }).eq("id", id);
@@ -190,13 +204,21 @@ function TasksPage() {
     let arr = tasks;
     if (search.trim()) {
       const s = search.toLowerCase();
-      arr = arr.filter(t => t.title.toLowerCase().includes(s));
+      arr = arr.filter(t =>
+        t.title.toLowerCase().includes(s) ||
+        projectName(t.project_id).toLowerCase().includes(s) ||
+        assigneeName(t.assignee_id).name.toLowerCase().includes(s)
+      );
     }
     if (priorityFilter !== "all") arr = arr.filter(t => t.priority === priorityFilter);
     if (statusFilter !== "all") arr = arr.filter(t => t.status === statusFilter);
+    if (assigneeFilter !== "all")
+      arr = arr.filter(t => (assigneeFilter === "none" ? !t.assignee_id : t.assignee_id === assigneeFilter));
+    if (projectFilter !== "all")
+      arr = arr.filter(t => (projectFilter === "none" ? !t.project_id : t.project_id === projectFilter));
     if (turbo) arr = [...arr].sort((a, b) => (b.billing_value ?? 0) - (a.billing_value ?? 0));
     return arr;
-  }, [tasks, search, priorityFilter, statusFilter, turbo]);
+  }, [tasks, search, priorityFilter, statusFilter, assigneeFilter, projectFilter, turbo, projectsMin, peopleMin]);
 
   const byStatus = useMemo(() => {
     const map: Record<TaskStatus, Task[]> = { todo: [], in_progress: [], review: [], done: [] };
@@ -208,8 +230,10 @@ function TasksPage() {
     const total = tasks.length;
     const overdue = tasks.filter(t => t.due_date && new Date(t.due_date) < new Date() && t.status !== "done").length;
     const inProgress = tasks.filter(t => t.status === "in_progress").length;
+    const review = tasks.filter(t => t.status === "review").length;
+    const done = tasks.filter(t => t.status === "done").length;
     const value = tasks.reduce((s, t) => s + (t.billing_value ?? 0), 0);
-    return { total, overdue, inProgress, value };
+    return { total, overdue, inProgress, review, done, value };
   }, [tasks]);
 
   const createTask = useMutation({
@@ -262,19 +286,37 @@ function TasksPage() {
           </Button>
         </header>
 
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
           <Kpi label="Total" value={kpis.total.toString()} />
           <Kpi label="Em andamento" value={kpis.inProgress.toString()} />
+          <Kpi label="Revisão" value={kpis.review.toString()} />
+          <Kpi label="Concluídas" value={kpis.done.toString()} />
           <Kpi label="Atrasadas" value={kpis.overdue.toString()} tone={kpis.overdue > 0 ? "danger" : "default"} />
-          <Kpi label="Valor total" value={`R$ ${kpis.value.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`} />
         </div>
 
         <Card className="p-3 rounded-2xl">
           <div className="flex flex-wrap items-center gap-2">
             <div className="relative flex-1 min-w-[200px]">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input placeholder="Buscar tarefa..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9 rounded-full" />
+              <Input placeholder="Buscar por tarefa, projeto ou responsável..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9 rounded-full" />
             </div>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-[140px] rounded-full"><SelectValue placeholder="Status" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos status</SelectItem>
+                {STATUS_ORDER.map(s => <SelectItem key={s} value={s}>{STATUS_META[s].label}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            <Select value={assigneeFilter} onValueChange={setAssigneeFilter}>
+              <SelectTrigger className="w-[160px] rounded-full"><SelectValue placeholder="Responsável" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos responsáveis</SelectItem>
+                <SelectItem value="none">Não atribuído</SelectItem>
+                {peopleMin.map(p => (
+                  <SelectItem key={p.id} value={p.id}>{p.display_name || p.full_name || "Sem nome"}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <Select value={priorityFilter} onValueChange={setPriorityFilter}>
               <SelectTrigger className="w-[140px] rounded-full"><SelectValue placeholder="Prioridade" /></SelectTrigger>
               <SelectContent>
@@ -286,11 +328,12 @@ function TasksPage() {
                 <SelectItem value="low">Baixa</SelectItem>
               </SelectContent>
             </Select>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-[140px] rounded-full"><SelectValue placeholder="Status" /></SelectTrigger>
+            <Select value={projectFilter} onValueChange={setProjectFilter}>
+              <SelectTrigger className="w-[160px] rounded-full"><SelectValue placeholder="Projeto" /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Todos status</SelectItem>
-                {STATUS_ORDER.map(s => <SelectItem key={s} value={s}>{STATUS_META[s].label}</SelectItem>)}
+                <SelectItem value="all">Todos projetos</SelectItem>
+                <SelectItem value="none">Sem projeto</SelectItem>
+                {projectsMin.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
               </SelectContent>
             </Select>
             <Button
@@ -315,6 +358,7 @@ function TasksPage() {
             view={view}
             tasks={filtered as any}
             projectName={projectName}
+            assigneeName={assigneeName}
             onOpen={(id) => { setDraftTask(null); setSelectedId(id); }}
             onQuickCreate={(status, title) => createTask.mutate({ title, status })}
             onStatusChange={(id, status) => updateStatus.mutate({ id, status })}
