@@ -417,6 +417,12 @@ export function TaskWindow({
                 : "Crie a tarefa, defina os entregáveis e acompanhe o fluxo de produção"}</p>
             </div>
             <div className="cw-head-actions">
+              <div className="cw-head-status" style={{ ["--sc" as string]: statusColor(status) }}>
+                <i />
+                <select value={status} onChange={e => changeStatus(e.target.value)} aria-label="Status">
+                  {STATUSES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+                </select>
+              </div>
               <button type="button" className="cw-btn cw-btn-primary cw-btn-sm" disabled={!canSave || save.isPending}
                 onClick={() => save.mutate()}><Save /> {save.isPending ? "Salvando…" : "Salvar"}</button>
               {isEdit && (
