@@ -397,7 +397,7 @@ function ProjectDetail() {
             <Share2 /> Compartilhar
           </button>
           <button className="p2-btn" type="button" onClick={() => setEditOpen(true)}><Pencil /> Editar projeto</button>
-          <button className="p2-btn primary" type="button" onClick={() => addTask.mutate("Nova tarefa")}><Plus /> Novo item</button>
+          <button className="p2-btn primary" type="button" onClick={() => setNewTaskOpen(true)}><Plus /> Nova tarefa</button>
           {isClosed ? (
             <button className="p2-btn icon" type="button" title="Reabrir" onClick={() => setStatus.mutate("active")}><RotateCcw /></button>
           ) : (
@@ -492,7 +492,7 @@ function ProjectDetail() {
           tasks={tasks as never}
           people={people}
           onOpen={(id) => setSelectedTaskId(id)}
-          onQuickCreate={() => addTask.mutate("Nova tarefa")}
+          onQuickCreate={() => setNewTaskOpen(true)}
           pending={addTask.isPending}
         />
       )}
@@ -513,6 +513,13 @@ function ProjectDetail() {
       {activeTab === "campaigns" && <div style={{ marginTop: 18 }}><ComingSoon icon={Rocket} title="Campanhas" description="Lançamentos e campanhas dentro do projeto." /></div>}
       {activeTab === "docs" && <Prj06Files />}
 
+      <TaskWindow
+        open={newTaskOpen}
+        taskId={null}
+        defaultProjectId={projectId}
+        onOpenChange={(o: boolean) => setNewTaskOpen(o)}
+        onCreated={() => { qc.invalidateQueries({ queryKey: ["project-tasks", projectId] }); }}
+      />
       <TaskWindow
         open={!!selectedTaskId}
         taskId={selectedTaskId}
