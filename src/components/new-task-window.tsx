@@ -7,16 +7,20 @@ import {
   X, Plus, Trash2, Check, Info, ChevronDown, ListChecks, DollarSign,
   Paperclip, Save, Clock, CalendarDays, Layers, Trash,
 } from "lucide-react";
+import { useTaskTypeStages } from "@/lib/task-types";
 import "@/windows.css";
 
+
 type Stage = "briefing" | "creation" | "review" | "approval" | "delivery";
-const STAGES: { id: Stage; label: string }[] = [
-  { id: "briefing", label: "Briefing" },
-  { id: "creation", label: "Criação" },
-  { id: "review", label: "Revisão" },
-  { id: "approval", label: "Aprovação" },
-  { id: "delivery", label: "Entrega" },
+type StatusGroup = "todo" | "in_progress" | "review" | "done";
+const STAGES: { id: Stage; label: string; status: StatusGroup }[] = [
+  { id: "briefing", label: "Briefing", status: "todo" },
+  { id: "creation", label: "Criação", status: "in_progress" },
+  { id: "review", label: "Revisão", status: "review" },
+  { id: "approval", label: "Aprovação", status: "review" },
+  { id: "delivery", label: "Entrega", status: "done" },
 ];
+
 
 const PRIORITIES = [
   { value: "low", label: "Baixa" },
@@ -65,6 +69,8 @@ export function TaskWindow({
   const [priority, setPriority] = useState("medium");
   const [status, setStatus] = useState("todo");
   const [stage, setStage] = useState<Stage>("briefing");
+  const [currentStageId, setCurrentStageId] = useState<string | null>(null);
+
   const [estimated, setEstimated] = useState<string>("");
   const [billingEnabled, setBillingEnabled] = useState(true);
   const [baseValue, setBaseValue] = useState<string>("");
@@ -120,6 +126,52 @@ export function TaskWindow({
     return filtered.length ? filtered : allPlatforms;
   }, [allPlatforms, projectId, projectPlatformNames]);
 
+  /* ---------- Etapas: do tipo de tarefa (quando houver) ou padrão ---------- */
+  const { data: typeStages = [] } = useTaskTypeStages(taskTypeId);
+
+  const flowSteps = useMemo(() => {
+    if (typeStages.length) {
+      return typeStages.map(s => ({ key: s.id, label: s.name, status: s.status_group as StatusGroup, stageId: s.id, stage: null as Stage | null }));
+    }
+    return STAGES.map(s => ({ key: s.id, label: s.label, status: s.status, stageId: null as string | null, stage: s.id }));
+  }, [typeStages]);
+
+  const activeIdx = useMemo(() => {
+    const byId = typeStages.length
+      ? flowSteps.findIndex(s => s.stageId === currentStageId)
+      : flowSteps.findIndex(s => s.stage === stage);
+    if (byId >= 0) return byId;
+    const byStatus = flowSteps.findIndex(s => s.status === status);
+    return byStatus >= 0 ? byStatus : 0;
+  }, [flowSteps, typeStages.length, currentStageId, stage, status]);
+
+  /* Selecionar uma etapa move o status condicionado a ela. */
+  const selectStep = (i: number) => {
+    const s = flowSteps[i];
+    if (!s) return;
+    setStatus(s.status);
+    if (s.stageId) {
+      setCurrentStageId(s.stageId);
+      const eq = STAGES.find(x => x.status === s.status);
+      if (eq) setStage(eq.id);
+    } else if (s.stage) {
+      setStage(s.stage);
+      setCurrentStageId(null);
+    }
+  };
+
+  /* Alterar o status leva a etapa para a primeira condicionada àquele status. */
+  const changeStatus = (value: string) => {
+    setStatus(value);
+    const i = flowSteps.findIndex(s => s.status === value);
+    if (i >= 0) {
+      const s = flowSteps[i];
+      if (s.stageId) setCurrentStageId(s.stageId);
+      else if (s.stage) { setStage(s.stage); setCurrentStageId(null); }
+    }
+  };
+
+
   /* ---------- Carregar tarefa existente ---------- */
   const { data: existing } = useQuery({
     queryKey: ["task-window", taskId],
@@ -143,6 +195,8 @@ export function TaskWindow({
     setDescription(existing.description ?? "");
     setProjectId(existing.project_id ?? null);
     setTaskTypeId(existing.task_type_id ?? null);
+    setCurrentStageId(existing.current_stage_id ?? null);
+
     setAssigneeId(existing.assignee_id ?? null);
     setDueDate(existing.due_date ?? "");
     setPriority(existing.priority ?? "medium");
@@ -181,7 +235,7 @@ export function TaskWindow({
 
   const reset = () => {
     setTitle(""); setDescription(""); setProjectId(defaultProjectId); setTaskTypeId(null);
-    setAssigneeId(null); setDueDate(""); setPriority("medium"); setStatus("todo"); setStage("briefing");
+    setAssigneeId(null); setDueDate(""); setPriority("medium"); setStatus("todo"); setStage("briefing"); setCurrentStageId(null);
     setEstimated(""); setBillingEnabled(true); setBaseValue(""); setDeliverables([]); setChecklist([]);
     setPlatformsSel([]); setNotes("");
   };
@@ -196,6 +250,8 @@ export function TaskWindow({
     assignee_id: assigneeId,
     due_date: dueDate || null,
     stage: stage as any,
+    current_stage_id: currentStageId,
+
     task_type_id: taskTypeId,
     estimated_hours: estimated ? Number(estimated) : null,
     billing_enabled: billingEnabled,
@@ -253,8 +309,9 @@ export function TaskWindow({
   return (
     <Dialog open={open} onOpenChange={close}>
       <DialogContent
-        className="cw p-0 gap-0 border-0 overflow-hidden [&>button:last-of-type]:hidden w-[calc(100vw-2rem)] max-w-[1105px] sm:max-w-[1105px]"
-        style={{ borderRadius: 14, boxShadow: "0 24px 60px rgba(15,25,40,.20)" }}
+        className="cw cw-shell p-0 gap-0 border-0 overflow-hidden [&>button:last-of-type]:hidden w-[calc(100vw-2rem)] max-w-[1180px] sm:max-w-[1180px]"
+        style={{ boxShadow: "0 24px 60px rgba(15,25,40,.20)" }}
+
       >
         <div className="cw-window">
           {/* HEADER */}
@@ -321,18 +378,17 @@ export function TaskWindow({
 
           {/* FLUXO DE ETAPAS */}
           <div className="cw-flow">
-            {STAGES.map((s, i) => {
-              const activeIdx = STAGES.findIndex(x => x.id === stage);
-              return (
-                <div key={s.id} className={`cw-flow-step${s.id === stage ? " is-on" : ""}${i < activeIdx ? " is-done" : ""}`}>
-                  <button type="button" className="cw-flow-dot" onClick={() => setStage(s.id)}>
-                    {i < activeIdx ? <Check size={13} /> : i + 1}
-                  </button>
-                  <span className="cw-flow-label">{s.label}</span>
-                </div>
-              );
-            })}
+            {flowSteps.map((s, i) => (
+              <div key={s.key} className={`cw-flow-step${i === activeIdx ? " is-on" : ""}${i < activeIdx ? " is-done" : ""}`}>
+                <button type="button" className="cw-flow-dot" onClick={() => selectStep(i)}
+                  title={`Move o status para: ${STATUSES.find(x => x.value === s.status)?.label ?? s.status}`}>
+                  {i < activeIdx ? <Check size={13} /> : i + 1}
+                </button>
+                <span className="cw-flow-label">{s.label}</span>
+              </div>
+            ))}
           </div>
+
 
           {/* CORPO */}
           <div className="cw-task-body">
@@ -478,11 +534,11 @@ export function TaskWindow({
                 <h5><Layers size={15} /> Resumo</h5>
                 <div className="cw-field" style={{ marginBottom: 8 }}>
                   <span className="cw-label">Status</span>
-                  <select className="cw-input" value={status} onChange={e => setStatus(e.target.value)}>
+                  <select className="cw-input" value={status} onChange={e => changeStatus(e.target.value)}>
                     {STATUSES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
                   </select>
                 </div>
-                <div className="cw-side-line"><span>Etapa atual</span><span>{STAGES.find(s => s.id === stage)?.label}</span></div>
+                <div className="cw-side-line"><span>Etapa atual</span><span>{flowSteps[activeIdx]?.label ?? "—"}</span></div>
                 <div className="cw-side-line"><span>Entregáveis</span><span>{deliverables.length}</span></div>
                 <div className="cw-side-line"><span>Checklist</span><span>{doneCount}/{checklist.length}</span></div>
                 <div className="cw-side-line"><span>Plataformas</span><span>{platformsSel.length}</span></div>
