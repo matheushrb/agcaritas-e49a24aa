@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
-import { Plus, Trash2, GripVertical, Layers, Palette, Copy, Pencil, ChevronRight, ChevronDown, ListChecks, Info, Radio } from "lucide-react";
+import { Plus, Trash2, GripVertical, Layers, Palette, Copy, Pencil, ChevronRight, ChevronDown, ListChecks, Info, Radio, SlidersHorizontal } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -29,6 +29,8 @@ export type TaskType = {
   default_price: number | null;
   active: boolean;
   has_broadcast: boolean;
+  has_live: boolean;
+  has_tech_sheet: boolean;
 };
 
 export type TaskTypeStage = {
@@ -70,7 +72,7 @@ export function TaskTypesEditor() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("task_types")
-        .select("id,name,description,color,icon,default_billing_model,default_price,active,has_broadcast")
+        .select("id,name,description,color,icon,default_billing_model,default_price,active,has_broadcast,has_live,has_tech_sheet")
         .order("name");
       if (error) throw error;
       return (data ?? []) as TaskType[];

@@ -11,6 +11,8 @@ export type TaskTypeRow = {
   default_billing_model: string | null;
   default_price: number | null;
   has_broadcast: boolean;
+  has_live: boolean;
+  has_tech_sheet: boolean;
 };
 
 export type TaskTypeStageRow = {
@@ -31,7 +33,7 @@ export function useTaskTypes() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("task_types")
-        .select("id,name,color,icon,default_billing_model,default_price,has_broadcast")
+        .select("id,name,color,icon,default_billing_model,default_price,has_broadcast,has_live,has_tech_sheet")
         .eq("active", true)
         .order("name");
       if (error) throw error;
