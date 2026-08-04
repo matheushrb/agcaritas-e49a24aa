@@ -510,3 +510,27 @@
 .cw-flow-step.is-click { cursor: pointer; }
 .cw-flow-step.is-click:hover .cw-flow-label { color: var(--cw-primary, #2F6BEF); }
 .cw-flow-step.is-click:focus-visible { outline: 2px solid var(--cw-primary, #2F6BEF); outline-offset: 3px; border-radius: 10px; }
+
+/* Resumo: status + etapa no mesmo quadrante, coloridos */
+.cw-status-box{
+  display:grid; grid-template-columns:1fr 1fr; gap:10px;
+  padding:10px; margin-bottom:10px;
+  border:1px solid color-mix(in oklab, var(--sc) 35%, transparent);
+  background: color-mix(in oklab, var(--sc) 8%, transparent);
+  border-radius:12px;
+}
+.cw-status-col{ display:flex; flex-direction:column; gap:6px; min-width:0; }
+.cw-status-select{
+  border-color: color-mix(in oklab, var(--sc) 45%, transparent) !important;
+  color: var(--sc) !important; font-weight:700;
+  background: color-mix(in oklab, var(--sc) 12%, transparent) !important;
+}
+.cw-stage-chip{
+  display:inline-flex; align-items:center; gap:6px;
+  padding:7px 10px; border-radius:999px; font-size:11.5px; font-weight:700;
+  color: var(--sc);
+  background: color-mix(in oklab, var(--sc) 14%, transparent);
+  border:1px solid color-mix(in oklab, var(--sc) 40%, transparent);
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.cw-stage-chip i{ width:7px; height:7px; border-radius:999px; background:var(--sc); flex:0 0 auto; }
