@@ -776,6 +776,19 @@ export function TaskWindow({
                   </span>
                 ) : (
                   <>
+                    <div className={`cw-timer${timerStart != null ? " is-running" : ""}`}>
+                      <span className="cw-timer-clock">{fmtClock(runningSeconds)}</span>
+                      {timerStart == null ? (
+                        <button type="button" className="cw-timer-btn is-play" onClick={startTimer} title="Iniciar cronômetro">
+                          <Play size={14} />
+                        </button>
+                      ) : (
+                        <button type="button" className="cw-timer-btn is-stop" disabled={stopTimer.isPending}
+                          onClick={() => stopTimer.mutate()} title="Parar e registrar">
+                          <Square size={13} />
+                        </button>
+                      )}
+                    </div>
                     <div style={{ marginTop: 8 }}>
                       {timeEntries.slice(0, 6).map(e => (
                         <div key={e.id} className="cw-ts-row">
@@ -793,11 +806,12 @@ export function TaskWindow({
                     <div className="cw-ts-form">
                       <input className="cw-input" type="date" value={tsDate} onChange={e => setTsDate(e.target.value)} />
                       <input className="cw-input" type="number" step="0.25" value={tsHours}
-                        onChange={e => setTsHours(e.target.value)} placeholder="Horas" style={{ maxWidth: 78 }} />
-                      <button type="button" className="cw-btn" disabled={addTime.isPending}
+                        onChange={e => setTsHours(e.target.value)} placeholder="Horas" />
+                      <button type="button" className="cw-btn cw-btn-sm" disabled={addTime.isPending}
                         onClick={() => addTime.mutate()}>Lançar</button>
                     </div>
                   </>
+
                 )}
               </div>
 
