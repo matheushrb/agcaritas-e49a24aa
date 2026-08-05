@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { computeProjectHealth, isAtRisk } from "@/lib/project-health";
+import { eventKindMeta } from "@/lib/event-kinds";
 
 const brl = (n: number) =>
   n.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
@@ -652,8 +653,13 @@ function NextMeetings({ data }: { data: Data }) {
                 <span className="text-[13px] font-semibold tabular-nums leading-none">{String(d.getDate()).padStart(2, "0")}</span>
                 <span className="text-[9px] uppercase text-muted-foreground">{d.toLocaleDateString("pt-BR", { month: "short" }).replace(".", "")}</span>
               </div>
-              <div className="min-w-0">
-                <p className="truncate text-[13px] font-medium">{e.title}</p>
+              <div className="min-w-0 flex-1">
+                <p className="flex items-center gap-2 text-[13px] font-medium">
+                  <span className="truncate">{e.title}</span>
+                  <span className={`ml-auto shrink-0 rounded-md border px-1.5 py-px text-[9px] font-semibold ${eventKindMeta((e as any).kind).soft}`}>
+                    {eventKindMeta((e as any).kind).label}
+                  </span>
+                </p>
                 <p className="truncate text-[11px] text-muted-foreground">
                   {d.toLocaleDateString("pt-BR", { weekday: "short" })} · {d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
                   {e.description ? ` · ${e.description}` : ""}
@@ -663,7 +669,7 @@ function NextMeetings({ data }: { data: Data }) {
           );
         })}
         <Link to="/calendar" className="block rounded-lg border border-border py-2 text-center text-[12px] font-medium hover:bg-muted">
-          Ver todas as reuniões
+          Ver toda a agenda
         </Link>
       </div>
     </Panel>
