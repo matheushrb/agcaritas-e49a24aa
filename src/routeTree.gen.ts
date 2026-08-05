@@ -35,6 +35,7 @@ import { Route as AuthenticatedCalendarRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedTeamIndexRouteImport } from './routes/_authenticated/team.index'
 import { Route as AuthenticatedProjectsIndexRouteImport } from './routes/_authenticated/projects.index'
 import { Route as AuthenticatedInvoicesIndexRouteImport } from './routes/_authenticated/invoices.index'
+import { Route as AuthenticatedTeamMemberIdRouteImport } from './routes/_authenticated/team.$memberId'
 import { Route as AuthenticatedProjectsProjectIdRouteImport } from './routes/_authenticated/projects.$projectId'
 import { Route as AuthenticatedInvoicesInvoiceIdRouteImport } from './routes/_authenticated/invoices.$invoiceId'
 import { Route as AuthenticatedClientsClientIdRouteImport } from './routes/_authenticated/clients.$clientId'
@@ -172,6 +173,12 @@ const AuthenticatedInvoicesIndexRoute =
     path: '/invoices/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedTeamMemberIdRoute =
+  AuthenticatedTeamMemberIdRouteImport.update({
+    id: '/$memberId',
+    path: '/$memberId',
+    getParentRoute: () => AuthenticatedTeamRoute,
+  } as any)
 const AuthenticatedProjectsProjectIdRoute =
   AuthenticatedProjectsProjectIdRouteImport.update({
     id: '/projects/$projectId',
@@ -217,6 +224,7 @@ export interface FileRoutesByFullPath {
   '/clients/$clientId': typeof AuthenticatedClientsClientIdRoute
   '/invoices/$invoiceId': typeof AuthenticatedInvoicesInvoiceIdRoute
   '/projects/$projectId': typeof AuthenticatedProjectsProjectIdRoute
+  '/team/$memberId': typeof AuthenticatedTeamMemberIdRoute
   '/invoices/': typeof AuthenticatedInvoicesIndexRoute
   '/projects/': typeof AuthenticatedProjectsIndexRoute
   '/team/': typeof AuthenticatedTeamIndexRoute
@@ -246,6 +254,7 @@ export interface FileRoutesByTo {
   '/clients/$clientId': typeof AuthenticatedClientsClientIdRoute
   '/invoices/$invoiceId': typeof AuthenticatedInvoicesInvoiceIdRoute
   '/projects/$projectId': typeof AuthenticatedProjectsProjectIdRoute
+  '/team/$memberId': typeof AuthenticatedTeamMemberIdRoute
   '/invoices': typeof AuthenticatedInvoicesIndexRoute
   '/projects': typeof AuthenticatedProjectsIndexRoute
   '/team': typeof AuthenticatedTeamIndexRoute
@@ -278,6 +287,7 @@ export interface FileRoutesById {
   '/_authenticated/clients/$clientId': typeof AuthenticatedClientsClientIdRoute
   '/_authenticated/invoices/$invoiceId': typeof AuthenticatedInvoicesInvoiceIdRoute
   '/_authenticated/projects/$projectId': typeof AuthenticatedProjectsProjectIdRoute
+  '/_authenticated/team/$memberId': typeof AuthenticatedTeamMemberIdRoute
   '/_authenticated/invoices/': typeof AuthenticatedInvoicesIndexRoute
   '/_authenticated/projects/': typeof AuthenticatedProjectsIndexRoute
   '/_authenticated/team/': typeof AuthenticatedTeamIndexRoute
@@ -310,6 +320,7 @@ export interface FileRouteTypes {
     | '/clients/$clientId'
     | '/invoices/$invoiceId'
     | '/projects/$projectId'
+    | '/team/$memberId'
     | '/invoices/'
     | '/projects/'
     | '/team/'
@@ -339,6 +350,7 @@ export interface FileRouteTypes {
     | '/clients/$clientId'
     | '/invoices/$invoiceId'
     | '/projects/$projectId'
+    | '/team/$memberId'
     | '/invoices'
     | '/projects'
     | '/team'
@@ -370,6 +382,7 @@ export interface FileRouteTypes {
     | '/_authenticated/clients/$clientId'
     | '/_authenticated/invoices/$invoiceId'
     | '/_authenticated/projects/$projectId'
+    | '/_authenticated/team/$memberId'
     | '/_authenticated/invoices/'
     | '/_authenticated/projects/'
     | '/_authenticated/team/'
@@ -567,6 +580,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedInvoicesIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/team/$memberId': {
+      id: '/_authenticated/team/$memberId'
+      path: '/$memberId'
+      fullPath: '/team/$memberId'
+      preLoaderRoute: typeof AuthenticatedTeamMemberIdRouteImport
+      parentRoute: typeof AuthenticatedTeamRoute
+    }
     '/_authenticated/projects/$projectId': {
       id: '/_authenticated/projects/$projectId'
       path: '/projects/$projectId'
@@ -603,10 +623,12 @@ const AuthenticatedClientsRouteWithChildren =
   AuthenticatedClientsRoute._addFileChildren(AuthenticatedClientsRouteChildren)
 
 interface AuthenticatedTeamRouteChildren {
+  AuthenticatedTeamMemberIdRoute: typeof AuthenticatedTeamMemberIdRoute
   AuthenticatedTeamIndexRoute: typeof AuthenticatedTeamIndexRoute
 }
 
 const AuthenticatedTeamRouteChildren: AuthenticatedTeamRouteChildren = {
+  AuthenticatedTeamMemberIdRoute: AuthenticatedTeamMemberIdRoute,
   AuthenticatedTeamIndexRoute: AuthenticatedTeamIndexRoute,
 }
 
