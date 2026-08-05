@@ -1330,7 +1330,7 @@ export function TaskWindow({
   return (
     <Dialog open onOpenChange={(o) => { if (!o) requestClose(); }}>
       <DialogContent
-        className="cw cw-shell p-0 gap-0 border-0 overflow-hidden [&>button:last-of-type]:hidden w-[calc(100vw-2rem)] max-w-[1180px] sm:max-w-[1180px]"
+        className="cw cw-shell p-0 gap-0 border-0 overflow-hidden [&>button:last-of-type]:hidden w-[calc(100vw-2rem)] max-w-[1400px] sm:max-w-[1400px]"
         style={{ boxShadow: "0 24px 60px rgba(15,25,40,.20)" }}
       >
         {windowEl}
