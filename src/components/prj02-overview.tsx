@@ -1,4 +1,6 @@
 import { Link } from "@tanstack/react-router";
+import { ProjectBriefingCard } from "@/components/project-briefing-card";
+
 import {
   ArrowRight, CheckCircle2, Circle, Mail, Phone, FileText, MoreVertical,
 } from "lucide-react";
