@@ -522,6 +522,21 @@ function InvoiceDetailPage() {
           <div className="f3-shint">{invoice.issue_date ? `Há ${Math.max(0, -(daysDiff(invoice.issue_date) ?? 0))} dias` : "—"}</div>
         </div>
         <div>
+          <div className="f3-slabel">Competência</div>
+          <div className="f3-svalue">
+            <Calendar size={14} color="#6B7A90" />
+            <input
+              type="month"
+              className="bg-transparent border border-border/60 rounded-md px-1.5 py-0.5 text-[13px] text-foreground"
+              value={(invoice.competence_month ?? invoice.issue_date ?? "").slice(0, 7)}
+              onChange={e => saveCompetence.mutate(e.target.value)}
+              disabled={invoice.status === "canceled" || saveCompetence.isPending}
+            />
+          </div>
+          <div className="f3-shint">Mês de referência no PDF</div>
+        </div>
+
+        <div>
           <div className="f3-slabel">Vencimento</div>
           <div className={`f3-svalue ${isOverdue ? "txt-red" : ""}`}><Calendar size={14} color={isOverdue ? "#E5484D" : "#6B7A90"} /> {fmtDate(invoice.due_date)}</div>
           <div className="f3-shint">{dd === null ? "—" : dd < 0 ? `Vencida há ${-dd} dias` : `Daqui a ${dd} dias`}</div>
