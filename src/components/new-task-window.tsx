@@ -6,8 +6,10 @@ import { toast } from "sonner";
 import {
   X, Plus, Trash2, Check, Info, ChevronDown, ListChecks, DollarSign,
   Paperclip, Save, Clock, CalendarDays, Layers, Trash, Minus, Maximize2, PanelRight,
-  Play, Square, Radio, SlidersHorizontal,
+  Play, Square, Radio, SlidersHorizontal, FileText,
 } from "lucide-react";
+import { BriefingForm } from "@/components/briefing-form";
+import { fetchBriefingTemplates, briefingProgress, type BriefingData } from "@/lib/briefing";
 
 import { useTaskTypeStages } from "@/lib/task-types";
 import { CwDate, CwDateRange } from "@/components/cw-date";
@@ -136,7 +138,9 @@ export function TaskWindow({
   const [notes, setNotes] = useState("");
   const [liveItems, setLiveItems] = useState<LiveDraft[]>([]);
   const [tech, setTech] = useState<TechSheet>(EMPTY_TECH);
-  const [tab, setTab] = useState<"details" | "live" | "tech">("details");
+  const [tab, setTab] = useState<"details" | "briefing" | "live" | "tech">("details");
+  const [briefingTemplateId, setBriefingTemplateId] = useState<string | null>(null);
+  const [briefingData, setBriefingData] = useState<BriefingData>({});
   const setT = (k: keyof TechSheet, v: string) => setTech(t => ({ ...t, [k]: v }));
 
 
@@ -150,9 +154,13 @@ export function TaskWindow({
   const { data: taskTypes = [] } = useQuery({
     queryKey: ["task_types_min_v2"],
     queryFn: async () => {
-      const { data } = await (supabase as any).from("task_types").select("id,name,default_price,active,has_broadcast,has_live,has_tech_sheet").order("name");
+      const { data } = await (supabase as any).from("task_types").select("id,name,default_price,active,has_broadcast,has_live,has_tech_sheet,briefing_template_id").order("name");
       return ((data ?? []) as any[]).filter(t => t.active !== false);
     },
+  });
+  const { data: briefingTemplates = [] } = useQuery({
+    queryKey: ["briefing_templates"],
+    queryFn: fetchBriefingTemplates,
   });
   const { data: people = [] } = useQuery({
     queryKey: ["profiles_people"],
@@ -199,6 +207,11 @@ export function TaskWindow({
     [taskTypes, taskTypeId],
   );
   const showLiveTab = !!activeType?.has_live || liveItems.length > 0;
+  const briefingTpl = useMemo(
+    () => briefingTemplates.find(t => t.id === briefingTemplateId) ?? null,
+    [briefingTemplates, briefingTemplateId],
+  );
+  const briefingFilled = briefingProgress(briefingTpl, briefingData).filled > 0;
   const showTechTab = !!activeType?.has_tech_sheet || Object.values(tech ?? {}).some(v => String(v ?? "").trim() !== "");
   const techFilled = useMemo(
     () => Object.entries(tech).some(([k, v]) => k !== "category" && String(v ?? "").trim() !== ""),
@@ -209,6 +222,12 @@ export function TaskWindow({
     if ((tab === "live" && !showLiveTab) || (tab === "tech" && !showTechTab)) setTab("details");
   }, [tab, showLiveTab, showTechTab]);
 
+
+  /* Modelo de briefing sugerido pelo tipo de tarefa. */
+  useEffect(() => {
+    if (!activeType?.briefing_template_id) return;
+    setBriefingTemplateId(prev => prev ?? activeType.briefing_template_id);
+  }, [activeType?.briefing_template_id]);
 
   /* ---------- Etapas: do tipo de tarefa (quando houver) ou padrão ---------- */
   const { data: typeStages = [] } = useTaskTypeStages(taskTypeId);
@@ -325,6 +344,8 @@ export function TaskWindow({
         url: l.url ?? "", notes: l.notes ?? "",
       })) as LiveDraft[],
     );
+    setBriefingTemplateId(existing.briefing_template_id ?? null);
+    setBriefingData(existing.briefing && typeof existing.briefing === "object" ? existing.briefing : {});
     setTech({ ...EMPTY_TECH, ...(existing.tech_sheet && typeof existing.tech_sheet === "object" ? existing.tech_sheet : {}) });
     setNotes("");
 
@@ -487,6 +508,7 @@ export function TaskWindow({
     setAssigneeId(null); setDueDate(""); setPriority("medium"); setStatus("todo"); setStage("briefing"); setCurrentStageId(null);
     setEstimated(""); setBillingEnabled(true); setBaseValue(""); setDeliverables([]); setChecklist([]);
     setPlatformsSel([]); setNotes(""); setLiveItems([]); setTech(EMPTY_TECH); setTab("details");
+    setBriefingTemplateId(null); setBriefingData({});
   };
   const close = (o: boolean) => { setBaseline(""); onOpenChange(o); if (!o) reset(); };
 
@@ -523,6 +545,8 @@ export function TaskWindow({
       billing_value: d.billing_value, delivered: d.delivered, invoiced: !!d.invoiced,
       due_date: d.due_date || null,
     })) as any,
+    briefing_template_id: briefingTemplateId,
+    briefing: briefingData as any,
     live_items: liveItems as any,
     tech_sheet: tech as any,
     subtasks: checklist as any,
@@ -771,6 +795,11 @@ export function TaskWindow({
               <div className="cw-tabs">
                 <button type="button" className={`cw-tab${tab === "details" ? " is-on" : ""}`} onClick={() => setTab("details")}>
                   <ListChecks size={14} /> Detalhes
+                </button>
+                <button type="button"
+                  className={`cw-tab${tab === "briefing" ? " is-on" : ""}${briefingFilled ? " is-filled" : ""}`}
+                  onClick={() => setTab("briefing")}>
+                  <FileText size={14} /> Briefing
                 </button>
                 {showLiveTab && (
                   <button type="button"
