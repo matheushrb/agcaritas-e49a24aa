@@ -406,7 +406,10 @@ export function AgendaTodayPanel({ data }: { data: any }) {
           }
           return (
             <div key={h} className="space-y-1.5">
-              {slot.map(ev => (
+              {slot.map(ev => {
+                const meta = eventKindMeta(ev.kind);
+                const Icon = meta.icon;
+                return (
                 <Link
                   key={ev.id}
                   to="/calendar"
@@ -416,14 +419,21 @@ export function AgendaTodayPanel({ data }: { data: any }) {
                   <span className="w-10 shrink-0 pt-1.5 text-right text-[10px] text-muted-foreground">
                     {hhmm(ev.starts_at)}
                   </span>
-                  <span className="min-w-0 rounded-xl border-l-2 border-primary bg-muted/40 px-3 py-1.5 hover:bg-muted">
-                    <span className="block truncate text-sm font-medium">{ev.title}</span>
+                  <span className={`min-w-0 rounded-xl border-l-[3px] ${meta.bar} bg-muted/40 px-3 py-1.5 hover:bg-muted`}>
+                    <span className="flex items-center gap-2">
+                      <span className="block truncate text-sm font-medium">{ev.title}</span>
+                      <span className={`ml-auto inline-flex shrink-0 items-center gap-1 rounded-md border px-1.5 py-px text-[9px] font-semibold ${meta.soft}`}>
+                        <Icon className="h-2.5 w-2.5" /> {meta.label}
+                      </span>
+                    </span>
                     <span className="block truncate text-[11px] text-muted-foreground">
-                      {ev.description || ev.kind || "Compromisso"}
+                      {ev.description || meta.hint}
                     </span>
                   </span>
                 </Link>
-              ))}
+                );
+              })}
+
             </div>
           );
         })}
