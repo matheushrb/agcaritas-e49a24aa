@@ -49,16 +49,21 @@
 
 /* strip de metadados */
 .fin03 .f3-strip {
-  display: grid; grid-template-columns: repeat(9, minmax(0, 1fr));
+  display: grid; grid-template-columns: repeat(5, minmax(0, 1fr));
   background: var(--f3-card); border: 1px solid var(--f3-line); border-radius: 14px;
   overflow: hidden; margin-bottom: 16px;
 }
 .fin03 .f3-strip > div { padding: 14px 16px; border-right: 1px solid var(--f3-line); border-bottom: 1px solid var(--f3-line); }
-.fin03 .f3-strip > div:nth-last-child(-n+4) { border-bottom: 0; }
+.fin03 .f3-strip > div:nth-last-child(-n+5) { border-bottom: 0; }
+.fin03 .f3-strip > div:nth-child(5n) { border-right: 0; }
 .fin03 .f3-strip > div:last-child { border-right: 0; }
 .fin03 .f3-slabel { font-size: 11px; color: var(--f3-muted); margin-bottom: 6px; }
-.fin03 .f3-svalue { font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 7px; }
+.fin03 .f3-svalue { font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 7px; min-width: 0; }
+.fin03 .f3-svalue > svg { flex: 0 0 auto; }
+.fin03 .f3-svalue input { min-width: 0; flex: 1 1 auto; max-width: 100%; }
+.fin03 .f3-strip > div.f3-wide { grid-column: span 2; }
 .fin03 .f3-svalue.big { font-size: 17px; font-weight: 700; }
+
 .fin03 .f3-shint { font-size: 11px; color: var(--f3-muted); margin-top: 6px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .fin03 .f3-slink { font-size: 11.5px; color: var(--f3-primary); margin-top: 6px; display: inline-flex; align-items: center; gap: 4px; background: none; border: 0; padding: 0; cursor: pointer; }
 .fin03 .txt-green { color: var(--f3-green); }
