@@ -222,7 +222,7 @@ export function DayCenterPanel({ data }: { data: any }) {
           </div>
         )}
         {items.slice(0, 8).map(it => {
-          const meta = KIND_META[it.kind];
+          const meta = KIND_META[it.kind] ?? KIND_META.task;
           const Icon = meta.icon;
           return (
             <Link
