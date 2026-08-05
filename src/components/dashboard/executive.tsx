@@ -604,8 +604,6 @@ function MiniCalendar() {
   );
 }
 
-const EVENT_COLORS = ["var(--color-primary)", "var(--color-warning)", "var(--color-info)", "var(--color-success)"];
-
 function DayAgenda({ data }: { data: Data }) {
   const today = new Date();
   const items = data.events.filter(e => sameDay(new Date(e.starts_at), today));
@@ -614,18 +612,24 @@ function DayAgenda({ data }: { data: Data }) {
       <PanelHead title="Agenda do dia" action="Ver agenda completa" to="/calendar" />
       <div className="space-y-2.5 p-3.5">
         {items.length === 0 && <p className="text-[12px] text-muted-foreground">Nenhum compromisso hoje.</p>}
-        {items.map((e, i) => (
-          <div key={e.id} className="flex gap-2.5">
-            <span className="w-10 shrink-0 pt-0.5 text-[12px] tabular-nums text-muted-foreground">
-              {new Date(e.starts_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
-            </span>
-            <span className="w-[3px] shrink-0 rounded-full" style={{ background: EVENT_COLORS[i % EVENT_COLORS.length] }} />
-            <div className="min-w-0">
-              <p className="truncate text-[13px] font-medium">{e.title}</p>
-              {e.description && <p className="truncate text-[11px] text-muted-foreground">{e.description}</p>}
+        {items.map((e) => {
+          const meta = eventKindMeta((e as any).kind);
+          return (
+            <div key={e.id} className="flex gap-2.5">
+              <span className="w-10 shrink-0 pt-0.5 text-[12px] tabular-nums text-muted-foreground">
+                {new Date(e.starts_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+              </span>
+              <span className={`w-[3px] shrink-0 rounded-full ${meta.dot}`} />
+              <div className="min-w-0 flex-1">
+                <p className="flex items-center gap-2 text-[13px] font-medium">
+                  <span className="truncate">{e.title}</span>
+                  <span className={`ml-auto shrink-0 rounded-md border px-1.5 py-px text-[9px] font-semibold ${meta.soft}`}>{meta.label}</span>
+                </p>
+                <p className="truncate text-[11px] text-muted-foreground">{e.description || meta.hint}</p>
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </Panel>
   );
@@ -636,9 +640,10 @@ function NextMeetings({ data }: { data: Data }) {
   const items = data.events.filter(e => !sameDay(new Date(e.starts_at), today)).slice(0, 4);
   return (
     <Panel>
-      <PanelHead title="Próximas reuniões" action="Ver todas" to="/calendar" />
+      <PanelHead title="Próximos compromissos" action="Ver todos" to="/calendar" />
       <div className="space-y-3 p-3.5">
-        {items.length === 0 && <p className="text-[12px] text-muted-foreground">Nenhuma reunião futura.</p>}
+        {items.length === 0 && <p className="text-[12px] text-muted-foreground">Nenhum compromisso futuro.</p>}
+
         {items.map(e => {
           const d = new Date(e.starts_at);
           return (
