@@ -31,6 +31,7 @@ export type TaskType = {
   has_broadcast: boolean;
   has_live: boolean;
   has_tech_sheet: boolean;
+  briefing_template_id: string | null;
 };
 
 export type TaskTypeStage = {
@@ -72,7 +73,7 @@ export function TaskTypesEditor() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("task_types")
-        .select("id,name,description,color,icon,default_billing_model,default_price,active,has_broadcast,has_live,has_tech_sheet")
+        .select("id,name,description,color,icon,default_billing_model,default_price,active,has_broadcast,has_live,has_tech_sheet,briefing_template_id")
         .order("name");
       if (error) throw error;
       return (data ?? []) as TaskType[];
@@ -538,6 +539,31 @@ function TypeEditorPanel({ type, stages, onDelete, onDuplicate }:{
       </div>
 
 
+
+      {/* Modelo de briefing */}
+      <div className="rounded-xl border p-3 space-y-2">
+        <div className="flex items-start gap-2.5 min-w-0">
+          <span className="h-8 w-8 rounded-lg bg-primary/10 text-primary inline-flex items-center justify-center shrink-0">
+            <FileText className="h-4 w-4" />
+          </span>
+          <div className="min-w-0">
+            <div className="text-sm font-medium">Modelo de briefing padrão</div>
+            <p className="text-[11px] text-muted-foreground leading-snug">
+              Sugerido automaticamente na aba Briefing das tarefas deste tipo.
+            </p>
+          </div>
+        </div>
+        <select
+          className="h-9 w-full rounded-md border border-input bg-background px-2 text-sm"
+          value={type.briefing_template_id ?? ""}
+          onChange={e => updateType.mutate({ briefing_template_id: e.target.value || null })}
+        >
+          <option value="">Nenhum</option>
+          {briefingTemplates
+            .filter(t => t.template_type === "briefing")
+            .map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+        </select>
+      </div>
 
       {/* Stages */}
       <div className="space-y-2">
