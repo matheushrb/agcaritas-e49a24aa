@@ -308,6 +308,11 @@ function TypeEditorPanel({ type, stages, onDelete, onDuplicate }:{
   onDuplicate: () => void;
 }) {
   const qc = useQueryClient();
+  const { data: briefingTemplates = [] } = useQuery({
+    queryKey: ["briefing_templates"],
+    queryFn: fetchBriefingTemplates,
+  });
+
   const [name, setName] = useState(type.name);
   const [description, setDescription] = useState(type.description ?? "");
   const [color, setColor] = useState(type.color);
