@@ -10,12 +10,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
-import { Plus, Trash2, GripVertical, Layers, Palette, Copy, Pencil, ChevronRight, ChevronDown, ListChecks, Info, Radio, SlidersHorizontal } from "lucide-react";
+import { Plus, Trash2, GripVertical, Layers, Palette, Copy, Pencil, ChevronRight, ChevronDown, ListChecks, Info, Radio, SlidersHorizontal, FileText } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { IconPicker, TaskTypeIcon } from "./icon-picker";
 import { useAgencyPricing, computeAgencyRate } from "./agency-pricing";
+import { fetchBriefingTemplates } from "@/lib/briefing";
 
 export type StatusGroup = "todo" | "in_progress" | "review" | "done";
 
