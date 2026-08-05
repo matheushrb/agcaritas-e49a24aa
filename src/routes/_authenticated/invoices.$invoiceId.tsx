@@ -281,6 +281,19 @@ function InvoiceDetailPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const saveCompetence = useMutation({
+    mutationFn: async (ym: string) => {
+      const { error } = await supabase
+        .from("invoices")
+        .update({ competence_month: ym ? `${ym}-01` : null })
+        .eq("id", invoiceId);
+      if (error) throw error;
+    },
+    onSuccess: () => { invalidate(); toast.success("Competência atualizada"); },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+
   async function suggestNumber() {
     const base = (form.issue_date || invoice?.issue_date || new Date().toISOString().slice(0, 10)).slice(0, 7).replace("-", "");
     const { data } = await supabase.from("invoices").select("number").like("number", `${base}%`).order("number", { ascending: false }).limit(1);
@@ -508,6 +521,21 @@ function InvoiceDetailPage() {
           <div className="f3-svalue"><Calendar size={14} color="#6B7A90" /> {fmtDate(invoice.issue_date)}</div>
           <div className="f3-shint">{invoice.issue_date ? `Há ${Math.max(0, -(daysDiff(invoice.issue_date) ?? 0))} dias` : "—"}</div>
         </div>
+        <div>
+          <div className="f3-slabel">Competência</div>
+          <div className="f3-svalue">
+            <Calendar size={14} color="#6B7A90" />
+            <input
+              type="month"
+              className="bg-transparent border border-border/60 rounded-md px-1.5 py-0.5 text-[13px] text-foreground"
+              value={(invoice.competence_month ?? invoice.issue_date ?? "").slice(0, 7)}
+              onChange={e => saveCompetence.mutate(e.target.value)}
+              disabled={invoice.status === "canceled" || saveCompetence.isPending}
+            />
+          </div>
+          <div className="f3-shint">Mês de referência no PDF</div>
+        </div>
+
         <div>
           <div className="f3-slabel">Vencimento</div>
           <div className={`f3-svalue ${isOverdue ? "txt-red" : ""}`}><Calendar size={14} color={isOverdue ? "#E5484D" : "#6B7A90"} /> {fmtDate(invoice.due_date)}</div>
