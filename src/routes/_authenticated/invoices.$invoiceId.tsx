@@ -829,18 +829,18 @@ function InvoiceDetailPage() {
               </div>
 
 
-              <div className="grid grid-cols-3 gap-3">
-                <div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="min-w-0">
                   <label className="text-xs font-medium text-muted-foreground">Emissão</label>
-                  <Input type="date" value={form.issue_date} onChange={e => setForm(f => ({ ...f, issue_date: e.target.value }))} />
+                  <Input className="w-full min-w-0" type="date" value={form.issue_date} onChange={e => setForm(f => ({ ...f, issue_date: e.target.value }))} />
                 </div>
-                <div>
+                <div className="min-w-0">
                   <label className="text-xs font-medium text-muted-foreground">Vencimento</label>
-                  <Input type="date" value={form.due_date} onChange={e => setForm(f => ({ ...f, due_date: e.target.value }))} />
+                  <Input className="w-full min-w-0" type="date" value={form.due_date} onChange={e => setForm(f => ({ ...f, due_date: e.target.value }))} />
                 </div>
-                <div>
+                <div className="min-w-0">
                   <label className="text-xs font-medium text-muted-foreground">Competência</label>
-                  <Input type="month" value={form.competence} onChange={e => setForm(f => ({ ...f, competence: e.target.value }))} />
+                  <Input className="w-full min-w-0" type="month" value={form.competence} onChange={e => setForm(f => ({ ...f, competence: e.target.value }))} />
                 </div>
               </div>
 
