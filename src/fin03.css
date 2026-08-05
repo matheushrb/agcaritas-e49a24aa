@@ -49,12 +49,13 @@
 
 /* strip de metadados */
 .fin03 .f3-strip {
-  display: grid; grid-template-columns: repeat(9, minmax(0, 1fr));
+  display: grid; grid-template-columns: repeat(5, minmax(0, 1fr));
   background: var(--f3-card); border: 1px solid var(--f3-line); border-radius: 14px;
   overflow: hidden; margin-bottom: 16px;
 }
 .fin03 .f3-strip > div { padding: 14px 16px; border-right: 1px solid var(--f3-line); border-bottom: 1px solid var(--f3-line); }
 .fin03 .f3-strip > div:nth-last-child(-n+4) { border-bottom: 0; }
+.fin03 .f3-strip > div:nth-child(5n) { border-right: 0; }
 .fin03 .f3-strip > div:last-child { border-right: 0; }
 .fin03 .f3-slabel { font-size: 11px; color: var(--f3-muted); margin-bottom: 6px; }
 .fin03 .f3-svalue { font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 7px; min-width: 0; }
