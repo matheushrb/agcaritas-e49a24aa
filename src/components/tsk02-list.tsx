@@ -107,7 +107,7 @@ export function Tsk02List({
   const [sel, setSel] = useState<Record<string, boolean>>({});
   const [quick, setQuick] = useState("");
 
-  useEffect(() => { setPage(1); }, [q, status, assignee, priority, project, deadline, archived, perPage]);
+  useEffect(() => { setPage(1); }, [q, status, assignee, priority, project, deadline, archived, hideDone, perPage]);
   useEffect(() => {
     const close = () => setMenu(null);
     if (menu) { window.addEventListener("click", close); return () => window.removeEventListener("click", close); }
@@ -128,6 +128,7 @@ export function Tsk02List({
     let arr = tasks;
     if (archived === "hide") arr = arr.filter(t => !t.archived_at);
     else if (archived === "only") arr = arr.filter(t => !!t.archived_at);
+    if (hideDone && status !== "done") arr = arr.filter(t => t.status !== "done");
     const s = q.trim().toLowerCase();
     if (s) arr = arr.filter(t =>
       t.title.toLowerCase().includes(s) ||
@@ -150,7 +151,7 @@ export function Tsk02List({
       });
     }
     return arr;
-  }, [tasks, q, status, assignee, priority, project, deadline, archived, projects, people]);
+  }, [tasks, q, status, assignee, priority, project, deadline, archived, hideDone, projects, people]);
 
   const kpiBase = useMemo(
     () => (archived === "only" ? tasks.filter(t => !!t.archived_at) : tasks.filter(t => !t.archived_at)),
@@ -181,7 +182,7 @@ export function Tsk02List({
   const to = Math.min(current * perPage, filtered.length);
 
   const clearFilters = () => {
-    setQ(""); setStatus("all"); setAssignee("all"); setPriority("all"); setProject("all"); setDeadline("all"); setArchived("hide");
+    setQ(""); setStatus("all"); setAssignee("all"); setPriority("all"); setProject("all"); setDeadline("all"); setArchived("hide"); setHideDone(true);
   };
 
   const exportCsv = () => {
@@ -290,6 +291,13 @@ export function Tsk02List({
             <option value="hide">Ocultar</option>
             <option value="show">Mostrar</option>
             <option value="only">Somente arquivadas</option>
+          </select>
+        </div>
+        <div className="k-fgroup">
+          <span className="k-flabel">Concluídas</span>
+          <select className="k-select" value={hideDone ? "hide" : "show"} onChange={e => setHideDone(e.target.value === "hide")}>
+            <option value="hide">Ocultar</option>
+            <option value="show">Mostrar</option>
           </select>
         </div>
         <button className="k-clear" onClick={clearFilters}><FilterX size={15} /> Limpar filtros</button>
