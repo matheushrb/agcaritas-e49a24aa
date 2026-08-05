@@ -521,7 +521,7 @@ function InvoiceDetailPage() {
           <div className="f3-svalue"><Calendar size={14} color="#6B7A90" /> {fmtDate(invoice.issue_date)}</div>
           <div className="f3-shint">{invoice.issue_date ? `Há ${Math.max(0, -(daysDiff(invoice.issue_date) ?? 0))} dias` : "—"}</div>
         </div>
-        <div>
+        <div className="f3-wide">
           <div className="f3-slabel">Competência</div>
           <div className="f3-svalue">
             <Calendar size={14} color="#6B7A90" />

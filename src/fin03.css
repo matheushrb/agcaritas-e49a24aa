@@ -54,7 +54,7 @@
   overflow: hidden; margin-bottom: 16px;
 }
 .fin03 .f3-strip > div { padding: 14px 16px; border-right: 1px solid var(--f3-line); border-bottom: 1px solid var(--f3-line); }
-.fin03 .f3-strip > div:nth-last-child(-n+4) { border-bottom: 0; }
+.fin03 .f3-strip > div:nth-last-child(-n+5) { border-bottom: 0; }
 .fin03 .f3-strip > div:nth-child(5n) { border-right: 0; }
 .fin03 .f3-strip > div:last-child { border-right: 0; }
 .fin03 .f3-slabel { font-size: 11px; color: var(--f3-muted); margin-bottom: 6px; }
