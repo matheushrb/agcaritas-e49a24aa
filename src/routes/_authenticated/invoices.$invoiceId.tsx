@@ -767,7 +767,7 @@ function InvoiceDetailPage() {
 
       {/* ==== Editar fatura (form + prévia ao vivo) ==== */}
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
-        <DialogContent className="max-w-[1200px] max-h-[92vh] flex flex-col">
+        <DialogContent className="w-[96vw] max-w-[1500px] max-h-[92vh] flex flex-col overflow-hidden">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <PenLine className="h-5 w-5" />
