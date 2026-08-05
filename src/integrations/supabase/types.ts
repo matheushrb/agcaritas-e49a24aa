@@ -2507,13 +2507,21 @@ export type Database = {
       }
       team_members: {
         Row: {
+          admitted_on: string | null
+          area: string | null
           avatar_url: string | null
+          birth_date: string | null
+          company_contact: string | null
+          company_legal_name: string | null
+          company_tax_id: string | null
+          contract_type: Database["public"]["Enums"]["hr_contract_type"]
           cost_mode: Database["public"]["Enums"]["team_cost_mode"]
           cost_notes: string | null
           created_at: string
           default_task_rate: number | null
           email: string | null
           hourly_rate: number | null
+          hr_notes: string | null
           id: string
           level: Database["public"]["Enums"]["team_level"] | null
           monthly_hours: number | null
@@ -2527,15 +2535,24 @@ export type Database = {
           task_rate_overrides: Json
           updated_at: string
           user_id: string | null
+          work_location: string | null
         }
         Insert: {
+          admitted_on?: string | null
+          area?: string | null
           avatar_url?: string | null
+          birth_date?: string | null
+          company_contact?: string | null
+          company_legal_name?: string | null
+          company_tax_id?: string | null
+          contract_type?: Database["public"]["Enums"]["hr_contract_type"]
           cost_mode?: Database["public"]["Enums"]["team_cost_mode"]
           cost_notes?: string | null
           created_at?: string
           default_task_rate?: number | null
           email?: string | null
           hourly_rate?: number | null
+          hr_notes?: string | null
           id?: string
           level?: Database["public"]["Enums"]["team_level"] | null
           monthly_hours?: number | null
@@ -2549,15 +2566,24 @@ export type Database = {
           task_rate_overrides?: Json
           updated_at?: string
           user_id?: string | null
+          work_location?: string | null
         }
         Update: {
+          admitted_on?: string | null
+          area?: string | null
           avatar_url?: string | null
+          birth_date?: string | null
+          company_contact?: string | null
+          company_legal_name?: string | null
+          company_tax_id?: string | null
+          contract_type?: Database["public"]["Enums"]["hr_contract_type"]
           cost_mode?: Database["public"]["Enums"]["team_cost_mode"]
           cost_notes?: string | null
           created_at?: string
           default_task_rate?: number | null
           email?: string | null
           hourly_rate?: number | null
+          hr_notes?: string | null
           id?: string
           level?: Database["public"]["Enums"]["team_level"] | null
           monthly_hours?: number | null
@@ -2571,6 +2597,7 @@ export type Database = {
           task_rate_overrides?: Json
           updated_at?: string
           user_id?: string | null
+          work_location?: string | null
         }
         Relationships: [
           {
@@ -2692,6 +2719,12 @@ export type Database = {
         | "pending_invoice"
         | "draft"
       contract_status: "active" | "closed" | "suspended" | "renewing"
+      hr_contract_type:
+        | "internal"
+        | "freelancer_task"
+        | "freelancer_hour"
+        | "contractor"
+        | "company"
       lead_stage: "lead" | "contact" | "proposal" | "negotiation" | "closed"
       plan_status: "draft" | "in_review" | "approved" | "archived"
       project_cost_kind:
@@ -2852,6 +2885,13 @@ export const Constants = {
         "draft",
       ],
       contract_status: ["active", "closed", "suspended", "renewing"],
+      hr_contract_type: [
+        "internal",
+        "freelancer_task",
+        "freelancer_hour",
+        "contractor",
+        "company",
+      ],
       lead_stage: ["lead", "contact", "proposal", "negotiation", "closed"],
       plan_status: ["draft", "in_review", "approved", "archived"],
       project_cost_kind: [
