@@ -20,14 +20,20 @@ import {
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Search, Plus, ChevronLeft, ChevronRight, FileText, Building2, Mail,
   Phone, Tag, DollarSign, User, GripVertical, TrendingUp, Target,
-  Sparkles, X,
+  Sparkles, X, Flame, Snowflake, Thermometer, CalendarDays, CheckCircle2, Clock,
 } from "lucide-react";
 import { toast } from "sonner";
+import { BriefingForm } from "@/components/briefing-form";
+import {
+  fetchBriefingTemplates, type BriefingData, type BriefingTemplate,
+} from "@/lib/briefing";
+import { fetchStages, stagesKey, type PipelineStage } from "@/components/settings/pipeline-stages-editor";
 
 export const Route = createFileRoute("/_authenticated/crm")({
   head: () => ({ meta: [{ title: "CRM · Caritas Agência" }] }),
@@ -38,7 +44,7 @@ export const Route = createFileRoute("/_authenticated/crm")({
 });
 
 // ---------- Domain ----------
-type Stage = "lead" | "contact" | "proposal" | "negotiation" | "closed";
+type Temperature = "cold" | "warm" | "hot";
 
 interface Lead {
   id: string;
@@ -50,7 +56,14 @@ interface Lead {
   segment: string | null;
   source: string | null;
   estimated_value: number | null;
-  stage: Stage;
+  stage: string;
+  stage_id: string | null;
+  probability: number | null;
+  temperature: Temperature | null;
+  expected_close_date: string | null;
+  notes: string | null;
+  briefing_template_id: string | null;
+  briefing: BriefingData | null;
   owner_id: string | null;
   entered_stage_at: string;
   created_at: string;
@@ -58,17 +71,30 @@ interface Lead {
   client_id: string | null;
 }
 
-const STAGES: { id: Stage; label: string; accent: string }[] = [
-  { id: "lead",        label: "Lead",        accent: "bg-slate-500" },
-  { id: "contact",     label: "Contato",     accent: "bg-blue-500" },
-  { id: "proposal",    label: "Proposta",    accent: "bg-violet-500" },
-  { id: "negotiation", label: "Negociação",  accent: "bg-amber-500" },
-  { id: "closed",      label: "Fechado",     accent: "bg-emerald-500" },
+interface LeadActivity {
+  id: string;
+  lead_id: string;
+  kind: string;
+  title: string;
+  notes: string | null;
+  due_date: string | null;
+  done: boolean;
+  created_at: string;
+}
+
+const ACTIVITY_KINDS = [
+  { value: "note", label: "Nota" },
+  { value: "call", label: "Ligação" },
+  { value: "meeting", label: "Reunião" },
+  { value: "email", label: "E-mail" },
+  { value: "task", label: "Tarefa" },
 ];
 
-const STAGE_INDEX: Record<Stage, number> = {
-  lead: 0, contact: 1, proposal: 2, negotiation: 3, closed: 4,
-};
+const TEMPERATURES: { value: Temperature; label: string; icon: any; tone: string }[] = [
+  { value: "cold", label: "Frio",  icon: Snowflake,   tone: "text-sky-500" },
+  { value: "warm", label: "Morno", icon: Thermometer, tone: "text-amber-500" },
+  { value: "hot",  label: "Quente",icon: Flame,       tone: "text-rose-500" },
+];
 
 const brl = (v: number | null) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 })
@@ -86,7 +112,7 @@ function useLeads() {
         .select("*")
         .order("entered_stage_at", { ascending: false });
       if (error) throw error;
-      return (data ?? []) as Lead[];
+      return (data ?? []) as unknown as Lead[];
     },
   });
 }
@@ -102,15 +128,17 @@ async function currentOrgId(): Promise<string> {
 // ---------- Page ----------
 function CrmPage() {
   const { data: leads = [], isLoading } = useLeads();
+  const { data: stages = [] } = useQuery({ queryKey: stagesKey, queryFn: fetchStages });
+  const { data: templates = [] } = useQuery({ queryKey: ["briefing_templates"], queryFn: fetchBriefingTemplates });
   const qc = useQueryClient();
   const navigate = useNavigate();
 
   const [query, setQuery] = useState("");
   const [segment, setSegment] = useState<string>("all");
-  const [openLead, setOpenLead] = useState<Lead | null>(null);
+  const [openLeadId, setOpenLeadId] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [dragId, setDragId] = useState<string | null>(null);
-  const [closedBanner, setClosedBanner] = useState<Lead | null>(null);
+  const [wonBanner, setWonBanner] = useState<Lead | null>(null);
   const searchParams = Route.useSearch();
 
   useEffect(() => {
@@ -119,6 +147,8 @@ function CrmPage() {
       navigate({ to: "/crm", search: {}, replace: true });
     }
   }, [searchParams.new, navigate]);
+
+  const openLead = useMemo(() => leads.find(l => l.id === openLeadId) ?? null, [leads, openLeadId]);
 
   const segments = useMemo(
     () => Array.from(new Set(leads.map(l => l.segment).filter(Boolean) as string[])).sort(),
@@ -138,47 +168,63 @@ function CrmPage() {
     });
   }, [leads, query, segment]);
 
+  const firstStageId = stages[0]?.id ?? null;
+
   const byStage = useMemo(() => {
-    const map = new Map<Stage, Lead[]>();
-    STAGES.forEach(s => map.set(s.id, []));
-    filtered.forEach(l => map.get(l.stage)?.push(l));
+    const map = new Map<string, Lead[]>();
+    stages.forEach(s => map.set(s.id, []));
+    filtered.forEach(l => {
+      const key = l.stage_id && map.has(l.stage_id) ? l.stage_id : firstStageId;
+      if (key) map.get(key)?.push(l);
+    });
     return map;
-  }, [filtered]);
+  }, [filtered, stages, firstStageId]);
+
+  const stageById = useMemo(() => new Map(stages.map(s => [s.id, s])), [stages]);
+  const isClosed = (l: Lead) => {
+    const s = l.stage_id ? stageById.get(l.stage_id) : undefined;
+    return !!s && (s.is_won || s.is_lost);
+  };
 
   // KPIs
-  const pipeline = leads
-    .filter(l => l.stage !== "closed")
-    .reduce((a, l) => a + Number(l.estimated_value ?? 0), 0);
-  const closedValue = leads
-    .filter(l => l.stage === "closed")
-    .reduce((a, l) => a + Number(l.estimated_value ?? 0), 0);
-  const conversion = leads.length
-    ? Math.round((leads.filter(l => l.stage === "closed").length / leads.length) * 100)
-    : 0;
+  const pipeline = leads.filter(l => !isClosed(l)).reduce((a, l) => a + Number(l.estimated_value ?? 0), 0);
+  const wonLeads = leads.filter(l => l.stage_id && stageById.get(l.stage_id)?.is_won);
+  const wonValue = wonLeads.reduce((a, l) => a + Number(l.estimated_value ?? 0), 0);
+  const conversion = leads.length ? Math.round((wonLeads.length / leads.length) * 100) : 0;
+  const weighted = leads
+    .filter(l => !isClosed(l))
+    .reduce((a, l) => a + Number(l.estimated_value ?? 0) * (Number(l.probability ?? 0) / 100), 0);
 
   // Mutations
-  const updateStage = useMutation({
-    mutationFn: async ({ id, stage }: { id: string; stage: Stage }) => {
-      const { error } = await supabase
-        .from("leads")
-        .update({ stage, entered_stage_at: new Date().toISOString() })
-        .eq("id", id);
+  const updateLead = useMutation({
+    mutationFn: async ({ id, values }: { id: string; values: Record<string, any> }) => {
+      const { error } = await supabase.from("leads").update(values as any).eq("id", id);
       if (error) throw error;
     },
-    onMutate: async ({ id, stage }) => {
+    onMutate: async ({ id, values }) => {
       await qc.cancelQueries({ queryKey: leadsKey });
       const prev = qc.getQueryData<Lead[]>(leadsKey);
-      qc.setQueryData<Lead[]>(leadsKey, (old = []) =>
-        old.map(l => (l.id === id ? { ...l, stage } : l)),
-      );
+      qc.setQueryData<Lead[]>(leadsKey, (old = []) => old.map(l => (l.id === id ? { ...l, ...values } : l)));
       return { prev };
     },
     onError: (_e, _v, ctx) => {
       if (ctx?.prev) qc.setQueryData(leadsKey, ctx.prev);
-      toast.error("Não deu para mover o lead");
+      toast.error("Não deu para salvar o lead");
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: leadsKey }),
   });
+
+  const moveToStage = (lead: Lead, stage: PipelineStage) => {
+    updateLead.mutate({
+      id: lead.id,
+      values: {
+        stage_id: stage.id,
+        probability: stage.default_probability,
+        entered_stage_at: new Date().toISOString(),
+      },
+    });
+    if (stage.is_won) setWonBanner(lead);
+  };
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
 
@@ -186,17 +232,15 @@ function CrmPage() {
   const onDragEnd = (e: DragEndEvent) => {
     setDragId(null);
     const overId = e.over?.id;
-    const leadId = String(e.active.id);
     if (!overId) return;
-    const targetStage = String(overId) as Stage;
-    const lead = leads.find(l => l.id === leadId);
-    if (!lead || lead.stage === targetStage) return;
-
-    updateStage.mutate({ id: leadId, stage: targetStage });
-    if (targetStage === "closed") setClosedBanner({ ...lead, stage: targetStage });
+    const lead = leads.find(l => l.id === String(e.active.id));
+    const stage = stages.find(s => s.id === String(overId));
+    if (!lead || !stage || lead.stage_id === stage.id) return;
+    moveToStage(lead, stage);
   };
 
   const dragging = dragId ? leads.find(l => l.id === dragId) ?? null : null;
+  const currentIdx = openLead?.stage_id ? stages.findIndex(s => s.id === openLead.stage_id) : 0;
 
   return (
     <div className="space-y-5">
@@ -207,7 +251,7 @@ function CrmPage() {
           </p>
           <h1 className="mt-1 font-display text-3xl font-bold tracking-tight">Pipeline de vendas</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Arraste os cards entre as colunas conforme o lead avança.
+            Arraste os cards entre as etapas. As etapas do funil são configuráveis em Configurações › Funil CRM.
           </p>
         </div>
         <Button className="rounded-full gap-2" onClick={() => setModalOpen(true)}>
@@ -216,10 +260,11 @@ function CrmPage() {
       </header>
 
       {/* KPIs */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <KpiCard label="Pipeline em aberto" value={brl(pipeline)} icon={TrendingUp} tone="text-blue-500" />
-        <KpiCard label="Receita fechada"    value={brl(closedValue)} icon={DollarSign} tone="text-emerald-500" />
-        <KpiCard label="Taxa de conversão"  value={`${conversion}%`} icon={Target} tone="text-violet-500" />
+        <KpiCard label="Previsão ponderada" value={brl(weighted)} icon={Target} tone="text-violet-500" />
+        <KpiCard label="Receita ganha" value={brl(wonValue)} icon={DollarSign} tone="text-emerald-500" />
+        <KpiCard label="Taxa de conversão" value={`${conversion}%`} icon={CheckCircle2} tone="text-amber-500" />
       </div>
 
       {/* Filters */}
@@ -250,19 +295,19 @@ function CrmPage() {
       </div>
 
       {/* Kanban */}
-      {isLoading ? (
+      {isLoading || stages.length === 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-          {STAGES.map(s => <Skeleton key={s.id} className="h-96 rounded-3xl" />)}
+          {[0, 1, 2, 3, 4].map(i => <Skeleton key={i} className="h-96 rounded-3xl" />)}
         </div>
       ) : (
         <DndContext sensors={sensors} onDragStart={onDragStart} onDragEnd={onDragEnd}>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-            {STAGES.map(stage => (
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6 gap-4">
+            {stages.map(stage => (
               <Column
                 key={stage.id}
                 stage={stage}
                 leads={byStage.get(stage.id) ?? []}
-                onOpen={setOpenLead}
+                onOpen={l => setOpenLeadId(l.id)}
               />
             ))}
           </div>
@@ -275,15 +320,15 @@ function CrmPage() {
       {/* Drawer */}
       <LeadDrawer
         lead={openLead}
-        onClose={() => setOpenLead(null)}
+        stages={stages}
+        templates={templates}
+        onClose={() => setOpenLeadId(null)}
+        onPatch={(values) => openLead && updateLead.mutate({ id: openLead.id, values })}
         onAdvance={dir => {
           if (!openLead) return;
-          const idx = STAGE_INDEX[openLead.stage] + dir;
-          if (idx < 0 || idx >= STAGES.length) return;
-          const next = STAGES[idx].id;
-          updateStage.mutate({ id: openLead.id, stage: next });
-          if (next === "closed") setClosedBanner({ ...openLead, stage: next });
-          setOpenLead({ ...openLead, stage: next });
+          const next = stages[currentIdx + dir];
+          if (!next) return;
+          moveToStage(openLead, next);
         }}
         onCreateProposal={() => {
           if (!openLead) return;
@@ -292,29 +337,29 @@ function CrmPage() {
       />
 
       {/* Modal new lead */}
-      <NewLeadModal open={modalOpen} onOpenChange={setModalOpen} segments={segments} />
+      <NewLeadModal open={modalOpen} onOpenChange={setModalOpen} segments={segments} stages={stages} templates={templates} />
 
-      {/* Banner "closed" → plano de marketing */}
-      {closedBanner && (
+      {/* Banner "ganho" → plano de marketing */}
+      {wonBanner && (
         <div className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2">
           <div className="flex items-center gap-3 rounded-2xl border border-border bg-card px-4 py-3 shadow-[var(--shadow-elevated)]">
             <Sparkles className="h-5 w-5 text-primary" />
             <div className="text-sm">
-              <p className="font-medium">Lead fechado: {closedBanner.name}</p>
+              <p className="font-medium">Lead ganho: {wonBanner.name}</p>
               <p className="text-xs text-muted-foreground">Criar um Plano de Marketing para este cliente?</p>
             </div>
             <Button
               size="sm"
               className="rounded-full ml-2"
               onClick={() => {
-                navigate({ to: "/marketing-plans", search: { leadId: closedBanner.id } as any });
-                setClosedBanner(null);
+                navigate({ to: "/marketing-plans", search: { leadId: wonBanner.id } as any });
+                setWonBanner(null);
               }}
             >
               Criar plano
             </Button>
             <button
-              onClick={() => setClosedBanner(null)}
+              onClick={() => setWonBanner(null)}
               className="grid h-8 w-8 place-items-center rounded-full text-muted-foreground hover:text-foreground"
               aria-label="Fechar"
             >
@@ -331,7 +376,7 @@ function CrmPage() {
 function Column({
   stage, leads, onOpen,
 }: {
-  stage: (typeof STAGES)[number];
+  stage: PipelineStage;
   leads: Lead[];
   onOpen: (l: Lead) => void;
 }) {
@@ -346,9 +391,9 @@ function Column({
       }`}
     >
       <div className="flex items-center justify-between mb-3 px-1">
-        <div className="flex items-center gap-2">
-          <span className={`h-2 w-2 rounded-full ${stage.accent}`} />
-          <p className="text-sm font-semibold">{stage.label}</p>
+        <div className="flex items-center gap-2 min-w-0">
+          <span className="h-2 w-2 rounded-full shrink-0" style={{ background: stage.color }} />
+          <p className="text-sm font-semibold truncate">{stage.name}</p>
           <Badge variant="secondary" className="rounded-full text-[10px]">{leads.length}</Badge>
         </div>
         <p className="text-[10px] text-muted-foreground">{brl(total)}</p>
@@ -370,11 +415,7 @@ function Column({
 function DraggableCard({ lead, onOpen }: { lead: Lead; onOpen: (l: Lead) => void }) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id: lead.id });
   return (
-    <div
-      ref={setNodeRef}
-      style={{ opacity: isDragging ? 0.4 : 1 }}
-      className="group"
-    >
+    <div ref={setNodeRef} style={{ opacity: isDragging ? 0.4 : 1 }} className="group">
       <div className="flex items-stretch gap-1">
         <button
           {...attributes}
@@ -384,16 +425,19 @@ function DraggableCard({ lead, onOpen }: { lead: Lead; onOpen: (l: Lead) => void
         >
           <GripVertical className="h-3.5 w-3.5" />
         </button>
-        <button
-          type="button"
-          onClick={() => onOpen(lead)}
-          className="flex-1 text-left"
-        >
+        <button type="button" onClick={() => onOpen(lead)} className="flex-1 text-left min-w-0">
           <LeadCard lead={lead} />
         </button>
       </div>
     </div>
   );
+}
+
+function TemperatureIcon({ value }: { value: Temperature | null }) {
+  const t = TEMPERATURES.find(t => t.value === value);
+  if (!t) return null;
+  const Icon = t.icon;
+  return <Icon className={`h-3.5 w-3.5 ${t.tone}`} aria-label={t.label} />;
 }
 
 function LeadCard({ lead, dragging = false }: { lead: Lead; dragging?: boolean }) {
@@ -403,15 +447,14 @@ function LeadCard({ lead, dragging = false }: { lead: Lead; dragging?: boolean }
         dragging ? "shadow-[var(--shadow-elevated)] rotate-1" : "hover:border-primary/40 transition-colors"
       }`}
     >
-      <p className="text-sm font-medium truncate">{lead.name}</p>
-      {lead.company && (
-        <p className="text-xs text-muted-foreground truncate">{lead.company}</p>
-      )}
+      <div className="flex items-start justify-between gap-2">
+        <p className="text-sm font-medium truncate">{lead.name}</p>
+        <TemperatureIcon value={lead.temperature} />
+      </div>
+      {lead.company && <p className="text-xs text-muted-foreground truncate">{lead.company}</p>}
       <div className="mt-2 flex items-center justify-between gap-2">
         {lead.segment ? (
-          <Badge variant="outline" className="rounded-full text-[10px] font-normal">
-            {lead.segment}
-          </Badge>
+          <Badge variant="outline" className="rounded-full text-[10px] font-normal">{lead.segment}</Badge>
         ) : <span />}
         {lead.estimated_value ? (
           <p className="text-xs font-semibold text-emerald-500 dark:text-emerald-400">
@@ -419,39 +462,92 @@ function LeadCard({ lead, dragging = false }: { lead: Lead; dragging?: boolean }
           </p>
         ) : null}
       </div>
+      {(lead.probability ?? 0) > 0 && (
+        <div className="mt-2 flex items-center gap-2">
+          <div className="h-1 flex-1 rounded-full bg-muted overflow-hidden">
+            <div className="h-full rounded-full bg-primary" style={{ width: `${lead.probability}%` }} />
+          </div>
+          <span className="text-[10px] tabular-nums text-muted-foreground">{lead.probability}%</span>
+        </div>
+      )}
     </div>
   );
 }
 
 // ---------- Drawer ----------
 function LeadDrawer({
-  lead, onClose, onAdvance, onCreateProposal,
+  lead, stages, templates, onClose, onPatch, onAdvance, onCreateProposal,
 }: {
   lead: Lead | null;
+  stages: PipelineStage[];
+  templates: BriefingTemplate[];
   onClose: () => void;
+  onPatch: (values: Record<string, any>) => void;
   onAdvance: (dir: -1 | 1) => void;
   onCreateProposal: () => void;
 }) {
   const qc = useQueryClient();
-  const [notes, setNotes] = useState("");
+  const [activity, setActivity] = useState({ kind: "note", title: "", notes: "", due_date: "" });
+  const [briefing, setBriefing] = useState<BriefingData>({});
 
-  const saveNotes = useMutation({
+  useEffect(() => { setBriefing((lead?.briefing as BriefingData) ?? {}); }, [lead?.id]);
+
+  const { data: activities = [] } = useQuery({
+    queryKey: ["lead_activities", lead?.id],
+    enabled: !!lead,
+    queryFn: async (): Promise<LeadActivity[]> => {
+      const { data, error } = await supabase
+        .from("lead_activities")
+        .select("*")
+        .eq("lead_id", lead!.id)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return (data ?? []) as unknown as LeadActivity[];
+    },
+  });
+
+  const addActivity = useMutation({
     mutationFn: async () => {
       if (!lead) return;
-      // notes vive em clients.notes; para lead usaremos coluna nova via update simples se existir
-      // No PRD histórico é aba futura; aqui só disparamos toast.
-      toast.success("Nota registrada");
-      setNotes("");
+      const { data: userRes } = await supabase.auth.getUser();
+      const { error } = await supabase.from("lead_activities").insert({
+        organization_id: lead.organization_id,
+        lead_id: lead.id,
+        kind: activity.kind,
+        title: activity.title.trim(),
+        notes: activity.notes.trim() || null,
+        due_date: activity.due_date || null,
+        created_by: userRes.user?.id ?? null,
+      } as any);
+      if (error) throw error;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: leadsKey }),
+    onSuccess: () => {
+      toast.success("Interação registrada");
+      setActivity({ kind: "note", title: "", notes: "", due_date: "" });
+      qc.invalidateQueries({ queryKey: ["lead_activities", lead?.id] });
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Erro ao registrar"),
+  });
+
+  const toggleActivity = useMutation({
+    mutationFn: async (a: LeadActivity) => {
+      const { error } = await supabase.from("lead_activities")
+        .update({ done: !a.done, done_at: a.done ? null : new Date().toISOString() } as any)
+        .eq("id", a.id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["lead_activities", lead?.id] }),
   });
 
   if (!lead) return null;
-  const idx = STAGE_INDEX[lead.stage];
+  const idx = Math.max(0, stages.findIndex(s => s.id === lead.stage_id));
+  const stage = stages[idx];
+  const briefingTemplates = templates.filter(t => t.template_type === "briefing");
+  const template = briefingTemplates.find(t => t.id === lead.briefing_template_id) ?? null;
 
   return (
     <Sheet open={!!lead} onOpenChange={o => !o && onClose()}>
-      <SheetContent className="w-full sm:max-w-lg overflow-y-auto">
+      <SheetContent className="w-full sm:max-w-xl overflow-y-auto">
         <SheetHeader>
           <SheetTitle>{lead.name}</SheetTitle>
           <SheetDescription>{lead.company ?? "Sem empresa"}</SheetDescription>
@@ -463,74 +559,204 @@ function LeadDrawer({
             Etapa atual
           </p>
           <div className="flex items-center gap-1">
-            {STAGES.map((s, i) => (
+            {stages.map((s, i) => (
               <div
                 key={s.id}
-                className={`h-1.5 flex-1 rounded-full ${
-                  i <= idx ? s.accent : "bg-muted"
-                }`}
+                className="h-1.5 flex-1 rounded-full"
+                style={{ background: i <= idx ? s.color : "hsl(var(--muted))" }}
               />
             ))}
           </div>
           <div className="mt-2 flex items-center justify-between">
-            <Badge className="rounded-full">{STAGES[idx].label}</Badge>
+            <Badge className="rounded-full" style={{ background: stage?.color, color: "#fff" }}>
+              {stage?.name ?? "—"}
+            </Badge>
             <div className="flex gap-1">
-              <Button
-                size="sm" variant="outline" className="rounded-full gap-1"
-                disabled={idx === 0}
-                onClick={() => onAdvance(-1)}
-              >
+              <Button size="sm" variant="outline" className="rounded-full gap-1" disabled={idx === 0} onClick={() => onAdvance(-1)}>
                 <ChevronLeft className="h-3.5 w-3.5" /> Voltar
               </Button>
-              <Button
-                size="sm" className="rounded-full gap-1"
-                disabled={idx === STAGES.length - 1}
-                onClick={() => onAdvance(1)}
-              >
+              <Button size="sm" className="rounded-full gap-1" disabled={idx >= stages.length - 1} onClick={() => onAdvance(1)}>
                 Avançar <ChevronRight className="h-3.5 w-3.5" />
               </Button>
             </div>
           </div>
         </div>
 
-        {/* Dados */}
-        <div className="mt-6 space-y-3">
-          <InfoRow icon={User} label="Responsável" value={lead.owner_id ? "Atribuído" : "Sem responsável"} />
-          <InfoRow icon={Building2} label="Empresa" value={lead.company ?? "—"} />
-          <InfoRow icon={Mail} label="Email" value={lead.email ?? "—"} />
-          <InfoRow icon={Phone} label="Telefone" value={lead.phone ?? "—"} />
-          <InfoRow icon={Tag} label="Segmento" value={lead.segment ?? "—"} />
-          <InfoRow icon={DollarSign} label="Valor estimado" value={brl(Number(lead.estimated_value ?? 0))} />
-          <InfoRow icon={FileText} label="Origem" value={lead.source ?? "—"} />
-        </div>
+        <Tabs defaultValue="info" className="mt-6">
+          <TabsList className="w-full">
+            <TabsTrigger value="info" className="flex-1">Dados</TabsTrigger>
+            <TabsTrigger value="briefing" className="flex-1">Briefing</TabsTrigger>
+            <TabsTrigger value="history" className="flex-1">Histórico</TabsTrigger>
+          </TabsList>
 
-        {/* Notas */}
-        <div className="mt-6">
-          <Label className="text-xs">Registrar interação</Label>
-          <Textarea
-            placeholder="Ex: Cliente pediu mais detalhes sobre pacote mensal…"
-            value={notes}
-            onChange={e => setNotes(e.target.value)}
-            className="mt-1"
-            rows={3}
-          />
-          <div className="mt-2 flex justify-end">
-            <Button
-              size="sm" variant="outline" className="rounded-full"
-              onClick={() => saveNotes.mutate()}
-              disabled={!notes.trim()}
-            >
-              Salvar nota
+          {/* --- Dados --- */}
+          <TabsContent value="info" className="mt-4 space-y-3">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label className="text-xs">Temperatura</Label>
+                <Select
+                  value={lead.temperature ?? undefined}
+                  onValueChange={v => onPatch({ temperature: v })}
+                >
+                  <SelectTrigger className="mt-1"><SelectValue placeholder="Definir" /></SelectTrigger>
+                  <SelectContent>
+                    {TEMPERATURES.map(t => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label className="text-xs">Probabilidade (%)</Label>
+                <Input
+                  type="number" min={0} max={100} className="mt-1"
+                  defaultValue={lead.probability ?? 0}
+                  onBlur={e => onPatch({ probability: Number(e.target.value) || 0 })}
+                />
+              </div>
+              <div>
+                <Label className="text-xs">Valor estimado (R$)</Label>
+                <Input
+                  type="number" min={0} step={100} className="mt-1"
+                  defaultValue={lead.estimated_value ?? ""}
+                  onBlur={e => onPatch({ estimated_value: e.target.value ? Number(e.target.value) : null })}
+                />
+              </div>
+              <div>
+                <Label className="text-xs">Fechamento previsto</Label>
+                <Input
+                  type="date" className="mt-1"
+                  defaultValue={lead.expected_close_date ?? ""}
+                  onBlur={e => onPatch({ expected_close_date: e.target.value || null })}
+                />
+              </div>
+            </div>
+
+            <InfoRow icon={User} label="Responsável" value={lead.owner_id ? "Atribuído" : "Sem responsável"} />
+            <InfoRow icon={Building2} label="Empresa" value={lead.company ?? "—"} />
+            <InfoRow icon={Mail} label="Email" value={lead.email ?? "—"} />
+            <InfoRow icon={Phone} label="Telefone" value={lead.phone ?? "—"} />
+            <InfoRow icon={Tag} label="Segmento" value={lead.segment ?? "—"} />
+            <InfoRow icon={FileText} label="Origem" value={lead.source ?? "—"} />
+
+            <div>
+              <Label className="text-xs">Observações</Label>
+              <Textarea
+                rows={3} className="mt-1"
+                defaultValue={lead.notes ?? ""}
+                onBlur={e => onPatch({ notes: e.target.value || null })}
+              />
+            </div>
+
+            <Button className="w-full rounded-full gap-2" onClick={onCreateProposal}>
+              <FileText className="h-4 w-4" /> Criar proposta
             </Button>
-          </div>
-        </div>
+          </TabsContent>
 
-        {/* Ações */}
-        <div className="mt-8 flex gap-2">
-          <Button className="flex-1 rounded-full gap-2" onClick={onCreateProposal}>
-            <FileText className="h-4 w-4" /> Criar proposta
-          </Button>
-        </div>
+          {/* --- Briefing --- */}
+          <TabsContent value="briefing" className="mt-4 space-y-4">
+            <div>
+              <Label className="text-xs">Modelo de briefing</Label>
+              <Select
+                value={lead.briefing_template_id ?? undefined}
+                onValueChange={v => onPatch({ briefing_template_id: v })}
+              >
+                <SelectTrigger className="mt-1">
+                  <SelectValue placeholder={briefingTemplates.length ? "Escolher modelo" : "Nenhum modelo cadastrado"} />
+                </SelectTrigger>
+                <SelectContent>
+                  {briefingTemplates.map(t => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {template ? (
+              <>
+                <BriefingForm template={template} data={briefing} onChange={setBriefing} />
+                <Button className="w-full rounded-full" onClick={() => onPatch({ briefing })}>
+                  Salvar briefing
+                </Button>
+              </>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                Escolha um modelo para preencher o briefing. Crie modelos em Configurações › Modelos de Briefing.
+              </p>
+            )}
+          </TabsContent>
+
+          {/* --- Histórico --- */}
+          <TabsContent value="history" className="mt-4 space-y-4">
+            <div className="rounded-2xl border border-border p-3 space-y-2">
+              <div className="grid grid-cols-2 gap-2">
+                <Select value={activity.kind} onValueChange={v => setActivity({ ...activity, kind: v })}>
+                  <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {ACTIVITY_KINDS.map(k => <SelectItem key={k.value} value={k.value}>{k.label}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+                <Input
+                  type="date" className="h-9"
+                  value={activity.due_date}
+                  onChange={e => setActivity({ ...activity, due_date: e.target.value })}
+                />
+              </div>
+              <Input
+                placeholder="Título da interação"
+                className="h-9"
+                value={activity.title}
+                onChange={e => setActivity({ ...activity, title: e.target.value })}
+              />
+              <Textarea
+                rows={2} placeholder="Detalhes"
+                value={activity.notes}
+                onChange={e => setActivity({ ...activity, notes: e.target.value })}
+              />
+              <div className="flex justify-end">
+                <Button
+                  size="sm" className="rounded-full"
+                  disabled={!activity.title.trim() || addActivity.isPending}
+                  onClick={() => addActivity.mutate()}
+                >
+                  Registrar
+                </Button>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              {activities.length === 0 && (
+                <p className="text-sm text-muted-foreground">Nenhuma interação registrada ainda.</p>
+              )}
+              {activities.map(a => (
+                <div key={a.id} className="flex items-start gap-3 rounded-2xl border border-border bg-card/60 p-3">
+                  <button
+                    onClick={() => toggleActivity.mutate(a)}
+                    className={`mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-full border ${
+                      a.done ? "border-emerald-500 text-emerald-500" : "border-border text-muted-foreground"
+                    }`}
+                    aria-label={a.done ? "Reabrir" : "Concluir"}
+                  >
+                    {a.done ? <CheckCircle2 className="h-3.5 w-3.5" /> : <Clock className="h-3.5 w-3.5" />}
+                  </button>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <p className={`text-sm font-medium truncate ${a.done ? "line-through text-muted-foreground" : ""}`}>
+                        {a.title}
+                      </p>
+                      <Badge variant="secondary" className="text-[10px]">
+                        {ACTIVITY_KINDS.find(k => k.value === a.kind)?.label ?? a.kind}
+                      </Badge>
+                    </div>
+                    {a.notes && <p className="text-xs text-muted-foreground whitespace-pre-wrap">{a.notes}</p>}
+                    <p className="mt-1 flex items-center gap-1 text-[11px] text-muted-foreground">
+                      <CalendarDays className="h-3 w-3" />
+                      {a.due_date
+                        ? new Date(a.due_date + "T00:00:00").toLocaleDateString("pt-BR")
+                        : new Date(a.created_at).toLocaleDateString("pt-BR")}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </TabsContent>
+        </Tabs>
       </SheetContent>
     </Sheet>
   );
@@ -552,21 +778,34 @@ function InfoRow({
 
 // ---------- Modal ----------
 function NewLeadModal({
-  open, onOpenChange, segments,
+  open, onOpenChange, segments, stages, templates,
 }: {
   open: boolean;
   onOpenChange: (o: boolean) => void;
   segments: string[];
+  stages: PipelineStage[];
+  templates: BriefingTemplate[];
 }) {
   const qc = useQueryClient();
-  const [form, setForm] = useState({
+  const empty = {
     name: "", company: "", email: "", phone: "",
-    segment: "", estimated_value: "", stage: "lead" as Stage, source: "",
-  });
+    segment: "", estimated_value: "", stage_id: "", source: "",
+    temperature: "warm" as Temperature, briefing_template_id: "",
+  };
+  const [form, setForm] = useState(empty);
+  const [briefing, setBriefing] = useState<BriefingData>({});
+
+  useEffect(() => {
+    if (open && !form.stage_id && stages[0]) setForm(f => ({ ...f, stage_id: stages[0].id }));
+  }, [open, stages]);
+
+  const briefingTemplates = templates.filter(t => t.template_type === "briefing");
+  const template = briefingTemplates.find(t => t.id === form.briefing_template_id) ?? null;
 
   const create = useMutation({
     mutationFn: async () => {
       const org = await currentOrgId();
+      const stage = stages.find(s => s.id === form.stage_id);
       const { error } = await supabase.from("leads").insert({
         organization_id: org,
         name: form.name.trim(),
@@ -576,25 +815,30 @@ function NewLeadModal({
         segment: form.segment.trim() || null,
         source: form.source.trim() || null,
         estimated_value: form.estimated_value ? Number(form.estimated_value) : null,
-        stage: form.stage,
-      });
+        stage_id: form.stage_id || null,
+        probability: stage?.default_probability ?? 0,
+        temperature: form.temperature,
+        briefing_template_id: form.briefing_template_id || null,
+        briefing,
+      } as any);
       if (error) throw error;
     },
     onSuccess: () => {
       toast.success("Lead criado");
       qc.invalidateQueries({ queryKey: leadsKey });
       onOpenChange(false);
-      setForm({ name: "", company: "", email: "", phone: "", segment: "", estimated_value: "", stage: "lead", source: "" });
+      setForm({ ...empty, stage_id: stages[0]?.id ?? "" });
+      setBriefing({});
     },
     onError: (e: any) => toast.error(e?.message ?? "Erro ao criar lead"),
   });
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="sm:max-w-2xl max-h-[88vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Novo lead</DialogTitle>
-          <DialogDescription>Cadastre um contato novo no pipeline.</DialogDescription>
+          <DialogDescription>Cadastre o contato e, se quiser, já preencha o briefing inicial.</DialogDescription>
         </DialogHeader>
 
         <div className="grid grid-cols-2 gap-3">
@@ -635,22 +879,46 @@ function NewLeadModal({
               placeholder="Indicação, Instagram, Site…"
             />
           </Field>
-          <Field label="Etapa inicial" className="col-span-2">
-            <Select value={form.stage} onValueChange={v => setForm({ ...form, stage: v as Stage })}>
+          <Field label="Etapa inicial">
+            <Select value={form.stage_id} onValueChange={v => setForm({ ...form, stage_id: v })}>
+              <SelectTrigger><SelectValue placeholder="Etapa" /></SelectTrigger>
+              <SelectContent>
+                {stages.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </Field>
+          <Field label="Temperatura">
+            <Select value={form.temperature} onValueChange={v => setForm({ ...form, temperature: v as Temperature })}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
-                {STAGES.map(s => <SelectItem key={s.id} value={s.id}>{s.label}</SelectItem>)}
+                {TEMPERATURES.map(t => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </Field>
+          <Field label="Modelo de briefing" className="col-span-2">
+            <Select
+              value={form.briefing_template_id || undefined}
+              onValueChange={v => setForm({ ...form, briefing_template_id: v })}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder={briefingTemplates.length ? "Opcional — escolher modelo" : "Nenhum modelo cadastrado"} />
+              </SelectTrigger>
+              <SelectContent>
+                {briefingTemplates.map(t => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}
               </SelectContent>
             </Select>
           </Field>
         </div>
 
+        {template && (
+          <div className="border-t border-border pt-4">
+            <BriefingForm template={template} data={briefing} onChange={setBriefing} />
+          </div>
+        )}
+
         <DialogFooter>
           <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancelar</Button>
-          <Button
-            onClick={() => create.mutate()}
-            disabled={!form.name.trim() || create.isPending}
-          >
+          <Button onClick={() => create.mutate()} disabled={!form.name.trim() || create.isPending}>
             {create.isPending ? "Salvando…" : "Salvar lead"}
           </Button>
         </DialogFooter>
@@ -680,7 +948,7 @@ function KpiCard({
         <p className="text-xs text-muted-foreground">{label}</p>
         <Icon className={`h-4 w-4 ${tone}`} />
       </div>
-      <p className="mt-2 font-display text-2xl font-bold">{value}</p>
+      <p className="mt-2 font-display text-2xl font-bold tabular-nums">{value}</p>
     </div>
   );
 }

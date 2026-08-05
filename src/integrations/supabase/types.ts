@@ -59,6 +59,53 @@ export type Database = {
           },
         ]
       }
+      briefing_templates: {
+        Row: {
+          active: boolean
+          created_at: string
+          description: string | null
+          icon: string | null
+          id: string
+          name: string
+          organization_id: string
+          sections: Json
+          template_type: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          description?: string | null
+          icon?: string | null
+          id?: string
+          name: string
+          organization_id: string
+          sections?: Json
+          template_type?: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          description?: string | null
+          icon?: string | null
+          id?: string
+          name?: string
+          organization_id?: string
+          sections?: Json
+          template_type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "briefing_templates_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       calendar_blocks: {
         Row: {
           all_day: boolean
@@ -1108,59 +1155,147 @@ export type Database = {
           },
         ]
       }
+      lead_activities: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          done: boolean
+          done_at: string | null
+          due_date: string | null
+          id: string
+          kind: string
+          lead_id: string
+          notes: string | null
+          organization_id: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          done?: boolean
+          done_at?: string | null
+          due_date?: string | null
+          id?: string
+          kind?: string
+          lead_id: string
+          notes?: string | null
+          organization_id: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          done?: boolean
+          done_at?: string | null
+          due_date?: string | null
+          id?: string
+          kind?: string
+          lead_id?: string
+          notes?: string | null
+          organization_id?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lead_activities_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lead_activities_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       leads: {
         Row: {
+          briefing: Json
+          briefing_template_id: string | null
           client_id: string | null
           company: string | null
           created_at: string
           email: string | null
           entered_stage_at: string
           estimated_value: number | null
+          expected_close_date: string | null
           id: string
           name: string
+          notes: string | null
           organization_id: string
           owner_id: string | null
           phone: string | null
+          probability: number
           segment: string | null
           source: string | null
           stage: Database["public"]["Enums"]["lead_stage"]
+          stage_id: string | null
+          temperature: string | null
           updated_at: string
         }
         Insert: {
+          briefing?: Json
+          briefing_template_id?: string | null
           client_id?: string | null
           company?: string | null
           created_at?: string
           email?: string | null
           entered_stage_at?: string
           estimated_value?: number | null
+          expected_close_date?: string | null
           id?: string
           name: string
+          notes?: string | null
           organization_id: string
           owner_id?: string | null
           phone?: string | null
+          probability?: number
           segment?: string | null
           source?: string | null
           stage?: Database["public"]["Enums"]["lead_stage"]
+          stage_id?: string | null
+          temperature?: string | null
           updated_at?: string
         }
         Update: {
+          briefing?: Json
+          briefing_template_id?: string | null
           client_id?: string | null
           company?: string | null
           created_at?: string
           email?: string | null
           entered_stage_at?: string
           estimated_value?: number | null
+          expected_close_date?: string | null
           id?: string
           name?: string
+          notes?: string | null
           organization_id?: string
           owner_id?: string | null
           phone?: string | null
+          probability?: number
           segment?: string | null
           source?: string | null
           stage?: Database["public"]["Enums"]["lead_stage"]
+          stage_id?: string | null
+          temperature?: string | null
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "leads_briefing_template_id_fkey"
+            columns: ["briefing_template_id"]
+            isOneToOne: false
+            referencedRelation: "briefing_templates"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "leads_client_id_fkey"
             columns: ["client_id"]
@@ -1173,6 +1308,13 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leads_stage_id_fkey"
+            columns: ["stage_id"]
+            isOneToOne: false
+            referencedRelation: "pipeline_stages"
             referencedColumns: ["id"]
           },
         ]
@@ -1356,6 +1498,53 @@ export type Database = {
           website?: string | null
         }
         Relationships: []
+      }
+      pipeline_stages: {
+        Row: {
+          color: string
+          created_at: string
+          default_probability: number
+          id: string
+          is_lost: boolean
+          is_won: boolean
+          name: string
+          organization_id: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          color?: string
+          created_at?: string
+          default_probability?: number
+          id?: string
+          is_lost?: boolean
+          is_won?: boolean
+          name: string
+          organization_id: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          color?: string
+          created_at?: string
+          default_probability?: number
+          id?: string
+          is_lost?: boolean
+          is_won?: boolean
+          name?: string
+          organization_id?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pipeline_stages_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       platform_kpis: {
         Row: {
@@ -1869,6 +2058,8 @@ export type Database = {
         Row: {
           archived_at: string | null
           billing_model: string | null
+          briefing: Json
+          briefing_template_id: string | null
           client_id: string | null
           contract_id: string | null
           created_at: string
@@ -1900,6 +2091,8 @@ export type Database = {
         Insert: {
           archived_at?: string | null
           billing_model?: string | null
+          briefing?: Json
+          briefing_template_id?: string | null
           client_id?: string | null
           contract_id?: string | null
           created_at?: string
@@ -1931,6 +2124,8 @@ export type Database = {
         Update: {
           archived_at?: string | null
           billing_model?: string | null
+          briefing?: Json
+          briefing_template_id?: string | null
           client_id?: string | null
           contract_id?: string | null
           created_at?: string
@@ -1960,6 +2155,13 @@ export type Database = {
           urgency?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "projects_briefing_template_id_fkey"
+            columns: ["briefing_template_id"]
+            isOneToOne: false
+            referencedRelation: "briefing_templates"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "projects_client_id_fkey"
             columns: ["client_id"]
@@ -2291,6 +2493,7 @@ export type Database = {
       task_types: {
         Row: {
           active: boolean
+          briefing_template_id: string | null
           color: string
           created_at: string
           default_billing_model: string | null
@@ -2307,6 +2510,7 @@ export type Database = {
         }
         Insert: {
           active?: boolean
+          briefing_template_id?: string | null
           color?: string
           created_at?: string
           default_billing_model?: string | null
@@ -2323,6 +2527,7 @@ export type Database = {
         }
         Update: {
           active?: boolean
+          briefing_template_id?: string | null
           color?: string
           created_at?: string
           default_billing_model?: string | null
@@ -2337,7 +2542,15 @@ export type Database = {
           organization_id?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "task_types_briefing_template_id_fkey"
+            columns: ["briefing_template_id"]
+            isOneToOne: false
+            referencedRelation: "briefing_templates"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       tasks: {
         Row: {
@@ -2352,6 +2565,8 @@ export type Database = {
           billing_enabled: boolean
           billing_model: Database["public"]["Enums"]["billing_model"] | null
           billing_value: number | null
+          briefing: Json
+          briefing_template_id: string | null
           broadcast_kind: string | null
           client_id: string | null
           comments_count: number
@@ -2392,6 +2607,8 @@ export type Database = {
           billing_enabled?: boolean
           billing_model?: Database["public"]["Enums"]["billing_model"] | null
           billing_value?: number | null
+          briefing?: Json
+          briefing_template_id?: string | null
           broadcast_kind?: string | null
           client_id?: string | null
           comments_count?: number
@@ -2432,6 +2649,8 @@ export type Database = {
           billing_enabled?: boolean
           billing_model?: Database["public"]["Enums"]["billing_model"] | null
           billing_value?: number | null
+          briefing?: Json
+          briefing_template_id?: string | null
           broadcast_kind?: string | null
           client_id?: string | null
           comments_count?: number
@@ -2466,6 +2685,13 @@ export type Database = {
             columns: ["billed_invoice_id"]
             isOneToOne: false
             referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_briefing_template_id_fkey"
+            columns: ["briefing_template_id"]
+            isOneToOne: false
+            referencedRelation: "briefing_templates"
             referencedColumns: ["id"]
           },
           {

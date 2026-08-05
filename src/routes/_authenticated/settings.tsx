@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
-  Building2, Wrench, Share2, Workflow, TrendingUp, UserCog, Plug, Zap, DollarSign, FolderKanban,
+  Building2, Wrench, Share2, Workflow, TrendingUp, UserCog, Plug, Zap, DollarSign, FolderKanban, ClipboardList,
 } from "lucide-react";
 import { toast } from "sonner";
 import { TaskTypesEditor } from "@/components/settings/task-types-editor";
@@ -18,6 +18,9 @@ import { AgencyPricingTab } from "@/components/settings/agency-pricing";
 import { CatalogEditor } from "@/components/settings/catalog-editor";
 import { ProjectTypesEditor } from "@/components/settings/project-types-editor";
 import { ProfileTab } from "@/components/settings/profile-tab";
+import { PipelineStagesEditor } from "@/components/settings/pipeline-stages-editor";
+import { BriefingTemplatesEditor } from "@/components/settings/briefing-templates-editor";
+
 
 
 
@@ -36,6 +39,8 @@ const TABS = [
   { value: "task-flows",   label: "Tipos de Tarefa",   icon: Workflow },
   { value: "automations",  label: "Automações",        icon: Zap },
   { value: "crm-funnel",   label: "Funil CRM",         icon: TrendingUp },
+  { value: "briefings",    label: "Modelos de Briefing", icon: ClipboardList },
+
   
   { value: "users",        label: "Usuários",          icon: UserCog },
   { value: "integrations", label: "Integrações",       icon: Plug },
@@ -77,7 +82,9 @@ function SettingsPage() {
         </TabsContent>
         <TabsContent value="task-flows" className="mt-4"><TaskTypesEditor /></TabsContent>
         <TabsContent value="automations" className="mt-4"><AutomationsTab /></TabsContent>
-        <TabsContent value="crm-funnel" className="mt-4"><ComingSoonCard title="Funil CRM" hint="Etapas do pipeline com probabilidade padrão, ordem e flags ganho/perdido." /></TabsContent>
+        <TabsContent value="crm-funnel" className="mt-4"><PipelineStagesEditor /></TabsContent>
+        <TabsContent value="briefings" className="mt-4"><BriefingTemplatesEditor /></TabsContent>
+
         
         <TabsContent value="users" className="mt-4"><UsersTab /></TabsContent>
         <TabsContent value="integrations" className="mt-4"><ComingSoonCard title="Integrações" hint="Buffer (token + profile IDs), Google Calendar (OAuth) — configuração centralizada." /></TabsContent>

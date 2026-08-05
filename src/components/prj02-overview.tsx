@@ -1,4 +1,6 @@
 import { Link } from "@tanstack/react-router";
+import { ProjectBriefingCard } from "@/components/project-briefing-card";
+
 import {
   ArrowRight, CheckCircle2, Circle, Mail, Phone, FileText, MoreVertical,
 } from "lucide-react";
@@ -265,6 +267,10 @@ export function Prj02Overview({
         </div>
         <Link to="/tasks" className="p2-link">Ver todos os arquivos <ArrowRight /></Link>
       </section>
+
+      {/* 9 — Briefing do projeto */}
+      <ProjectBriefingCard projectId={projectId} />
     </div>
+
   );
 }
