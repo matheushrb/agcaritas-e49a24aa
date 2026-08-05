@@ -88,13 +88,15 @@ export function DayQuickStatsPanel({ data }: { data: any }) {
  * Central do dia — timeline unificada com abas por tipo               *
  * ------------------------------------------------------------------ */
 
-type FeedKind = "task" | "meeting" | "finance" | "approval";
+type FeedKind = "task" | "finance" | "approval" | EventKind;
 
-const KIND_META: Record<FeedKind, { icon: any; tone: string; label: string; dot: string }> = {
+const KIND_META: Record<string, { icon: any; tone: string; label: string; dot: string }> = {
   task:     { icon: CheckSquare, tone: "bg-primary/10 text-primary", label: "Tarefa",     dot: "bg-primary" },
-  meeting:  { icon: Calendar,    tone: "bg-info/15 text-info",       label: "Reunião",    dot: "bg-info" },
   finance:  { icon: DollarSign,  tone: "bg-success/10 text-success", label: "Financeiro", dot: "bg-success" },
   approval: { icon: ShieldCheck, tone: "bg-warning/15 text-warning", label: "Aprovação",  dot: "bg-warning" },
+  ...Object.fromEntries(
+    EVENT_KIND_LIST.map(([k, m]) => [k, { icon: m.icon, tone: m.soft, label: m.label, dot: m.dot }]),
+  ),
 };
 
 type FeedItem = {
@@ -111,12 +113,14 @@ export function DayCenterPanel({ data }: { data: any }) {
     const feed: FeedItem[] = [];
 
     for (const ev of data.events ?? []) {
+      const meta = eventKindMeta(ev.kind);
       feed.push({
-        id: `ev-${ev.id}`, kind: "meeting", time: hhmm(ev.starts_at),
-        title: ev.title, sub: ev.description ?? "Reunião",
+        id: `ev-${ev.id}`, kind: (ev.kind ?? "meeting") as FeedKind, time: hhmm(ev.starts_at),
+        title: ev.title, sub: ev.description ?? meta.hint,
         to: { to: "/calendar", search: { d: String(ev.starts_at).slice(0, 10) } },
       });
     }
+
 
     for (const t of (data.tasks ?? []).filter(isOpen)) {
       if (!t.due_date) continue;
