@@ -767,7 +767,7 @@ function InvoiceDetailPage() {
 
       {/* ==== Editar fatura (form + prévia ao vivo) ==== */}
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
-        <DialogContent className="max-w-[1200px] max-h-[92vh] flex flex-col">
+        <DialogContent className="w-[96vw] max-w-[1500px] max-h-[92vh] flex flex-col overflow-hidden">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <PenLine className="h-5 w-5" />
@@ -829,18 +829,18 @@ function InvoiceDetailPage() {
               </div>
 
 
-              <div className="grid grid-cols-3 gap-3">
-                <div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="min-w-0">
                   <label className="text-xs font-medium text-muted-foreground">Emissão</label>
-                  <Input type="date" value={form.issue_date} onChange={e => setForm(f => ({ ...f, issue_date: e.target.value }))} />
+                  <Input className="w-full min-w-0" type="date" value={form.issue_date} onChange={e => setForm(f => ({ ...f, issue_date: e.target.value }))} />
                 </div>
-                <div>
+                <div className="min-w-0">
                   <label className="text-xs font-medium text-muted-foreground">Vencimento</label>
-                  <Input type="date" value={form.due_date} onChange={e => setForm(f => ({ ...f, due_date: e.target.value }))} />
+                  <Input className="w-full min-w-0" type="date" value={form.due_date} onChange={e => setForm(f => ({ ...f, due_date: e.target.value }))} />
                 </div>
-                <div>
+                <div className="min-w-0">
                   <label className="text-xs font-medium text-muted-foreground">Competência</label>
-                  <Input type="month" value={form.competence} onChange={e => setForm(f => ({ ...f, competence: e.target.value }))} />
+                  <Input className="w-full min-w-0" type="month" value={form.competence} onChange={e => setForm(f => ({ ...f, competence: e.target.value }))} />
                 </div>
               </div>
 
@@ -933,14 +933,14 @@ function InvoiceDetailPage() {
                       </Button>
                     </div>
                     <div className="rounded border overflow-hidden">
-                      <div className="grid grid-cols-[1fr_110px_100px_28px] gap-2 px-3 py-1 bg-muted/50 text-[9px] font-bold uppercase tracking-wider text-muted-foreground">
+                      <div className="grid grid-cols-[minmax(0,1fr)_136px_110px_28px] gap-2 px-3 py-1 bg-muted/50 text-[9px] font-bold uppercase tracking-wider text-muted-foreground">
                         <div>Descrição</div><div>Data</div><div className="text-right">Valor</div><div />
                       </div>
                       {drafts.length === 0 && (
                         <div className="px-2 py-3 text-center text-muted-foreground">Nenhum item. Adicione ao menos um.</div>
                       )}
                       {drafts.map((d, i) => (
-                        <div key={i} className={cn("grid grid-cols-[1fr_110px_100px_28px] gap-2 px-3 py-1.5 border-t items-center", i % 2 === 1 && "bg-muted/20")}>
+                        <div key={i} className={cn("grid grid-cols-[minmax(0,1fr)_136px_110px_28px] gap-2 px-3 py-1.5 border-t items-center", i % 2 === 1 && "bg-muted/20")}>
                           <input
                             className="h-7 px-1.5 text-[11px] rounded border bg-background text-foreground w-full"
                             placeholder="Descrição" value={d.description}
