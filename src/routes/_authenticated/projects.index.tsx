@@ -92,6 +92,7 @@ function ProjectsPage() {
   const [ownerFilter, setOwnerFilter] = useState("all");
   const [sort, setSort] = useState("recent");
   const [archivedFilter, setArchivedFilter] = useState<"hide" | "show" | "only">("hide");
+  const [hideDone, setHideDone] = useState(true);
   const [view, setView] = useState<"cards" | "list" | "kanban">("cards");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(8);
@@ -280,6 +281,7 @@ function ProjectsPage() {
       );
     }
     if (statusFilter !== "all") result = result.filter((p) => p.status === statusFilter);
+    else if (hideDone) result = result.filter((p) => p.status !== "done");
     if (clientFilter !== "all") {
       const name = clientById[clientFilter];
       result = result.filter((p) => p.clientName === name);
@@ -293,9 +295,9 @@ function ProjectsPage() {
       sorted.sort((a, b) => (a.endDate ?? "9999").localeCompare(b.endDate ?? "9999"));
     if (sort === "revenue") sorted.sort((a, b) => b.revenue - a.revenue);
     return sorted;
-  }, [rows, search, statusFilter, clientFilter, ownerFilter, sort, archivedFilter, clientById, membersByProject]);
+  }, [rows, search, statusFilter, clientFilter, ownerFilter, sort, archivedFilter, hideDone, clientById, membersByProject]);
 
-  useEffect(() => setPage(1), [search, statusFilter, clientFilter, ownerFilter, sort, archivedFilter, pageSize]);
+  useEffect(() => setPage(1), [search, statusFilter, clientFilter, ownerFilter, sort, archivedFilter, hideDone, pageSize]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const currentPage = Math.min(page, totalPages);
@@ -466,6 +468,14 @@ function ProjectsPage() {
               <option value="hide">Ocultar</option>
               <option value="show">Mostrar</option>
               <option value="only">Somente arquivados</option>
+            </select>
+          </div>
+
+          <div className="dropdown-pill">
+            Concluídos:
+            <select value={hideDone ? "hide" : "show"} onChange={(e) => setHideDone(e.target.value === "hide")}>
+              <option value="hide">Ocultar</option>
+              <option value="show">Mostrar</option>
             </select>
           </div>
 
