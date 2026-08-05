@@ -9,8 +9,14 @@ import { toast } from "sonner";
 import { Rh01Overview } from "@/components/rh01-overview";
 import { Rh02People } from "@/components/rh02-people";
 import { HrMemberDialog } from "@/components/hr-member-dialog";
-import { MEMBER_COLUMNS, COST_MODE_SAFE_KEYS, type HrMember } from "@/lib/hr-columns";
-import { CONTRACT_TYPES, costSummary } from "@/lib/hr";
+import { MEMBER_COLUMNS, CONTRACT_TYPES, costSummary, type HrMember } from "@/lib/hr";
+
+const WRITABLE_KEYS = [
+  "name","email","phone","role","specialty","level","status","hourly_rate","avatar_url",
+  "cost_mode","monthly_salary","monthly_hours","default_task_rate","task_rate_overrides","cost_notes",
+  "contract_type","area","admitted_on","birth_date","work_location","hr_notes",
+  "company_legal_name","company_tax_id","company_contact",
+] as const;
 
 type Tab = "overview" | "people";
 
@@ -73,9 +79,9 @@ function HrPage() {
   const upsert = useMutation({
     mutationFn: async (input: Partial<HrMember> & { id?: string }) => {
       const payload: Record<string, any> = {};
-      for (const k of COST_MODE_SAFE_KEYS) if (k in input) payload[k] = (input as any)[k];
+      for (const k of WRITABLE_KEYS) if (k in input) payload[k] = (input as any)[k];
       if (input.id) {
-        const { error } = await supabase.from("team_members").update(payload).eq("id", input.id);
+        const { error } = await supabase.from("team_members").update(payload as any).eq("id", input.id);
         if (error) throw error;
       } else {
         const { data: profile } = await supabase.from("profiles").select("organization_id").maybeSingle();
@@ -139,7 +145,7 @@ function HrPage() {
             <ShieldCheck className="size-5 text-emerald-500 mt-0.5" />
             <div>
               <div className="text-sm font-medium">Seu cadastro: {me.name}</div>
-              <p className="text-xs text-muted-foreground">{CONTRACT_TYPES[me.contract_type].label} · {costSummary(me)}</p>
+              <p className="text-xs text-muted-foreground">{CONTRACT_TYPES[me.contract_type as keyof typeof CONTRACT_TYPES]?.label} · {costSummary(me)}</p>
             </div>
           </div>
           <Button variant="outline" className="rounded-full shrink-0" onClick={() => setEditing(me)}>Editar meus dados e custo</Button>
