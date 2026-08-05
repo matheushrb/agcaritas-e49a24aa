@@ -169,10 +169,14 @@ export function DayCenterPanel({ data }: { data: any }) {
   const tabs: Array<{ id: "all" | FeedKind; label: string; count: number }> = [
     { id: "all", label: "Tudo", count: all.length },
     { id: "task", label: "Tarefas", count: countOf("task") },
-    { id: "meeting", label: "Reuniões", count: countOf("meeting") },
+    ...EVENT_KIND_LIST
+      .filter(([k]) => k !== "task")
+      .map(([k, m]) => ({ id: k as FeedKind, label: `${m.label}s`.replace("Feriados", "Feriados"), count: countOf(k as FeedKind) }))
+      .filter(t => t.count > 0),
     { id: "finance", label: "Financeiro", count: countOf("finance") },
     { id: "approval", label: "Aprovações", count: countOf("approval") },
   ];
+
 
   return (
     <Card className="card-surface flex h-full flex-col p-5">
