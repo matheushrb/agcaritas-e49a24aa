@@ -360,7 +360,7 @@
 .cw-flow-step.is-done::before,
 .cw-flow-step.is-on::before { background: var(--cw-cobalt); }
 
-.cw-task-body { display: grid; grid-template-columns: minmax(0,1fr) 236px; gap: 20px; padding: 18px 22px 22px; overflow: auto; flex: 1; min-height: 0; }
+.cw-task-body { display: grid; grid-template-columns: minmax(0,1fr) 280px; gap: 20px; padding: 18px 22px 22px; overflow: auto; flex: 1; min-height: 0; }
 .cw-side { display: flex; flex-direction: column; gap: 14px; }
 .cw-side-card { border: 1px solid var(--cw-border); border-radius: 10px; padding: 13px 14px; }
 .cw-side-card h5 { font-size: 12px; font-weight: 600; margin: 0 0 10px; display: flex; align-items: center; gap: 7px; color: var(--cw-ink); }
@@ -445,7 +445,7 @@
 .cw-dock-backdrop { position: fixed; inset: 0; z-index: 55; background: rgba(15,25,40,.28); }
 .cw-dock {
   position: fixed; top: 0; right: 0; bottom: 0; z-index: 56;
-  width: min(760px, 96vw); padding: 10px;
+  width: min(980px, 96vw); padding: 10px;
   background: rgba(15,25,40,.05);
   box-shadow: -18px 0 48px rgba(15,25,40,.18);
 }
