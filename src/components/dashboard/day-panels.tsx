@@ -7,6 +7,8 @@ import {
   CheckSquare, Calendar, DollarSign, ShieldCheck, Clock, ArrowUpRight,
   FolderKanban, Users, TrendingUp, Flame, Star, CalendarDays, CalendarRange,
 } from "lucide-react";
+import { EVENT_KIND_LIST, eventKindMeta, type EventKind } from "@/lib/event-kinds";
+
 
 const BRL = (n: number) =>
   n.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
