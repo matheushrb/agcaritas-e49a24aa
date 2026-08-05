@@ -14,6 +14,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { z } from "zod";
 import { useCalendarBlocks, BLOCK_META, type CalendarBlock } from "@/lib/calendar-blocks";
+import { EVENT_KIND_LIST, eventKindMeta } from "@/lib/event-kinds";
 
 const searchSchema = z.object({
   d: z.string().optional(),
@@ -36,13 +37,9 @@ type Ev = {
   kind: EventKind | string;
 };
 
-const KIND_META: Record<string, { label: string; color: string; dot: string }> = {
-  meeting:  { label: "Reunião",   color: "bg-blue-500/15 text-blue-600 dark:text-blue-400",       dot: "bg-blue-500" },
-  delivery: { label: "Entrega",   color: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400", dot: "bg-emerald-500" },
-  internal: { label: "Interno",   color: "bg-purple-500/15 text-purple-600 dark:text-purple-400", dot: "bg-purple-500" },
-  holiday:  { label: "Feriado",   color: "bg-amber-500/15 text-amber-600 dark:text-amber-400",    dot: "bg-amber-500" },
-  task:     { label: "Tarefa",    color: "bg-slate-500/15 text-slate-600 dark:text-slate-400",    dot: "bg-slate-500" },
-};
+const KIND_META: Record<string, { label: string; color: string; dot: string; icon: any }> = Object.fromEntries(
+  EVENT_KIND_LIST.map(([k, m]) => [k, { label: m.label, color: `${m.soft} border`, dot: m.dot, icon: m.icon }]),
+);
 
 function toISO(d: Date) { return d.toISOString(); }
 function ymd(d: Date) { return d.toISOString().slice(0, 10); }
@@ -357,7 +354,6 @@ function NewEventDialog({ open, onOpenChange, defaultDate, onCreate }: {
 
   useEffect(() => { if (open) { setDate(defaultDate); setTitle(""); setDescription(""); setLocation(""); setGuests(""); } }, [open, defaultDate]);
 
-  const kindColor = KIND_META[kind]?.color ?? "bg-muted";
   const durationMin = (() => {
     const [sh, sm] = startTime.split(":").map(Number);
     const [eh, em] = endTime.split(":").map(Number);
@@ -410,17 +406,31 @@ function NewEventDialog({ open, onOpenChange, defaultDate, onCreate }: {
       }
       sidebar={
         <>
-          <DialogField label="Tipo">
-            <Select value={kind} onValueChange={(v) => setKind(v as EventKind)}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {Object.entries(KIND_META).map(([k, m]) => <SelectItem key={k} value={k}>{m.label}</SelectItem>)}
-              </SelectContent>
-            </Select>
+          <DialogField label="Tipo de compromisso" hint="Define a cor e onde ele aparece no dashboard.">
+            <div className="grid grid-cols-2 gap-2">
+              {EVENT_KIND_LIST.map(([k, m]) => {
+                const Icon = m.icon;
+                const active = kind === k;
+                return (
+                  <button
+                    key={k}
+                    type="button"
+                    onClick={() => setKind(k)}
+                    className={cn(
+                      "flex items-center gap-2 rounded-xl border px-2.5 py-2 text-xs font-semibold transition",
+                      active ? m.solid + " shadow-sm" : m.soft + " hover:brightness-105",
+                    )}
+                  >
+                    <Icon className="h-3.5 w-3.5 shrink-0" />
+                    <span className="truncate">{m.label}</span>
+                  </button>
+                );
+              })}
+            </div>
           </DialogField>
           <div className="rounded-lg border p-3 space-y-2">
             <div className="text-[11px] uppercase tracking-wider text-muted-foreground">Prévia</div>
-            <Badge className={kindColor}>{KIND_META[kind]?.label}</Badge>
+            <Badge className={cn("border", eventKindMeta(kind).solid)}>{eventKindMeta(kind).label}</Badge>
             <div className="text-xs text-muted-foreground">
               {new Date(`${date}T12:00:00`).toLocaleDateString("pt-BR", { weekday: "short", day: "2-digit", month: "short" })}
               <br />{allDay ? "Dia inteiro" : `${startTime} – ${endTime} · ${durationMin} min`}

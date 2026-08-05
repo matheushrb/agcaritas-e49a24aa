@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { eventKindMeta } from "@/lib/event-kinds";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { DashboardPersonalize } from "@/components/dashboard-personalize";
@@ -360,16 +361,18 @@ function DashboardPage() {
               {(data.events as any[]).length === 0 && (
                 <div style={{ color: "var(--muted)", fontSize: 12 }}>Nenhum compromisso hoje.</div>
               )}
-              {(data.events as any[]).map((e: any, i: number) => {
+              {(data.events as any[]).map((e: any) => {
                 const start = new Date(e.starts_at);
                 const end = e.ends_at ? new Date(e.ends_at) : null;
                 const mins = end ? Math.max(0, Math.round((end.getTime() - start.getTime()) / 60000)) : null;
+                const meta = eventKindMeta(e.kind);
+                const tone = ({ delivery: "teal", internal: "purple", holiday: "amber" } as Record<string, string>)[e.kind] ?? "";
                 return (
-                  <div className={`cv-agenda-item ${["", "amber", "purple", "teal"][i % 4]}`} key={e.id}>
+                  <div className={`cv-agenda-item ${tone}`} key={e.id}>
                     <strong>{start.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</strong>
                     <div>
                       <b>{e.title}</b>
-                      <span>{[e.description || (e.kind ?? "Compromisso"), mins ? `${mins} min` : null].filter(Boolean).join(" · ")}</span>
+                      <span>{[meta.label, e.description || null, mins ? `${mins} min` : null].filter(Boolean).join(" · ")}</span>
                     </div>
                   </div>
                 );

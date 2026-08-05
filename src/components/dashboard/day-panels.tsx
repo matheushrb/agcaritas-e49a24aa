@@ -7,6 +7,8 @@ import {
   CheckSquare, Calendar, DollarSign, ShieldCheck, Clock, ArrowUpRight,
   FolderKanban, Users, TrendingUp, Flame, Star, CalendarDays, CalendarRange,
 } from "lucide-react";
+import { EVENT_KIND_LIST, eventKindMeta, type EventKind } from "@/lib/event-kinds";
+
 
 const BRL = (n: number) =>
   n.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
@@ -57,10 +59,11 @@ export function DayQuickStatsPanel({ data }: { data: any }) {
 
   const pills = [
     { icon: CheckSquare, value: String(tasksToday), label: "tarefas para hoje", tone: "bg-primary/10 text-primary", to: "/tasks" },
-    { icon: Calendar, value: String(meetings), label: "reuniões agendadas", tone: "bg-info/15 text-info", to: "/calendar" },
+    { icon: Calendar, value: String(meetings), label: "compromissos na agenda", tone: "bg-info/15 text-info", to: "/calendar" },
     { icon: DollarSign, value: BRL(pendingAmount), label: "pendente de recebimento", tone: "bg-success/10 text-success", to: "/finance" },
     { icon: ShieldCheck, value: String(approvals), label: "aguardando você", tone: "bg-warning/15 text-warning", to: "/proposals" },
   ];
+
 
   return (
     <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 xl:grid-cols-4">
@@ -87,13 +90,15 @@ export function DayQuickStatsPanel({ data }: { data: any }) {
  * Central do dia — timeline unificada com abas por tipo               *
  * ------------------------------------------------------------------ */
 
-type FeedKind = "task" | "meeting" | "finance" | "approval";
+type FeedKind = "task" | "finance" | "approval" | EventKind;
 
-const KIND_META: Record<FeedKind, { icon: any; tone: string; label: string; dot: string }> = {
+const KIND_META: Record<string, { icon: any; tone: string; label: string; dot: string }> = {
   task:     { icon: CheckSquare, tone: "bg-primary/10 text-primary", label: "Tarefa",     dot: "bg-primary" },
-  meeting:  { icon: Calendar,    tone: "bg-info/15 text-info",       label: "Reunião",    dot: "bg-info" },
   finance:  { icon: DollarSign,  tone: "bg-success/10 text-success", label: "Financeiro", dot: "bg-success" },
   approval: { icon: ShieldCheck, tone: "bg-warning/15 text-warning", label: "Aprovação",  dot: "bg-warning" },
+  ...Object.fromEntries(
+    EVENT_KIND_LIST.map(([k, m]) => [k, { icon: m.icon, tone: m.soft, label: m.label, dot: m.dot }]),
+  ),
 };
 
 type FeedItem = {
@@ -110,12 +115,14 @@ export function DayCenterPanel({ data }: { data: any }) {
     const feed: FeedItem[] = [];
 
     for (const ev of data.events ?? []) {
+      const meta = eventKindMeta(ev.kind);
       feed.push({
-        id: `ev-${ev.id}`, kind: "meeting", time: hhmm(ev.starts_at),
-        title: ev.title, sub: ev.description ?? "Reunião",
+        id: `ev-${ev.id}`, kind: (ev.kind ?? "meeting") as FeedKind, time: hhmm(ev.starts_at),
+        title: ev.title, sub: ev.description ?? meta.hint,
         to: { to: "/calendar", search: { d: String(ev.starts_at).slice(0, 10) } },
       });
     }
+
 
     for (const t of (data.tasks ?? []).filter(isOpen)) {
       if (!t.due_date) continue;
@@ -162,10 +169,14 @@ export function DayCenterPanel({ data }: { data: any }) {
   const tabs: Array<{ id: "all" | FeedKind; label: string; count: number }> = [
     { id: "all", label: "Tudo", count: all.length },
     { id: "task", label: "Tarefas", count: countOf("task") },
-    { id: "meeting", label: "Reuniões", count: countOf("meeting") },
+    ...EVENT_KIND_LIST
+      .filter(([k]) => k !== "task")
+      .map(([k, m]) => ({ id: k as FeedKind, label: `${m.label}s`.replace("Feriados", "Feriados"), count: countOf(k as FeedKind) }))
+      .filter(t => t.count > 0),
     { id: "finance", label: "Financeiro", count: countOf("finance") },
     { id: "approval", label: "Aprovações", count: countOf("approval") },
   ];
+
 
   return (
     <Card className="card-surface flex h-full flex-col p-5">
@@ -211,7 +222,7 @@ export function DayCenterPanel({ data }: { data: any }) {
           </div>
         )}
         {items.slice(0, 8).map(it => {
-          const meta = KIND_META[it.kind];
+          const meta = KIND_META[it.kind] ?? KIND_META.task;
           const Icon = meta.icon;
           return (
             <Link
@@ -395,7 +406,10 @@ export function AgendaTodayPanel({ data }: { data: any }) {
           }
           return (
             <div key={h} className="space-y-1.5">
-              {slot.map(ev => (
+              {slot.map(ev => {
+                const meta = eventKindMeta(ev.kind);
+                const Icon = meta.icon;
+                return (
                 <Link
                   key={ev.id}
                   to="/calendar"
@@ -405,14 +419,21 @@ export function AgendaTodayPanel({ data }: { data: any }) {
                   <span className="w-10 shrink-0 pt-1.5 text-right text-[10px] text-muted-foreground">
                     {hhmm(ev.starts_at)}
                   </span>
-                  <span className="min-w-0 rounded-xl border-l-2 border-primary bg-muted/40 px-3 py-1.5 hover:bg-muted">
-                    <span className="block truncate text-sm font-medium">{ev.title}</span>
+                  <span className={`min-w-0 rounded-xl border-l-[3px] ${meta.bar} bg-muted/40 px-3 py-1.5 hover:bg-muted`}>
+                    <span className="flex items-center gap-2">
+                      <span className="block truncate text-sm font-medium">{ev.title}</span>
+                      <span className={`ml-auto inline-flex shrink-0 items-center gap-1 rounded-md border px-1.5 py-px text-[9px] font-semibold ${meta.soft}`}>
+                        <Icon className="h-2.5 w-2.5" /> {meta.label}
+                      </span>
+                    </span>
                     <span className="block truncate text-[11px] text-muted-foreground">
-                      {ev.description || ev.kind || "Compromisso"}
+                      {ev.description || meta.hint}
                     </span>
                   </span>
                 </Link>
-              ))}
+                );
+              })}
+
             </div>
           );
         })}
