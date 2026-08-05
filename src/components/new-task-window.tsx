@@ -974,7 +974,40 @@ export function TaskWindow({
               </div>
               </div>
 
+              {/* BRIEFING */}
+              <div hidden={tab !== "briefing"}>
+                <div className="cw-section" style={{ marginTop: 0 }}>
+                  <div className="cw-field">
+                    <span className="cw-label">Modelo de briefing</span>
+                    <select
+                      className="cw-input"
+                      value={briefingTemplateId ?? ""}
+                      onChange={e => setBriefingTemplateId(e.target.value || null)}
+                    >
+                      <option value="">
+                        {briefingTemplates.length ? "Selecionar modelo…" : "Nenhum modelo cadastrado"}
+                      </option>
+                      {briefingTemplates
+                        .filter(t => t.template_type === "briefing")
+                        .map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+                    </select>
+                  </div>
+
+                  {briefingTpl ? (
+                    <div style={{ marginTop: 14 }}>
+                      <BriefingForm template={briefingTpl} data={briefingData} onChange={setBriefingData} />
+                    </div>
+                  ) : (
+                    <p className="cw-hint" style={{ marginTop: 10 }}>
+                      Escolha um modelo para preencher o briefing desta tarefa. Os modelos são criados em
+                      Configurações › Modelos de Briefing e podem ser vinculados a um tipo de tarefa.
+                    </p>
+                  )}
+                </div>
+              </div>
+
               {/* AO VIVO / ESTREIA */}
+
               <div hidden={tab !== "live"}>
                 <div className="cw-section" style={{ marginTop: 0 }}>
                   <div className="cw-section-head">
