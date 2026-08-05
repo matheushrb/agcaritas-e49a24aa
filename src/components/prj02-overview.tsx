@@ -265,6 +265,10 @@ export function Prj02Overview({
         </div>
         <Link to="/tasks" className="p2-link">Ver todos os arquivos <ArrowRight /></Link>
       </section>
+
+      {/* 9 — Briefing do projeto */}
+      <ProjectBriefingCard projectId={projectId} />
     </div>
+
   );
 }
