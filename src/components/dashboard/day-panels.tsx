@@ -57,10 +57,11 @@ export function DayQuickStatsPanel({ data }: { data: any }) {
 
   const pills = [
     { icon: CheckSquare, value: String(tasksToday), label: "tarefas para hoje", tone: "bg-primary/10 text-primary", to: "/tasks" },
-    { icon: Calendar, value: String(meetings), label: "reuniões agendadas", tone: "bg-info/15 text-info", to: "/calendar" },
+    { icon: Calendar, value: String(meetings), label: "compromissos na agenda", tone: "bg-info/15 text-info", to: "/calendar" },
     { icon: DollarSign, value: BRL(pendingAmount), label: "pendente de recebimento", tone: "bg-success/10 text-success", to: "/finance" },
     { icon: ShieldCheck, value: String(approvals), label: "aguardando você", tone: "bg-warning/15 text-warning", to: "/proposals" },
   ];
+
 
   return (
     <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 xl:grid-cols-4">
