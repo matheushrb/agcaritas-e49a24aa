@@ -939,27 +939,63 @@ function InvoiceDetailPage() {
                       {drafts.length === 0 && (
                         <div className="px-2 py-3 text-center text-muted-foreground">Nenhum item. Adicione ao menos um.</div>
                       )}
-                      {drafts.map((d, i) => (
-                        <div key={i} className={cn("grid grid-cols-[minmax(0,1fr)_136px_110px_28px] gap-2 px-3 py-1.5 border-t items-center", i % 2 === 1 && "bg-muted/20")}>
-                          <input
-                            className="h-7 px-1.5 text-[11px] rounded border bg-background text-foreground w-full"
-                            placeholder="Descrição" value={d.description}
-                            onChange={e => setDrafts(a => a.map((x, j) => j === i ? { ...x, description: e.target.value } : x))} />
-                          <input
-                            type="date" className="h-7 px-1 text-[10px] rounded border bg-background text-foreground w-full"
-                            value={d.due_date}
-                            onChange={e => setDrafts(a => a.map((x, j) => j === i ? { ...x, due_date: e.target.value } : x))} />
-                          <input
-                            type="number" step="0.01" className="h-7 px-1.5 text-[11px] text-right rounded border bg-background text-foreground w-full"
-                            value={d.amount}
-                            onChange={e => setDrafts(a => a.map((x, j) => j === i ? { ...x, amount: e.target.value } : x))} />
-                          <button type="button" title="Remover item"
-                            className="h-7 w-7 flex items-center justify-center rounded border text-destructive hover:bg-destructive/10"
-                            onClick={() => { if (d.id) setRemoved(r => [...r, d.id!]); setDrafts(a => a.filter((_, j) => j !== i)); }}>
-                            <Trash2 className="h-3 w-3" />
-                          </button>
-                        </div>
-                      ))}
+                      {(() => {
+                        const groups = new Map<string, { label: string; rows: { d: typeof drafts[number]; i: number }[] }>();
+                        drafts.forEach((d, i) => {
+                          const key = d.project_id ?? "__none__";
+                          const label = d.project_id
+                            ? (allProjects.find(p => p.id === d.project_id)?.name ?? "Projeto")
+                            : "Sem projeto";
+                          if (!groups.has(key)) groups.set(key, { label, rows: [] });
+                          groups.get(key)!.rows.push({ d, i });
+                        });
+                        const ordered = [...groups.entries()].sort((a, b) => {
+                          if (a[0] === "__none__") return 1;
+                          if (b[0] === "__none__") return -1;
+                          return a[1].label.localeCompare(b[1].label, "pt-BR");
+                        });
+                        ordered.forEach(([, g]) =>
+                          g.rows.sort((x, y) => (x.d.description || "").localeCompare(y.d.description || "", "pt-BR")));
+                        let stripe = 0;
+                        return ordered.map(([key, g]) => {
+                          const subtotal = g.rows.reduce((s, r) => s + (Number(r.d.amount) || 0), 0);
+                          return (
+                            <div key={key}>
+                              <div className="flex items-center justify-between gap-2 px-3 py-1.5 border-t bg-primary/[0.06]">
+                                <span className="text-[10px] font-bold uppercase tracking-wider text-primary truncate">
+                                  {g.label} <span className="text-muted-foreground font-semibold">· {g.rows.length} item(ns)</span>
+                                </span>
+                                <span className="text-[10px] font-bold tabular-nums text-primary shrink-0">{money(subtotal)}</span>
+                              </div>
+                              {g.rows.map(({ d, i }) => {
+                                const zebra = stripe++ % 2 === 1;
+                                return (
+                                  <div key={i} className={cn("grid grid-cols-[minmax(0,1fr)_136px_110px_28px] gap-2 px-3 py-1.5 border-t items-center", zebra && "bg-muted/20")}>
+                                    <input
+                                      className="h-7 px-1.5 text-[11px] rounded border bg-background text-foreground w-full"
+                                      placeholder="Descrição" value={d.description}
+                                      onChange={e => setDrafts(a => a.map((x, j) => j === i ? { ...x, description: e.target.value } : x))} />
+                                    <input
+                                      type="date" className="h-7 px-1 text-[10px] rounded border bg-background text-foreground w-full"
+                                      value={d.due_date}
+                                      onChange={e => setDrafts(a => a.map((x, j) => j === i ? { ...x, due_date: e.target.value } : x))} />
+                                    <input
+                                      type="number" step="0.01" className="h-7 px-1.5 text-[11px] text-right rounded border bg-background text-foreground w-full"
+                                      value={d.amount}
+                                      onChange={e => setDrafts(a => a.map((x, j) => j === i ? { ...x, amount: e.target.value } : x))} />
+                                    <button type="button" title="Remover item"
+                                      className="h-7 w-7 flex items-center justify-center rounded border text-destructive hover:bg-destructive/10"
+                                      onClick={() => { if (d.id) setRemoved(r => [...r, d.id!]); setDrafts(a => a.filter((_, j) => j !== i)); }}>
+                                      <Trash2 className="h-3 w-3" />
+                                    </button>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          );
+                        });
+                      })()}
+
                       {(Number(form.discount) || 0) > 0 && (
                         <div className="grid grid-cols-[1fr_100px] gap-2 px-3 py-1.5 border-t">
                           <div className="text-right text-[10px] uppercase tracking-wider text-muted-foreground">Desconto</div>
