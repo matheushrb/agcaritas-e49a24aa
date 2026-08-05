@@ -281,6 +281,19 @@ function InvoiceDetailPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const saveCompetence = useMutation({
+    mutationFn: async (ym: string) => {
+      const { error } = await supabase
+        .from("invoices")
+        .update({ competence_month: ym ? `${ym}-01` : null })
+        .eq("id", invoiceId);
+      if (error) throw error;
+    },
+    onSuccess: () => { invalidate(); toast.success("Competência atualizada"); },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+
   async function suggestNumber() {
     const base = (form.issue_date || invoice?.issue_date || new Date().toISOString().slice(0, 10)).slice(0, 7).replace("-", "");
     const { data } = await supabase.from("invoices").select("number").like("number", `${base}%`).order("number", { ascending: false }).limit(1);
