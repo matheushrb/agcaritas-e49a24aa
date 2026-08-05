@@ -933,14 +933,14 @@ function InvoiceDetailPage() {
                       </Button>
                     </div>
                     <div className="rounded border overflow-hidden">
-                      <div className="grid grid-cols-[1fr_110px_100px_28px] gap-2 px-3 py-1 bg-muted/50 text-[9px] font-bold uppercase tracking-wider text-muted-foreground">
+                      <div className="grid grid-cols-[minmax(0,1fr)_136px_110px_28px] gap-2 px-3 py-1 bg-muted/50 text-[9px] font-bold uppercase tracking-wider text-muted-foreground">
                         <div>Descrição</div><div>Data</div><div className="text-right">Valor</div><div />
                       </div>
                       {drafts.length === 0 && (
                         <div className="px-2 py-3 text-center text-muted-foreground">Nenhum item. Adicione ao menos um.</div>
                       )}
                       {drafts.map((d, i) => (
-                        <div key={i} className={cn("grid grid-cols-[1fr_110px_100px_28px] gap-2 px-3 py-1.5 border-t items-center", i % 2 === 1 && "bg-muted/20")}>
+                        <div key={i} className={cn("grid grid-cols-[minmax(0,1fr)_136px_110px_28px] gap-2 px-3 py-1.5 border-t items-center", i % 2 === 1 && "bg-muted/20")}>
                           <input
                             className="h-7 px-1.5 text-[11px] rounded border bg-background text-foreground w-full"
                             placeholder="Descrição" value={d.description}
