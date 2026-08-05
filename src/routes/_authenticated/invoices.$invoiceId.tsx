@@ -497,72 +497,74 @@ function InvoiceDetailPage() {
         </div>
       </div>
 
-      {/* strip */}
-      <div className="f3-strip">
-        <div>
-          <div className="f3-slabel">Cliente</div>
-          <div className="f3-svalue">{client?.name ?? "—"}</div>
-          {client && <Link to="/clients/$clientId" params={{ clientId: client.id }} className="f3-slink">Ver cliente <ArrowRight size={11} /></Link>}
-        </div>
-        <div>
-          <div className="f3-slabel">Projeto(s)</div>
-          <div className="f3-svalue">
-            {(() => {
-              const ids = Array.from(new Set(items.map(i => i.project_id).filter(Boolean))) as string[];
-              if (ids.length === 0) return project?.name ?? "—";
-              return ids.map(id => allProjects.find(p => p.id === id)?.name ?? "Projeto").join(" · ");
-            })()}
+      {/* régua de informações */}
+      <div className="f3-info">
+        <div className="f3-meta">
+          <div className="f3-cell f3-span2">
+            <div className="f3-slabel">Cliente</div>
+            <div className="f3-svalue">{client?.name ?? "—"}</div>
+            {client && <Link to="/clients/$clientId" params={{ clientId: client.id }} className="f3-slink">Ver cliente <ArrowRight size={11} /></Link>}
+          </div>
+          <div className="f3-cell f3-span2">
+            <div className="f3-slabel">Projeto(s)</div>
+            <div className="f3-svalue f3-clamp">
+              {(() => {
+                const ids = Array.from(new Set(items.map(i => i.project_id).filter(Boolean))) as string[];
+                if (ids.length === 0) return project?.name ?? "—";
+                return ids.map(id => allProjects.find(p => p.id === id)?.name ?? "Projeto").join(" · ");
+              })()}
+            </div>
+            {project && <Link to="/projects/$projectId" params={{ projectId: project.id }} className="f3-slink">Ver projeto <ArrowRight size={11} /></Link>}
           </div>
 
-          {project && <Link to="/projects/$projectId" params={{ projectId: project.id }} className="f3-slink">Ver projeto <ArrowRight size={11} /></Link>}
-        </div>
-        <div>
-          <div className="f3-slabel">Emissão</div>
-          <div className="f3-svalue"><Calendar size={14} color="#6B7A90" /> {fmtDate(invoice.issue_date)}</div>
-          <div className="f3-shint">{invoice.issue_date ? `Há ${Math.max(0, -(daysDiff(invoice.issue_date) ?? 0))} dias` : "—"}</div>
-        </div>
-        <div className="f3-wide">
-          <div className="f3-slabel">Competência</div>
-          <div className="f3-svalue">
-            <Calendar size={14} color="#6B7A90" />
+          <div className="f3-cell">
+            <div className="f3-slabel">Emissão</div>
+            <div className="f3-svalue"><Calendar size={14} className="f3-ico" /> {fmtDate(invoice.issue_date)}</div>
+            <div className="f3-shint">{invoice.issue_date ? `Há ${Math.max(0, -(daysDiff(invoice.issue_date) ?? 0))} dias` : "—"}</div>
+          </div>
+          <div className="f3-cell">
+            <div className="f3-slabel">Vencimento</div>
+            <div className={`f3-svalue ${isOverdue ? "txt-red" : ""}`}><Calendar size={14} className="f3-ico" /> {fmtDate(invoice.due_date)}</div>
+            <div className="f3-shint">{dd === null ? "—" : dd < 0 ? `Vencida há ${-dd} dias` : `Daqui a ${dd} dias`}</div>
+          </div>
+          <div className="f3-cell">
+            <div className="f3-slabel">Competência</div>
             <input
               type="month"
-              className="bg-transparent border border-border/60 rounded-md px-1.5 py-0.5 text-[13px] text-foreground"
+              className="f3-monthinput"
               value={(invoice.competence_month ?? invoice.issue_date ?? "").slice(0, 7)}
               onChange={e => saveCompetence.mutate(e.target.value)}
               disabled={invoice.status === "canceled" || saveCompetence.isPending}
             />
+            <div className="f3-shint">Mês de referência no PDF</div>
           </div>
-          <div className="f3-shint">Mês de referência no PDF</div>
+          <div className="f3-cell">
+            <div className="f3-slabel">Parcelas</div>
+            <div className="f3-svalue"><FileText size={14} className="f3-ico" /> 1 de 1</div>
+            <div className="f3-shint">Parcela única</div>
+          </div>
+
+          <div className="f3-cell f3-span4">
+            <div className="f3-slabel">Forma de pagamento</div>
+            <div className="f3-svalue"><CreditCard size={14} className="f3-ico" /> {invoice.payment_method || "A combinar"}</div>
+            <div className="f3-shint">{invoice.payment_terms || "Ver instruções"}</div>
+          </div>
         </div>
 
-        <div>
-          <div className="f3-slabel">Vencimento</div>
-          <div className={`f3-svalue ${isOverdue ? "txt-red" : ""}`}><Calendar size={14} color={isOverdue ? "#E5484D" : "#6B7A90"} /> {fmtDate(invoice.due_date)}</div>
-          <div className="f3-shint">{dd === null ? "—" : dd < 0 ? `Vencida há ${-dd} dias` : `Daqui a ${dd} dias`}</div>
-        </div>
-        <div>
-          <div className="f3-slabel">Forma de pagamento</div>
-          <div className="f3-svalue"><CreditCard size={14} color="#6B7A90" /> {invoice.payment_method || "A combinar"}</div>
-          <div className="f3-shint">{invoice.payment_terms || "Ver instruções"}</div>
-        </div>
-        <div>
-          <div className="f3-slabel">Parcelas</div>
-          <div className="f3-svalue"><FileText size={14} color="#6B7A90" /> 1 de 1</div>
-          <div className="f3-shint">Parcela única</div>
-        </div>
-        <div>
-          <div className="f3-slabel">Valor total</div>
-          <div className="f3-svalue big">{money(totals.total)}</div>
-        </div>
-        <div>
-          <div className="f3-slabel">Valor recebido</div>
-          <div className="f3-svalue big txt-green">{money(totals.received)}</div>
-        </div>
-        <div>
-          <div className="f3-slabel">Saldo em aberto</div>
-          <div className="f3-svalue big txt-red">{money(totals.open)}</div>
-        </div>
+        <aside className="f3-money">
+          <div className="f3-mrow">
+            <span className="f3-slabel">Valor total</span>
+            <span className="f3-svalue big">{money(totals.total)}</span>
+          </div>
+          <div className="f3-mrow">
+            <span className="f3-slabel">Valor recebido</span>
+            <span className="f3-svalue big txt-green">{money(totals.received)}</span>
+          </div>
+          <div className="f3-mrow f3-mrow-total">
+            <span className="f3-slabel">Saldo em aberto</span>
+            <span className="f3-svalue big txt-red">{money(totals.open)}</span>
+          </div>
+        </aside>
       </div>
 
       <div className="f3-grid">
