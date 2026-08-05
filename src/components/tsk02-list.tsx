@@ -100,6 +100,7 @@ export function Tsk02List({
   const [project, setProject] = useState("all");
   const [deadline, setDeadline] = useState("all");
   const [archived, setArchived] = useState<"hide" | "show" | "only">("hide");
+  const [hideDone, setHideDone] = useState(true);
   const [page, setPage] = useState(1);
   const [perPage, setPerPage] = useState(10);
   const [menu, setMenu] = useState<string | null>(null);
