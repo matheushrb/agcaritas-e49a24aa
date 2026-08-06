@@ -105,22 +105,26 @@ const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", curren
 const uid = () => Math.random().toString(36).slice(2, 9);
 
 export function TaskWindow({
-  open, onOpenChange, taskId = null, defaultProjectId = null, onCreated,
+  open, onOpenChange, taskId = null, defaultProjectId = null, defaultTaskTypeId = null, defaultTitle = "", onCreated,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   /** Quando informado, a janela abre no modo edição da tarefa existente. */
   taskId?: string | null;
   defaultProjectId?: string | null;
+  /** Tipo de tarefa pré-selecionado ao criar (ex.: tarefa base do tipo de projeto). */
+  defaultTaskTypeId?: string | null;
+  defaultTitle?: string;
   onCreated?: (id: string) => void;
 }) {
   const qc = useQueryClient();
   const isEdit = !!taskId;
 
-  const [title, setTitle] = useState("");
+  const [title, setTitle] = useState(defaultTitle);
   const [description, setDescription] = useState("");
   const [projectId, setProjectId] = useState<string | null>(defaultProjectId);
-  const [taskTypeId, setTaskTypeId] = useState<string | null>(null);
+  const [taskTypeId, setTaskTypeId] = useState<string | null>(defaultTaskTypeId);
+
   const [assigneeId, setAssigneeId] = useState<string | null>(null);
   const [startDate, setStartDate] = useState("");
   const [dueDate, setDueDate] = useState("");
@@ -504,7 +508,7 @@ export function TaskWindow({
 
 
   const reset = () => {
-    setTitle(""); setDescription(""); setProjectId(defaultProjectId); setTaskTypeId(null);
+    setTitle(defaultTitle); setDescription(""); setProjectId(defaultProjectId); setTaskTypeId(defaultTaskTypeId);
     setAssigneeId(null); setDueDate(""); setPriority("medium"); setStatus("todo"); setStage("briefing"); setCurrentStageId(null);
     setEstimated(""); setBillingEnabled(true); setBaseValue(""); setDeliverables([]); setChecklist([]);
     setPlatformsSel([]); setNotes(""); setLiveItems([]); setTech(EMPTY_TECH); setTab("details");

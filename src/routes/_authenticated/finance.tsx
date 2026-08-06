@@ -9,8 +9,8 @@ import { FinanceEntryWindow } from "@/components/finance-entry-window";
 
 
 export const Route = createFileRoute("/_authenticated/finance")({
-  validateSearch: (s: Record<string, unknown>) => ({
-    new: s.new === 1 || s.new === "1" ? 1 : undefined,
+  validateSearch: (s: Record<string, unknown>): { new?: 1 } => ({
+    new: s.new === 1 || s.new === "1" ? (1 as const) : undefined,
   }),
   component: FinancePage,
 });
