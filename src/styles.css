@@ -5,6 +5,7 @@
 @import "./caritas-ui.css";
 @import "./dark-fixes.css";
 @import "./polish.css";
+@import "./notebook.css";
 
 
 @custom-variant dark (&:is(.dark *));
