@@ -508,7 +508,7 @@ export function TaskWindow({
 
 
   const reset = () => {
-    setTitle(""); setDescription(""); setProjectId(defaultProjectId); setTaskTypeId(null);
+    setTitle(defaultTitle); setDescription(""); setProjectId(defaultProjectId); setTaskTypeId(defaultTaskTypeId);
     setAssigneeId(null); setDueDate(""); setPriority("medium"); setStatus("todo"); setStage("briefing"); setCurrentStageId(null);
     setEstimated(""); setBillingEnabled(true); setBaseValue(""); setDeliverables([]); setChecklist([]);
     setPlatformsSel([]); setNotes(""); setLiveItems([]); setTech(EMPTY_TECH); setTab("details");
