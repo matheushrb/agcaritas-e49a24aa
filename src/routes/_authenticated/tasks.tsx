@@ -42,9 +42,9 @@ import { Tsk04Gantt } from "@/components/tsk04-gantt";
 
 
 export const Route = createFileRoute("/_authenticated/tasks")({
-  validateSearch: (s: Record<string, unknown>) => ({
+  validateSearch: (s: Record<string, unknown>): { open?: string; new?: 1 } => ({
     open: typeof s.open === "string" ? s.open : undefined,
-    new: s.new === 1 || s.new === "1" ? 1 : undefined,
+    new: s.new === 1 || s.new === "1" ? (1 as const) : undefined,
   }),
   component: TasksPage,
 });

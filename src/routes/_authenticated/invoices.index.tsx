@@ -23,9 +23,9 @@ import "@/fat01.css";
 
 export const Route = createFileRoute("/_authenticated/invoices/")({
   component: InvoicesPage,
-  validateSearch: (s: Record<string, unknown>) => ({
+  validateSearch: (s: Record<string, unknown>): { projectId?: string; new?: "1" } => ({
     projectId: typeof s.projectId === "string" ? s.projectId : undefined,
-    new: s.new === "1" ? "1" as const : undefined,
+    new: s.new === "1" ? ("1" as const) : undefined,
   }),
 });
 

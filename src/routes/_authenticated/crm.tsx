@@ -37,8 +37,8 @@ import { fetchStages, stagesKey, type PipelineStage } from "@/components/setting
 
 export const Route = createFileRoute("/_authenticated/crm")({
   head: () => ({ meta: [{ title: "CRM · Caritas Agência" }] }),
-  validateSearch: (s: Record<string, unknown>) => ({
-    new: s.new === 1 || s.new === "1" ? 1 : undefined,
+  validateSearch: (s: Record<string, unknown>): { new?: 1 } => ({
+    new: s.new === 1 || s.new === "1" ? (1 as const) : undefined,
   }),
   component: CrmPage,
 });

@@ -37,7 +37,7 @@ import { Prj08Table, Prj08Preview } from "@/components/prj08-list";
 import "@/prj01.css";
 
 export const Route = createFileRoute("/_authenticated/projects/")({
-  validateSearch: (s: { new?: number | string }) => ({
+  validateSearch: (s: { new?: number | string }): { new?: 1 } => ({
     new: s.new === 1 || s.new === "1" ? (1 as const) : undefined,
   }),
   component: ProjectsPage,
