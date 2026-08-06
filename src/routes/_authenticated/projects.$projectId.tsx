@@ -529,6 +529,43 @@ function ProjectDetail() {
       {activeTab === "campaigns" && <div style={{ marginTop: 18 }}><ComingSoon icon={Rocket} title="Campanhas" description="Lançamentos e campanhas dentro do projeto." /></div>}
       {activeTab === "docs" && <Prj06Files />}
 
+      <Dialog open={templatePickerOpen} onOpenChange={setTemplatePickerOpen}>
+        <DialogContent className="sm:max-w-[520px]">
+          <DialogHeader>
+            <DialogTitle>Qual modelo de tarefa?</DialogTitle>
+            <DialogDescription>
+              Modelos definidos em <strong>{projectTypeRow?.name ?? "tipo do projeto"}</strong>. A tarefa abre já com etapas, checklist, briefing e valor padrão.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-2">
+            {baseTaskTypes.map(bt => (
+              <button
+                key={bt.id}
+                type="button"
+                onClick={() => pickTemplate({ typeId: bt.id, title: bt.name })}
+                className="flex items-center justify-between gap-3 rounded-xl border border-border bg-background px-3 py-2.5 text-left transition hover:bg-muted/60"
+              >
+                <span className="flex items-center gap-2 text-sm font-medium">
+                  <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ backgroundColor: bt.color ?? "hsl(var(--primary))" }} />
+                  {bt.name}
+                </span>
+                {bt.default_price != null && Number(bt.default_price) > 0 && (
+                  <span className="text-xs text-muted-foreground">R$ {Number(bt.default_price).toLocaleString("pt-BR")}</span>
+                )}
+              </button>
+            ))}
+            <button
+              type="button"
+              onClick={() => pickTemplate({ typeId: null, title: "" })}
+              className="rounded-xl border border-dashed border-border px-3 py-2.5 text-left text-sm text-muted-foreground transition hover:bg-muted/60"
+            >
+              Tarefa em branco
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+
       <TaskWindow
         key={`new-task-${taskSeed.typeId ?? "none"}`}
         open={newTaskOpen}
