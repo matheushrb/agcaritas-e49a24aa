@@ -496,13 +496,39 @@ function ProjectDetail() {
       )}
 
       {activeTab === "tasks" && (
-        <Prj03Tasks
-          tasks={tasks as never}
-          people={people}
-          onOpen={(id) => setSelectedTaskId(id)}
-          onQuickCreate={() => setNewTaskOpen(true)}
-          pending={addTask.isPending}
-        />
+        <>
+          {baseTaskTypes.length > 0 && (
+            <div className="mt-4 rounded-2xl border border-border bg-card p-3">
+              <div className="mb-2 px-1 text-xs text-muted-foreground">
+                Tarefas pré-definidas de <strong>{projectTypeRow?.name ?? "este tipo de projeto"}</strong> — clique para criar já configurada
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {baseTaskTypes.map(bt => (
+                  <button
+                    key={bt.id}
+                    type="button"
+                    onClick={() => openNewTask({ typeId: bt.id, title: bt.name })}
+                    className="inline-flex items-center gap-2 rounded-full border border-border bg-background px-3 py-1.5 text-xs font-medium transition hover:bg-muted/60"
+                    title={`Criar tarefa: ${bt.name}`}
+                  >
+                    <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ backgroundColor: bt.color ?? "hsl(var(--primary))" }} />
+                    {bt.name}
+                    {bt.default_price != null && Number(bt.default_price) > 0 && (
+                      <span className="text-muted-foreground">· R$ {Number(bt.default_price).toLocaleString("pt-BR")}</span>
+                    )}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+          <Prj03Tasks
+            tasks={tasks as never}
+            people={people}
+            onOpen={(id) => setSelectedTaskId(id)}
+            onQuickCreate={() => openNewTask()}
+            pending={addTask.isPending}
+          />
+        </>
       )}
 
       {activeTab === "team" && (
@@ -522,12 +548,16 @@ function ProjectDetail() {
       {activeTab === "docs" && <Prj06Files />}
 
       <TaskWindow
+        key={`new-task-${taskSeed.typeId ?? "none"}`}
         open={newTaskOpen}
         taskId={null}
         defaultProjectId={projectId}
+        defaultTaskTypeId={taskSeed.typeId}
+        defaultTitle={taskSeed.title}
         onOpenChange={(o: boolean) => setNewTaskOpen(o)}
         onCreated={() => { qc.invalidateQueries({ queryKey: ["project-tasks", projectId] }); }}
       />
+
       <TaskWindow
         open={!!selectedTaskId}
         taskId={selectedTaskId}
