@@ -9,6 +9,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+
 import {
   ArrowLeft, Calendar, CheckSquare, FileText, Grid3x3, Timer as TimerIcon,
   Megaphone, Compass, Rocket, DollarSign, Plus, Flag, Zap,
@@ -328,13 +330,20 @@ function ProjectDetail() {
 
   const [activeTab, setActiveTab] = useState("overview");
   const [newTaskOpen, setNewTaskOpen] = useState(false);
+  const [templatePickerOpen, setTemplatePickerOpen] = useState(false);
   /** Modelo (tarefa base do tipo de projeto) usado para pré-preencher a nova tarefa. */
   const [taskSeed, setTaskSeed] = useState<{ typeId: string | null; title: string }>({ typeId: null, title: "" });
   const openNewTask = (seed?: { typeId: string | null; title: string }) => {
-    const single = baseTaskTypes.length === 1 ? { typeId: baseTaskTypes[0].id, title: baseTaskTypes[0].name } : { typeId: null, title: "" };
-    setTaskSeed(seed ?? single);
+    if (!seed && baseTaskTypes.length > 0) { setTemplatePickerOpen(true); return; }
+    setTaskSeed(seed ?? { typeId: null, title: "" });
     setNewTaskOpen(true);
   };
+  const pickTemplate = (seed: { typeId: string | null; title: string }) => {
+    setTemplatePickerOpen(false);
+    setTaskSeed(seed);
+    setNewTaskOpen(true);
+  };
+
 
 
 
@@ -496,40 +505,15 @@ function ProjectDetail() {
       )}
 
       {activeTab === "tasks" && (
-        <>
-          {baseTaskTypes.length > 0 && (
-            <div className="mt-4 rounded-2xl border border-border bg-card p-3">
-              <div className="mb-2 px-1 text-xs text-muted-foreground">
-                Tarefas pré-definidas de <strong>{projectTypeRow?.name ?? "este tipo de projeto"}</strong> — clique para criar já configurada
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {baseTaskTypes.map(bt => (
-                  <button
-                    key={bt.id}
-                    type="button"
-                    onClick={() => openNewTask({ typeId: bt.id, title: bt.name })}
-                    className="inline-flex items-center gap-2 rounded-full border border-border bg-background px-3 py-1.5 text-xs font-medium transition hover:bg-muted/60"
-                    title={`Criar tarefa: ${bt.name}`}
-                  >
-                    <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ backgroundColor: bt.color ?? "hsl(var(--primary))" }} />
-                    {bt.name}
-                    {bt.default_price != null && Number(bt.default_price) > 0 && (
-                      <span className="text-muted-foreground">· R$ {Number(bt.default_price).toLocaleString("pt-BR")}</span>
-                    )}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-          <Prj03Tasks
-            tasks={tasks as never}
-            people={people}
-            onOpen={(id) => setSelectedTaskId(id)}
-            onQuickCreate={() => openNewTask()}
-            pending={addTask.isPending}
-          />
-        </>
+        <Prj03Tasks
+          tasks={tasks as never}
+          people={people}
+          onOpen={(id) => setSelectedTaskId(id)}
+          onQuickCreate={() => openNewTask()}
+          pending={addTask.isPending}
+        />
       )}
+
 
       {activeTab === "team" && (
         <div style={{ marginTop: 18 }}>
@@ -546,6 +530,43 @@ function ProjectDetail() {
       {activeTab === "traffic" && <div style={{ marginTop: 18 }}><ComingSoon icon={Megaphone} title="Tráfego Pago" description="Campanhas, orçamento, CPA e ROAS do projeto." /></div>}
       {activeTab === "campaigns" && <div style={{ marginTop: 18 }}><ComingSoon icon={Rocket} title="Campanhas" description="Lançamentos e campanhas dentro do projeto." /></div>}
       {activeTab === "docs" && <Prj06Files />}
+
+      <Dialog open={templatePickerOpen} onOpenChange={setTemplatePickerOpen}>
+        <DialogContent className="sm:max-w-[520px]">
+          <DialogHeader>
+            <DialogTitle>Qual modelo de tarefa?</DialogTitle>
+            <DialogDescription>
+              Modelos definidos em <strong>{projectTypeRow?.name ?? "tipo do projeto"}</strong>. A tarefa abre já com etapas, checklist, briefing e valor padrão.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-2">
+            {baseTaskTypes.map(bt => (
+              <button
+                key={bt.id}
+                type="button"
+                onClick={() => pickTemplate({ typeId: bt.id, title: bt.name })}
+                className="flex items-center justify-between gap-3 rounded-xl border border-border bg-background px-3 py-2.5 text-left transition hover:bg-muted/60"
+              >
+                <span className="flex items-center gap-2 text-sm font-medium">
+                  <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ backgroundColor: bt.color ?? "hsl(var(--primary))" }} />
+                  {bt.name}
+                </span>
+                {bt.default_price != null && Number(bt.default_price) > 0 && (
+                  <span className="text-xs text-muted-foreground">R$ {Number(bt.default_price).toLocaleString("pt-BR")}</span>
+                )}
+              </button>
+            ))}
+            <button
+              type="button"
+              onClick={() => pickTemplate({ typeId: null, title: "" })}
+              className="rounded-xl border border-dashed border-border px-3 py-2.5 text-left text-sm text-muted-foreground transition hover:bg-muted/60"
+            >
+              Tarefa em branco
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
 
       <TaskWindow
         key={`new-task-${taskSeed.typeId ?? "none"}`}
