@@ -328,6 +328,14 @@ function ProjectDetail() {
 
   const [activeTab, setActiveTab] = useState("overview");
   const [newTaskOpen, setNewTaskOpen] = useState(false);
+  /** Modelo (tarefa base do tipo de projeto) usado para pré-preencher a nova tarefa. */
+  const [taskSeed, setTaskSeed] = useState<{ typeId: string | null; title: string }>({ typeId: null, title: "" });
+  const openNewTask = (seed?: { typeId: string | null; title: string }) => {
+    const single = baseTaskTypes.length === 1 ? { typeId: baseTaskTypes[0].id, title: baseTaskTypes[0].name } : { typeId: null, title: "" };
+    setTaskSeed(seed ?? single);
+    setNewTaskOpen(true);
+  };
+
 
 
   if (!project) {
