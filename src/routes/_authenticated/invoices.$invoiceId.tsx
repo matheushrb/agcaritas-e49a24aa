@@ -297,7 +297,7 @@ function InvoiceDetailPage() {
             amount: num(it.amount),
             is_child: !!it.isChild,
             reference_date: it.due_date,
-            group: allProjects.find(p => p.id === it.project_id)?.name ?? project?.name ?? null,
+            group: allProjects.find(p => p.id === it.project_id)?.name ?? project?.name ?? "Outros serviços",
             service: serviceOf(it),
           })),
         discount: num(invoice.discount) || undefined,
