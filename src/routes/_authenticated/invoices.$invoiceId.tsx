@@ -243,7 +243,10 @@ function InvoiceDetailPage() {
             amount: num(it.amount),
             reference_date: it.due_date,
             group: allProjects.find(p => p.id === it.project_id)?.name ?? project?.name ?? null,
-            service: it.deliverable_id ? "Entregável" : it.task_id ? "Tarefa" : "Lançamento",
+            service:
+              (it.deliverable_id ? serviceNames[it.deliverable_id] : null)
+              || (it.task_id ? serviceNames[it.task_id] : null)
+              || (it.deliverable_id ? "Entregável" : it.task_id ? "Serviço" : "Lançamento"),
           })),
         discount: num(invoice.discount) || undefined,
         notes: invoice.notes || undefined,
