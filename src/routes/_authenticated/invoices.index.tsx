@@ -606,22 +606,41 @@ function NewInvoiceWizard({
         }
       }
     }
+    // Entregáveis cujo pai não é faturável (tarefa sem valor): mostra a tarefa-pai
+    // como linha de agrupamento com valor zero, seguida dos entregáveis com valor.
     const includedTaskIds = new Set(Array.from(selectedTasks));
+    const orphanParents = new Set<string>();
     for (const d of billableDeliverables) {
-      if (selectedDeliverables.has(d.key) && !includedTaskIds.has(d.taskId)) {
-        const dkey = `deliv:${d.key}`;
+      if (!selectedDeliverables.has(d.key) || includedTaskIds.has(d.taskId)) continue;
+      if (!orphanParents.has(d.taskId)) {
+        orphanParents.add(d.taskId);
+        const parent = tasks.find(t => t.id === d.taskId);
+        const typeName = parent?.task_type_id ? taskTypeNames[parent.task_type_id] ?? null : null;
+        const pkey = `taskhdr:${d.taskId}`;
         lines.push({
-          key: dkey,
-          title: d.label, amount: d.amount, is_child: true,
-          reference_date: withOverride(dkey, d.reference_date),
-          reference_label: d.reference_label,
+          key: pkey,
+          title: parent?.title || d.taskTitle,
+          amount: 0,
+          reference_date: withOverride(pkey, parent ? taskReference(parent).reference_date : null),
+          reference_label: parent ? taskReference(parent).reference_label : undefined,
           group: groupOf(d.project_id),
-          service: d.service_name || "Entregável",
+          service: typeName || "Serviço",
           task_id: d.taskId,
-          deliverable_id: d.deliverableId,
         });
       }
+      const dkey = `deliv:${d.key}`;
+      lines.push({
+        key: dkey,
+        title: d.label, amount: d.amount, is_child: true,
+        reference_date: withOverride(dkey, d.reference_date),
+        reference_label: d.reference_label,
+        group: groupOf(d.project_id),
+        service: d.service_name || "Entregável",
+        task_id: d.taskId,
+        deliverable_id: d.deliverableId,
+      });
     }
+
     // Dentro de cada projeto, preserva sempre a hierarquia: tarefa-pai e seus entregáveis.
     const hierarchyOrdered: typeof lines = [];
     const consumed = new Set<string>();
