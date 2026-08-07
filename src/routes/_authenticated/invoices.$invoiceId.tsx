@@ -136,9 +136,11 @@ function InvoiceDetailPage() {
         for (const d of list) {
           const id = d?.id ? String(d.id) : "";
           if (!id) continue;
-          const label = [d.type, d.platform, d.channel]
-            .map(v => (v ?? "").toString().trim()).find(Boolean);
-          if (label || tn) map[id] = (label || tn) as string;
+          const platform = (d.platform ?? "").toString().trim();
+          const dname = [d.type, d.channel].map(v => (v ?? "").toString().trim()).find(Boolean) ?? "";
+          const head = platform ? `Entregável ${platform}` : "Entregável";
+          const label = dname ? `${head} | ${dname}` : head;
+          map[id] = label;
         }
       }
       return map;
