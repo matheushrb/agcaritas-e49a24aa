@@ -550,7 +550,7 @@ function NewInvoiceWizard({
     const withOverride = (key: string, fallback: string | null | undefined) =>
       lineDateOverrides[key] ?? (fallback ?? null);
     const groupOf = (projectId: string | null | undefined) =>
-      (projectId ? projects.find(p => p.id === projectId)?.name ?? null : null);
+      (projectId ? projects.find(p => p.id === projectId)?.name ?? "Outros serviços" : "Outros serviços");
     const taskById = new Map(tasks.map(task => [task.id, task]));
     const serviceForCharge = (charge: PendingCharge) => {
       const task = charge.task_id ? taskById.get(charge.task_id) : undefined;
