@@ -393,6 +393,18 @@ function NewInvoiceWizard({
   const inProjects = (pid: string | null) =>
     !pid || (!invoicedProjectIds.has(pid) && (!projectFilterActive || selectedProjects.has(pid)));
 
+  // Nome do tipo de tarefa (ex.: "Aula online") usado como serviço na fatura
+  const { data: taskTypeNames = {} as Record<string, string> } = useQuery({
+    queryKey: ["invoices-task-type-names"],
+    staleTime: 60_000,
+    queryFn: async () => {
+      const { data } = await supabase.from("task_types").select("id,name");
+      const map: Record<string, string> = {};
+      for (const r of (data ?? []) as Array<{ id: string; name: string }>) map[r.id] = r.name;
+      return map;
+    },
+  });
+
 
   // Pending charges + billable tasks
   const { data: charges = [] } = useQuery<PendingCharge[]>({
