@@ -84,7 +84,7 @@ function InvoiceDetailPage() {
     number: "", client_id: "", project_id: "", issue_date: "", competence: "", due_date: "",
     payment_method: "", payment_terms: "", payment_link: "", discount: "0", notes: "",
   });
-  const [drafts, setDrafts] = useState<{ id?: string; description: string; amount: string; due_date: string; project_id: string | null }[]>([]);
+  const [drafts, setDrafts] = useState<{ id?: string; description: string; amount: string; due_date: string; project_id: string | null; service: string }[]>([]);
   const [removed, setRemoved] = useState<string[]>([]);
   const [pay, setPay] = useState({ date: new Date().toISOString().slice(0, 10), method: "", amount: "" });
   const [methods, setMethods] = useState<string[]>([]);
@@ -108,7 +108,7 @@ function InvoiceDetailPage() {
     queryKey: ["invoice-charges", invoiceId],
     queryFn: async () => {
       const { data } = await supabase.from("charges")
-        .select("id,description,amount,due_date,deliverable_id,task_id,project_id")
+        .select("id,description,amount,due_date,deliverable_id,task_id,project_id,service_label")
         .eq("invoice_id", invoiceId);
       return (data ?? []) as unknown as Item[];
     },
