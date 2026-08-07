@@ -718,7 +718,7 @@ function NewInvoiceWizard({
 
       const { data: invoice, error: invErr } = await supabase.from("invoices").insert({
         organization_id: profile.organization_id,
-        number: "",
+        number: /^\d{6,}$/.test(previewNumber.trim()) ? previewNumber.trim() : "",
         client_id: payerClient || null,
         project_id: singleProject,
         issue_date: issueDate,
