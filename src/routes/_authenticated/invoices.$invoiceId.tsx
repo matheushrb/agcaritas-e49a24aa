@@ -315,22 +315,37 @@ function InvoiceDetailPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmNumber, setConfirmNumber] = useState("");
+
   const sendInvoice = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (numberOverride?: string) => {
       const wasDraft = invoice?.status === "draft";
+      const nextNumber = (numberOverride ?? "").trim();
+      if (nextNumber && nextNumber !== (invoice?.number ?? "")) {
+        const { data: dup } = await supabase.from("invoices")
+          .select("id").eq("number", nextNumber).neq("id", invoiceId).maybeSingle();
+        if (dup) throw new Error(`Já existe uma fatura com o número ${nextNumber}`);
+      }
       const { error } = await supabase.from("invoices")
-        .update({ status: "issued", ...(wasDraft ? {} : { sent_at: new Date().toISOString() }) })
+        .update({
+          status: "issued",
+          ...(nextNumber ? { number: nextNumber } : {}),
+          ...(wasDraft ? {} : { sent_at: new Date().toISOString() }),
+        })
         .eq("id", invoiceId);
       if (error) throw error;
       await supabase.from("charges").update({ status: "pending" }).eq("invoice_id", invoiceId);
       return { wasDraft };
     },
     onSuccess: (r) => {
+      setConfirmOpen(false);
       invalidate();
       toast.success(r.wasDraft ? "Fatura confirmada — número emitido e lançamentos gerados" : "Cobrança enviada ao cliente");
     },
     onError: (e: Error) => toast.error(e.message),
   });
+
 
 
   const [cancelOpen, setCancelOpen] = useState(false);
