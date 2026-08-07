@@ -595,6 +595,18 @@ function InvoiceDetailPage() {
           </button>
           <button className="f3-btn" disabled={invoice.status === "canceled"} onClick={openEdit}><PenLine size={15} /> Editar fatura</button>
           <button
+            className="f3-btn"
+            style={{ color: "#DC2626" }}
+            disabled={deleteInvoice.isPending}
+            onClick={() => {
+              if (window.confirm(`Excluir a fatura ${invoice.number ?? ""}? Os itens voltam para "a faturar" e o número fica disponível novamente.`)) {
+                deleteInvoice.mutate();
+              }
+            }}
+          >
+            <Trash2 size={15} /> Excluir fatura
+          </button>
+          <button
             className="f3-btn primary"
             disabled={invoice.status === "paid" || invoice.status === "canceled"}
             onClick={() => { setPay({ date: new Date().toISOString().slice(0, 10), method: invoice.payment_method ?? "", amount: String(totals.open || totals.total) }); setPayOpen(true); }}
