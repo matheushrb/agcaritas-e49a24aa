@@ -66,6 +66,7 @@ type BillableTask = {
   due_date?: string | null;
   aired_at?: string | null; aired_dates?: string[] | null;
   recorded_at?: string | null; recorded_dates?: string[] | null;
+  task_type_id?: string | null;
 };
 type BillableDeliverable = {
   key: string; // taskId::deliverableId
@@ -73,6 +74,7 @@ type BillableDeliverable = {
   label: string; amount: number;
   client_id: string | null; project_id: string | null;
   reference_date?: string | null; reference_label?: string;
+  service_name?: string | null;
 };
 type Organization = {
   id: string; name: string | null;
@@ -136,6 +138,13 @@ function deliverableReference(t: BillableTask, d: Deliverable) {
   if (rec) return { reference_date: rec, reference_label: "Gravação" };
   return taskReference(t);
 }
+/** Nome do serviço mostrado na fatura para um entregável. */
+function deliverableServiceLabel(d: Deliverable): string | null {
+  const v = [d.type, d.platform, d.channel].map(x => (x ?? "").toString().trim()).find(Boolean);
+  return v || null;
+}
+
+
 
 const STATUS_META: Record<InvoiceStatus, { label: string; className: string }> = {
   draft:    { label: "Aguardando confirmação", className: "bg-amber-500/15 text-amber-700 dark:text-amber-400" },
@@ -384,6 +393,18 @@ function NewInvoiceWizard({
   const inProjects = (pid: string | null) =>
     !pid || (!invoicedProjectIds.has(pid) && (!projectFilterActive || selectedProjects.has(pid)));
 
+  // Nome do tipo de tarefa (ex.: "Aula online") usado como serviço na fatura
+  const { data: taskTypeNames = {} as Record<string, string> } = useQuery({
+    queryKey: ["invoices-task-type-names"],
+    staleTime: 60_000,
+    queryFn: async () => {
+      const { data } = await supabase.from("task_types").select("id,name");
+      const map: Record<string, string> = {};
+      for (const r of (data ?? []) as Array<{ id: string; name: string }>) map[r.id] = r.name;
+      return map;
+    },
+  });
+
 
   // Pending charges + billable tasks
   const { data: charges = [] } = useQuery<PendingCharge[]>({
@@ -404,7 +425,7 @@ function NewInvoiceWizard({
     queryFn: async () => {
       const { data } = await supabase
         .from("tasks")
-        .select("id,title,billing_value,billing_enabled,client_id,project_id,status,deliverables,due_date,aired_at,aired_dates,recorded_at,recorded_dates")
+        .select("id,title,billing_value,billing_enabled,client_id,project_id,status,deliverables,due_date,aired_at,aired_dates,recorded_at,recorded_dates,task_type_id")
         .eq("billing_enabled", true);
       const ts = (data ?? []) as BillableTask[];
       const { data: existingCharges } = await supabase
@@ -488,11 +509,12 @@ function NewInvoiceWizard({
           project_id: t.project_id,
           reference_date: ref.reference_date,
           reference_label: ref.reference_label,
+          service_name: deliverableServiceLabel(d) ?? (t.task_type_id ? taskTypeNames[t.task_type_id] ?? null : null),
         });
       }
     }
     return out;
-  }, [tasks, invoicedDeliverableIds, filterClient, selectedProjects, clientOfProject, invoicedProjectIds]);
+  }, [tasks, invoicedDeliverableIds, filterClient, selectedProjects, clientOfProject, invoicedProjectIds, taskTypeNames]);
 
   const subtotal = useMemo(() => {
     let t = 0;
@@ -536,6 +558,7 @@ function NewInvoiceWizard({
     for (const tk of filteredTasks) if (selectedTasks.has(tk.id)) {
       const ref = taskReference(tk);
       const key = `task:${tk.id}`;
+      const typeName = tk.task_type_id ? taskTypeNames[tk.task_type_id] ?? null : null;
       lines.push({
         key,
         title: tk.title,
@@ -543,7 +566,7 @@ function NewInvoiceWizard({
         reference_date: withOverride(key, ref.reference_date),
         reference_label: ref.reference_label,
         group: groupOf(tk.project_id),
-        service: ref.reference_label,
+        service: typeName || "Serviço",
       });
       for (const d of billableDeliverables) {
         if (d.taskId === tk.id && selectedDeliverables.has(d.key)) {
@@ -554,7 +577,7 @@ function NewInvoiceWizard({
             reference_date: withOverride(dkey, d.reference_date),
             reference_label: d.reference_label,
             group: groupOf(d.project_id),
-            service: d.reference_label,
+            service: d.service_name || typeName || "Entregável",
           });
         }
       }
@@ -569,7 +592,7 @@ function NewInvoiceWizard({
           reference_date: withOverride(dkey, d.reference_date),
           reference_label: d.reference_label,
           group: groupOf(d.project_id),
-          service: d.reference_label,
+          service: d.service_name || "Entregável",
         });
       }
     }
@@ -581,7 +604,7 @@ function NewInvoiceWizard({
       buckets.get(g)!.push(l);
     }
     return order.flatMap(g => buckets.get(g)!);
-  }, [filteredCharges, filteredTasks, billableDeliverables, selectedCharges, selectedTasks, selectedDeliverables, lineDateOverrides, projects]);
+  }, [filteredCharges, filteredTasks, billableDeliverables, selectedCharges, selectedTasks, selectedDeliverables, lineDateOverrides, projects, taskTypeNames]);
 
   const adjustmentLines = useMemo(() => {
     const extra: typeof previewLines = [];
