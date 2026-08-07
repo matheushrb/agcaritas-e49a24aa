@@ -418,7 +418,7 @@ function NewInvoiceWizard({
     queryFn: async () => {
       const { data } = await supabase
         .from("charges")
-        .select("id,description,amount,due_date,client_id,project_id,task_id,status,invoice_id")
+        .select("id,description,amount,due_date,client_id,project_id,task_id,deliverable_id,service_label,status,invoice_id")
         .in("status", ["pending_invoice", "pending", "overdue"])
         .is("invoice_id", null)
         .order("due_date", { ascending: true });
@@ -544,11 +544,23 @@ function NewInvoiceWizard({
       title: string; detail?: string; amount: number; is_child?: boolean;
       reference_date?: string | null; reference_label?: string;
       group?: string | null; service?: string | null;
+      task_id?: string | null; deliverable_id?: string | null;
     }> = [];
     const withOverride = (key: string, fallback: string | null | undefined) =>
       lineDateOverrides[key] ?? (fallback ?? null);
     const groupOf = (projectId: string | null | undefined) =>
       (projectId ? projects.find(p => p.id === projectId)?.name ?? null : null);
+    const taskById = new Map(tasks.map(task => [task.id, task]));
+    const serviceForCharge = (charge: PendingCharge) => {
+      const task = charge.task_id ? taskById.get(charge.task_id) : undefined;
+      if (charge.deliverable_id && task) {
+        const deliverable = (task.deliverables ?? []).find(item => item.id === charge.deliverable_id);
+        if (deliverable) return deliverableServiceLabel(deliverable);
+      }
+      if (task?.task_type_id && taskTypeNames[task.task_type_id]) return taskTypeNames[task.task_type_id];
+      const saved = charge.service_label?.trim();
+      return saved && saved.toLocaleLowerCase("pt-BR") !== "serviço" ? saved : (charge.deliverable_id ? "Entregável" : "Lançamento");
+    };
     for (const c of filteredCharges) if (selectedCharges.has(c.id)) {
       const key = `charge:${c.id}`;
       lines.push({
@@ -558,7 +570,10 @@ function NewInvoiceWizard({
         reference_date: withOverride(key, c.due_date),
         reference_label: "Prazo",
         group: groupOf(c.project_id),
-        service: "Serviço",
+        service: serviceForCharge(c),
+        task_id: c.task_id,
+        deliverable_id: c.deliverable_id,
+        is_child: !!c.deliverable_id,
       });
     }
     for (const tk of filteredTasks) if (selectedTasks.has(tk.id)) {
@@ -573,6 +588,7 @@ function NewInvoiceWizard({
         reference_label: ref.reference_label,
         group: groupOf(tk.project_id),
         service: typeName || "Serviço",
+        task_id: tk.id,
       });
       for (const d of billableDeliverables) {
         if (d.taskId === tk.id && selectedDeliverables.has(d.key)) {
@@ -584,6 +600,8 @@ function NewInvoiceWizard({
             reference_label: d.reference_label,
             group: groupOf(d.project_id),
             service: d.service_name || typeName || "Entregável",
+            task_id: d.taskId,
+            deliverable_id: d.deliverableId,
           });
         }
       }
@@ -594,17 +612,41 @@ function NewInvoiceWizard({
         const dkey = `deliv:${d.key}`;
         lines.push({
           key: dkey,
-          title: d.label, amount: d.amount,
+          title: d.label, amount: d.amount, is_child: true,
           reference_date: withOverride(dkey, d.reference_date),
           reference_label: d.reference_label,
           group: groupOf(d.project_id),
           service: d.service_name || "Entregável",
+          task_id: d.taskId,
+          deliverable_id: d.deliverableId,
         });
+      }
+    }
+    // Dentro de cada projeto, preserva sempre a hierarquia: tarefa-pai e seus entregáveis.
+    const hierarchyOrdered: typeof lines = [];
+    const consumed = new Set<string>();
+    for (const line of lines) {
+      if (consumed.has(line.key) || line.deliverable_id) continue;
+      hierarchyOrdered.push(line);
+      consumed.add(line.key);
+      if (line.task_id) {
+        for (const child of lines) {
+          if (!consumed.has(child.key) && child.deliverable_id && child.task_id === line.task_id) {
+            hierarchyOrdered.push({ ...child, is_child: true });
+            consumed.add(child.key);
+          }
+        }
+      }
+    }
+    for (const line of lines) {
+      if (!consumed.has(line.key)) {
+        hierarchyOrdered.push({ ...line, is_child: !!line.deliverable_id });
+        consumed.add(line.key);
       }
     }
     const order: string[] = [];
     const buckets = new Map<string, typeof lines>();
-    for (const l of lines) {
+    for (const l of hierarchyOrdered) {
       const g = l.group ?? "";
       if (!buckets.has(g)) { buckets.set(g, []); order.push(g); }
       buckets.get(g)!.push(l);
@@ -696,8 +738,12 @@ function NewInvoiceWizard({
       for (const c of filteredCharges) {
         if (!selectedCharges.has(c.id)) continue;
         const ov = lineDateOverrides[`charge:${c.id}`];
-        if (ov && ov !== c.due_date) {
-          await supabase.from("charges").update({ due_date: ov }).eq("id", c.id);
+        const resolvedService = previewLines.find(line => line.key === `charge:${c.id}`)?.service;
+        const patch: { due_date?: string; service_label?: string | null } = {};
+        if (ov && ov !== c.due_date) patch.due_date = ov;
+        if (resolvedService && resolvedService !== c.service_label) patch.service_label = resolvedService;
+        if (Object.keys(patch).length) {
+          await supabase.from("charges").update(patch).eq("id", c.id);
         }
       }
       for (const [taskId, delIds] of deliverablesByTask) {
