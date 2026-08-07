@@ -66,6 +66,7 @@ type BillableTask = {
   due_date?: string | null;
   aired_at?: string | null; aired_dates?: string[] | null;
   recorded_at?: string | null; recorded_dates?: string[] | null;
+  task_type_id?: string | null;
 };
 type BillableDeliverable = {
   key: string; // taskId::deliverableId
@@ -73,6 +74,7 @@ type BillableDeliverable = {
   label: string; amount: number;
   client_id: string | null; project_id: string | null;
   reference_date?: string | null; reference_label?: string;
+  service_name?: string | null;
 };
 type Organization = {
   id: string; name: string | null;
