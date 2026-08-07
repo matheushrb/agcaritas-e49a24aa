@@ -731,33 +731,40 @@ function InvoiceDetailPage() {
                   </div>
                 )}
 
-                {delAuthMethod === "google" ? (
-                  <p className="rounded-lg border p-3 text-muted-foreground">
-                    Como sua conta usa o Google, confirme a exclusão entrando novamente com a mesma conta.
+                <div className="space-y-1.5">
+                  <label className="font-medium">Confirme com a senha da sua conta</label>
+                  <Input
+                    type="password"
+                    autoComplete="current-password"
+                    value={delPass}
+                    onChange={(e) => setDelPass(e.target.value)}
+                    placeholder="Sua senha"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Entrou com o Google? Use o botão “Confirmar com Google” abaixo.
                   </p>
-                ) : (
-                  <div className="space-y-1.5">
-                    <label className="font-medium">Confirme com a senha da sua conta</label>
-                    <Input
-                      type="password"
-                      autoComplete="current-password"
-                      value={delPass}
-                      onChange={(e) => setDelPass(e.target.value)}
-                      placeholder="Sua senha"
-                    />
-                  </div>
-                )}
+                </div>
               </div>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setDelOpen(false)} disabled={deleteInvoice.isPending}>Cancelar</Button>
+              <DialogFooter className="gap-2 sm:justify-between">
                 <Button
-                  variant="destructive"
-                  disabled={(delAuthMethod === "password" && !delPass) || deleteInvoice.isPending}
-                  onClick={() => deleteInvoice.mutate({ restore: invoice.status === "canceled" ? false : delRestore, password: delPass })}
+                  variant="outline"
+                  disabled={deleteInvoice.isPending}
+                  onClick={() => deleteInvoice.mutate({ restore: invoice.status === "canceled" ? false : delRestore, method: "google" })}
                 >
-                  {deleteInvoice.isPending ? "Confirmando…" : delAuthMethod === "google" ? "Confirmar com Google" : "Excluir fatura"}
+                  Confirmar com Google
                 </Button>
+                <div className="flex gap-2">
+                  <Button variant="outline" onClick={() => setDelOpen(false)} disabled={deleteInvoice.isPending}>Cancelar</Button>
+                  <Button
+                    variant="destructive"
+                    disabled={!delPass || deleteInvoice.isPending}
+                    onClick={() => deleteInvoice.mutate({ restore: invoice.status === "canceled" ? false : delRestore, password: delPass, method: "password" })}
+                  >
+                    {deleteInvoice.isPending ? "Confirmando…" : "Excluir fatura"}
+                  </Button>
+                </div>
               </DialogFooter>
+
             </DialogContent>
           </Dialog>
           <button
