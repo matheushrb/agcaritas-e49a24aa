@@ -342,6 +342,7 @@ function NewInvoiceWizard({
 
   // Número previsto da fatura (mesma regra do banco: AAAAMM + sequencial contínuo)
   useEffect(() => {
+    if (numberTouched) return;
     let active = true;
     (async () => {
       const base = issueDate || new Date().toISOString().slice(0, 10);
@@ -356,7 +357,8 @@ function NewInvoiceWizard({
       if (active) setPreviewNumber(`${ym}${String(max + 1).padStart(3, "0")}`);
     })();
     return () => { active = false; };
-  }, [issueDate]);
+  }, [issueDate, numberTouched]);
+
 
   // Vencimento derivado da condição de pagamento
   useEffect(() => {
