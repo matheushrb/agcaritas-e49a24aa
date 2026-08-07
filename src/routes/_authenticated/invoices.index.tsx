@@ -34,7 +34,7 @@ type Invoice = {
   id: string; number: string; client_id: string | null; project_id: string | null;
   status: InvoiceStatus; issue_date: string; due_date: string | null;
   total: number | null; amount: number; paid_at: string | null; notes: string | null;
-  payment_terms: string | null; payment_link: string | null;
+  payment_terms: string | null; payment_link: string | null; competence_month?: string | null;
 };
 type Client = {
   id: string; name: string;
@@ -1411,7 +1411,7 @@ function InvoiceDetail({ id, clients, organization, onClose }: { id: string; cli
     queryKey: ["invoice", id],
     queryFn: async () => {
       const { data } = await supabase.from("invoices")
-        .select("id,number,client_id,project_id,status,issue_date,due_date,total,amount,paid_at,notes,payment_terms,payment_link,payment_method")
+        .select("id,number,client_id,project_id,status,issue_date,competence_month,due_date,total,amount,paid_at,notes,payment_terms,payment_link,payment_method")
         .eq("id", id).maybeSingle();
       return (data ?? null) as Invoice | null;
     },
@@ -1608,6 +1608,12 @@ function InvoiceDetail({ id, clients, organization, onClose }: { id: string; cli
 
     const doc = await generateInvoicePDF({
       number: invoice.number,
+      competence: (() => {
+        const src = invoice.competence_month || invoice.issue_date;
+        if (!src) return undefined;
+        return new Date(String(src).slice(0, 7) + "-01T12:00:00")
+          .toLocaleDateString("pt-BR", { month: "short", year: "numeric" }).replace(".", "");
+      })(),
       issue_date: invoice.issue_date,
       due_date: invoice.due_date,
       client: buildClientParty(client),
