@@ -32,6 +32,7 @@ type Inv = {
 type Item = {
   id: string; description: string; amount: number | string | null; due_date: string | null;
   deliverable_id: string | null; task_id: string | null; project_id: string | null;
+  service_label?: string | null;
 };
 
 
@@ -83,7 +84,7 @@ function InvoiceDetailPage() {
     number: "", client_id: "", project_id: "", issue_date: "", competence: "", due_date: "",
     payment_method: "", payment_terms: "", payment_link: "", discount: "0", notes: "",
   });
-  const [drafts, setDrafts] = useState<{ id?: string; description: string; amount: string; due_date: string; project_id: string | null }[]>([]);
+  const [drafts, setDrafts] = useState<{ id?: string; description: string; amount: string; due_date: string; project_id: string | null; service?: string; isChild?: boolean }[]>([]);
   const [removed, setRemoved] = useState<string[]>([]);
   const [pay, setPay] = useState({ date: new Date().toISOString().slice(0, 10), method: "", amount: "" });
   const [methods, setMethods] = useState<string[]>([]);
@@ -107,7 +108,7 @@ function InvoiceDetailPage() {
     queryKey: ["invoice-charges", invoiceId],
     queryFn: async () => {
       const { data } = await supabase.from("charges")
-        .select("id,description,amount,due_date,deliverable_id,task_id,project_id")
+        .select("id,description,amount,due_date,deliverable_id,task_id,project_id,service_label")
         .eq("invoice_id", invoiceId);
       return (data ?? []) as unknown as Item[];
     },
@@ -146,6 +147,32 @@ function InvoiceDetailPage() {
       return map;
     },
   });
+
+  /** Nome do serviço: tipo da tarefa (pai) ou "Entregável {plataforma} | {nome}". */
+  const serviceOf = (it: Item): string => {
+    if (it.deliverable_id) {
+      return serviceNames[it.deliverable_id] || it.service_label || "Entregável";
+    }
+    return (it.task_id ? serviceNames[it.task_id] : null) || it.service_label || (it.task_id ? "Serviço" : "Lançamento");
+  };
+
+  /** Ordem: tarefa-pai, depois seus entregáveis (recuados). */
+  const orderedItems = useMemo(() => {
+    const parents = items.filter(i => !i.deliverable_id);
+    const children = items.filter(i => !!i.deliverable_id);
+    const used = new Set<string>();
+    const out: Array<Item & { isChild?: boolean }> = [];
+    for (const p of parents) {
+      out.push(p);
+      for (const c of children) {
+        if (c.task_id && c.task_id === p.task_id) { out.push({ ...c, isChild: true }); used.add(c.id); }
+      }
+    }
+    for (const c of children) if (!used.has(c.id)) out.push({ ...c, isChild: true });
+    return out;
+  }, [items]);
+
+
 
 
 
@@ -238,17 +265,14 @@ function InvoiceDetailPage() {
           phone: organization.phone ?? null, address: organization.address ?? null,
           website: organization.website ?? null, bank_info: organization.bank_info ?? null,
         } : undefined,
-        lines: [...items]
-          .sort((x, y) => (x.project_id ?? "").localeCompare(y.project_id ?? ""))
+        lines: [...orderedItems]
           .map(it => ({
             title: it.description,
             amount: num(it.amount),
+            is_child: !!it.isChild,
             reference_date: it.due_date,
             group: allProjects.find(p => p.id === it.project_id)?.name ?? project?.name ?? null,
-            service:
-              (it.deliverable_id ? serviceNames[it.deliverable_id] : null)
-              || (it.task_id ? serviceNames[it.task_id] : null)
-              || (it.deliverable_id ? "Entregável" : it.task_id ? "Serviço" : "Lançamento"),
+            service: serviceOf(it),
           })),
         discount: num(invoice.discount) || undefined,
         notes: invoice.notes || undefined,
@@ -310,6 +334,43 @@ function InvoiceDetailPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const deleteInvoice = useMutation({
+    mutationFn: async () => {
+      // devolve os itens para "a faturar" e libera o número da fatura
+      const { error: e1 } = await supabase.from("charges")
+        .update({ status: "pending_invoice", invoice_id: null }).eq("invoice_id", invoiceId);
+      if (e1) throw e1;
+      const delivByTask = new Map<string, Set<string>>();
+      const plainTasks = new Set<string>();
+      for (const it of items) {
+        if (it.task_id && it.deliverable_id) {
+          if (!delivByTask.has(it.task_id)) delivByTask.set(it.task_id, new Set());
+          delivByTask.get(it.task_id)!.add(it.deliverable_id);
+        } else if (it.task_id) plainTasks.add(it.task_id);
+      }
+      for (const [taskId, ids] of delivByTask) {
+        const { data: t } = await supabase.from("tasks").select("deliverables").eq("id", taskId).maybeSingle();
+        const list = (t?.deliverables ?? []) as { id: string; invoiced?: boolean }[];
+        await supabase.from("tasks")
+          .update({ deliverables: list.map(dd => (ids.has(dd.id) ? { ...dd, invoiced: false } : dd)) } as never)
+          .eq("id", taskId);
+      }
+      if (plainTasks.size) {
+        await supabase.from("tasks").update({ billed_invoice_id: null, billed: false } as never).in("id", [...plainTasks]);
+      }
+      const { error: e2 } = await supabase.from("invoices").delete().eq("id", invoiceId);
+      if (e2) throw e2;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["invoices"] });
+      qc.invalidateQueries({ queryKey: ["charges"] });
+      toast.success("Fatura excluída — número liberado e itens devolvidos");
+      navigate({ to: "/invoices" });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+
   const saveNotes = useMutation({
     mutationFn: async () => {
       const { error } = await supabase.from("invoices").update({ notes: notes || null }).eq("id", invoiceId);
@@ -355,7 +416,15 @@ function InvoiceDetailPage() {
       discount: String(num(invoice.discount)),
       notes: invoice.notes ?? "",
     });
-    setDrafts(items.map(i => ({ id: i.id, description: i.description, amount: String(num(i.amount)), due_date: (i.due_date ?? "").slice(0, 10), project_id: i.project_id ?? null })));
+    setDrafts(orderedItems.map(i => ({
+      id: i.id,
+      description: i.description,
+      amount: String(num(i.amount)),
+      due_date: (i.due_date ?? "").slice(0, 10),
+      project_id: i.project_id ?? null,
+      service: serviceOf(i),
+      isChild: i.isChild,
+    })));
     setMethods(parsePaymentMethods(invoice.payment_method));
     setRemoved([]);
     setEditOpen(true);
@@ -438,7 +507,7 @@ function InvoiceDetailPage() {
         const due = d.due_date || form.due_date || new Date().toISOString().slice(0, 10);
         if (d.id) {
           const { error: e2 } = await supabase.from("charges")
-            .update({ description: d.description, amount, due_date: due }).eq("id", d.id);
+            .update({ description: d.description, amount, due_date: due, service_label: d.service || null } as never).eq("id", d.id);
           if (e2) throw e2;
         } else {
           const { data: prof } = await supabase.from("profiles").select("organization_id").maybeSingle();
@@ -453,7 +522,8 @@ function InvoiceDetailPage() {
             due_date: due,
             nature: "income",
             status: "pending",
-          });
+            service_label: d.service || null,
+          } as never);
           if (e3) throw e3;
         }
       }
@@ -524,6 +594,18 @@ function InvoiceDetailPage() {
             <Send size={15} /> Enviar cobrança
           </button>
           <button className="f3-btn" disabled={invoice.status === "canceled"} onClick={openEdit}><PenLine size={15} /> Editar fatura</button>
+          <button
+            className="f3-btn"
+            style={{ color: "#DC2626" }}
+            disabled={deleteInvoice.isPending}
+            onClick={() => {
+              if (window.confirm(`Excluir a fatura ${invoice.number ?? ""}? Os itens voltam para "a faturar" e o número fica disponível novamente.`)) {
+                deleteInvoice.mutate();
+              }
+            }}
+          >
+            <Trash2 size={15} /> Excluir fatura
+          </button>
           <button
             className="f3-btn primary"
             disabled={invoice.status === "paid" || invoice.status === "canceled"}
@@ -618,6 +700,7 @@ function InvoiceDetailPage() {
                   <thead>
                     <tr>
                       <th>Descrição</th>
+                      <th>Serviço</th>
                       <th className="num">Quantidade</th>
                       <th className="num">Valor unitário</th>
                       <th className="num">Desconto</th>
@@ -626,12 +709,15 @@ function InvoiceDetailPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {items.map(it => (
+                    {orderedItems.map(it => (
                       <tr key={it.id}>
                         <td>
-                          <div className="f3-itemtitle" style={it.deliverable_id ? { paddingLeft: 14 } : undefined}>{it.description}</div>
-                          {it.deliverable_id && <div className="f3-itemdesc" style={{ paddingLeft: 14 }}>Entregável vinculado à tarefa</div>}
+                          <div className="f3-itemtitle" style={it.isChild ? { paddingLeft: 18 } : undefined}>
+                            {it.isChild && <span style={{ color: "#8FA3BF", marginRight: 4 }}>↳</span>}
+                            {it.description}
+                          </div>
                         </td>
+                        <td style={{ color: "#6B7A90", fontSize: 12 }}>{serviceOf(it)}</td>
                         <td className="num">1</td>
                         <td className="num">{money(num(it.amount))}</td>
                         <td className="num">—</td>
@@ -973,8 +1059,8 @@ function InvoiceDetailPage() {
                       </Button>
                     </div>
                     <div className="rounded border overflow-hidden">
-                      <div className="grid grid-cols-[minmax(0,1fr)_136px_110px_28px] gap-2 px-3 py-1 bg-muted/50 text-[9px] font-bold uppercase tracking-wider text-muted-foreground">
-                        <div>Descrição</div><div>Data</div><div className="text-right">Valor</div><div />
+                      <div className="grid grid-cols-[minmax(0,1fr)_180px_120px_100px_28px] gap-2 px-3 py-1 bg-muted/50 text-[9px] font-bold uppercase tracking-wider text-muted-foreground">
+                        <div>Descrição</div><div>Serviço</div><div>Data</div><div className="text-right">Valor</div><div />
                       </div>
                       {drafts.length === 0 && (
                         <div className="px-2 py-3 text-center text-muted-foreground">Nenhum item. Adicione ao menos um.</div>
@@ -994,8 +1080,6 @@ function InvoiceDetailPage() {
                           if (b[0] === "__none__") return -1;
                           return a[1].label.localeCompare(b[1].label, "pt-BR");
                         });
-                        ordered.forEach(([, g]) =>
-                          g.rows.sort((x, y) => (x.d.description || "").localeCompare(y.d.description || "", "pt-BR")));
                         let stripe = 0;
                         return ordered.map(([key, g]) => {
                           const subtotal = g.rows.reduce((s, r) => s + (Number(r.d.amount) || 0), 0);
@@ -1010,11 +1094,18 @@ function InvoiceDetailPage() {
                               {g.rows.map(({ d, i }) => {
                                 const zebra = stripe++ % 2 === 1;
                                 return (
-                                  <div key={i} className={cn("grid grid-cols-[minmax(0,1fr)_136px_110px_28px] gap-2 px-3 py-1.5 border-t items-center", zebra && "bg-muted/20")}>
+                                  <div key={i} className={cn("grid grid-cols-[minmax(0,1fr)_180px_120px_100px_28px] gap-2 px-3 py-1.5 border-t items-center", zebra && "bg-muted/20")}>
+                                    <div className="flex items-center gap-1 min-w-0">
+                                      {d.isChild && <span className="text-muted-foreground text-[11px] pl-3 shrink-0">↳</span>}
+                                      <input
+                                        className="h-7 px-1.5 text-[11px] rounded border bg-background text-foreground w-full"
+                                        placeholder="Descrição" value={d.description}
+                                        onChange={e => setDrafts(a => a.map((x, j) => j === i ? { ...x, description: e.target.value } : x))} />
+                                    </div>
                                     <input
-                                      className="h-7 px-1.5 text-[11px] rounded border bg-background text-foreground w-full"
-                                      placeholder="Descrição" value={d.description}
-                                      onChange={e => setDrafts(a => a.map((x, j) => j === i ? { ...x, description: e.target.value } : x))} />
+                                      className="h-7 px-1.5 text-[11px] rounded border bg-background text-muted-foreground w-full"
+                                      placeholder="Serviço" value={d.service ?? ""}
+                                      onChange={e => setDrafts(a => a.map((x, j) => j === i ? { ...x, service: e.target.value } : x))} />
                                     <input
                                       type="date" className="h-7 px-1 text-[10px] rounded border bg-background text-foreground w-full"
                                       value={d.due_date}

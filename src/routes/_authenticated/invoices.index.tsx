@@ -50,7 +50,7 @@ type Project = { id: string; name: string; client_id: string | null };
 type PendingCharge = {
   id: string; description: string; amount: number; due_date: string;
   client_id: string | null; project_id: string | null; task_id: string | null;
-  deliverable_id?: string | null;
+  deliverable_id?: string | null; service_label?: string | null;
 };
 type Deliverable = {
   id: string; platform?: string | null; type?: string | null; channel?: string | null;
@@ -659,7 +659,8 @@ function NewInvoiceWizard({
           status: "pending_invoice",
           due_date: chargeDate,
           type: "income",
-        }).select("id").single();
+          service_label: (tk.task_type_id ? taskTypeNames[tk.task_type_id] : null) || "Serviço",
+        } as never).select("id").single();
         if (error) throw error;
         if (inserted) newCharges.push(inserted.id);
       }
@@ -680,6 +681,7 @@ function NewInvoiceWizard({
           status: "pending_invoice",
           due_date: chargeDate,
           type: "income",
+          service_label: d.service_name || "Entregável",
         } as never).select("id").single();
         if (error) throw error;
         if (inserted) newCharges.push(inserted.id);
@@ -1299,7 +1301,7 @@ function InvoiceDetail({ id, clients, organization, onClose }: { id: string; cli
     queryKey: ["invoice-charges", id],
     queryFn: async () => {
       const { data } = await supabase.from("charges")
-        .select("id,description,amount,due_date,client_id,project_id,task_id,deliverable_id")
+        .select("id,description,amount,due_date,client_id,project_id,task_id,deliverable_id,service_label")
         .eq("invoice_id", id);
       return (data ?? []) as unknown as PendingCharge[];
     },
@@ -1496,6 +1498,7 @@ function InvoiceDetail({ id, clients, organization, onClose }: { id: string; cli
         is_child: !!c.isChild,
         reference_date: c.due_date ?? null,
         reference_label: "Prazo",
+        service: c.service_label ?? null,
         group: c.groupName || null,
       })),
       notes: invoice.notes ?? undefined,
@@ -1552,6 +1555,7 @@ function InvoiceDetail({ id, clients, organization, onClose }: { id: string; cli
             {orderedCharges.map(c => (
               <div key={c.id} className="flex items-center justify-between px-4 py-2 border-b last:border-b-0 text-sm gap-2">
                 <div className={cn("flex-1 min-w-0 truncate", c.isChild && "pl-5 text-muted-foreground")}>{c.isChild && "↳ "}{c.description}</div>
+                <div className="w-52 shrink-0 truncate text-xs text-muted-foreground">{c.service_label ?? "—"}</div>
                 <div className="font-medium">{money(Number(c.amount ?? 0))}</div>
                 {editing && !isLocked && (
                   <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-red-600"

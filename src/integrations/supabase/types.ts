@@ -217,6 +217,7 @@ export type Database = {
           parent_charge_id: string | null
           payment_method: string | null
           project_id: string | null
+          service_label: string | null
           status: Database["public"]["Enums"]["charge_status"]
           task_id: string | null
           type: string | null
@@ -241,6 +242,7 @@ export type Database = {
           parent_charge_id?: string | null
           payment_method?: string | null
           project_id?: string | null
+          service_label?: string | null
           status?: Database["public"]["Enums"]["charge_status"]
           task_id?: string | null
           type?: string | null
@@ -265,6 +267,7 @@ export type Database = {
           parent_charge_id?: string | null
           payment_method?: string | null
           project_id?: string | null
+          service_label?: string | null
           status?: Database["public"]["Enums"]["charge_status"]
           task_id?: string | null
           type?: string | null
