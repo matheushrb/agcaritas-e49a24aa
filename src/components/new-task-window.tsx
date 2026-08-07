@@ -564,7 +564,10 @@ export function TaskWindow({
       if (isEdit) {
         const { error } = await (supabase as any).from("tasks").update(payload()).eq("id", taskId!);
         if (error) throw error;
-        return taskId!;
+        // Espelha os novos valores nas cobranças/faturas em aberto que já usam
+        // esta tarefa (faturas pagas ou canceladas não são alteradas).
+        const updated = await syncChargesFromTask(taskId!).catch(() => [] as string[]);
+        return { id: taskId!, updated };
       }
       const { data: profile } = await supabase.from("profiles").select("organization_id").maybeSingle();
       if (!profile?.organization_id) throw new Error("Sem organização");
@@ -572,17 +575,24 @@ export function TaskWindow({
         .insert({ ...payload(), organization_id: profile.organization_id })
         .select("id").single();
       if (error) throw error;
-      return data.id as string;
+      return { id: data.id as string, updated: [] as string[] };
     },
-    onSuccess: (id) => {
+    onSuccess: ({ id, updated }) => {
       qc.invalidateQueries({ queryKey: ["tasks"] });
       qc.invalidateQueries({ queryKey: ["task-window", taskId] });
+      qc.invalidateQueries({ queryKey: ["charges"] });
+      qc.invalidateQueries({ queryKey: ["invoices"] });
+      qc.invalidateQueries({ queryKey: ["invoice-charges"] });
       toast.success(isEdit ? "Tarefa atualizada" : "Tarefa criada");
+      if (updated.length) {
+        toast.info(`Valores atualizados na${updated.length > 1 ? "s" : ""} fatura${updated.length > 1 ? "s" : ""} #${updated.join(", #")}`);
+      }
       if (!isEdit) onCreated?.(id);
       close(false);
     },
     onError: (e: Error) => toast.error(e.message),
   });
+
 
   const remove = useMutation({
     mutationFn: async () => {
