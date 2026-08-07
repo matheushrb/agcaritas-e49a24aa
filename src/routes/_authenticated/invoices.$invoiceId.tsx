@@ -628,6 +628,7 @@ function InvoiceDetailPage() {
                   <thead>
                     <tr>
                       <th>Descrição</th>
+                      <th>Serviço</th>
                       <th className="num">Quantidade</th>
                       <th className="num">Valor unitário</th>
                       <th className="num">Desconto</th>
@@ -642,6 +643,7 @@ function InvoiceDetailPage() {
                           <div className="f3-itemtitle" style={it.deliverable_id ? { paddingLeft: 14 } : undefined}>{it.description}</div>
                           {it.deliverable_id && <div className="f3-itemdesc" style={{ paddingLeft: 14 }}>Entregável vinculado à tarefa</div>}
                         </td>
+                        <td style={{ color: "#6B7A90", fontSize: 12 }}>{it.service_label || defaultService(it)}</td>
                         <td className="num">1</td>
                         <td className="num">{money(num(it.amount))}</td>
                         <td className="num">—</td>
@@ -983,8 +985,8 @@ function InvoiceDetailPage() {
                       </Button>
                     </div>
                     <div className="rounded border overflow-hidden">
-                      <div className="grid grid-cols-[minmax(0,1fr)_136px_110px_28px] gap-2 px-3 py-1 bg-muted/50 text-[9px] font-bold uppercase tracking-wider text-muted-foreground">
-                        <div>Descrição</div><div>Data</div><div className="text-right">Valor</div><div />
+                      <div className="grid grid-cols-[minmax(0,1fr)_170px_120px_100px_28px] gap-2 px-3 py-1 bg-muted/50 text-[9px] font-bold uppercase tracking-wider text-muted-foreground">
+                        <div>Descrição</div><div>Serviço</div><div>Data</div><div className="text-right">Valor</div><div />
                       </div>
                       {drafts.length === 0 && (
                         <div className="px-2 py-3 text-center text-muted-foreground">Nenhum item. Adicione ao menos um.</div>
@@ -1020,11 +1022,15 @@ function InvoiceDetailPage() {
                               {g.rows.map(({ d, i }) => {
                                 const zebra = stripe++ % 2 === 1;
                                 return (
-                                  <div key={i} className={cn("grid grid-cols-[minmax(0,1fr)_136px_110px_28px] gap-2 px-3 py-1.5 border-t items-center", zebra && "bg-muted/20")}>
+                                  <div key={i} className={cn("grid grid-cols-[minmax(0,1fr)_170px_120px_100px_28px] gap-2 px-3 py-1.5 border-t items-center", zebra && "bg-muted/20")}>
                                     <input
                                       className="h-7 px-1.5 text-[11px] rounded border bg-background text-foreground w-full"
                                       placeholder="Descrição" value={d.description}
                                       onChange={e => setDrafts(a => a.map((x, j) => j === i ? { ...x, description: e.target.value } : x))} />
+                                    <input
+                                      className="h-7 px-1.5 text-[11px] rounded border bg-background text-foreground w-full"
+                                      placeholder="Serviço" value={d.service}
+                                      onChange={e => setDrafts(a => a.map((x, j) => j === i ? { ...x, service: e.target.value } : x))} />
                                     <input
                                       type="date" className="h-7 px-1 text-[10px] rounded border bg-background text-foreground w-full"
                                       value={d.due_date}
