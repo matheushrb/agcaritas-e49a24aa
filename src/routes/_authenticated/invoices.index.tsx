@@ -1411,7 +1411,7 @@ function InvoiceDetail({ id, clients, organization, onClose }: { id: string; cli
     queryKey: ["invoice", id],
     queryFn: async () => {
       const { data } = await supabase.from("invoices")
-        .select("id,number,client_id,project_id,status,issue_date,due_date,total,amount,paid_at,notes,payment_terms,payment_link,payment_method")
+        .select("id,number,client_id,project_id,status,issue_date,competence_month,due_date,total,amount,paid_at,notes,payment_terms,payment_link,payment_method")
         .eq("id", id).maybeSingle();
       return (data ?? null) as Invoice | null;
     },
