@@ -32,6 +32,7 @@ type Inv = {
 type Item = {
   id: string; description: string; amount: number | string | null; due_date: string | null;
   deliverable_id: string | null; task_id: string | null; project_id: string | null;
+  service_label?: string | null;
 };
 
 
