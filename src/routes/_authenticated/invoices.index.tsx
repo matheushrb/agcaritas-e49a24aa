@@ -50,7 +50,7 @@ type Project = { id: string; name: string; client_id: string | null };
 type PendingCharge = {
   id: string; description: string; amount: number; due_date: string;
   client_id: string | null; project_id: string | null; task_id: string | null;
-  deliverable_id?: string | null;
+  deliverable_id?: string | null; service_label?: string | null;
 };
 type Deliverable = {
   id: string; platform?: string | null; type?: string | null; channel?: string | null;
