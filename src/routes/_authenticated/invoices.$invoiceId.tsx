@@ -15,6 +15,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { PaymentMethodTags, parsePaymentMethods, serializePaymentMethods } from "@/components/invoices/payment-methods";
+import { syncTasksFromCharges } from "@/lib/billing-sync";
+
 import "@/fin03.css";
 
 
