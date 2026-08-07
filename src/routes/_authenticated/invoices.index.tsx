@@ -731,8 +731,33 @@ function NewInvoiceWizard({
       }
 
       const deliverablesByTask = new Map<string, Set<string>>();
+      const headerCreated = new Set<string>();
       for (const d of billableDeliverables) {
         if (!selectedDeliverables.has(d.key)) continue;
+        // Tarefa-pai sem valor: cria linha de agrupamento com valor zero (não duplica valor).
+        if (!selectedTasks.has(d.taskId) && !headerCreated.has(d.taskId)) {
+          headerCreated.add(d.taskId);
+          const parent = tasks.find(t => t.id === d.taskId);
+          const hkey = `taskhdr:${d.taskId}`;
+          const hDate = lineDateOverrides[hkey]
+            || (parent ? taskReference(parent).reference_date : null)
+            || d.reference_date || dueDate || issueDate;
+          const { data: hIns, error: hErr } = await supabase.from("charges").insert({
+            organization_id: profile.organization_id,
+            project_id: d.project_id,
+            task_id: d.taskId,
+            client_id: d.client_id,
+            description: parent?.title || d.taskTitle,
+            amount: 0,
+            status: "pending_invoice",
+            due_date: hDate,
+            type: "income",
+            service_label: (parent?.task_type_id ? taskTypeNames[parent.task_type_id] : null) || "Serviço",
+          } as never).select("id").single();
+          if (hErr) throw hErr;
+          if (hIns) newCharges.push(hIns.id);
+        }
+
         const overrideDate = lineDateOverrides[`deliv:${d.key}`];
         const chargeDate = overrideDate || d.reference_date || dueDate || issueDate;
         const { data: inserted, error } = await supabase.from("charges").insert({
