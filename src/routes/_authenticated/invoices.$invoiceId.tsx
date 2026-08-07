@@ -113,6 +113,39 @@ function InvoiceDetailPage() {
     },
   });
 
+  // Nome do serviço por item: tipo da tarefa (ex.: "Aula online") ou nome do entregável
+  const itemTaskIds = useMemo(
+    () => Array.from(new Set(items.map(i => i.task_id).filter(Boolean) as string[])),
+    [items],
+  );
+  const { data: serviceNames = {} as Record<string, string> } = useQuery({
+    queryKey: ["invoice-service-names", invoiceId, itemTaskIds.join(",")],
+    enabled: itemTaskIds.length > 0,
+    queryFn: async () => {
+      const [{ data: tks }, { data: tps }] = await Promise.all([
+        supabase.from("tasks").select("id,task_type_id,deliverables").in("id", itemTaskIds),
+        supabase.from("task_types").select("id,name"),
+      ]);
+      const typeName: Record<string, string> = {};
+      for (const r of (tps ?? []) as Array<{ id: string; name: string }>) typeName[r.id] = r.name;
+      const map: Record<string, string> = {};
+      for (const t of (tks ?? []) as Array<{ id: string; task_type_id: string | null; deliverables: unknown }>) {
+        const tn = t.task_type_id ? typeName[t.task_type_id] ?? "" : "";
+        if (tn) map[t.id] = tn;
+        const list = Array.isArray(t.deliverables) ? t.deliverables as Array<Record<string, unknown>> : [];
+        for (const d of list) {
+          const id = d?.id ? String(d.id) : "";
+          if (!id) continue;
+          const label = [d.type, d.platform, d.channel]
+            .map(v => (v ?? "").toString().trim()).find(Boolean);
+          if (label || tn) map[id] = (label || tn) as string;
+        }
+      }
+      return map;
+    },
+  });
+
+
 
   const { data: client } = useQuery({
     queryKey: ["invoice-client", invoice?.client_id],
