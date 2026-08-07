@@ -659,7 +659,8 @@ function NewInvoiceWizard({
           status: "pending_invoice",
           due_date: chargeDate,
           type: "income",
-        }).select("id").single();
+          service_label: (tk.task_type_id ? taskTypeNames[tk.task_type_id] : null) || "Serviço",
+        } as never).select("id").single();
         if (error) throw error;
         if (inserted) newCharges.push(inserted.id);
       }
