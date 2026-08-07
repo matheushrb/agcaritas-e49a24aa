@@ -355,7 +355,15 @@ function InvoiceDetailPage() {
       discount: String(num(invoice.discount)),
       notes: invoice.notes ?? "",
     });
-    setDrafts(items.map(i => ({ id: i.id, description: i.description, amount: String(num(i.amount)), due_date: (i.due_date ?? "").slice(0, 10), project_id: i.project_id ?? null })));
+    setDrafts(orderedItems.map(i => ({
+      id: i.id,
+      description: i.description,
+      amount: String(num(i.amount)),
+      due_date: (i.due_date ?? "").slice(0, 10),
+      project_id: i.project_id ?? null,
+      service: serviceOf(i),
+      isChild: i.isChild,
+    })));
     setMethods(parsePaymentMethods(invoice.payment_method));
     setRemoved([]);
     setEditOpen(true);
