@@ -509,11 +509,12 @@ function NewInvoiceWizard({
           project_id: t.project_id,
           reference_date: ref.reference_date,
           reference_label: ref.reference_label,
+          service_name: deliverableServiceLabel(d) ?? (t.task_type_id ? taskTypeNames[t.task_type_id] ?? null : null),
         });
       }
     }
     return out;
-  }, [tasks, invoicedDeliverableIds, filterClient, selectedProjects, clientOfProject, invoicedProjectIds]);
+  }, [tasks, invoicedDeliverableIds, filterClient, selectedProjects, clientOfProject, invoicedProjectIds, taskTypeNames]);
 
   const subtotal = useMemo(() => {
     let t = 0;
