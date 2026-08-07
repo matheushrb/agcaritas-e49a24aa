@@ -1608,6 +1608,12 @@ function InvoiceDetail({ id, clients, organization, onClose }: { id: string; cli
 
     const doc = await generateInvoicePDF({
       number: invoice.number,
+      competence: (() => {
+        const src = invoice.competence_month || invoice.issue_date;
+        if (!src) return undefined;
+        return new Date(String(src).slice(0, 7) + "-01T12:00:00")
+          .toLocaleDateString("pt-BR", { month: "short", year: "numeric" }).replace(".", "");
+      })(),
       issue_date: invoice.issue_date,
       due_date: invoice.due_date,
       client: buildClientParty(client),
