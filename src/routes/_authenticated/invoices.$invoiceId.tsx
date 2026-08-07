@@ -352,6 +352,7 @@ function InvoiceDetailPage() {
     mutationFn: async ({ restore, password }: { restore: boolean; password?: string }) => {
       const { data: u } = await supabase.auth.getUser();
       const email = u.user?.email;
+      const currentUserId = u.user?.id;
       if (!email) throw new Error("Sessão expirada. Faça login novamente.");
       const usesGoogle = u.user?.identities?.some((identity) => identity.provider === "google") ?? false;
 
@@ -362,6 +363,10 @@ function InvoiceDetailPage() {
         });
         if (result.redirected) return { restore, redirected: true };
         if (result.error) throw new Error("Não foi possível confirmar sua conta Google.");
+        const { data: confirmed } = await supabase.auth.getUser();
+        if (!currentUserId || confirmed.user?.id !== currentUserId) {
+          throw new Error("Confirme usando a mesma conta Google conectada ao sistema.");
+        }
       } else {
         if (!password) throw new Error("Digite a senha da sua conta.");
         const { error: authErr } = await supabase.auth.signInWithPassword({ email, password });
