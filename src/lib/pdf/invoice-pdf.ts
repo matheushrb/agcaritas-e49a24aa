@@ -385,27 +385,16 @@ export async function generateInvoicePDF(data: InvoicePDFData): Promise<jsPDF> {
     }
 
     for (const line of group.lines) {
-      const indent = line.is_child ? 12 : 3;
-      const titleText = line.title;
+      const indent = line.is_child ? 9 : 3;
+      const titleText = line.is_child ? `- ${line.title}` : line.title;
       const titleLines = doc.splitTextToSize(titleText, itemW - indent);
       const detailLines = line.detail ? doc.splitTextToSize(line.detail, itemW - indent) : [];
       const rowH = Math.max(8.4, titleLines.length * 3.9 + detailLines.length * 3.3 + 4.6);
 
       if (y + rowH > footerTop - 6) nextPage();
 
-      if (line.is_child) {
-        // conector em L indicando subitem da linha acima
-        draw(doc, C.soft); doc.setLineWidth(0.3);
-        const ex = marginX + 6.5;
-        doc.line(ex, y - 1.2, ex, y + 4.2);
-        doc.line(ex, y + 4.2, ex + 3, y + 4.2);
-        doc.line(ex + 3, y + 4.2, ex + 1.6, y + 3.2);
-        doc.line(ex + 3, y + 4.2, ex + 1.6, y + 5.2);
-      }
-
       ink(doc, C.deep); F("normal", 8.2);
       doc.text(titleLines, marginX + indent, y + 5);
-
 
       if (detailLines.length) {
         ink(doc, C.soft); F("normal", 7);
@@ -426,7 +415,7 @@ export async function generateInvoicePDF(data: InvoicePDFData): Promise<jsPDF> {
 
       y += rowH;
       draw(doc, C.hair); doc.setLineWidth(0.2);
-      doc.line(marginX + (line.is_child ? 12 : 0), y, rightX, y);
+      doc.line(marginX + (line.is_child ? 9 : 0), y, rightX, y);
     }
     y += 3.5;
   }
