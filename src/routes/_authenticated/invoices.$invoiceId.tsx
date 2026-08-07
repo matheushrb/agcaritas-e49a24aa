@@ -334,6 +334,10 @@ function InvoiceDetailPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const [delOpen, setDelOpen] = useState(false);
+  const [delPass, setDelPass] = useState("");
+  const [delRestore, setDelRestore] = useState(true);
+
   const deleteInvoice = useMutation({
     mutationFn: async ({ restore, password }: { restore: boolean; password: string }) => {
       // confirmação por senha da conta
