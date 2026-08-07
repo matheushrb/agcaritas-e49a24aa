@@ -333,13 +333,22 @@ function InvoiceDetailPage() {
   });
 
 
+  const [cancelOpen, setCancelOpen] = useState(false);
+  const [cancelRestore, setCancelRestore] = useState(true);
+
   const cancelInvoice = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (restore: boolean) => {
       const { error } = await supabase.from("invoices").update({ status: "canceled" }).eq("id", invoiceId);
       if (error) throw error;
-      await supabase.from("charges").update({ status: "pending_invoice", invoice_id: null }).eq("invoice_id", invoiceId);
+      await supabase.from("charges")
+        .update(restore ? { status: "pending_invoice", invoice_id: null } : { invoice_id: null })
+        .eq("invoice_id", invoiceId);
     },
-    onSuccess: () => { invalidate(); toast.success("Fatura cancelada — itens devolvidos"); },
+    onSuccess: (_d, restore) => {
+      invalidate();
+      setCancelOpen(false);
+      toast.success(restore ? "Fatura cancelada — itens devolvidos" : "Fatura cancelada");
+    },
     onError: (e: Error) => toast.error(e.message),
   });
 
@@ -347,6 +356,7 @@ function InvoiceDetailPage() {
   const [delPass, setDelPass] = useState("");
   const [delRestore, setDelRestore] = useState(true);
   const [delAuthMethod, setDelAuthMethod] = useState<"password" | "google">("password");
+
 
   const DEL_KEY = "caritas:pendingInvoiceDelete";
 
