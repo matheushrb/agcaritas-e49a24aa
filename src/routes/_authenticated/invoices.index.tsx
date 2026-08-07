@@ -558,6 +558,7 @@ function NewInvoiceWizard({
     for (const tk of filteredTasks) if (selectedTasks.has(tk.id)) {
       const ref = taskReference(tk);
       const key = `task:${tk.id}`;
+      const typeName = tk.task_type_id ? taskTypeNames[tk.task_type_id] ?? null : null;
       lines.push({
         key,
         title: tk.title,
@@ -565,7 +566,7 @@ function NewInvoiceWizard({
         reference_date: withOverride(key, ref.reference_date),
         reference_label: ref.reference_label,
         group: groupOf(tk.project_id),
-        service: ref.reference_label,
+        service: typeName || "Serviço",
       });
       for (const d of billableDeliverables) {
         if (d.taskId === tk.id && selectedDeliverables.has(d.key)) {
@@ -576,7 +577,7 @@ function NewInvoiceWizard({
             reference_date: withOverride(dkey, d.reference_date),
             reference_label: d.reference_label,
             group: groupOf(d.project_id),
-            service: d.reference_label,
+            service: d.service_name || typeName || "Entregável",
           });
         }
       }
@@ -591,7 +592,7 @@ function NewInvoiceWizard({
           reference_date: withOverride(dkey, d.reference_date),
           reference_label: d.reference_label,
           group: groupOf(d.project_id),
-          service: d.reference_label,
+          service: d.service_name || "Entregável",
         });
       }
     }
@@ -603,7 +604,7 @@ function NewInvoiceWizard({
       buckets.get(g)!.push(l);
     }
     return order.flatMap(g => buckets.get(g)!);
-  }, [filteredCharges, filteredTasks, billableDeliverables, selectedCharges, selectedTasks, selectedDeliverables, lineDateOverrides, projects]);
+  }, [filteredCharges, filteredTasks, billableDeliverables, selectedCharges, selectedTasks, selectedDeliverables, lineDateOverrides, projects, taskTypeNames]);
 
   const adjustmentLines = useMemo(() => {
     const extra: typeof previewLines = [];
