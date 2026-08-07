@@ -695,14 +695,12 @@ function InvoiceDetailPage() {
             className="f3-btn"
             style={{ color: "#DC2626" }}
             disabled={deleteInvoice.isPending}
-            onClick={async () => {
+            onClick={() => {
               setDelPass("");
               setDelRestore(invoice.status !== "canceled");
-              const { data } = await supabase.auth.getUser();
-              const usesGoogle = data.user?.identities?.some((identity) => identity.provider === "google") ?? false;
-              setDelAuthMethod(usesGoogle ? "google" : "password");
               setDelOpen(true);
             }}
+
           >
             <Trash2 size={15} /> Excluir fatura
           </button>
