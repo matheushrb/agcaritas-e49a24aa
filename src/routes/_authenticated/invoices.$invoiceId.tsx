@@ -623,13 +623,61 @@ function InvoiceDetailPage() {
             style={{ color: "#DC2626" }}
             disabled={deleteInvoice.isPending}
             onClick={() => {
-              if (window.confirm(`Excluir a fatura ${invoice.number ?? ""}? Os itens voltam para "a faturar" e o número fica disponível novamente.`)) {
-                deleteInvoice.mutate();
-              }
+              setDelPass("");
+              setDelRestore(invoice.status !== "canceled");
+              setDelOpen(true);
             }}
           >
             <Trash2 size={15} /> Excluir fatura
           </button>
+
+          <Dialog open={delOpen} onOpenChange={(v) => { if (!deleteInvoice.isPending) setDelOpen(v); }}>
+            <DialogContent className="max-w-md">
+              <DialogHeader>
+                <DialogTitle>Excluir fatura {invoice.number ?? ""}</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4 text-sm">
+                <p className="text-muted-foreground">
+                  Esta ação não pode ser desfeita. O número da fatura ficará disponível novamente.
+                </p>
+
+                {invoice.status !== "canceled" && (
+                  <div className="rounded-lg border p-3 space-y-2">
+                    <p className="font-medium">Esta fatura não foi cancelada antes. O que fazer com os itens?</p>
+                    <label className="flex items-start gap-2 cursor-pointer">
+                      <input type="radio" className="mt-1" checked={delRestore} onChange={() => setDelRestore(true)} />
+                      <span>Devolver os itens para <strong>possíveis faturáveis</strong></span>
+                    </label>
+                    <label className="flex items-start gap-2 cursor-pointer">
+                      <input type="radio" className="mt-1" checked={!delRestore} onChange={() => setDelRestore(false)} />
+                      <span>Não devolver — manter os itens fora do faturamento</span>
+                    </label>
+                  </div>
+                )}
+
+                <div className="space-y-1.5">
+                  <label className="font-medium">Confirme com a senha da sua conta</label>
+                  <Input
+                    type="password"
+                    autoComplete="current-password"
+                    value={delPass}
+                    onChange={(e) => setDelPass(e.target.value)}
+                    placeholder="Sua senha"
+                  />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setDelOpen(false)} disabled={deleteInvoice.isPending}>Cancelar</Button>
+                <Button
+                  variant="destructive"
+                  disabled={!delPass || deleteInvoice.isPending}
+                  onClick={() => deleteInvoice.mutate({ restore: invoice.status === "canceled" ? false : delRestore, password: delPass })}
+                >
+                  {deleteInvoice.isPending ? "Excluindo…" : "Excluir fatura"}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
           <button
             className="f3-btn primary"
             disabled={invoice.status === "paid" || invoice.status === "canceled"}
