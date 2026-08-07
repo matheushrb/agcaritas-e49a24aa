@@ -334,12 +334,15 @@ function NewInvoiceWizard({
   const [paymentLink, setPaymentLink] = useState("");
   const [paymentQrPreview, setPaymentQrPreview] = useState<string | null>(null);
   const [previewNumber, setPreviewNumber] = useState("—");
+  const [numberTouched, setNumberTouched] = useState(false);
+
   const [submitting, setSubmitting] = useState(false);
   const [selectedDeliverables, setSelectedDeliverables] = useState<Set<string>>(new Set());
   const [lineDateOverrides, setLineDateOverrides] = useState<Record<string, string>>({});
 
   // Número previsto da fatura (mesma regra do banco: AAAAMM + sequencial contínuo)
   useEffect(() => {
+    if (numberTouched) return;
     let active = true;
     (async () => {
       const base = issueDate || new Date().toISOString().slice(0, 10);
@@ -354,7 +357,8 @@ function NewInvoiceWizard({
       if (active) setPreviewNumber(`${ym}${String(max + 1).padStart(3, "0")}`);
     })();
     return () => { active = false; };
-  }, [issueDate]);
+  }, [issueDate, numberTouched]);
+
 
   // Vencimento derivado da condição de pagamento
   useEffect(() => {
@@ -714,7 +718,7 @@ function NewInvoiceWizard({
 
       const { data: invoice, error: invErr } = await supabase.from("invoices").insert({
         organization_id: profile.organization_id,
-        number: "",
+        number: /^\d{6,}$/.test(previewNumber.trim()) ? previewNumber.trim() : "",
         client_id: payerClient || null,
         project_id: singleProject,
         issue_date: issueDate,
@@ -1234,9 +1238,18 @@ function NewInvoiceWizard({
               </div>
             </div>
 
-            <div className="fat01-sum-number">
-              <span>Número previsto</span><b>{previewNumber}</b>
+            <div className="fat01-sum-number" style={{ display: "block" }}>
+              <span>Número da fatura</span>
+              <Input
+                className="fat01-input"
+                style={{ marginTop: 6, fontWeight: 700 }}
+                value={previewNumber === "—" ? "" : previewNumber}
+                placeholder="Ex.: 202608001"
+                onChange={e => { setNumberTouched(true); setPreviewNumber(e.target.value); }}
+              />
+              <span className="fat01-hint">Sugestão automática — você pode alterar.</span>
             </div>
+
 
             <p className="fat01-hint" style={{ marginTop: 12 }}>
               A fatura é criada como <b>rascunho</b>. O número definitivo é gerado na confirmação e

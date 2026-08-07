@@ -315,22 +315,37 @@ function InvoiceDetailPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmNumber, setConfirmNumber] = useState("");
+
   const sendInvoice = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (numberOverride?: string) => {
       const wasDraft = invoice?.status === "draft";
+      const nextNumber = (numberOverride ?? "").trim();
+      if (nextNumber && nextNumber !== (invoice?.number ?? "")) {
+        const { data: dup } = await supabase.from("invoices")
+          .select("id").eq("number", nextNumber).neq("id", invoiceId).maybeSingle();
+        if (dup) throw new Error(`Já existe uma fatura com o número ${nextNumber}`);
+      }
       const { error } = await supabase.from("invoices")
-        .update({ status: "issued", ...(wasDraft ? {} : { sent_at: new Date().toISOString() }) })
+        .update({
+          status: "issued",
+          ...(nextNumber ? { number: nextNumber } : {}),
+          ...(wasDraft ? {} : { sent_at: new Date().toISOString() }),
+        })
         .eq("id", invoiceId);
       if (error) throw error;
       await supabase.from("charges").update({ status: "pending" }).eq("invoice_id", invoiceId);
       return { wasDraft };
     },
     onSuccess: (r) => {
+      setConfirmOpen(false);
       invalidate();
       toast.success(r.wasDraft ? "Fatura confirmada — número emitido e lançamentos gerados" : "Cobrança enviada ao cliente");
     },
     onError: (e: Error) => toast.error(e.message),
   });
+
 
 
   const [cancelOpen, setCancelOpen] = useState(false);
@@ -681,14 +696,54 @@ function InvoiceDetailPage() {
           </button>
 
           {invoice.status === "draft" ? (
-            <button className="f3-btn primary" disabled={sendInvoice.isPending} onClick={() => sendInvoice.mutate()}>
+            <button
+              className="f3-btn primary"
+              disabled={sendInvoice.isPending}
+              onClick={async () => {
+                if (invoice.number) setConfirmNumber(invoice.number);
+                else {
+                  const base = (invoice.issue_date || new Date().toISOString().slice(0, 10)).slice(0, 7).replace("-", "");
+                  const { data } = await supabase.from("invoices").select("number");
+                  const max = (data ?? []).reduce((m: number, r: { number: string | null }) => {
+                    const raw = String(r.number ?? "").trim();
+                    if (!/^\d{9,}$/.test(raw)) return m;
+                    const seq = parseInt(raw.slice(6), 10);
+                    return Number.isFinite(seq) && seq > m ? seq : m;
+                  }, 139);
+                  setConfirmNumber(`${base}${String(max + 1).padStart(3, "0")}`);
+                }
+                setConfirmOpen(true);
+              }}
+            >
               <Check size={15} /> Confirmar fatura
             </button>
           ) : (
-            <button className="f3-btn" disabled={invoice.status === "paid" || invoice.status === "canceled" || sendInvoice.isPending} onClick={() => sendInvoice.mutate()}>
+            <button className="f3-btn" disabled={invoice.status === "paid" || invoice.status === "canceled" || sendInvoice.isPending} onClick={() => sendInvoice.mutate(undefined)}>
               <Send size={15} /> Enviar cobrança
             </button>
           )}
+
+          <Dialog open={confirmOpen} onOpenChange={(v) => { if (!sendInvoice.isPending) setConfirmOpen(v); }}>
+            <DialogContent className="max-w-md">
+              <DialogHeader>
+                <DialogTitle>Confirmar fatura</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-2">
+                <label className="text-xs font-medium text-muted-foreground">Número da fatura</label>
+                <Input value={confirmNumber} placeholder="Ex.: 202608001" onChange={e => setConfirmNumber(e.target.value)} />
+                <p className="text-[11px] text-muted-foreground">
+                  O sistema sugere o próximo número disponível, mas você pode alterá-lo antes de emitir.
+                </p>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setConfirmOpen(false)}>Cancelar</Button>
+                <Button disabled={sendInvoice.isPending || !confirmNumber.trim()} onClick={() => sendInvoice.mutate(confirmNumber)}>
+                  Confirmar e emitir
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
 
           <button className="f3-btn" disabled={invoice.status === "canceled"} onClick={openEdit}><PenLine size={15} /> Editar fatura</button>
           <button
