@@ -541,7 +541,9 @@ export function TaskWindow({
     estimated_hours: estimated ? Number(estimated) : null,
     billing_enabled: billingEnabled,
     billing_base_value: baseValue ? Number(baseValue) : null,
-    billing_value: billableTotal || null,
+    // O valor da tarefa guarda somente a parcela-base. Entregáveis são linhas
+    // independentes no faturamento e não podem ser incorporados aqui novamente.
+    billing_value: baseValue ? Number(baseValue) : null,
     platform: platformsSel.join(", ") || null,
     deliverables: deliverables.map(d => ({
       id: d.id, platform: d.platform, type: d.type,

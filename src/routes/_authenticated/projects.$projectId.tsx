@@ -80,6 +80,7 @@ type Task = {
   status: "todo" | "in_progress" | "review" | "done";
   priority: "low" | "medium" | "high";
   due_date: string | null;
+  billing_base_value: number | null;
   billing_value: number | null;
   billing_model: "hourly" | "one_time" | "package" | "monthly" | "per_task" | null;
   billing_enabled: boolean;
@@ -167,7 +168,7 @@ function ProjectDetail() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("tasks")
-        .select("id,title,description,status,priority,due_date,billing_value,billing_model,billing_enabled,billed,project_id,client_id,assignee_id,platform,delivery_type,estimated_hours,progress,stage,task_type_id,current_stage_id,deliverables,subtasks,broadcast_kind,recorded_at,aired_at,recorded_dates,aired_dates,created_at")
+        .select("id,title,description,status,priority,due_date,billing_base_value,billing_value,billing_model,billing_enabled,billed,project_id,client_id,assignee_id,platform,delivery_type,estimated_hours,progress,stage,task_type_id,current_stage_id,deliverables,subtasks,broadcast_kind,recorded_at,aired_at,recorded_dates,aired_dates,created_at")
         .eq("project_id", projectId)
         .order("created_at", { ascending: false });
       if (error) throw error;
@@ -369,7 +370,7 @@ function ProjectDetail() {
 
   const taskRevenue = tasks.reduce((s, t) => {
     const deliv = (t.deliverables ?? []).reduce((a, d) => a + Number(d.billing_value ?? 0), 0);
-    return s + (t.billing_enabled ? Number(t.billing_value ?? 0) : 0) + deliv;
+    return s + (t.billing_enabled ? Number(t.billing_base_value ?? t.billing_value ?? 0) : 0) + deliv;
   }, 0);
   const revenue = Number(project.fixed_value ?? 0) + Number(project.monthly_value ?? 0) + taskRevenue;
   const health = stats.overdue > 2 ? "bad" : stats.overdue > 0 ? "warn" : "";
@@ -773,7 +774,7 @@ function FinanceTab({
   // considerando o valor da tarefa e o dos entregáveis marcados como faturáveis.
   // Para tarefas de transmissão/estreia, multiplica pelo nº de datas ao ar.
   const projected = tasks.reduce((sum, t) => {
-    const base = t.billing_enabled && t.billing_value != null ? Number(t.billing_value) : 0;
+    const base = t.billing_enabled ? Number(t.billing_base_value ?? t.billing_value ?? 0) : 0;
     const multiplier = t.broadcast_kind && (t.aired_dates?.length ?? 0) > 0 ? t.aired_dates.length : 1;
     const taskRev = base * multiplier;
     const deliverRev = (t.deliverables ?? [])
