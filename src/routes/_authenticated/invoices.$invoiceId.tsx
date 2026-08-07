@@ -1034,11 +1034,40 @@ function InvoiceDetailPage() {
               </button>
               <button
                 className="f3-btn danger"
-                disabled={invoice.status === "canceled"}
-                onClick={() => { if (window.confirm("Cancelar esta fatura? Os itens voltam para 'a faturar'.")) cancelInvoice.mutate(); }}
+                disabled={invoice.status === "canceled" || cancelInvoice.isPending}
+                onClick={() => { setCancelRestore(true); setCancelOpen(true); }}
               >
                 <XCircle size={15} /> Cancelar fatura
               </button>
+
+              <Dialog open={cancelOpen} onOpenChange={(v) => { if (!cancelInvoice.isPending) setCancelOpen(v); }}>
+                <DialogContent className="max-w-md">
+                  <DialogHeader>
+                    <DialogTitle>Cancelar fatura {invoice.number ?? ""}</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4 text-sm">
+                    <p className="text-muted-foreground">A fatura ficará com status cancelada.</p>
+                    <div className="rounded-lg border p-3 space-y-2">
+                      <p className="font-medium">O que fazer com os itens desta fatura?</p>
+                      <label className="flex items-start gap-2 cursor-pointer">
+                        <input type="radio" className="mt-1" checked={cancelRestore} onChange={() => setCancelRestore(true)} />
+                        <span>Devolver os itens para <strong>possíveis faturáveis</strong></span>
+                      </label>
+                      <label className="flex items-start gap-2 cursor-pointer">
+                        <input type="radio" className="mt-1" checked={!cancelRestore} onChange={() => setCancelRestore(false)} />
+                        <span>Não devolver — manter os itens fora do faturamento</span>
+                      </label>
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => setCancelOpen(false)} disabled={cancelInvoice.isPending}>Voltar</Button>
+                    <Button variant="destructive" disabled={cancelInvoice.isPending} onClick={() => cancelInvoice.mutate(cancelRestore)}>
+                      {cancelInvoice.isPending ? "Cancelando…" : "Cancelar fatura"}
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+
             </div>
           </div>
         </div>
