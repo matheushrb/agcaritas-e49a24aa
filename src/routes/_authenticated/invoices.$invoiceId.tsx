@@ -614,9 +614,16 @@ function InvoiceDetailPage() {
             <Share2 size={15} /> Compartilhar
           </button>
 
-          <button className="f3-btn" disabled={invoice.status === "paid" || invoice.status === "canceled"} onClick={() => sendInvoice.mutate()}>
-            <Send size={15} /> Enviar cobrança
-          </button>
+          {invoice.status === "draft" ? (
+            <button className="f3-btn primary" disabled={sendInvoice.isPending} onClick={() => sendInvoice.mutate()}>
+              <Check size={15} /> Confirmar fatura
+            </button>
+          ) : (
+            <button className="f3-btn" disabled={invoice.status === "paid" || invoice.status === "canceled" || sendInvoice.isPending} onClick={() => sendInvoice.mutate()}>
+              <Send size={15} /> Enviar cobrança
+            </button>
+          )}
+
           <button className="f3-btn" disabled={invoice.status === "canceled"} onClick={openEdit}><PenLine size={15} /> Editar fatura</button>
           <button
             className="f3-btn"
