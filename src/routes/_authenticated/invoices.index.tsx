@@ -138,10 +138,12 @@ function deliverableReference(t: BillableTask, d: Deliverable) {
   if (rec) return { reference_date: rec, reference_label: "Gravação" };
   return taskReference(t);
 }
-/** Nome do serviço mostrado na fatura para um entregável. */
+/** Nome do serviço mostrado na fatura para um entregável: "Entregável Portus | Upload". */
 function deliverableServiceLabel(d: Deliverable): string | null {
-  const v = [d.type, d.platform, d.channel].map(x => (x ?? "").toString().trim()).find(Boolean);
-  return v || null;
+  const platform = (d.platform ?? "").toString().trim();
+  const name = [d.type, d.channel].map(x => (x ?? "").toString().trim()).find(Boolean) ?? "";
+  const head = platform ? `Entregável ${platform}` : "Entregável";
+  return name ? `${head} | ${name}` : head;
 }
 
 
