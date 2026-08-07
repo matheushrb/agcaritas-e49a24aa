@@ -154,7 +154,11 @@ function InvoiceDetailPage() {
     if (it.deliverable_id) {
       return serviceNames[it.deliverable_id] || it.service_label || "Entregável";
     }
-    return (it.task_id ? serviceNames[it.task_id] : null) || it.service_label || (it.task_id ? "Serviço" : "Lançamento");
+    const resolved = (it.task_id ? serviceNames[it.task_id] : null) || it.service_label;
+    if (resolved?.trim().toLocaleLowerCase("pt-BR") === "serviço") {
+      return it.task_id ? "Tarefa" : "Lançamento";
+    }
+    return resolved || (it.task_id ? "Tarefa" : "Lançamento");
   };
 
   /** Ordem: tarefa-pai, depois seus entregáveis (recuados). */
@@ -169,7 +173,22 @@ function InvoiceDetailPage() {
         if (c.task_id && c.task_id === p.task_id) { out.push({ ...c, isChild: true }); used.add(c.id); }
       }
     }
-    for (const c of children) if (!used.has(c.id)) out.push({ ...c, isChild: true });
+    // Entregáveis sem cobrança da tarefa-pai continuam juntos por tarefa,
+    // em vez de aparecerem como linhas independentes espalhadas.
+    const orphanTaskOrder: string[] = [];
+    const orphanBuckets = new Map<string, Item[]>();
+    for (const child of children) {
+      if (used.has(child.id)) continue;
+      const key = child.task_id ?? child.id;
+      if (!orphanBuckets.has(key)) {
+        orphanBuckets.set(key, []);
+        orphanTaskOrder.push(key);
+      }
+      orphanBuckets.get(key)?.push(child);
+    }
+    for (const key of orphanTaskOrder) {
+      for (const child of orphanBuckets.get(key) ?? []) out.push({ ...child, isChild: true });
+    }
     return out;
   }, [items]);
 
