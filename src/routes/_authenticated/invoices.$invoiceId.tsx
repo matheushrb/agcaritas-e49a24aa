@@ -355,7 +355,7 @@ function InvoiceDetailPage() {
   const [delOpen, setDelOpen] = useState(false);
   const [delPass, setDelPass] = useState("");
   const [delRestore, setDelRestore] = useState(true);
-  const [delAuthMethod, setDelAuthMethod] = useState<"password" | "google">("password");
+  
 
 
   const DEL_KEY = "caritas:pendingInvoiceDelete";
