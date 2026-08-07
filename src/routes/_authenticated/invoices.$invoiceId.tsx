@@ -671,10 +671,21 @@ function InvoiceDetailPage() {
           if (e3) throw e3;
         }
       }
+
+      // Espelha os valores editados de volta na tarefa/entregável de origem,
+      // para que projeto e financeiro fiquem consistentes com a fatura.
+      const byCharge = new Map(items.map(i => [i.id, i]));
+      await syncTasksFromCharges(
+        lines.filter(d => d.id && byCharge.has(d.id!)).map(d => {
+          const src = byCharge.get(d.id!)!;
+          return { task_id: src.task_id, deliverable_id: src.deliverable_id, amount: Number(d.amount) || 0 };
+        }),
+      ).catch(() => undefined);
     },
     onSuccess: () => { invalidate(); setEditOpen(false); toast.success("Fatura atualizada"); },
     onError: (e: Error) => toast.error(e.message),
   });
+
 
 
   const totals = useMemo(() => {
