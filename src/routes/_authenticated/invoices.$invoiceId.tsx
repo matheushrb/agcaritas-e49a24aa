@@ -188,13 +188,27 @@ function InvoiceDetailPage() {
       const rows = (orphanBuckets.get(key) ?? []).map(c => ({ ...c, isChild: true }));
       if (rows.length) blocks.push({ project: rows[0].project_id ?? "__none__", rows });
     }
-    // Junta todos os blocos do mesmo projeto (uma única ocorrência por projeto)
-    const byProject = new Map<string, Array<Item & { isChild?: boolean }>>();
+    // Junta todos os blocos do mesmo projeto (uma única ocorrência por projeto),
+    // ordenando por data (mais antiga primeiro) e depois pelo nome (numérico natural).
+    const collator = new Intl.Collator("pt-BR", { numeric: true, sensitivity: "base" });
+    const order: string[] = [];
+    const byProject = new Map<string, typeof blocks>();
     for (const b of blocks) {
-      if (!byProject.has(b.project)) byProject.set(b.project, []);
-      byProject.get(b.project)!.push(...b.rows);
+      if (!byProject.has(b.project)) { byProject.set(b.project, []); order.push(b.project); }
+      byProject.get(b.project)!.push(b);
     }
-    return Array.from(byProject.values()).flat();
+    return order.flatMap(p =>
+      byProject.get(p)!
+        .slice()
+        .sort((a, b) => {
+          const da = a.rows[0].due_date ?? "9999-12-31";
+          const db = b.rows[0].due_date ?? "9999-12-31";
+          if (da !== db) return da < db ? -1 : 1;
+          return collator.compare(a.rows[0].description ?? "", b.rows[0].description ?? "");
+        })
+        .flatMap(b => b.rows),
+    );
+
   }, [items]);
 
 
