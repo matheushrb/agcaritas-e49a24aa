@@ -2,6 +2,7 @@ import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useMemo, useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { lovable } from "@/integrations/lovable";
 import {
   Share2, Send, PenLine, Wallet, Check, Calendar, CreditCard, FileText,
   ArrowRight, Mail, Phone, Copy, Receipt, XCircle, ArrowLeft, Plus, Trash2,
@@ -345,15 +346,32 @@ function InvoiceDetailPage() {
   const [delOpen, setDelOpen] = useState(false);
   const [delPass, setDelPass] = useState("");
   const [delRestore, setDelRestore] = useState(true);
+  const [delAuthMethod, setDelAuthMethod] = useState<"password" | "google">("password");
 
   const deleteInvoice = useMutation({
-    mutationFn: async ({ restore, password }: { restore: boolean; password: string }) => {
-      // confirmação por senha da conta
+    mutationFn: async ({ restore, password }: { restore: boolean; password?: string }) => {
       const { data: u } = await supabase.auth.getUser();
       const email = u.user?.email;
+      const currentUserId = u.user?.id;
       if (!email) throw new Error("Sessão expirada. Faça login novamente.");
-      const { error: authErr } = await supabase.auth.signInWithPassword({ email, password });
-      if (authErr) throw new Error("Senha incorreta.");
+      const usesGoogle = u.user?.identities?.some((identity) => identity.provider === "google") ?? false;
+
+      if (usesGoogle) {
+        const result = await lovable.auth.signInWithOAuth("google", {
+          redirect_uri: window.location.origin,
+          extraParams: { prompt: "select_account" },
+        });
+        if (result.redirected) return { restore, redirected: true };
+        if (result.error) throw new Error("Não foi possível confirmar sua conta Google.");
+        const { data: confirmed } = await supabase.auth.getUser();
+        if (!currentUserId || confirmed.user?.id !== currentUserId) {
+          throw new Error("Confirme usando a mesma conta Google conectada ao sistema.");
+        }
+      } else {
+        if (!password) throw new Error("Digite a senha da sua conta.");
+        const { error: authErr } = await supabase.auth.signInWithPassword({ email, password });
+        if (authErr) throw new Error("Senha incorreta.");
+      }
 
       if (restore) {
         // devolve os itens para "a faturar"
@@ -386,9 +404,10 @@ function InvoiceDetailPage() {
       }
       const { error: e2 } = await supabase.from("invoices").delete().eq("id", invoiceId);
       if (e2) throw e2;
-      return { restore };
+      return { restore, redirected: false };
     },
     onSuccess: (r) => {
+      if (r.redirected) return;
       qc.invalidateQueries({ queryKey: ["invoices"] });
       qc.invalidateQueries({ queryKey: ["charges"] });
       setDelOpen(false);
@@ -637,9 +656,12 @@ function InvoiceDetailPage() {
             className="f3-btn"
             style={{ color: "#DC2626" }}
             disabled={deleteInvoice.isPending}
-            onClick={() => {
+            onClick={async () => {
               setDelPass("");
               setDelRestore(invoice.status !== "canceled");
+              const { data } = await supabase.auth.getUser();
+              const usesGoogle = data.user?.identities?.some((identity) => identity.provider === "google") ?? false;
+              setDelAuthMethod(usesGoogle ? "google" : "password");
               setDelOpen(true);
             }}
           >
@@ -670,25 +692,31 @@ function InvoiceDetailPage() {
                   </div>
                 )}
 
-                <div className="space-y-1.5">
-                  <label className="font-medium">Confirme com a senha da sua conta</label>
-                  <Input
-                    type="password"
-                    autoComplete="current-password"
-                    value={delPass}
-                    onChange={(e) => setDelPass(e.target.value)}
-                    placeholder="Sua senha"
-                  />
-                </div>
+                {delAuthMethod === "google" ? (
+                  <p className="rounded-lg border p-3 text-muted-foreground">
+                    Como sua conta usa o Google, confirme a exclusão entrando novamente com a mesma conta.
+                  </p>
+                ) : (
+                  <div className="space-y-1.5">
+                    <label className="font-medium">Confirme com a senha da sua conta</label>
+                    <Input
+                      type="password"
+                      autoComplete="current-password"
+                      value={delPass}
+                      onChange={(e) => setDelPass(e.target.value)}
+                      placeholder="Sua senha"
+                    />
+                  </div>
+                )}
               </div>
               <DialogFooter>
                 <Button variant="outline" onClick={() => setDelOpen(false)} disabled={deleteInvoice.isPending}>Cancelar</Button>
                 <Button
                   variant="destructive"
-                  disabled={!delPass || deleteInvoice.isPending}
+                  disabled={(delAuthMethod === "password" && !delPass) || deleteInvoice.isPending}
                   onClick={() => deleteInvoice.mutate({ restore: invoice.status === "canceled" ? false : delRestore, password: delPass })}
                 >
-                  {deleteInvoice.isPending ? "Excluindo…" : "Excluir fatura"}
+                  {deleteInvoice.isPending ? "Confirmando…" : delAuthMethod === "google" ? "Confirmar com Google" : "Excluir fatura"}
                 </Button>
               </DialogFooter>
             </DialogContent>
