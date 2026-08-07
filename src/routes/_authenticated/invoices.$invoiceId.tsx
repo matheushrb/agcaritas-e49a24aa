@@ -333,34 +333,45 @@ function InvoiceDetailPage() {
   });
 
 
+  const [cancelOpen, setCancelOpen] = useState(false);
+  const [cancelRestore, setCancelRestore] = useState(true);
+
   const cancelInvoice = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (restore: boolean) => {
       const { error } = await supabase.from("invoices").update({ status: "canceled" }).eq("id", invoiceId);
       if (error) throw error;
-      await supabase.from("charges").update({ status: "pending_invoice", invoice_id: null }).eq("invoice_id", invoiceId);
+      await supabase.from("charges")
+        .update(restore ? { status: "pending_invoice", invoice_id: null } : { invoice_id: null })
+        .eq("invoice_id", invoiceId);
     },
-    onSuccess: () => { invalidate(); toast.success("Fatura cancelada — itens devolvidos"); },
+    onSuccess: (_d, restore) => {
+      invalidate();
+      setCancelOpen(false);
+      toast.success(restore ? "Fatura cancelada — itens devolvidos" : "Fatura cancelada");
+    },
     onError: (e: Error) => toast.error(e.message),
   });
 
   const [delOpen, setDelOpen] = useState(false);
   const [delPass, setDelPass] = useState("");
   const [delRestore, setDelRestore] = useState(true);
-  const [delAuthMethod, setDelAuthMethod] = useState<"password" | "google">("password");
+  
+
 
   const DEL_KEY = "caritas:pendingInvoiceDelete";
 
   const deleteInvoice = useMutation({
-    mutationFn: async ({ restore, password, skipAuth }: { restore: boolean; password?: string; skipAuth?: boolean }) => {
+    mutationFn: async ({ restore, password, skipAuth, method }: { restore: boolean; password?: string; skipAuth?: boolean; method?: "password" | "google" }) => {
       const { data: u } = await supabase.auth.getUser();
       const email = u.user?.email;
       const currentUserId = u.user?.id;
       if (!email) throw new Error("Sessão expirada. Faça login novamente.");
-      const usesGoogle = u.user?.identities?.some((identity) => identity.provider === "google") ?? false;
+      const usesGoogle = method ? method === "google" : (u.user?.identities?.some((identity) => identity.provider === "google") ?? false);
 
       if (skipAuth) {
         // reautenticação já concluída (retorno do Google)
       } else if (usesGoogle) {
+
         // guarda a escolha do usuário para retomar após o redirecionamento
         try { sessionStorage.setItem(DEL_KEY, JSON.stringify({ invoiceId, restore })); } catch { /* ignore */ }
         const result = await lovable.auth.signInWithOAuth("google", {
@@ -684,14 +695,12 @@ function InvoiceDetailPage() {
             className="f3-btn"
             style={{ color: "#DC2626" }}
             disabled={deleteInvoice.isPending}
-            onClick={async () => {
+            onClick={() => {
               setDelPass("");
               setDelRestore(invoice.status !== "canceled");
-              const { data } = await supabase.auth.getUser();
-              const usesGoogle = data.user?.identities?.some((identity) => identity.provider === "google") ?? false;
-              setDelAuthMethod(usesGoogle ? "google" : "password");
               setDelOpen(true);
             }}
+
           >
             <Trash2 size={15} /> Excluir fatura
           </button>
@@ -720,33 +729,40 @@ function InvoiceDetailPage() {
                   </div>
                 )}
 
-                {delAuthMethod === "google" ? (
-                  <p className="rounded-lg border p-3 text-muted-foreground">
-                    Como sua conta usa o Google, confirme a exclusão entrando novamente com a mesma conta.
+                <div className="space-y-1.5">
+                  <label className="font-medium">Confirme com a senha da sua conta</label>
+                  <Input
+                    type="password"
+                    autoComplete="current-password"
+                    value={delPass}
+                    onChange={(e) => setDelPass(e.target.value)}
+                    placeholder="Sua senha"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Entrou com o Google? Use o botão “Confirmar com Google” abaixo.
                   </p>
-                ) : (
-                  <div className="space-y-1.5">
-                    <label className="font-medium">Confirme com a senha da sua conta</label>
-                    <Input
-                      type="password"
-                      autoComplete="current-password"
-                      value={delPass}
-                      onChange={(e) => setDelPass(e.target.value)}
-                      placeholder="Sua senha"
-                    />
-                  </div>
-                )}
+                </div>
               </div>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setDelOpen(false)} disabled={deleteInvoice.isPending}>Cancelar</Button>
+              <DialogFooter className="gap-2 sm:justify-between">
                 <Button
-                  variant="destructive"
-                  disabled={(delAuthMethod === "password" && !delPass) || deleteInvoice.isPending}
-                  onClick={() => deleteInvoice.mutate({ restore: invoice.status === "canceled" ? false : delRestore, password: delPass })}
+                  variant="outline"
+                  disabled={deleteInvoice.isPending}
+                  onClick={() => deleteInvoice.mutate({ restore: invoice.status === "canceled" ? false : delRestore, method: "google" })}
                 >
-                  {deleteInvoice.isPending ? "Confirmando…" : delAuthMethod === "google" ? "Confirmar com Google" : "Excluir fatura"}
+                  Confirmar com Google
                 </Button>
+                <div className="flex gap-2">
+                  <Button variant="outline" onClick={() => setDelOpen(false)} disabled={deleteInvoice.isPending}>Cancelar</Button>
+                  <Button
+                    variant="destructive"
+                    disabled={!delPass || deleteInvoice.isPending}
+                    onClick={() => deleteInvoice.mutate({ restore: invoice.status === "canceled" ? false : delRestore, password: delPass, method: "password" })}
+                  >
+                    {deleteInvoice.isPending ? "Confirmando…" : "Excluir fatura"}
+                  </Button>
+                </div>
               </DialogFooter>
+
             </DialogContent>
           </Dialog>
           <button
@@ -1024,11 +1040,40 @@ function InvoiceDetailPage() {
               </button>
               <button
                 className="f3-btn danger"
-                disabled={invoice.status === "canceled"}
-                onClick={() => { if (window.confirm("Cancelar esta fatura? Os itens voltam para 'a faturar'.")) cancelInvoice.mutate(); }}
+                disabled={invoice.status === "canceled" || cancelInvoice.isPending}
+                onClick={() => { setCancelRestore(true); setCancelOpen(true); }}
               >
                 <XCircle size={15} /> Cancelar fatura
               </button>
+
+              <Dialog open={cancelOpen} onOpenChange={(v) => { if (!cancelInvoice.isPending) setCancelOpen(v); }}>
+                <DialogContent className="max-w-md">
+                  <DialogHeader>
+                    <DialogTitle>Cancelar fatura {invoice.number ?? ""}</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4 text-sm">
+                    <p className="text-muted-foreground">A fatura ficará com status cancelada.</p>
+                    <div className="rounded-lg border p-3 space-y-2">
+                      <p className="font-medium">O que fazer com os itens desta fatura?</p>
+                      <label className="flex items-start gap-2 cursor-pointer">
+                        <input type="radio" className="mt-1" checked={cancelRestore} onChange={() => setCancelRestore(true)} />
+                        <span>Devolver os itens para <strong>possíveis faturáveis</strong></span>
+                      </label>
+                      <label className="flex items-start gap-2 cursor-pointer">
+                        <input type="radio" className="mt-1" checked={!cancelRestore} onChange={() => setCancelRestore(false)} />
+                        <span>Não devolver — manter os itens fora do faturamento</span>
+                      </label>
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => setCancelOpen(false)} disabled={cancelInvoice.isPending}>Voltar</Button>
+                    <Button variant="destructive" disabled={cancelInvoice.isPending} onClick={() => cancelInvoice.mutate(cancelRestore)}>
+                      {cancelInvoice.isPending ? "Cancelando…" : "Cancelar fatura"}
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+
             </div>
           </div>
         </div>
