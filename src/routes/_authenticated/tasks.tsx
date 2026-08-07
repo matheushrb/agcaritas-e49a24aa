@@ -372,6 +372,7 @@ function createLocalTask(overrides: Partial<Task> = {}): Task {
     assignee_id: null,
     due_date: null,
     billing_model: null,
+    billing_base_value: null,
     billing_value: null,
     billing_enabled: false,
     progress: 0,
