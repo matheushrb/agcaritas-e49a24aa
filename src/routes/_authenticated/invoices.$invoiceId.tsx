@@ -470,7 +470,7 @@ function InvoiceDetailPage() {
         const due = d.due_date || form.due_date || new Date().toISOString().slice(0, 10);
         if (d.id) {
           const { error: e2 } = await supabase.from("charges")
-            .update({ description: d.description, amount, due_date: due }).eq("id", d.id);
+            .update({ description: d.description, amount, due_date: due, service_label: d.service || null } as never).eq("id", d.id);
           if (e2) throw e2;
         } else {
           const { data: prof } = await supabase.from("profiles").select("organization_id").maybeSingle();
@@ -485,7 +485,8 @@ function InvoiceDetailPage() {
             due_date: due,
             nature: "income",
             status: "pending",
-          });
+            service_label: d.service || null,
+          } as never);
           if (e3) throw e3;
         }
       }
