@@ -147,6 +147,32 @@ function InvoiceDetailPage() {
     },
   });
 
+  /** Nome do serviço: tipo da tarefa (pai) ou "Entregável {plataforma} | {nome}". */
+  const serviceOf = (it: Item): string => {
+    if (it.deliverable_id) {
+      return serviceNames[it.deliverable_id] || it.service_label || "Entregável";
+    }
+    return (it.task_id ? serviceNames[it.task_id] : null) || it.service_label || (it.task_id ? "Serviço" : "Lançamento");
+  };
+
+  /** Ordem: tarefa-pai, depois seus entregáveis (recuados). */
+  const orderedItems = useMemo(() => {
+    const parents = items.filter(i => !i.deliverable_id);
+    const children = items.filter(i => !!i.deliverable_id);
+    const used = new Set<string>();
+    const out: Array<Item & { isChild?: boolean }> = [];
+    for (const p of parents) {
+      out.push(p);
+      for (const c of children) {
+        if (c.task_id && c.task_id === p.task_id) { out.push({ ...c, isChild: true }); used.add(c.id); }
+      }
+    }
+    for (const c of children) if (!used.has(c.id)) out.push({ ...c, isChild: true });
+    return out;
+  }, [items]);
+
+
+
 
 
   const { data: client } = useQuery({
