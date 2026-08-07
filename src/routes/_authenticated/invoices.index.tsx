@@ -681,6 +681,7 @@ function NewInvoiceWizard({
           status: "pending_invoice",
           due_date: chargeDate,
           type: "income",
+          service_label: d.service_name || "Entregável",
         } as never).select("id").single();
         if (error) throw error;
         if (inserted) newCharges.push(inserted.id);
