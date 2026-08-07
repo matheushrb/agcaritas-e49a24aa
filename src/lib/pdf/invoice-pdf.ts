@@ -426,7 +426,7 @@ export async function generateInvoicePDF(data: InvoicePDFData): Promise<jsPDF> {
 
       y += rowH;
       draw(doc, C.hair); doc.setLineWidth(0.2);
-      doc.line(marginX + (line.is_child ? 9 : 0), y, rightX, y);
+      doc.line(marginX + (line.is_child ? 12 : 0), y, rightX, y);
     }
     y += 3.5;
   }
