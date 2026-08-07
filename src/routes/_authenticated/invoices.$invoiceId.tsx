@@ -429,8 +429,24 @@ function InvoiceDetailPage() {
         : "Fatura excluída — número liberado");
       navigate({ to: "/invoices" });
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => { try { sessionStorage.removeItem(DEL_KEY); } catch { /* ignore */ } toast.error(e.message); },
   });
+
+  // retoma a exclusão após voltar da confirmação com o Google, mantendo a escolha sobre os itens
+  useEffect(() => {
+    if (!invoice || !items) return;
+    let raw: string | null = null;
+    try { raw = sessionStorage.getItem(DEL_KEY); } catch { return; }
+    if (!raw) return;
+    try { sessionStorage.removeItem(DEL_KEY); } catch { /* ignore */ }
+    try {
+      const saved = JSON.parse(raw) as { invoiceId?: string; restore?: boolean };
+      if (saved.invoiceId !== invoiceId) return;
+      deleteInvoice.mutate({ restore: !!saved.restore, skipAuth: true });
+    } catch { /* ignore */ }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [invoice, items, invoiceId]);
+
 
 
 
