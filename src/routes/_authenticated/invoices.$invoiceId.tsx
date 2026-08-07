@@ -348,30 +348,42 @@ function InvoiceDetailPage() {
   const [delRestore, setDelRestore] = useState(true);
   const [delAuthMethod, setDelAuthMethod] = useState<"password" | "google">("password");
 
+  const DEL_KEY = "caritas:pendingInvoiceDelete";
+
   const deleteInvoice = useMutation({
-    mutationFn: async ({ restore, password }: { restore: boolean; password?: string }) => {
+    mutationFn: async ({ restore, password, skipAuth }: { restore: boolean; password?: string; skipAuth?: boolean }) => {
       const { data: u } = await supabase.auth.getUser();
       const email = u.user?.email;
       const currentUserId = u.user?.id;
       if (!email) throw new Error("Sessão expirada. Faça login novamente.");
       const usesGoogle = u.user?.identities?.some((identity) => identity.provider === "google") ?? false;
 
-      if (usesGoogle) {
+      if (skipAuth) {
+        // reautenticação já concluída (retorno do Google)
+      } else if (usesGoogle) {
+        // guarda a escolha do usuário para retomar após o redirecionamento
+        try { sessionStorage.setItem(DEL_KEY, JSON.stringify({ invoiceId, restore })); } catch { /* ignore */ }
         const result = await lovable.auth.signInWithOAuth("google", {
           redirect_uri: window.location.origin,
           extraParams: { prompt: "select_account" },
         });
         if (result.redirected) return { restore, redirected: true };
-        if (result.error) throw new Error("Não foi possível confirmar sua conta Google.");
+        if (result.error) {
+          try { sessionStorage.removeItem(DEL_KEY); } catch { /* ignore */ }
+          throw new Error("Não foi possível confirmar sua conta Google.");
+        }
         const { data: confirmed } = await supabase.auth.getUser();
         if (!currentUserId || confirmed.user?.id !== currentUserId) {
+          try { sessionStorage.removeItem(DEL_KEY); } catch { /* ignore */ }
           throw new Error("Confirme usando a mesma conta Google conectada ao sistema.");
         }
+        try { sessionStorage.removeItem(DEL_KEY); } catch { /* ignore */ }
       } else {
         if (!password) throw new Error("Digite a senha da sua conta.");
         const { error: authErr } = await supabase.auth.signInWithPassword({ email, password });
         if (authErr) throw new Error("Senha incorreta.");
       }
+
 
       if (restore) {
         // devolve os itens para "a faturar"
