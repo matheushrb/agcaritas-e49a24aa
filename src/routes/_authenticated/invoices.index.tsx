@@ -34,7 +34,7 @@ type Invoice = {
   id: string; number: string; client_id: string | null; project_id: string | null;
   status: InvoiceStatus; issue_date: string; due_date: string | null;
   total: number | null; amount: number; paid_at: string | null; notes: string | null;
-  payment_terms: string | null; payment_link: string | null;
+  payment_terms: string | null; payment_link: string | null; competence_month?: string | null;
 };
 type Client = {
   id: string; name: string;
