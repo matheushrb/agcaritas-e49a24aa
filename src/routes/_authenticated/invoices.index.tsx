@@ -334,6 +334,8 @@ function NewInvoiceWizard({
   const [paymentLink, setPaymentLink] = useState("");
   const [paymentQrPreview, setPaymentQrPreview] = useState<string | null>(null);
   const [previewNumber, setPreviewNumber] = useState("—");
+  const [numberTouched, setNumberTouched] = useState(false);
+
   const [submitting, setSubmitting] = useState(false);
   const [selectedDeliverables, setSelectedDeliverables] = useState<Set<string>>(new Set());
   const [lineDateOverrides, setLineDateOverrides] = useState<Record<string, string>>({});
