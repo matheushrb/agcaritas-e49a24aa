@@ -215,7 +215,7 @@ export async function generateInvoicePDF(data: InvoicePDFData): Promise<jsPDF> {
 
   const a = data.agency ?? {};
   const c = data.client;
-  const agencyName = a.legal_name || a.name || "Agência Caritas";
+  const agencyName = a.name || a.legal_name || "Agência Caritas";
   const agencyLine = [
     a.document ? `CNPJ: ${a.document}` : null,
     a.email,
