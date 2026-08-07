@@ -334,41 +334,65 @@ function InvoiceDetailPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const [delOpen, setDelOpen] = useState(false);
+  const [delPass, setDelPass] = useState("");
+  const [delRestore, setDelRestore] = useState(true);
+
   const deleteInvoice = useMutation({
-    mutationFn: async () => {
-      // devolve os itens para "a faturar" e libera o número da fatura
-      const { error: e1 } = await supabase.from("charges")
-        .update({ status: "pending_invoice", invoice_id: null }).eq("invoice_id", invoiceId);
-      if (e1) throw e1;
-      const delivByTask = new Map<string, Set<string>>();
-      const plainTasks = new Set<string>();
-      for (const it of items) {
-        if (it.task_id && it.deliverable_id) {
-          if (!delivByTask.has(it.task_id)) delivByTask.set(it.task_id, new Set());
-          delivByTask.get(it.task_id)!.add(it.deliverable_id);
-        } else if (it.task_id) plainTasks.add(it.task_id);
-      }
-      for (const [taskId, ids] of delivByTask) {
-        const { data: t } = await supabase.from("tasks").select("deliverables").eq("id", taskId).maybeSingle();
-        const list = (t?.deliverables ?? []) as { id: string; invoiced?: boolean }[];
-        await supabase.from("tasks")
-          .update({ deliverables: list.map(dd => (ids.has(dd.id) ? { ...dd, invoiced: false } : dd)) } as never)
-          .eq("id", taskId);
-      }
-      if (plainTasks.size) {
-        await supabase.from("tasks").update({ billed_invoice_id: null, billed: false } as never).in("id", [...plainTasks]);
+    mutationFn: async ({ restore, password }: { restore: boolean; password: string }) => {
+      // confirmação por senha da conta
+      const { data: u } = await supabase.auth.getUser();
+      const email = u.user?.email;
+      if (!email) throw new Error("Sessão expirada. Faça login novamente.");
+      const { error: authErr } = await supabase.auth.signInWithPassword({ email, password });
+      if (authErr) throw new Error("Senha incorreta.");
+
+      if (restore) {
+        // devolve os itens para "a faturar"
+        const { error: e1 } = await supabase.from("charges")
+          .update({ status: "pending_invoice", invoice_id: null }).eq("invoice_id", invoiceId);
+        if (e1) throw e1;
+        const delivByTask = new Map<string, Set<string>>();
+        const plainTasks = new Set<string>();
+        for (const it of items) {
+          if (it.task_id && it.deliverable_id) {
+            if (!delivByTask.has(it.task_id)) delivByTask.set(it.task_id, new Set());
+            delivByTask.get(it.task_id)!.add(it.deliverable_id);
+          } else if (it.task_id) plainTasks.add(it.task_id);
+        }
+        for (const [taskId, ids] of delivByTask) {
+          const { data: t } = await supabase.from("tasks").select("deliverables").eq("id", taskId).maybeSingle();
+          const list = (t?.deliverables ?? []) as { id: string; invoiced?: boolean }[];
+          await supabase.from("tasks")
+            .update({ deliverables: list.map(dd => (ids.has(dd.id) ? { ...dd, invoiced: false } : dd)) } as never)
+            .eq("id", taskId);
+        }
+        if (plainTasks.size) {
+          await supabase.from("tasks").update({ billed_invoice_id: null, billed: false } as never).in("id", [...plainTasks]);
+        }
+      } else {
+        // mantém os itens fora do fluxo de faturamento, apenas desvincula da fatura
+        const { error: e1 } = await supabase.from("charges")
+          .update({ invoice_id: null }).eq("invoice_id", invoiceId);
+        if (e1) throw e1;
       }
       const { error: e2 } = await supabase.from("invoices").delete().eq("id", invoiceId);
       if (e2) throw e2;
+      return { restore };
     },
-    onSuccess: () => {
+    onSuccess: (r) => {
       qc.invalidateQueries({ queryKey: ["invoices"] });
       qc.invalidateQueries({ queryKey: ["charges"] });
-      toast.success("Fatura excluída — número liberado e itens devolvidos");
+      setDelOpen(false);
+      setDelPass("");
+      toast.success(r.restore
+        ? "Fatura excluída — número liberado e itens devolvidos"
+        : "Fatura excluída — número liberado");
       navigate({ to: "/invoices" });
     },
     onError: (e: Error) => toast.error(e.message),
   });
+
 
 
   const saveNotes = useMutation({
@@ -599,13 +623,61 @@ function InvoiceDetailPage() {
             style={{ color: "#DC2626" }}
             disabled={deleteInvoice.isPending}
             onClick={() => {
-              if (window.confirm(`Excluir a fatura ${invoice.number ?? ""}? Os itens voltam para "a faturar" e o número fica disponível novamente.`)) {
-                deleteInvoice.mutate();
-              }
+              setDelPass("");
+              setDelRestore(invoice.status !== "canceled");
+              setDelOpen(true);
             }}
           >
             <Trash2 size={15} /> Excluir fatura
           </button>
+
+          <Dialog open={delOpen} onOpenChange={(v) => { if (!deleteInvoice.isPending) setDelOpen(v); }}>
+            <DialogContent className="max-w-md">
+              <DialogHeader>
+                <DialogTitle>Excluir fatura {invoice.number ?? ""}</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4 text-sm">
+                <p className="text-muted-foreground">
+                  Esta ação não pode ser desfeita. O número da fatura ficará disponível novamente.
+                </p>
+
+                {invoice.status !== "canceled" && (
+                  <div className="rounded-lg border p-3 space-y-2">
+                    <p className="font-medium">Esta fatura não foi cancelada antes. O que fazer com os itens?</p>
+                    <label className="flex items-start gap-2 cursor-pointer">
+                      <input type="radio" className="mt-1" checked={delRestore} onChange={() => setDelRestore(true)} />
+                      <span>Devolver os itens para <strong>possíveis faturáveis</strong></span>
+                    </label>
+                    <label className="flex items-start gap-2 cursor-pointer">
+                      <input type="radio" className="mt-1" checked={!delRestore} onChange={() => setDelRestore(false)} />
+                      <span>Não devolver — manter os itens fora do faturamento</span>
+                    </label>
+                  </div>
+                )}
+
+                <div className="space-y-1.5">
+                  <label className="font-medium">Confirme com a senha da sua conta</label>
+                  <Input
+                    type="password"
+                    autoComplete="current-password"
+                    value={delPass}
+                    onChange={(e) => setDelPass(e.target.value)}
+                    placeholder="Sua senha"
+                  />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setDelOpen(false)} disabled={deleteInvoice.isPending}>Cancelar</Button>
+                <Button
+                  variant="destructive"
+                  disabled={!delPass || deleteInvoice.isPending}
+                  onClick={() => deleteInvoice.mutate({ restore: invoice.status === "canceled" ? false : delRestore, password: delPass })}
+                >
+                  {deleteInvoice.isPending ? "Excluindo…" : "Excluir fatura"}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
           <button
             className="f3-btn primary"
             disabled={invoice.status === "paid" || invoice.status === "canceled"}
