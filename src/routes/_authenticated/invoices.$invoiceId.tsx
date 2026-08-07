@@ -153,6 +153,33 @@ function InvoiceDetailPage() {
     || (it.task_id ? serviceNames[it.task_id] : null)
     || (it.deliverable_id ? "Entregável" : it.task_id ? "Serviço" : "Lançamento");
 
+  /** Ordena por projeto e encaixa os entregáveis logo abaixo da tarefa-pai. */
+  const orderedItems = useMemo<Array<Item & { isChild?: boolean }>>(() => {
+    const byProject = new Map<string, Item[]>();
+    for (const it of items) {
+      const k = it.project_id ?? "__none__";
+      if (!byProject.has(k)) byProject.set(k, []);
+      byProject.get(k)!.push(it);
+    }
+    const out: Array<Item & { isChild?: boolean }> = [];
+    for (const [, list] of byProject) {
+      const parents = list.filter(i => !i.deliverable_id);
+      const children = list.filter(i => !!i.deliverable_id);
+      const used = new Set<string>();
+      for (const p of parents) {
+        out.push(p);
+        for (const ch of children) {
+          if (ch.task_id && ch.task_id === p.task_id && !used.has(ch.id)) {
+            out.push({ ...ch, isChild: true });
+            used.add(ch.id);
+          }
+        }
+      }
+      for (const ch of children) if (!used.has(ch.id)) out.push({ ...ch, isChild: true });
+    }
+    return out;
+  }, [items]);
+
 
 
 
@@ -246,15 +273,14 @@ function InvoiceDetailPage() {
           phone: organization.phone ?? null, address: organization.address ?? null,
           website: organization.website ?? null, bank_info: organization.bank_info ?? null,
         } : undefined,
-        lines: [...items]
-          .sort((x, y) => (x.project_id ?? "").localeCompare(y.project_id ?? ""))
-          .map(it => ({
-            title: it.description,
-            amount: num(it.amount),
-            reference_date: it.due_date,
-            group: allProjects.find(p => p.id === it.project_id)?.name ?? project?.name ?? null,
-            service: it.service_label || defaultService(it),
-          })),
+        lines: orderedItems.map(it => ({
+          title: it.description,
+          amount: num(it.amount),
+          reference_date: it.due_date,
+          is_child: !!it.isChild,
+          group: allProjects.find(p => p.id === it.project_id)?.name ?? project?.name ?? null,
+          service: it.service_label || defaultService(it),
+        })),
         discount: num(invoice.discount) || undefined,
         notes: invoice.notes || undefined,
         payment_terms: invoice.payment_terms || DEFAULT_PAYMENT_TERMS,
@@ -637,11 +663,15 @@ function InvoiceDetailPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {items.map(it => (
+                    {orderedItems.map(it => (
                       <tr key={it.id}>
                         <td>
-                          <div className="f3-itemtitle" style={it.deliverable_id ? { paddingLeft: 14 } : undefined}>{it.description}</div>
-                          {it.deliverable_id && <div className="f3-itemdesc" style={{ paddingLeft: 14 }}>Entregável vinculado à tarefa</div>}
+                          <div className="f3-itemtitle" style={it.deliverable_id ? { paddingLeft: 22, position: "relative" } : undefined}>
+                            {it.deliverable_id && (
+                              <span style={{ position: "absolute", left: 4, color: "#8A9AB0" }}>↳</span>
+                            )}
+                            {it.description}
+                          </div>
                         </td>
                         <td style={{ color: "#6B7A90", fontSize: 12 }}>{it.service_label || defaultService(it)}</td>
                         <td className="num">1</td>
