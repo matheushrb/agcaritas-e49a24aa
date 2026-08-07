@@ -62,7 +62,6 @@ type Deliverable = {
   type: string;
   billing_enabled: boolean;
   billing_model: BillingModel | null;
-  billing_base_value: number | null;
   billing_value: number | null;
   delivered_date?: string | null;
   link?: string | null;
@@ -83,6 +82,7 @@ type Task = {
   due_date: string | null;
   start_date?: string | null;
   billing_model: BillingModel | null;
+  billing_base_value: number | null;
   billing_value: number | null;
   billing_enabled: boolean;
   progress: number;
