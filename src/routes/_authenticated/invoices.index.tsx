@@ -436,15 +436,16 @@ function NewInvoiceWizard({
       const ts = (data ?? []) as BillableTask[];
       const { data: existingCharges } = await supabase
         .from("charges")
-        .select("task_id,deliverable_id")
+        .select("task_id,deliverable_id,amount")
         .not("task_id", "is", null);
       const invoicedMainTaskIds = new Set<string>();
       const invoicedDeliverableIds = new Set<string>();
-      for (const r of (existingCharges ?? []) as Array<{ task_id: string | null; deliverable_id: string | null }>) {
+      for (const r of (existingCharges ?? []) as Array<{ task_id: string | null; deliverable_id: string | null; amount: number | null }>) {
         if (!r.task_id) continue;
         if (r.deliverable_id) invoicedDeliverableIds.add(r.deliverable_id);
-        else invoicedMainTaskIds.add(r.task_id);
+        else if (Number(r.amount ?? 0) > 0) invoicedMainTaskIds.add(r.task_id);
       }
+
       return { tasks: ts, invoicedMainTaskIds, invoicedDeliverableIds };
     },
   });
@@ -606,22 +607,41 @@ function NewInvoiceWizard({
         }
       }
     }
+    // Entregáveis cujo pai não é faturável (tarefa sem valor): mostra a tarefa-pai
+    // como linha de agrupamento com valor zero, seguida dos entregáveis com valor.
     const includedTaskIds = new Set(Array.from(selectedTasks));
+    const orphanParents = new Set<string>();
     for (const d of billableDeliverables) {
-      if (selectedDeliverables.has(d.key) && !includedTaskIds.has(d.taskId)) {
-        const dkey = `deliv:${d.key}`;
+      if (!selectedDeliverables.has(d.key) || includedTaskIds.has(d.taskId)) continue;
+      if (!orphanParents.has(d.taskId)) {
+        orphanParents.add(d.taskId);
+        const parent = tasks.find(t => t.id === d.taskId);
+        const typeName = parent?.task_type_id ? taskTypeNames[parent.task_type_id] ?? null : null;
+        const pkey = `taskhdr:${d.taskId}`;
         lines.push({
-          key: dkey,
-          title: d.label, amount: d.amount, is_child: true,
-          reference_date: withOverride(dkey, d.reference_date),
-          reference_label: d.reference_label,
+          key: pkey,
+          title: parent?.title || d.taskTitle,
+          amount: 0,
+          reference_date: withOverride(pkey, parent ? taskReference(parent).reference_date : null),
+          reference_label: parent ? taskReference(parent).reference_label : undefined,
           group: groupOf(d.project_id),
-          service: d.service_name || "Entregável",
+          service: typeName || "Serviço",
           task_id: d.taskId,
-          deliverable_id: d.deliverableId,
         });
       }
+      const dkey = `deliv:${d.key}`;
+      lines.push({
+        key: dkey,
+        title: d.label, amount: d.amount, is_child: true,
+        reference_date: withOverride(dkey, d.reference_date),
+        reference_label: d.reference_label,
+        group: groupOf(d.project_id),
+        service: d.service_name || "Entregável",
+        task_id: d.taskId,
+        deliverable_id: d.deliverableId,
+      });
     }
+
     // Dentro de cada projeto, preserva sempre a hierarquia: tarefa-pai e seus entregáveis.
     const hierarchyOrdered: typeof lines = [];
     const consumed = new Set<string>();
@@ -712,8 +732,33 @@ function NewInvoiceWizard({
       }
 
       const deliverablesByTask = new Map<string, Set<string>>();
+      const headerCreated = new Set<string>();
       for (const d of billableDeliverables) {
         if (!selectedDeliverables.has(d.key)) continue;
+        // Tarefa-pai sem valor: cria linha de agrupamento com valor zero (não duplica valor).
+        if (!selectedTasks.has(d.taskId) && !headerCreated.has(d.taskId)) {
+          headerCreated.add(d.taskId);
+          const parent = tasks.find(t => t.id === d.taskId);
+          const hkey = `taskhdr:${d.taskId}`;
+          const hDate = lineDateOverrides[hkey]
+            || (parent ? taskReference(parent).reference_date : null)
+            || d.reference_date || dueDate || issueDate;
+          const { data: hIns, error: hErr } = await supabase.from("charges").insert({
+            organization_id: profile.organization_id,
+            project_id: d.project_id,
+            task_id: d.taskId,
+            client_id: d.client_id,
+            description: parent?.title || d.taskTitle,
+            amount: 0,
+            status: "pending_invoice",
+            due_date: hDate,
+            type: "income",
+            service_label: (parent?.task_type_id ? taskTypeNames[parent.task_type_id] : null) || "Serviço",
+          } as never).select("id").single();
+          if (hErr) throw hErr;
+          if (hIns) newCharges.push(hIns.id);
+        }
+
         const overrideDate = lineDateOverrides[`deliv:${d.key}`];
         const chargeDate = overrideDate || d.reference_date || dueDate || issueDate;
         const { data: inserted, error } = await supabase.from("charges").insert({
