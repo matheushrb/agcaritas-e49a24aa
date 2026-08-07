@@ -973,8 +973,8 @@ function InvoiceDetailPage() {
                       </Button>
                     </div>
                     <div className="rounded border overflow-hidden">
-                      <div className="grid grid-cols-[minmax(0,1fr)_136px_110px_28px] gap-2 px-3 py-1 bg-muted/50 text-[9px] font-bold uppercase tracking-wider text-muted-foreground">
-                        <div>Descrição</div><div>Data</div><div className="text-right">Valor</div><div />
+                      <div className="grid grid-cols-[minmax(0,1fr)_180px_120px_100px_28px] gap-2 px-3 py-1 bg-muted/50 text-[9px] font-bold uppercase tracking-wider text-muted-foreground">
+                        <div>Descrição</div><div>Serviço</div><div>Data</div><div className="text-right">Valor</div><div />
                       </div>
                       {drafts.length === 0 && (
                         <div className="px-2 py-3 text-center text-muted-foreground">Nenhum item. Adicione ao menos um.</div>
@@ -994,8 +994,6 @@ function InvoiceDetailPage() {
                           if (b[0] === "__none__") return -1;
                           return a[1].label.localeCompare(b[1].label, "pt-BR");
                         });
-                        ordered.forEach(([, g]) =>
-                          g.rows.sort((x, y) => (x.d.description || "").localeCompare(y.d.description || "", "pt-BR")));
                         let stripe = 0;
                         return ordered.map(([key, g]) => {
                           const subtotal = g.rows.reduce((s, r) => s + (Number(r.d.amount) || 0), 0);
@@ -1010,11 +1008,18 @@ function InvoiceDetailPage() {
                               {g.rows.map(({ d, i }) => {
                                 const zebra = stripe++ % 2 === 1;
                                 return (
-                                  <div key={i} className={cn("grid grid-cols-[minmax(0,1fr)_136px_110px_28px] gap-2 px-3 py-1.5 border-t items-center", zebra && "bg-muted/20")}>
+                                  <div key={i} className={cn("grid grid-cols-[minmax(0,1fr)_180px_120px_100px_28px] gap-2 px-3 py-1.5 border-t items-center", zebra && "bg-muted/20")}>
+                                    <div className="flex items-center gap-1 min-w-0">
+                                      {d.isChild && <span className="text-muted-foreground text-[11px] pl-3 shrink-0">↳</span>}
+                                      <input
+                                        className="h-7 px-1.5 text-[11px] rounded border bg-background text-foreground w-full"
+                                        placeholder="Descrição" value={d.description}
+                                        onChange={e => setDrafts(a => a.map((x, j) => j === i ? { ...x, description: e.target.value } : x))} />
+                                    </div>
                                     <input
-                                      className="h-7 px-1.5 text-[11px] rounded border bg-background text-foreground w-full"
-                                      placeholder="Descrição" value={d.description}
-                                      onChange={e => setDrafts(a => a.map((x, j) => j === i ? { ...x, description: e.target.value } : x))} />
+                                      className="h-7 px-1.5 text-[11px] rounded border bg-background text-muted-foreground w-full"
+                                      placeholder="Serviço" value={d.service ?? ""}
+                                      onChange={e => setDrafts(a => a.map((x, j) => j === i ? { ...x, service: e.target.value } : x))} />
                                     <input
                                       type="date" className="h-7 px-1 text-[10px] rounded border bg-background text-foreground w-full"
                                       value={d.due_date}
