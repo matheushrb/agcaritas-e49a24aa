@@ -436,15 +436,16 @@ function NewInvoiceWizard({
       const ts = (data ?? []) as BillableTask[];
       const { data: existingCharges } = await supabase
         .from("charges")
-        .select("task_id,deliverable_id")
+        .select("task_id,deliverable_id,amount")
         .not("task_id", "is", null);
       const invoicedMainTaskIds = new Set<string>();
       const invoicedDeliverableIds = new Set<string>();
-      for (const r of (existingCharges ?? []) as Array<{ task_id: string | null; deliverable_id: string | null }>) {
+      for (const r of (existingCharges ?? []) as Array<{ task_id: string | null; deliverable_id: string | null; amount: number | null }>) {
         if (!r.task_id) continue;
         if (r.deliverable_id) invoicedDeliverableIds.add(r.deliverable_id);
-        else invoicedMainTaskIds.add(r.task_id);
+        else if (Number(r.amount ?? 0) > 0) invoicedMainTaskIds.add(r.task_id);
       }
+
       return { tasks: ts, invoicedMainTaskIds, invoicedDeliverableIds };
     },
   });
