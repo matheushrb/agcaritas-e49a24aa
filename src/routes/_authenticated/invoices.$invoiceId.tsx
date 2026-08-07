@@ -335,40 +335,60 @@ function InvoiceDetailPage() {
   });
 
   const deleteInvoice = useMutation({
-    mutationFn: async () => {
-      // devolve os itens para "a faturar" e libera o número da fatura
-      const { error: e1 } = await supabase.from("charges")
-        .update({ status: "pending_invoice", invoice_id: null }).eq("invoice_id", invoiceId);
-      if (e1) throw e1;
-      const delivByTask = new Map<string, Set<string>>();
-      const plainTasks = new Set<string>();
-      for (const it of items) {
-        if (it.task_id && it.deliverable_id) {
-          if (!delivByTask.has(it.task_id)) delivByTask.set(it.task_id, new Set());
-          delivByTask.get(it.task_id)!.add(it.deliverable_id);
-        } else if (it.task_id) plainTasks.add(it.task_id);
-      }
-      for (const [taskId, ids] of delivByTask) {
-        const { data: t } = await supabase.from("tasks").select("deliverables").eq("id", taskId).maybeSingle();
-        const list = (t?.deliverables ?? []) as { id: string; invoiced?: boolean }[];
-        await supabase.from("tasks")
-          .update({ deliverables: list.map(dd => (ids.has(dd.id) ? { ...dd, invoiced: false } : dd)) } as never)
-          .eq("id", taskId);
-      }
-      if (plainTasks.size) {
-        await supabase.from("tasks").update({ billed_invoice_id: null, billed: false } as never).in("id", [...plainTasks]);
+    mutationFn: async ({ restore, password }: { restore: boolean; password: string }) => {
+      // confirmação por senha da conta
+      const { data: u } = await supabase.auth.getUser();
+      const email = u.user?.email;
+      if (!email) throw new Error("Sessão expirada. Faça login novamente.");
+      const { error: authErr } = await supabase.auth.signInWithPassword({ email, password });
+      if (authErr) throw new Error("Senha incorreta.");
+
+      if (restore) {
+        // devolve os itens para "a faturar"
+        const { error: e1 } = await supabase.from("charges")
+          .update({ status: "pending_invoice", invoice_id: null }).eq("invoice_id", invoiceId);
+        if (e1) throw e1;
+        const delivByTask = new Map<string, Set<string>>();
+        const plainTasks = new Set<string>();
+        for (const it of items) {
+          if (it.task_id && it.deliverable_id) {
+            if (!delivByTask.has(it.task_id)) delivByTask.set(it.task_id, new Set());
+            delivByTask.get(it.task_id)!.add(it.deliverable_id);
+          } else if (it.task_id) plainTasks.add(it.task_id);
+        }
+        for (const [taskId, ids] of delivByTask) {
+          const { data: t } = await supabase.from("tasks").select("deliverables").eq("id", taskId).maybeSingle();
+          const list = (t?.deliverables ?? []) as { id: string; invoiced?: boolean }[];
+          await supabase.from("tasks")
+            .update({ deliverables: list.map(dd => (ids.has(dd.id) ? { ...dd, invoiced: false } : dd)) } as never)
+            .eq("id", taskId);
+        }
+        if (plainTasks.size) {
+          await supabase.from("tasks").update({ billed_invoice_id: null, billed: false } as never).in("id", [...plainTasks]);
+        }
+      } else {
+        // mantém os itens fora do fluxo de faturamento, apenas desvincula da fatura
+        const { error: e1 } = await supabase.from("charges")
+          .update({ invoice_id: null }).eq("invoice_id", invoiceId);
+        if (e1) throw e1;
       }
       const { error: e2 } = await supabase.from("invoices").delete().eq("id", invoiceId);
       if (e2) throw e2;
+      return { restore };
     },
-    onSuccess: () => {
+    onSuccess: (r) => {
       qc.invalidateQueries({ queryKey: ["invoices"] });
       qc.invalidateQueries({ queryKey: ["charges"] });
-      toast.success("Fatura excluída — número liberado e itens devolvidos");
+      setDelOpen(false);
+      setDelPass("");
+      toast.success(r.restore
+        ? "Fatura excluída — número liberado e itens devolvidos"
+        : "Fatura excluída — número liberado");
       navigate({ to: "/invoices" });
     },
     onError: (e: Error) => toast.error(e.message),
   });
+
 
 
   const saveNotes = useMutation({
