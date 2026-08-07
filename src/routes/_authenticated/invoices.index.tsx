@@ -642,36 +642,52 @@ function NewInvoiceWizard({
       });
     }
 
-    // Dentro de cada projeto, preserva sempre a hierarquia: tarefa-pai e seus entregáveis.
-    const hierarchyOrdered: typeof lines = [];
+    // Blocos hierárquicos: tarefa-pai + seus entregáveis.
+    type Line = (typeof lines)[number];
+    const blocks: Array<{ group: string; rows: Line[] }> = [];
     const consumed = new Set<string>();
     for (const line of lines) {
       if (consumed.has(line.key) || line.deliverable_id) continue;
-      hierarchyOrdered.push(line);
+      const rows: Line[] = [line];
       consumed.add(line.key);
       if (line.task_id) {
         for (const child of lines) {
           if (!consumed.has(child.key) && child.deliverable_id && child.task_id === line.task_id) {
-            hierarchyOrdered.push({ ...child, is_child: true });
+            rows.push({ ...child, is_child: true });
             consumed.add(child.key);
           }
         }
       }
+      blocks.push({ group: line.group ?? "", rows });
     }
     for (const line of lines) {
-      if (!consumed.has(line.key)) {
-        hierarchyOrdered.push({ ...line, is_child: !!line.deliverable_id });
-        consumed.add(line.key);
-      }
+      if (consumed.has(line.key)) continue;
+      consumed.add(line.key);
+      blocks.push({ group: line.group ?? "", rows: [{ ...line, is_child: !!line.deliverable_id }] });
     }
+    // Ordena os blocos dentro de cada projeto: data mais antiga primeiro, depois nome (numérico natural).
+    const collator = new Intl.Collator("pt-BR", { numeric: true, sensitivity: "base" });
+    const blockKey = (b: { rows: Line[] }) => ({
+      date: b.rows[0].reference_date ?? "9999-12-31",
+      title: b.rows[0].title ?? "",
+    });
     const order: string[] = [];
-    const buckets = new Map<string, typeof lines>();
-    for (const l of hierarchyOrdered) {
-      const g = l.group ?? "";
-      if (!buckets.has(g)) { buckets.set(g, []); order.push(g); }
-      buckets.get(g)!.push(l);
+    const buckets = new Map<string, Array<{ group: string; rows: Line[] }>>();
+    for (const b of blocks) {
+      if (!buckets.has(b.group)) { buckets.set(b.group, []); order.push(b.group); }
+      buckets.get(b.group)!.push(b);
     }
-    return order.flatMap(g => buckets.get(g)!);
+    return order.flatMap(g =>
+      buckets.get(g)!
+        .slice()
+        .sort((a, b) => {
+          const ka = blockKey(a); const kb = blockKey(b);
+          if (ka.date !== kb.date) return ka.date < kb.date ? -1 : 1;
+          return collator.compare(ka.title, kb.title);
+        })
+        .flatMap(b => b.rows),
+    );
+
   }, [filteredCharges, filteredTasks, billableDeliverables, selectedCharges, selectedTasks, selectedDeliverables, lineDateOverrides, projects, taskTypeNames, tasks]);
 
   const adjustmentLines = useMemo(() => {
