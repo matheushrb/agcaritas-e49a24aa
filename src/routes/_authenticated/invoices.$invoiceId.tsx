@@ -316,13 +316,21 @@ function InvoiceDetailPage() {
 
   const sendInvoice = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase.from("invoices").update({ status: "issued" }).eq("id", invoiceId);
+      const wasDraft = invoice?.status === "draft";
+      const { error } = await supabase.from("invoices")
+        .update({ status: "issued", ...(wasDraft ? {} : { sent_at: new Date().toISOString() }) })
+        .eq("id", invoiceId);
       if (error) throw error;
       await supabase.from("charges").update({ status: "pending" }).eq("invoice_id", invoiceId);
+      return { wasDraft };
     },
-    onSuccess: () => { invalidate(); toast.success("Cobrança enviada ao cliente"); },
+    onSuccess: (r) => {
+      invalidate();
+      toast.success(r.wasDraft ? "Fatura confirmada — número emitido e lançamentos gerados" : "Cobrança enviada ao cliente");
+    },
     onError: (e: Error) => toast.error(e.message),
   });
+
 
   const cancelInvoice = useMutation({
     mutationFn: async () => {
