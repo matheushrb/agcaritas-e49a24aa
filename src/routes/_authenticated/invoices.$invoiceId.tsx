@@ -361,16 +361,17 @@ function InvoiceDetailPage() {
   const DEL_KEY = "caritas:pendingInvoiceDelete";
 
   const deleteInvoice = useMutation({
-    mutationFn: async ({ restore, password, skipAuth }: { restore: boolean; password?: string; skipAuth?: boolean }) => {
+    mutationFn: async ({ restore, password, skipAuth, method }: { restore: boolean; password?: string; skipAuth?: boolean; method?: "password" | "google" }) => {
       const { data: u } = await supabase.auth.getUser();
       const email = u.user?.email;
       const currentUserId = u.user?.id;
       if (!email) throw new Error("Sessão expirada. Faça login novamente.");
-      const usesGoogle = u.user?.identities?.some((identity) => identity.provider === "google") ?? false;
+      const usesGoogle = method ? method === "google" : (u.user?.identities?.some((identity) => identity.provider === "google") ?? false);
 
       if (skipAuth) {
         // reautenticação já concluída (retorno do Google)
       } else if (usesGoogle) {
+
         // guarda a escolha do usuário para retomar após o redirecionamento
         try { sessionStorage.setItem(DEL_KEY, JSON.stringify({ invoiceId, restore })); } catch { /* ignore */ }
         const result = await lovable.auth.signInWithOAuth("google", {
