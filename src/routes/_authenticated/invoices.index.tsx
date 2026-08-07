@@ -1234,9 +1234,18 @@ function NewInvoiceWizard({
               </div>
             </div>
 
-            <div className="fat01-sum-number">
-              <span>Número previsto</span><b>{previewNumber}</b>
+            <div className="fat01-sum-number" style={{ display: "block" }}>
+              <span>Número da fatura</span>
+              <Input
+                className="fat01-input"
+                style={{ marginTop: 6, fontWeight: 700 }}
+                value={previewNumber === "—" ? "" : previewNumber}
+                placeholder="Ex.: 202608001"
+                onChange={e => { setNumberTouched(true); setPreviewNumber(e.target.value); }}
+              />
+              <span className="fat01-hint">Sugestão automática — você pode alterar.</span>
             </div>
+
 
             <p className="fat01-hint" style={{ marginTop: 12 }}>
               A fatura é criada como <b>rascunho</b>. O número definitivo é gerado na confirmação e
