@@ -161,36 +161,42 @@ function InvoiceDetailPage() {
     return resolved || (it.task_id ? "Tarefa" : "Lançamento");
   };
 
-  /** Ordem: tarefa-pai, depois seus entregáveis (recuados). */
+  /** Ordem: agrupado por projeto (uma vez cada), tarefa-pai e depois seus entregáveis. */
   const orderedItems = useMemo(() => {
     const parents = items.filter(i => !i.deliverable_id);
     const children = items.filter(i => !!i.deliverable_id);
     const used = new Set<string>();
-    const out: Array<Item & { isChild?: boolean }> = [];
+    // Blocos: tarefa-pai + entregáveis
+    const blocks: Array<{ project: string; rows: Array<Item & { isChild?: boolean }> }> = [];
     for (const p of parents) {
-      out.push(p);
+      const rows: Array<Item & { isChild?: boolean }> = [p];
       for (const c of children) {
-        if (c.task_id && c.task_id === p.task_id) { out.push({ ...c, isChild: true }); used.add(c.id); }
+        if (c.task_id && c.task_id === p.task_id) { rows.push({ ...c, isChild: true }); used.add(c.id); }
       }
+      blocks.push({ project: p.project_id ?? "__none__", rows });
     }
-    // Entregáveis sem cobrança da tarefa-pai continuam juntos por tarefa,
-    // em vez de aparecerem como linhas independentes espalhadas.
-    const orphanTaskOrder: string[] = [];
+    // Entregáveis órfãos agrupados por tarefa
+    const orphanOrder: string[] = [];
     const orphanBuckets = new Map<string, Item[]>();
     for (const child of children) {
       if (used.has(child.id)) continue;
       const key = child.task_id ?? child.id;
-      if (!orphanBuckets.has(key)) {
-        orphanBuckets.set(key, []);
-        orphanTaskOrder.push(key);
-      }
+      if (!orphanBuckets.has(key)) { orphanBuckets.set(key, []); orphanOrder.push(key); }
       orphanBuckets.get(key)?.push(child);
     }
-    for (const key of orphanTaskOrder) {
-      for (const child of orphanBuckets.get(key) ?? []) out.push({ ...child, isChild: true });
+    for (const key of orphanOrder) {
+      const rows = (orphanBuckets.get(key) ?? []).map(c => ({ ...c, isChild: true }));
+      if (rows.length) blocks.push({ project: rows[0].project_id ?? "__none__", rows });
     }
-    return out;
+    // Junta todos os blocos do mesmo projeto (uma única ocorrência por projeto)
+    const byProject = new Map<string, Array<Item & { isChild?: boolean }>>();
+    for (const b of blocks) {
+      if (!byProject.has(b.project)) byProject.set(b.project, []);
+      byProject.get(b.project)!.push(...b.rows);
+    }
+    return Array.from(byProject.values()).flat();
   }, [items]);
+
 
 
 
