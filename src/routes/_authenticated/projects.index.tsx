@@ -169,7 +169,7 @@ function ProjectsPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("tasks")
-        .select("project_id,status,due_date,billing_enabled,billing_value,broadcast_kind,aired_dates,deliverables");
+        .select("project_id,status,due_date,billing_enabled,billing_base_value,billing_value,broadcast_kind,aired_dates,deliverables");
       if (error) throw error;
 
       const counts: TaskAgg["counts"] = {};
@@ -183,6 +183,7 @@ function ProjectsPage() {
           due_date: string | null;
           status: string;
           billing_enabled: boolean | null;
+          billing_base_value: number | null;
           billing_value: number | null;
           broadcast_kind: string | null;
           aired_dates: string[] | null;
@@ -195,7 +196,7 @@ function ProjectsPage() {
         if (row.status === "done") counts[pid].done += 1;
         if (row.due_date && new Date(row.due_date) < today && row.status !== "done") counts[pid].overdue += 1;
 
-        const base = row.billing_enabled && row.billing_value != null ? Number(row.billing_value) : 0;
+        const base = row.billing_enabled ? Number(row.billing_base_value ?? row.billing_value ?? 0) : 0;
         const multiplier = row.broadcast_kind && (row.aired_dates?.length ?? 0) > 0 ? row.aired_dates!.length : 1;
         const deliverables = (row.deliverables ?? [])
           .filter((d) => d.billing_enabled && d.billing_value != null)

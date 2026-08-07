@@ -27,6 +27,7 @@ export type P4Task = {
   status?: string | null;
   billed?: boolean | null;
   billing_enabled?: boolean | null;
+  billing_base_value?: number | string | null;
   billing_value?: number | string | null;
   broadcast_kind?: string | null;
   aired_dates?: string[] | null;
@@ -135,7 +136,7 @@ export function Prj04Finance({
     const received = charges.filter(c => c.status === "paid").reduce((s, c) => s + Number(c.amount ?? 0), 0);
     const toReceive = Math.max(0, invoiced - received);
     const projected = tasks.reduce((sum, t) => {
-      const base = t.billing_enabled && t.billing_value != null ? Number(t.billing_value) : 0;
+      const base = t.billing_enabled ? Number(t.billing_base_value ?? t.billing_value ?? 0) : 0;
       const mult = t.broadcast_kind && (t.aired_dates?.length ?? 0) > 0 ? (t.aired_dates as string[]).length : 1;
       const deliv = (t.deliverables ?? [])
         .filter(d => d.billing_enabled && d.billing_value != null)
@@ -155,7 +156,7 @@ export function Prj04Finance({
     return tasks
       .map(t => {
         const mult = t.broadcast_kind && (t.aired_dates?.length ?? 0) > 0 ? (t.aired_dates as string[]).length : 1;
-        const base = t.billing_enabled && t.billing_value != null ? Number(t.billing_value) * mult : 0;
+        const base = t.billing_enabled ? Number(t.billing_base_value ?? t.billing_value ?? 0) * mult : 0;
         const delivs = (t.deliverables ?? []).filter(d => d.billing_enabled && d.billing_value != null);
         const deliv = delivs.reduce((s, d) => s + Number(d.billing_value ?? 0), 0);
         return {

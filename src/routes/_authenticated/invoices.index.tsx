@@ -60,7 +60,7 @@ type Deliverable = {
   aired_at?: string | null; recorded_at?: string | null;
 };
 type BillableTask = {
-  id: string; title: string; billing_value: number | null; billing_enabled: boolean;
+  id: string; title: string; billing_base_value?: number | null; billing_value: number | null; billing_enabled: boolean;
   client_id: string | null; project_id: string | null; status: string | null;
   deliverables?: Deliverable[] | null;
   due_date?: string | null;
@@ -431,7 +431,7 @@ function NewInvoiceWizard({
     queryFn: async () => {
       const { data } = await supabase
         .from("tasks")
-        .select("id,title,billing_value,billing_enabled,client_id,project_id,status,deliverables,due_date,aired_at,aired_dates,recorded_at,recorded_dates,task_type_id")
+        .select("id,title,billing_base_value,billing_value,billing_enabled,client_id,project_id,status,deliverables,due_date,aired_at,aired_dates,recorded_at,recorded_dates,task_type_id")
         .eq("billing_enabled", true);
       const ts = (data ?? []) as BillableTask[];
       const { data: existingCharges } = await supabase
@@ -451,6 +451,7 @@ function NewInvoiceWizard({
   });
 
   const tasks = tasksData.tasks;
+  const taskBaseAmount = (task: BillableTask) => Number(task.billing_base_value ?? task.billing_value ?? 0);
   const invoicedMainTaskIds = tasksData.invoicedMainTaskIds;
   const invoicedDeliverableIds = tasksData.invoicedDeliverableIds;
 
@@ -486,7 +487,7 @@ function NewInvoiceWizard({
     t.status === "done" &&
     matchesClient(t.client_id, t.project_id) &&
     inProjects(t.project_id) &&
-    (t.billing_value ?? 0) > 0,
+    taskBaseAmount(t) > 0,
   ), [tasks, invoicedMainTaskIds, filterClient, selectedProjects, clientOfProject, invoicedProjectIds]);
 
   const billableDeliverables = useMemo<BillableDeliverable[]>(() => {
@@ -526,7 +527,7 @@ function NewInvoiceWizard({
   const subtotal = useMemo(() => {
     let t = 0;
     for (const c of filteredCharges) if (selectedCharges.has(c.id)) t += Number(c.amount ?? 0);
-    for (const tk of filteredTasks) if (selectedTasks.has(tk.id)) t += Number(tk.billing_value ?? 0);
+    for (const tk of filteredTasks) if (selectedTasks.has(tk.id)) t += taskBaseAmount(tk);
     for (const d of billableDeliverables) if (selectedDeliverables.has(d.key)) t += d.amount;
     return t;
   }, [filteredCharges, filteredTasks, billableDeliverables, selectedCharges, selectedTasks, selectedDeliverables]);
@@ -584,7 +585,7 @@ function NewInvoiceWizard({
       lines.push({
         key,
         title: tk.title,
-        amount: Number(tk.billing_value ?? 0),
+        amount: taskBaseAmount(tk),
         reference_date: withOverride(key, ref.reference_date),
         reference_label: ref.reference_label,
         group: groupOf(tk.project_id),
@@ -737,7 +738,7 @@ function NewInvoiceWizard({
           task_id: tk.id,
           client_id: tk.client_id,
           description: `Tarefa: ${tk.title}`,
-          amount: Number(tk.billing_value ?? 0),
+          amount: taskBaseAmount(tk),
           status: "pending_invoice",
           due_date: chargeDate,
           type: "income",
@@ -1030,7 +1031,7 @@ function NewInvoiceWizard({
                   return groupList.map(g => {
                     const groupTotal =
                       g.charges.reduce((s, c) => s + Number(c.amount ?? 0), 0) +
-                      g.tasks.reduce((s, t) => s + Number(t.billing_value ?? 0), 0) +
+                      g.tasks.reduce((s, t) => s + taskBaseAmount(t), 0) +
                       g.orphanDelivs.reduce((s, [, l]) => s + l.reduce((ss, d) => ss + d.amount, 0), 0);
                     const gChargeIds = g.charges.map(c => c.id);
                     const gTaskIds = g.tasks.map(t => t.id);

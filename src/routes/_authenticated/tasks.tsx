@@ -82,6 +82,7 @@ type Task = {
   due_date: string | null;
   start_date?: string | null;
   billing_model: BillingModel | null;
+  billing_base_value: number | null;
   billing_value: number | null;
   billing_enabled: boolean;
   progress: number;
@@ -158,7 +159,7 @@ function TasksPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("tasks")
-        .select("id,title,description,status,priority,project_id,client_id,assignee_id,due_date,billing_model,billing_value,billing_enabled,progress,start_date,platform,delivery_type,estimated_hours,stage,task_type_id,current_stage_id,deliverables,subtasks,broadcast_kind,recorded_at,aired_at,recorded_dates,aired_dates,created_at,archived_at")
+        .select("id,title,description,status,priority,project_id,client_id,assignee_id,due_date,billing_model,billing_base_value,billing_value,billing_enabled,progress,start_date,platform,delivery_type,estimated_hours,stage,task_type_id,current_stage_id,deliverables,subtasks,broadcast_kind,recorded_at,aired_at,recorded_dates,aired_dates,created_at,archived_at")
         .order("created_at", { ascending: false });
       if (error) throw error;
       return ((data ?? []) as any[]).map(t => ({
@@ -257,7 +258,13 @@ function TasksPage() {
     const inProgress = tasks.filter(t => t.status === "in_progress").length;
     const review = tasks.filter(t => t.status === "review").length;
     const done = tasks.filter(t => t.status === "done").length;
-    const value = tasks.reduce((s, t) => s + (t.billing_value ?? 0), 0);
+    const value = tasks.reduce((s, t) => {
+      const base = Number(t.billing_base_value ?? t.billing_value ?? 0);
+      const deliverables = (t.deliverables ?? [])
+        .filter(d => d.billing_enabled)
+        .reduce((sum, d) => sum + Number(d.billing_value ?? 0), 0);
+      return s + base + deliverables;
+    }, 0);
     return { total, overdue, inProgress, review, done, value };
   }, [tasks]);
 
@@ -365,6 +372,7 @@ function createLocalTask(overrides: Partial<Task> = {}): Task {
     assignee_id: null,
     due_date: null,
     billing_model: null,
+    billing_base_value: null,
     billing_value: null,
     billing_enabled: false,
     progress: 0,
