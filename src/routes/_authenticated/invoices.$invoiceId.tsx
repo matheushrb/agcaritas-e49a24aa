@@ -108,7 +108,7 @@ function InvoiceDetailPage() {
     queryKey: ["invoice-charges", invoiceId],
     queryFn: async () => {
       const { data } = await supabase.from("charges")
-        .select("id,description,amount,due_date,deliverable_id,task_id,project_id")
+        .select("id,description,amount,due_date,deliverable_id,task_id,project_id,service_label")
         .eq("invoice_id", invoiceId);
       return (data ?? []) as unknown as Item[];
     },
