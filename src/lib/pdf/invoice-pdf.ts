@@ -296,12 +296,16 @@ export async function generateInvoicePDF(data: InvoicePDFData): Promise<jsPDF> {
   };
 
   const hFrom = party(marginX, "EMITENTE", agencyName, [
+    a.legal_name && a.legal_name !== agencyName ? `Razão social: ${a.legal_name}` : null,
     a.document ? `CNPJ: ${a.document}` : null,
     a.address,
     a.phone,
     a.email,
   ]);
-  const hTo = party(col2X, "DESTINATÁRIO", (c.legal_name || c.company || c.name || "").toUpperCase(), [
+  const clientTitle = (c.company || c.name || c.legal_name || "").trim();
+  const hTo = party(col2X, "DESTINATÁRIO", clientTitle, [
+    c.legal_name && c.legal_name.trim().toUpperCase() !== clientTitle.toUpperCase()
+      ? `Razão social: ${c.legal_name}` : null,
     c.document ? `CNPJ: ${c.document}` : null,
     c.state_registration ? `IE: ${c.state_registration}` : null,
     c.address,
