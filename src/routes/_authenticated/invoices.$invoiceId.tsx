@@ -653,6 +653,7 @@ function InvoiceDetailPage() {
                   <thead>
                     <tr>
                       <th>Descrição</th>
+                      <th>Serviço</th>
                       <th className="num">Quantidade</th>
                       <th className="num">Valor unitário</th>
                       <th className="num">Desconto</th>
@@ -661,12 +662,15 @@ function InvoiceDetailPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {items.map(it => (
+                    {orderedItems.map(it => (
                       <tr key={it.id}>
                         <td>
-                          <div className="f3-itemtitle" style={it.deliverable_id ? { paddingLeft: 14 } : undefined}>{it.description}</div>
-                          {it.deliverable_id && <div className="f3-itemdesc" style={{ paddingLeft: 14 }}>Entregável vinculado à tarefa</div>}
+                          <div className="f3-itemtitle" style={it.isChild ? { paddingLeft: 18 } : undefined}>
+                            {it.isChild && <span style={{ color: "#8FA3BF", marginRight: 4 }}>↳</span>}
+                            {it.description}
+                          </div>
                         </td>
+                        <td style={{ color: "#6B7A90", fontSize: 12 }}>{serviceOf(it)}</td>
                         <td className="num">1</td>
                         <td className="num">{money(num(it.amount))}</td>
                         <td className="num">—</td>
