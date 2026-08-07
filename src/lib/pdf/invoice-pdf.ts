@@ -510,7 +510,7 @@ export async function generateInvoicePDF(data: InvoicePDFData): Promise<jsPDF> {
   };
   meta("Vencimento", data.due_date ? formatDate(data.due_date) : "-", cardY + 8);
   meta("Forma de pagamento", data.payment_method || "Pix", cardY + 21);
-  meta("Status", data.status_label || (data.is_preview ? "Rascunho" : "Pendente"), cardY + 33, true);
+  
 
   y = cardY + pixCardH + 7;
 
