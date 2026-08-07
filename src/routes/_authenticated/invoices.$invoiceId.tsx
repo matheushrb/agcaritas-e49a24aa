@@ -84,7 +84,7 @@ function InvoiceDetailPage() {
     number: "", client_id: "", project_id: "", issue_date: "", competence: "", due_date: "",
     payment_method: "", payment_terms: "", payment_link: "", discount: "0", notes: "",
   });
-  const [drafts, setDrafts] = useState<{ id?: string; description: string; amount: string; due_date: string; project_id: string | null; service: string }[]>([]);
+  const [drafts, setDrafts] = useState<{ id?: string; description: string; amount: string; due_date: string; project_id: string | null; service: string; is_child?: boolean }[]>([]);
   const [removed, setRemoved] = useState<string[]>([]);
   const [pay, setPay] = useState({ date: new Date().toISOString().slice(0, 10), method: "", amount: "" });
   const [methods, setMethods] = useState<string[]>([]);
@@ -152,6 +152,33 @@ function InvoiceDetailPage() {
     (it.deliverable_id ? serviceNames[it.deliverable_id] : null)
     || (it.task_id ? serviceNames[it.task_id] : null)
     || (it.deliverable_id ? "Entregável" : it.task_id ? "Serviço" : "Lançamento");
+
+  /** Ordena por projeto e encaixa os entregáveis logo abaixo da tarefa-pai. */
+  const orderedItems = useMemo<Array<Item & { isChild?: boolean }>>(() => {
+    const byProject = new Map<string, Item[]>();
+    for (const it of items) {
+      const k = it.project_id ?? "__none__";
+      if (!byProject.has(k)) byProject.set(k, []);
+      byProject.get(k)!.push(it);
+    }
+    const out: Array<Item & { isChild?: boolean }> = [];
+    for (const [, list] of byProject) {
+      const parents = list.filter(i => !i.deliverable_id);
+      const children = list.filter(i => !!i.deliverable_id);
+      const used = new Set<string>();
+      for (const p of parents) {
+        out.push(p);
+        for (const ch of children) {
+          if (ch.task_id && ch.task_id === p.task_id && !used.has(ch.id)) {
+            out.push({ ...ch, isChild: true });
+            used.add(ch.id);
+          }
+        }
+      }
+      for (const ch of children) if (!used.has(ch.id)) out.push({ ...ch, isChild: true });
+    }
+    return out;
+  }, [items]);
 
 
 
@@ -246,15 +273,14 @@ function InvoiceDetailPage() {
           phone: organization.phone ?? null, address: organization.address ?? null,
           website: organization.website ?? null, bank_info: organization.bank_info ?? null,
         } : undefined,
-        lines: [...items]
-          .sort((x, y) => (x.project_id ?? "").localeCompare(y.project_id ?? ""))
-          .map(it => ({
-            title: it.description,
-            amount: num(it.amount),
-            reference_date: it.due_date,
-            group: allProjects.find(p => p.id === it.project_id)?.name ?? project?.name ?? null,
-            service: it.service_label || defaultService(it),
-          })),
+        lines: orderedItems.map(it => ({
+          title: it.description,
+          amount: num(it.amount),
+          reference_date: it.due_date,
+          is_child: !!it.isChild,
+          group: allProjects.find(p => p.id === it.project_id)?.name ?? project?.name ?? null,
+          service: it.service_label || defaultService(it),
+        })),
         discount: num(invoice.discount) || undefined,
         notes: invoice.notes || undefined,
         payment_terms: invoice.payment_terms || DEFAULT_PAYMENT_TERMS,
@@ -360,10 +386,11 @@ function InvoiceDetailPage() {
       discount: String(num(invoice.discount)),
       notes: invoice.notes ?? "",
     });
-    setDrafts(items.map(i => ({
+    setDrafts(orderedItems.map(i => ({
       id: i.id, description: i.description, amount: String(num(i.amount)),
       due_date: (i.due_date ?? "").slice(0, 10), project_id: i.project_id ?? null,
       service: i.service_label || defaultService(i),
+      is_child: !!i.isChild,
     })));
     setMethods(parsePaymentMethods(invoice.payment_method));
     setRemoved([]);
@@ -637,11 +664,15 @@ function InvoiceDetailPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {items.map(it => (
+                    {orderedItems.map(it => (
                       <tr key={it.id}>
                         <td>
-                          <div className="f3-itemtitle" style={it.deliverable_id ? { paddingLeft: 14 } : undefined}>{it.description}</div>
-                          {it.deliverable_id && <div className="f3-itemdesc" style={{ paddingLeft: 14 }}>Entregável vinculado à tarefa</div>}
+                          <div className="f3-itemtitle" style={it.deliverable_id ? { paddingLeft: 22, position: "relative" } : undefined}>
+                            {it.deliverable_id && (
+                              <span style={{ position: "absolute", left: 4, color: "#8A9AB0" }}>↳</span>
+                            )}
+                            {it.description}
+                          </div>
                         </td>
                         <td style={{ color: "#6B7A90", fontSize: 12 }}>{it.service_label || defaultService(it)}</td>
                         <td className="num">1</td>
@@ -1006,8 +1037,6 @@ function InvoiceDetailPage() {
                           if (b[0] === "__none__") return -1;
                           return a[1].label.localeCompare(b[1].label, "pt-BR");
                         });
-                        ordered.forEach(([, g]) =>
-                          g.rows.sort((x, y) => (x.d.description || "").localeCompare(y.d.description || "", "pt-BR")));
                         let stripe = 0;
                         return ordered.map(([key, g]) => {
                           const subtotal = g.rows.reduce((s, r) => s + (Number(r.d.amount) || 0), 0);
@@ -1023,10 +1052,13 @@ function InvoiceDetailPage() {
                                 const zebra = stripe++ % 2 === 1;
                                 return (
                                   <div key={i} className={cn("grid grid-cols-[minmax(0,1fr)_170px_120px_100px_28px] gap-2 px-3 py-1.5 border-t items-center", zebra && "bg-muted/20")}>
+                                    <div className="flex items-center gap-1 min-w-0">
+                                      {d.is_child && <span className="text-muted-foreground text-[11px] pl-2">↳</span>}
                                     <input
                                       className="h-7 px-1.5 text-[11px] rounded border bg-background text-foreground w-full"
                                       placeholder="Descrição" value={d.description}
                                       onChange={e => setDrafts(a => a.map((x, j) => j === i ? { ...x, description: e.target.value } : x))} />
+                                    </div>
                                     <input
                                       className="h-7 px-1.5 text-[11px] rounded border bg-background text-foreground w-full"
                                       placeholder="Serviço" value={d.service}
