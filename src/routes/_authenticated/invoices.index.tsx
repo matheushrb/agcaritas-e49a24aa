@@ -652,7 +652,7 @@ function NewInvoiceWizard({
       buckets.get(g)!.push(l);
     }
     return order.flatMap(g => buckets.get(g)!);
-  }, [filteredCharges, filteredTasks, billableDeliverables, selectedCharges, selectedTasks, selectedDeliverables, lineDateOverrides, projects, taskTypeNames]);
+  }, [filteredCharges, filteredTasks, billableDeliverables, selectedCharges, selectedTasks, selectedDeliverables, lineDateOverrides, projects, taskTypeNames, tasks]);
 
   const adjustmentLines = useMemo(() => {
     const extra: typeof previewLines = [];
