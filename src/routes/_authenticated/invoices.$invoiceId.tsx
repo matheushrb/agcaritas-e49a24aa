@@ -334,6 +334,43 @@ function InvoiceDetailPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const deleteInvoice = useMutation({
+    mutationFn: async () => {
+      // devolve os itens para "a faturar" e libera o número da fatura
+      const { error: e1 } = await supabase.from("charges")
+        .update({ status: "pending_invoice", invoice_id: null }).eq("invoice_id", invoiceId);
+      if (e1) throw e1;
+      const delivByTask = new Map<string, Set<string>>();
+      const plainTasks = new Set<string>();
+      for (const it of items) {
+        if (it.task_id && it.deliverable_id) {
+          if (!delivByTask.has(it.task_id)) delivByTask.set(it.task_id, new Set());
+          delivByTask.get(it.task_id)!.add(it.deliverable_id);
+        } else if (it.task_id) plainTasks.add(it.task_id);
+      }
+      for (const [taskId, ids] of delivByTask) {
+        const { data: t } = await supabase.from("tasks").select("deliverables").eq("id", taskId).maybeSingle();
+        const list = (t?.deliverables ?? []) as { id: string; invoiced?: boolean }[];
+        await supabase.from("tasks")
+          .update({ deliverables: list.map(dd => (ids.has(dd.id) ? { ...dd, invoiced: false } : dd)) } as never)
+          .eq("id", taskId);
+      }
+      if (plainTasks.size) {
+        await supabase.from("tasks").update({ billed_invoice_id: null, billed: false } as never).in("id", [...plainTasks]);
+      }
+      const { error: e2 } = await supabase.from("invoices").delete().eq("id", invoiceId);
+      if (e2) throw e2;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["invoices"] });
+      qc.invalidateQueries({ queryKey: ["charges"] });
+      toast.success("Fatura excluída — número liberado e itens devolvidos");
+      navigate({ to: "/invoices" });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+
   const saveNotes = useMutation({
     mutationFn: async () => {
       const { error } = await supabase.from("invoices").update({ notes: notes || null }).eq("id", invoiceId);
