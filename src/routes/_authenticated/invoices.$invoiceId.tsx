@@ -356,7 +356,11 @@ function InvoiceDetailPage() {
       discount: String(num(invoice.discount)),
       notes: invoice.notes ?? "",
     });
-    setDrafts(items.map(i => ({ id: i.id, description: i.description, amount: String(num(i.amount)), due_date: (i.due_date ?? "").slice(0, 10), project_id: i.project_id ?? null })));
+    setDrafts(items.map(i => ({
+      id: i.id, description: i.description, amount: String(num(i.amount)),
+      due_date: (i.due_date ?? "").slice(0, 10), project_id: i.project_id ?? null,
+      service: i.service_label || defaultService(i),
+    })));
     setMethods(parsePaymentMethods(invoice.payment_method));
     setRemoved([]);
     setEditOpen(true);
@@ -968,7 +972,7 @@ function InvoiceDetailPage() {
                     <div className="flex items-center justify-between mb-1">
                       <div className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">Itens ({drafts.length})</div>
                       <Button type="button" size="sm" variant="outline" className="h-6 px-2 text-[10px]"
-                        onClick={() => setDrafts(d => [...d, { description: "", amount: "0", due_date: form.due_date, project_id: draftProjectIds.length === 1 ? draftProjectIds[0] : null }])}>
+                        onClick={() => setDrafts(d => [...d, { description: "", amount: "0", due_date: form.due_date, project_id: draftProjectIds.length === 1 ? draftProjectIds[0] : null, service: "" }])}>
 
                         <Plus className="h-3 w-3 mr-1" /> Adicionar item
                       </Button>
