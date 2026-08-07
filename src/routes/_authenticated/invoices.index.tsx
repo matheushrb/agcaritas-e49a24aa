@@ -1498,6 +1498,7 @@ function InvoiceDetail({ id, clients, organization, onClose }: { id: string; cli
         is_child: !!c.isChild,
         reference_date: c.due_date ?? null,
         reference_label: "Prazo",
+        service: c.service_label ?? null,
         group: c.groupName || null,
       })),
       notes: invoice.notes ?? undefined,
