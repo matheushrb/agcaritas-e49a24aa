@@ -265,17 +265,14 @@ function InvoiceDetailPage() {
           phone: organization.phone ?? null, address: organization.address ?? null,
           website: organization.website ?? null, bank_info: organization.bank_info ?? null,
         } : undefined,
-        lines: [...items]
-          .sort((x, y) => (x.project_id ?? "").localeCompare(y.project_id ?? ""))
+        lines: [...orderedItems]
           .map(it => ({
             title: it.description,
             amount: num(it.amount),
+            is_child: !!it.isChild,
             reference_date: it.due_date,
             group: allProjects.find(p => p.id === it.project_id)?.name ?? project?.name ?? null,
-            service:
-              (it.deliverable_id ? serviceNames[it.deliverable_id] : null)
-              || (it.task_id ? serviceNames[it.task_id] : null)
-              || (it.deliverable_id ? "Entregável" : it.task_id ? "Serviço" : "Lançamento"),
+            service: serviceOf(it),
           })),
         discount: num(invoice.discount) || undefined,
         notes: invoice.notes || undefined,
