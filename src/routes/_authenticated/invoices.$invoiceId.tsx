@@ -148,6 +148,13 @@ function InvoiceDetailPage() {
     },
   });
 
+  const defaultService = (it: Item) =>
+    (it.deliverable_id ? serviceNames[it.deliverable_id] : null)
+    || (it.task_id ? serviceNames[it.task_id] : null)
+    || (it.deliverable_id ? "Entregável" : it.task_id ? "Serviço" : "Lançamento");
+
+
+
 
 
   const { data: client } = useQuery({
