@@ -497,7 +497,7 @@ function ProposalDrawer({
                     unit_price: it.unit_price,
                     amount: it.qty * it.unit_price,
                   })),
-                  public_url: `${window.location.origin}/p/${proposal.id}`,
+                  public_url: `${window.location.origin}/p/${proposal.public_token}`,
                 });
                 pdf.save(`${proposal.number}.pdf`);
               }}
