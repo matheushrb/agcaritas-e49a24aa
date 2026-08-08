@@ -47,6 +47,7 @@ interface Proposal {
   id: string;
   organization_id: string;
   number: string;
+  public_token: string;
   client_id: string | null;
   lead_id: string | null;
   status: Status;
