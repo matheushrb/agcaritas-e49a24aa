@@ -47,6 +47,7 @@ interface Proposal {
   id: string;
   organization_id: string;
   number: string;
+  public_token: string;
   client_id: string | null;
   lead_id: string | null;
   status: Status;
@@ -497,7 +498,7 @@ function ProposalDrawer({
                     unit_price: it.unit_price,
                     amount: it.qty * it.unit_price,
                   })),
-                  public_url: `${window.location.origin}/p/${proposal.id}`,
+                  public_url: `${window.location.origin}/p/${proposal.public_token}`,
                 });
                 pdf.save(`${proposal.number}.pdf`);
               }}
@@ -508,7 +509,7 @@ function ProposalDrawer({
               variant="outline"
               className="rounded-full gap-2"
               onClick={() => {
-                const url = `${window.location.origin}/p/${proposal.id}`;
+                const url = `${window.location.origin}/p/${proposal.public_token}`;
                 navigator.clipboard.writeText(url);
                 toast.success("Link público copiado");
               }}
