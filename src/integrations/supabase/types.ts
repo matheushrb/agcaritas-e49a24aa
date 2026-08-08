@@ -2924,6 +2924,22 @@ export type Database = {
     }
     Functions: {
       current_organization_id: { Args: never; Returns: string }
+      get_public_proposal: {
+        Args: { p_token: string }
+        Returns: {
+          billing_model: Database["public"]["Enums"]["billing_model"]
+          created_at: string
+          doc_number: string
+          id: string
+          items: Json
+          number: string
+          scope_text: string
+          status: Database["public"]["Enums"]["proposal_status"]
+          title: string
+          total_value: number
+          valid_until: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -2934,6 +2950,16 @@ export type Database = {
       is_user_blocked: {
         Args: { _date: string; _user_id: string }
         Returns: boolean
+      }
+      respond_public_proposal: {
+        Args: {
+          p_action: string
+          p_email: string
+          p_name: string
+          p_notes?: string
+          p_token: string
+        }
+        Returns: string
       }
     }
     Enums: {
