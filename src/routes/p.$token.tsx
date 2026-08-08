@@ -128,9 +128,9 @@ function ProposalView({ p, token }: { p: Proposal; token: string }) {
       const { data, error } = await supabase.rpc("respond_public_proposal", {
         p_token: token,
         p_action: action,
-        p_name: name.trim() || null,
-        p_email: email.trim() || null,
-        p_notes: notes.trim() || null,
+        p_name: name.trim(),
+        p_email: email.trim(),
+        p_notes: notes.trim() || undefined,
       });
       if (error) throw error;
       return data as ProposalStatus;
