@@ -509,7 +509,7 @@ function ProposalDrawer({
               variant="outline"
               className="rounded-full gap-2"
               onClick={() => {
-                const url = `${window.location.origin}/p/${proposal.id}`;
+                const url = `${window.location.origin}/p/${proposal.public_token}`;
                 navigator.clipboard.writeText(url);
                 toast.success("Link público copiado");
               }}
