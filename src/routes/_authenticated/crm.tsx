@@ -1435,8 +1435,11 @@ function NewLeadModal({
   const [briefing, setBriefing] = useState<BriefingData>({});
 
   useEffect(() => {
-    if (open && !form.stage_id && stages[0]) setForm(f => ({ ...f, stage_id: stages[0].id }));
-  }, [open, stages]);
+    if (!open) return;
+    if (initialStageId) setForm(f => ({ ...f, stage_id: initialStageId }));
+    else if (!form.stage_id && stages[0]) setForm(f => ({ ...f, stage_id: stages[0].id }));
+  }, [open, stages, initialStageId]);
+
 
   const briefingTemplates = templates.filter(t => t.template_type === "briefing");
   const template = briefingTemplates.find(t => t.id === form.briefing_template_id) ?? null;
