@@ -1134,7 +1134,7 @@ function NewLeadModal({
 
         <DialogFooter>
           <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancelar</Button>
-          <Button onClick={() => create.mutate()} disabled={!form.name.trim() || create.isPending}>
+          <Button onClick={() => create.mutate()} disabled={!form.name.trim() || !form.service_type_id || create.isPending}>
             {create.isPending ? "Salvando…" : "Salvar lead"}
           </Button>
         </DialogFooter>
