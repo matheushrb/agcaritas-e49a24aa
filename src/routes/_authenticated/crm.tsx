@@ -1501,8 +1501,8 @@ function Field({
 
 // ---------- KPI ----------
 function KpiCard({
-  label, value, icon: Icon, tone,
-}: { label: string; value: string; icon: any; tone: string }) {
+  label, value, icon: Icon, tone, subtitle,
+}: { label: string; value: string; icon: any; tone: string; subtitle?: string }) {
   return (
     <div className="rounded-3xl border border-border bg-card p-5">
       <div className="flex items-center justify-between">
@@ -1510,6 +1510,7 @@ function KpiCard({
         <Icon className={`h-4 w-4 ${tone}`} />
       </div>
       <p className="mt-2 font-display text-2xl font-bold tabular-nums">{value}</p>
+      {subtitle ? <p className="mt-1 text-[10px] text-muted-foreground">{subtitle}</p> : null}
     </div>
   );
 }
