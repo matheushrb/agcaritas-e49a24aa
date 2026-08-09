@@ -74,6 +74,7 @@ interface Lead {
   client_id: string | null;
   service_type_id: string | null;
   next_contact_at: string | null;
+  we_approached: boolean | null;
   scope_items: ScopeItem[];
 }
 
@@ -695,6 +696,18 @@ function LeadDrawer({
 
           {/* --- Dados --- */}
           <TabsContent value="info" className="mt-4 space-y-3">
+            <div className="cw">
+              <div className="cw-grid cw-grid-2">
+                <button type="button" className={`cw-choice${lead.we_approached === true ? " is-on" : ""}`} onClick={() => onPatch({ we_approached: true })}>
+                  <span className="cw-choice-title"><Send size={15} /> Nós abordamos</span>
+                  <span className="cw-choice-desc">Prospecção ativa da agência</span>
+                </button>
+                <button type="button" className={`cw-choice${lead.we_approached === false ? " is-on" : ""}`} onClick={() => onPatch({ we_approached: false })}>
+                  <span className="cw-choice-title"><Inbox size={15} /> Fomos abordados</span>
+                  <span className="cw-choice-desc">O lead chegou até nós</span>
+                </button>
+              </div>
+            </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label className="text-xs">Temperatura</Label>
@@ -979,6 +992,7 @@ function NewLeadModal({
     segment: "", stage_id: "", source: "", client_id: "",
     service_type_id: "", owner_id: "", next_contact_at: "",
     temperature: "warm" as Temperature, briefing_template_id: "",
+    approach: "" as "" | "we" | "them",
   };
   const [form, setForm] = useState(empty);
   const [scopeItems, setScopeItems] = useState<ScopeItem[]>([]);
@@ -1007,6 +1021,7 @@ function NewLeadModal({
         service_type_id: form.service_type_id || null,
         owner_id: form.owner_id || null,
         next_contact_at: form.next_contact_at || null,
+        we_approached: form.approach === "we" ? true : form.approach === "them" ? false : null,
         scope_items: scopeItems.filter(i => i.title.trim()),
         estimated_value: scopeItems.reduce((a, i) => a + Number(i.qty || 0) * Number(i.unit_price || 0), 0),
         stage_id: form.stage_id || null,
