@@ -413,6 +413,7 @@ function CrmPage() {
                 stage={stage}
                 leads={byStage.get(stage.id) ?? []}
                 serviceTypeById={serviceTypeById}
+                teamMembers={teamMembers}
                 onOpen={l => setOpenLeadId(l.id)}
               />
             ))}
@@ -422,6 +423,7 @@ function CrmPage() {
               <LeadCard
                 lead={dragging}
                 serviceType={(dragging.service_type_id && serviceTypeById.get(dragging.service_type_id)) || null}
+                teamMembers={teamMembers}
                 dragging
               />
             ) : null}
@@ -501,11 +503,12 @@ function CrmPage() {
 
 // ---------- Column ----------
 function Column({
-  stage, leads, serviceTypeById, onOpen,
+  stage, leads, serviceTypeById, teamMembers, onOpen,
 }: {
   stage: PipelineStage;
   leads: Lead[];
   serviceTypeById: Map<string, ServiceTypeLite>;
+  teamMembers: MemberLite[];
   onOpen: (l: Lead) => void;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: stage.id });
@@ -532,6 +535,7 @@ function Column({
             key={l.id}
             lead={l}
             serviceType={(l.service_type_id && serviceTypeById.get(l.service_type_id)) || null}
+            teamMembers={teamMembers}
             onOpen={onOpen}
           />
         ))}
@@ -545,7 +549,7 @@ function Column({
   );
 }
 
-function DraggableCard({ lead, serviceType, onOpen }: { lead: Lead; serviceType: ServiceTypeLite | null; onOpen: (l: Lead) => void }) {
+function DraggableCard({ lead, serviceType, teamMembers, onOpen }: { lead: Lead; serviceType: ServiceTypeLite | null; teamMembers: MemberLite[]; onOpen: (l: Lead) => void }) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id: lead.id });
   return (
     <div ref={setNodeRef} style={{ opacity: isDragging ? 0.4 : 1 }} className="group">
@@ -559,7 +563,7 @@ function DraggableCard({ lead, serviceType, onOpen }: { lead: Lead; serviceType:
           <GripVertical className="h-3.5 w-3.5" />
         </button>
         <button type="button" onClick={() => onOpen(lead)} className="flex-1 text-left min-w-0">
-          <LeadCard lead={lead} serviceType={serviceType} />
+          <LeadCard lead={lead} serviceType={serviceType} teamMembers={teamMembers} />
         </button>
       </div>
     </div>
@@ -573,18 +577,69 @@ function TemperatureIcon({ value }: { value: Temperature | null }) {
   return <Icon className={`h-3.5 w-3.5 ${t.tone}`} aria-label={t.label} />;
 }
 
-function LeadCard({ lead, serviceType = null, dragging = false }: { lead: Lead; serviceType?: ServiceTypeLite | null; dragging?: boolean }) {
+const TEMP_BORDER: Record<string, string> = { hot: "#E24B4A", warm: "#F59E0B", cold: "#3B82F6" };
+
+const AVATAR_COLORS = ["#2F6BEF", "#E24B4A", "#F59E0B", "#10B981", "#8B5CF6", "#0EA5E9"];
+
+function initialsOf(name: string) {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  return ((parts[0]?.[0] ?? "") + (parts[1]?.[0] ?? "")).toUpperCase() || "?";
+}
+
+function LeadCard({
+  lead, serviceType = null, teamMembers = [], dragging = false,
+}: { lead: Lead; serviceType?: ServiceTypeLite | null; teamMembers?: MemberLite[]; dragging?: boolean }) {
+  const owner = lead.owner_id ? teamMembers.find(m => m.id === lead.owner_id) ?? null : null;
+  const ownerName = owner ? memberLabel(owner) : null;
+  const avatarColor = owner
+    ? AVATAR_COLORS[Math.abs(owner.id.charCodeAt(0) + owner.id.charCodeAt(owner.id.length - 1)) % AVATAR_COLORS.length]
+    : AVATAR_COLORS[0];
+
+  const tempColor = lead.temperature ? TEMP_BORDER[lead.temperature] : null;
+
+  let nextContact: { label: string; late: boolean } | null = null;
+  if (lead.next_contact_at) {
+    const d = new Date(String(lead.next_contact_at).slice(0, 10) + "T00:00:00");
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    nextContact = { label: d.toLocaleDateString("pt-BR"), late: d.getTime() <= today.getTime() };
+  }
+
   return (
     <div
       className={`rounded-2xl border border-border bg-card p-3 ${
         dragging ? "shadow-[var(--shadow-elevated)] rotate-1" : "hover:border-primary/40 transition-colors"
       }`}
+      style={tempColor ? { borderLeft: `3px solid ${tempColor}` } : { borderLeftWidth: 3 }}
     >
       <div className="flex items-start justify-between gap-2">
         <p className="text-sm font-medium truncate">{lead.name}</p>
         <TemperatureIcon value={lead.temperature} />
       </div>
-      {lead.company && <p className="text-xs text-muted-foreground truncate">{lead.company}</p>}
+
+      {(lead.company || lead.client_id) && (
+        <div className="flex items-center gap-1.5 min-w-0">
+          {lead.company && <p className="text-xs text-muted-foreground truncate">{lead.company}</p>}
+          {lead.client_id && (
+            <span className="inline-flex items-center gap-0.5 text-[10px] text-emerald-600 dark:text-emerald-400 shrink-0">
+              <CheckCircle2 className="h-3 w-3" /> Cliente
+            </span>
+          )}
+        </div>
+      )}
+
+      {ownerName && (
+        <div className="mt-2 flex items-center gap-1.5 min-w-0">
+          <span
+            className="grid h-5 w-5 shrink-0 place-items-center rounded-full text-[9px] font-semibold text-white"
+            style={{ background: avatarColor }}
+          >
+            {initialsOf(ownerName)}
+          </span>
+          <span className="text-[11px] text-muted-foreground truncate">{ownerName}</span>
+        </div>
+      )}
+
       <div className="mt-2 flex items-center justify-between gap-2">
         <div className="flex min-w-0 flex-wrap items-center gap-1">
           {lead.segment ? (
@@ -611,9 +666,20 @@ function LeadCard({ lead, serviceType = null, dragging = false }: { lead: Lead; 
           <span className="text-[10px] tabular-nums text-muted-foreground">{lead.probability}%</span>
         </div>
       )}
+      {nextContact && (
+        <div
+          className={`mt-2 flex items-center gap-1 text-[10px] ${
+            nextContact.late ? "font-medium text-[#E24B4A]" : "text-muted-foreground"
+          }`}
+        >
+          <CalendarDays className="h-3 w-3" />
+          <span>Próximo contato: {nextContact.label}</span>
+        </div>
+      )}
     </div>
   );
 }
+
 
 // ---------- Drawer ----------
 function LeadDrawer({
