@@ -461,6 +461,17 @@ function CrmPage() {
               <p className="font-medium">Lead ganho: {wonBanner.name}</p>
               <p className="text-xs text-muted-foreground">Criar um Plano de Marketing para este cliente?</p>
             </div>
+            {!wonBanner.client_id && (
+              <Button
+                size="sm"
+                variant="outline"
+                className="rounded-full ml-2"
+                disabled={createClientFromLead.isPending}
+                onClick={() => createClientFromLead.mutate(wonBanner)}
+              >
+                Criar cliente
+              </Button>
+            )}
             <Button
               size="sm"
               className="rounded-full ml-2"
