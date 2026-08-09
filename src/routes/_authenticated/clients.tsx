@@ -601,14 +601,6 @@ export function NewClientDialog({
                   )}
                 </div>
               </DialogField>
-              <DialogField label="Status">
-                <Select value={form.status} onValueChange={v => set("status", v)}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {Object.entries(STATUS).map(([k, v]) => <SelectItem key={k} value={k}>{v.label}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </DialogField>
             </div>
 
             {form.person_type === "PJ" ? (
