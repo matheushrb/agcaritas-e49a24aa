@@ -270,8 +270,8 @@ function ClientsPage() {
                             {c.phone && <div className="inline-flex items-center gap-1.5"><Phone className="h-3.5 w-3.5" />{c.phone}</div>}
                           </div>
                         </div>
-                        <Badge className={cn("rounded-full shrink-0 self-center", STATUS[c.status ?? "prospect"]?.color ?? "bg-muted")}>
-                          {STATUS[c.status ?? "prospect"]?.label ?? "—"}
+                        <Badge className={cn("rounded-full shrink-0 self-center", STATUS[computeClientStatus(c, activeClientIds, prospectClientIds)]?.color ?? "bg-muted")}>
+                          {STATUS[computeClientStatus(c, activeClientIds, prospectClientIds)]?.label ?? "—"}
                         </Badge>
                       </div>
                     </button>
