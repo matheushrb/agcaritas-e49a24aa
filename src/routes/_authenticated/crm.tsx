@@ -193,6 +193,31 @@ function CrmPage() {
 
   const serviceTypeById = useMemo(() => new Map(serviceTypes.map(s => [s.id, s])), [serviceTypes]);
 
+  const { data: activityRows = [] } = useQuery({
+    queryKey: ["lead_activities", "counts"],
+    queryFn: async (): Promise<{ lead_id: string }[]> => {
+      const { data, error } = await supabase.from("lead_activities").select("lead_id");
+      if (error) throw error;
+      return (data ?? []) as { lead_id: string }[];
+    },
+  });
+  const { data: meetingRows = [] } = useQuery({
+    queryKey: ["lead_meetings", "counts"],
+    queryFn: async (): Promise<{ lead_id: string }[]> => {
+      const { data, error } = await supabase.from("lead_meetings").select("lead_id");
+      if (error) throw error;
+      return (data ?? []) as { lead_id: string }[];
+    },
+  });
+  const activityCounts = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const r of [...activityRows, ...meetingRows]) {
+      if (!r?.lead_id) continue;
+      map.set(r.lead_id, (map.get(r.lead_id) ?? 0) + 1);
+    }
+    return map;
+  }, [activityRows, meetingRows]);
+
   const [query, setQuery] = useState("");
   const [segment, setSegment] = useState<string>("all");
   const [serviceTypeFilter, setServiceTypeFilter] = useState<string>("all");
