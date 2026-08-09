@@ -26,13 +26,14 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   Search, Plus, ChevronLeft, ChevronRight, FileText, Building2, Mail,
   Phone, Tag, DollarSign, User, GripVertical, TrendingUp, Target,
-  Sparkles, X, Flame, Snowflake, Thermometer, CalendarDays, CheckCircle2, Clock,
+  Sparkles, X, Flame, Snowflake, Thermometer, CalendarDays, CheckCircle2, Clock, Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { BriefingForm } from "@/components/briefing-form";
 import {
   fetchBriefingTemplates, type BriefingData, type BriefingTemplate,
 } from "@/lib/briefing";
+import { useTaskTypes, type TaskTypeRow } from "@/lib/task-types";
 import { fetchStages, stagesKey, type PipelineStage } from "@/components/settings/pipeline-stages-editor";
 
 export const Route = createFileRoute("/_authenticated/crm")({
@@ -71,6 +72,7 @@ interface Lead {
   client_id: string | null;
   service_type_id: string | null;
   next_contact_at: string | null;
+  scope_items: ScopeItem[];
 }
 
 interface LeadActivity {
@@ -104,6 +106,7 @@ const LEAD_SEGMENTS = ["Saúde", "Moda", "Imóveis", "Alimentação", "Educaçã
 type ClientLite = { id: string; name: string; company: string | null };
 type ServiceTypeLite = { id: string; name: string; color: string };
 type MemberLite = { id: string; display_name: string | null; full_name: string | null };
+type ScopeItem = { task_type_id: string | null; title: string; qty: number; unit_price: number; billing_model: string | null };
 
 function useClientsLite() {
   return useQuery({
@@ -583,10 +586,13 @@ function LeadDrawer({
   onCreateProposal: () => void;
 }) {
   const qc = useQueryClient();
+  const { data: taskTypes = [] } = useTaskTypes();
   const [activity, setActivity] = useState({ kind: "note", title: "", notes: "", due_date: "" });
   const [briefing, setBriefing] = useState<BriefingData>({});
+  const [scopeItems, setScopeItems] = useState<ScopeItem[]>([]);
 
   useEffect(() => { setBriefing((lead?.briefing as BriefingData) ?? {}); }, [lead?.id]);
+  useEffect(() => { setScopeItems((lead?.scope_items as ScopeItem[]) ?? []); }, [lead?.id]);
 
   const { data: activities = [] } = useQuery({
     queryKey: ["lead_activities", lead?.id],
@@ -709,14 +715,7 @@ function LeadDrawer({
                 />
               </div>
               <div>
-                <Label className="text-xs">Valor estimado (R$)</Label>
-                <Input
-                  type="number" min={0} step={100} className="mt-1"
-                  defaultValue={lead.estimated_value ?? ""}
-                  onBlur={e => onPatch({ estimated_value: e.target.value ? Number(e.target.value) : null })}
-                />
-              </div>
-              <div>
+
                 <Label className="text-xs">Fechamento previsto</Label>
                 <Input
                   type="date" className="mt-1"
@@ -733,6 +732,21 @@ function LeadDrawer({
                 />
               </div>
             </div>
+
+            <div className="space-y-2">
+              <ScopeBuilder items={scopeItems} onChange={setScopeItems} taskTypes={taskTypes} />
+              <Button
+                variant="outline"
+                className="w-full rounded-full"
+                onClick={() => onPatch({
+                  scope_items: scopeItems.filter(i => i.title.trim()),
+                  estimated_value: scopeItems.reduce((a, i) => a + Number(i.qty || 0) * Number(i.unit_price || 0), 0),
+                })}
+              >
+                Salvar escopo
+              </Button>
+            </div>
+
 
             <div>
               <Label className="text-xs flex items-center gap-1.5"><User className="size-3.5" />Responsável</Label>
@@ -957,13 +971,15 @@ function NewLeadModal({
   teamMembers: MemberLite[];
 }) {
   const qc = useQueryClient();
+  const { data: taskTypes = [] } = useTaskTypes();
   const empty = {
     name: "", company: "", email: "", phone: "",
-    segment: "", estimated_value: "", stage_id: "", source: "", client_id: "",
+    segment: "", stage_id: "", source: "", client_id: "",
     service_type_id: "", owner_id: "", next_contact_at: "",
     temperature: "warm" as Temperature, briefing_template_id: "",
   };
   const [form, setForm] = useState(empty);
+  const [scopeItems, setScopeItems] = useState<ScopeItem[]>([]);
   const [briefing, setBriefing] = useState<BriefingData>({});
 
   useEffect(() => {
@@ -989,7 +1005,8 @@ function NewLeadModal({
         service_type_id: form.service_type_id || null,
         owner_id: form.owner_id || null,
         next_contact_at: form.next_contact_at || null,
-        estimated_value: form.estimated_value ? Number(form.estimated_value) : null,
+        scope_items: scopeItems.filter(i => i.title.trim()),
+        estimated_value: scopeItems.reduce((a, i) => a + Number(i.qty || 0) * Number(i.unit_price || 0), 0),
         stage_id: form.stage_id || null,
         probability: stage?.default_probability ?? 0,
         temperature: form.temperature,
@@ -1003,6 +1020,7 @@ function NewLeadModal({
       qc.invalidateQueries({ queryKey: leadsKey });
       onOpenChange(false);
       setForm({ ...empty, stage_id: stages[0]?.id ?? "" });
+      setScopeItems([]);
       setBriefing({});
     },
     onError: (e: any) => toast.error(e?.message ?? "Erro ao criar lead"),
@@ -1079,13 +1097,6 @@ function NewLeadModal({
           <Field label="Email">
             <Input type="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} />
           </Field>
-          <Field label="Valor estimado (R$)">
-            <Input
-              type="number" min="0" step="100"
-              value={form.estimated_value}
-              onChange={e => setForm({ ...form, estimated_value: e.target.value })}
-            />
-          </Field>
           <Field label="Origem">
             <Select value={form.source || undefined} onValueChange={v => setForm({ ...form, source: v })}>
               <SelectTrigger><SelectValue placeholder="Selecionar origem" /></SelectTrigger>
@@ -1126,6 +1137,10 @@ function NewLeadModal({
           </Field>
         </div>
 
+        <ScopeBuilder items={scopeItems} onChange={setScopeItems} taskTypes={taskTypes} />
+
+
+
         {template && (
           <div className="border-t border-border pt-4">
             <BriefingForm template={template} data={briefing} onChange={setBriefing} />
@@ -1140,6 +1155,89 @@ function NewLeadModal({
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  );
+}
+
+// ---------- Escopo (itens de precificação) ----------
+function ScopeBuilder({
+  items, onChange, taskTypes,
+}: { items: ScopeItem[]; onChange: (items: ScopeItem[]) => void; taskTypes: TaskTypeRow[] }) {
+  const patch = (i: number, p: Partial<ScopeItem>) =>
+    onChange(items.map((it, idx) => (idx === i ? { ...it, ...p } : it)));
+  const total = items.reduce((a, i) => a + Number(i.qty || 0) * Number(i.unit_price || 0), 0);
+
+  return (
+    <div className="rounded-2xl border border-border p-3 space-y-2">
+      <Label className="text-xs">Escopo / itens</Label>
+
+      {items.length === 0 && (
+        <p className="text-xs text-muted-foreground">Nenhum item. Adicione serviços do catálogo ou um valor livre.</p>
+      )}
+
+      {items.map((item, i) => (
+        <div key={i} className="grid grid-cols-[1fr_70px_110px_36px] gap-2 items-center">
+          {item.task_type_id !== null ? (
+            <Select
+              value={item.task_type_id || undefined}
+              onValueChange={v => {
+                const t = taskTypes.find(tt => tt.id === v);
+                patch(i, {
+                  task_type_id: v,
+                  title: t?.name ?? "",
+                  unit_price: t?.default_price ?? 0,
+                  billing_model: t?.default_billing_model ?? null,
+                });
+              }}
+            >
+              <SelectTrigger className="h-9"><SelectValue placeholder="Selecionar serviço" /></SelectTrigger>
+              <SelectContent>
+                {taskTypes.map(t => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          ) : (
+            <Input
+              className="h-9"
+              placeholder="Descrição do item"
+              value={item.title}
+              onChange={e => patch(i, { title: e.target.value })}
+            />
+          )}
+          <Input
+            className="h-9" type="number" min={0} step="1"
+            value={item.qty}
+            onChange={e => patch(i, { qty: Number(e.target.value) || 0 })}
+          />
+          <Input
+            className="h-9" type="number" min={0} step="0.01"
+            value={item.unit_price}
+            onChange={e => patch(i, { unit_price: Number(e.target.value) || 0 })}
+          />
+          <Button variant="ghost" size="icon" onClick={() => onChange(items.filter((_, idx) => idx !== i))}>
+            <Trash2 className="size-4" />
+          </Button>
+        </div>
+      ))}
+
+      <div className="flex flex-wrap gap-2 pt-1">
+        <Button
+          variant="outline" size="sm" className="rounded-full"
+          onClick={() => onChange([...items, { task_type_id: "", title: "", qty: 1, unit_price: 0, billing_model: null }])}
+        >
+          <Plus className="size-3.5 mr-1" /> Adicionar item do catálogo
+        </Button>
+        <Button
+          variant="outline" size="sm" className="rounded-full"
+          onClick={() => onChange([...items, { task_type_id: null, title: "", qty: 1, unit_price: 0, billing_model: null }])}
+        >
+          <Plus className="size-3.5 mr-1" /> Valor livre
+        </Button>
+      </div>
+
+      <div className="flex justify-between border-t border-border pt-2 text-sm">
+        <span className="text-muted-foreground">Total</span>
+        <span className="font-semibold tabular-nums">{brl(total)}</span>
+      </div>
+    </div>
   );
 }
 
