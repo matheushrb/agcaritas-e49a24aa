@@ -89,12 +89,39 @@ function ClientsPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("clients")
-        .select("id,name,status,segment,email,phone,tax_id")
+        .select("id,name,status,segment,email,phone,tax_id,created_at")
         .order("name");
       if (error) throw error;
       return (data ?? []) as Client[];
     },
   });
+
+  const { data: activeClientIds = new Set<string>() } = useQuery<Set<string>>({
+    queryKey: ["clients-active-ids"],
+    queryFn: async () => {
+      const [p, t] = await Promise.all([
+        supabase.from("projects").select("client_id").not("client_id", "is", null),
+        supabase.from("tasks").select("client_id").not("client_id", "is", null),
+      ]);
+      if (p.error) throw p.error;
+      if (t.error) throw t.error;
+      const s = new Set<string>();
+      for (const r of [...(p.data ?? []), ...(t.data ?? [])]) if (r.client_id) s.add(r.client_id as string);
+      return s;
+    },
+  });
+
+  const { data: prospectClientIds = new Set<string>() } = useQuery<Set<string>>({
+    queryKey: ["clients-prospect-ids"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("leads").select("client_id").not("client_id", "is", null);
+      if (error) throw error;
+      const s = new Set<string>();
+      for (const r of data ?? []) if (r.client_id) s.add(r.client_id as string);
+      return s;
+    },
+  });
+
 
   const { data: editingClient } = useQuery({
     queryKey: ["client-edit", editingId],
