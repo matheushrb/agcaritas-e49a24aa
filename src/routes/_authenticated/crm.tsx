@@ -736,6 +736,7 @@ function LeadDrawer({
             <TabsTrigger value="briefing" className="flex-1">Briefing</TabsTrigger>
             <TabsTrigger value="meetings" className="flex-1">Reuniões</TabsTrigger>
             <TabsTrigger value="org" className="flex-1">Organização</TabsTrigger>
+            <TabsTrigger value="plan" className="flex-1">Plano de ação</TabsTrigger>
             <TabsTrigger value="history" className="flex-1">Histórico</TabsTrigger>
           </TabsList>
 
