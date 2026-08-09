@@ -69,6 +69,8 @@ interface Lead {
   created_at: string;
   updated_at: string;
   client_id: string | null;
+  service_type_id: string | null;
+  next_contact_at: string | null;
 }
 
 interface LeadActivity {
@@ -97,8 +99,11 @@ const TEMPERATURES: { value: Temperature; label: string; icon: any; tone: string
 ];
 
 const LEAD_SOURCES = ["Indicação", "Instagram", "Facebook", "Google Ads", "Site", "Evento", "Prospecção ativa", "Outro"] as const;
+const LEAD_SEGMENTS = ["Saúde", "Moda", "Imóveis", "Alimentação", "Educação", "Varejo", "Serviços", "Outro"] as const;
 
 type ClientLite = { id: string; name: string; company: string | null };
+type ServiceTypeLite = { id: string; name: string; color: string };
+type MemberLite = { id: string; display_name: string | null; full_name: string | null };
 
 function useClientsLite() {
   return useQuery({
@@ -110,6 +115,32 @@ function useClientsLite() {
     },
   });
 }
+
+function useProjectTypesLite() {
+  return useQuery({
+    queryKey: ["project-types-lite"],
+    queryFn: async (): Promise<ServiceTypeLite[]> => {
+      const { data, error } = await supabase
+        .from("project_types").select("id,name,color").eq("active", true).order("sort_order");
+      if (error) throw error;
+      return (data ?? []) as ServiceTypeLite[];
+    },
+  });
+}
+
+function useTeamMembersLite() {
+  return useQuery({
+    queryKey: ["team-members-lite"],
+    queryFn: async (): Promise<MemberLite[]> => {
+      const { data, error } = await supabase
+        .from("profiles").select("id,display_name,full_name").order("display_name");
+      if (error) throw error;
+      return (data ?? []) as MemberLite[];
+    },
+  });
+}
+
+const memberLabel = (m: MemberLite) => m.display_name ?? m.full_name ?? "Sem nome";
 
 const brl = (v: number | null) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 })
@@ -146,11 +177,16 @@ function CrmPage() {
   const { data: stages = [] } = useQuery({ queryKey: stagesKey, queryFn: fetchStages });
   const { data: templates = [] } = useQuery({ queryKey: ["briefing_templates"], queryFn: fetchBriefingTemplates });
   const { data: clients = [] } = useClientsLite();
+  const { data: serviceTypes = [] } = useProjectTypesLite();
+  const { data: teamMembers = [] } = useTeamMembersLite();
   const qc = useQueryClient();
   const navigate = useNavigate();
 
+  const serviceTypeById = useMemo(() => new Map(serviceTypes.map(s => [s.id, s])), [serviceTypes]);
+
   const [query, setQuery] = useState("");
   const [segment, setSegment] = useState<string>("all");
+  const [serviceTypeFilter, setServiceTypeFilter] = useState<string>("all");
   const [openLeadId, setOpenLeadId] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [dragId, setDragId] = useState<string | null>(null);
@@ -167,7 +203,10 @@ function CrmPage() {
   const openLead = useMemo(() => leads.find(l => l.id === openLeadId) ?? null, [leads, openLeadId]);
 
   const segments = useMemo(
-    () => Array.from(new Set(leads.map(l => l.segment).filter(Boolean) as string[])).sort(),
+    () => Array.from(new Set([
+      ...LEAD_SEGMENTS,
+      ...(leads.map(l => l.segment).filter(Boolean) as string[]),
+    ])).sort(),
     [leads],
   );
 
@@ -175,6 +214,7 @@ function CrmPage() {
     const q = query.trim().toLowerCase();
     return leads.filter(l => {
       if (segment !== "all" && l.segment !== segment) return false;
+      if (serviceTypeFilter !== "all" && l.service_type_id !== serviceTypeFilter) return false;
       if (!q) return true;
       return (
         l.name.toLowerCase().includes(q) ||
@@ -182,7 +222,7 @@ function CrmPage() {
         (l.email ?? "").toLowerCase().includes(q)
       );
     });
-  }, [leads, query, segment]);
+  }, [leads, query, segment, serviceTypeFilter]);
 
   const firstStageId = stages[0]?.id ?? null;
 
@@ -305,6 +345,17 @@ function CrmPage() {
             ))}
           </SelectContent>
         </Select>
+        <Select value={serviceTypeFilter} onValueChange={setServiceTypeFilter}>
+          <SelectTrigger className="w-[200px] rounded-full">
+            <SelectValue placeholder="Tipo de serviço" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos os serviços</SelectItem>
+            {serviceTypes.map(s => (
+              <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
         <p className="ml-auto text-xs text-muted-foreground">
           {filtered.length} de {leads.length} leads
         </p>
@@ -323,12 +374,19 @@ function CrmPage() {
                 key={stage.id}
                 stage={stage}
                 leads={byStage.get(stage.id) ?? []}
+                serviceTypeById={serviceTypeById}
                 onOpen={l => setOpenLeadId(l.id)}
               />
             ))}
           </div>
           <DragOverlay dropAnimation={null}>
-            {dragging ? <LeadCard lead={dragging} dragging /> : null}
+            {dragging ? (
+              <LeadCard
+                lead={dragging}
+                serviceType={(dragging.service_type_id && serviceTypeById.get(dragging.service_type_id)) || null}
+                dragging
+              />
+            ) : null}
           </DragOverlay>
         </DndContext>
       )}
@@ -339,6 +397,9 @@ function CrmPage() {
         stages={stages}
         templates={templates}
         clients={clients}
+        segments={segments}
+        serviceTypes={serviceTypes}
+        teamMembers={teamMembers}
         onClose={() => setOpenLeadId(null)}
         onPatch={(values) => openLead && updateLead.mutate({ id: openLead.id, values })}
         onAdvance={dir => {
@@ -354,7 +415,7 @@ function CrmPage() {
       />
 
       {/* Modal new lead */}
-      <NewLeadModal open={modalOpen} onOpenChange={setModalOpen} segments={segments} stages={stages} templates={templates} clients={clients} />
+      <NewLeadModal open={modalOpen} onOpenChange={setModalOpen} segments={segments} stages={stages} templates={templates} clients={clients} serviceTypes={serviceTypes} teamMembers={teamMembers} />
 
       {/* Banner "ganho" → plano de marketing */}
       {wonBanner && (
@@ -391,10 +452,11 @@ function CrmPage() {
 
 // ---------- Column ----------
 function Column({
-  stage, leads, onOpen,
+  stage, leads, serviceTypeById, onOpen,
 }: {
   stage: PipelineStage;
   leads: Lead[];
+  serviceTypeById: Map<string, ServiceTypeLite>;
   onOpen: (l: Lead) => void;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: stage.id });
@@ -417,7 +479,12 @@ function Column({
       </div>
       <div className="space-y-2 min-h-[120px]">
         {leads.map(l => (
-          <DraggableCard key={l.id} lead={l} onOpen={onOpen} />
+          <DraggableCard
+            key={l.id}
+            lead={l}
+            serviceType={(l.service_type_id && serviceTypeById.get(l.service_type_id)) || null}
+            onOpen={onOpen}
+          />
         ))}
         {leads.length === 0 && (
           <div className="rounded-2xl border border-dashed border-border p-6 text-center text-xs text-muted-foreground">
@@ -429,7 +496,7 @@ function Column({
   );
 }
 
-function DraggableCard({ lead, onOpen }: { lead: Lead; onOpen: (l: Lead) => void }) {
+function DraggableCard({ lead, serviceType, onOpen }: { lead: Lead; serviceType: ServiceTypeLite | null; onOpen: (l: Lead) => void }) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id: lead.id });
   return (
     <div ref={setNodeRef} style={{ opacity: isDragging ? 0.4 : 1 }} className="group">
@@ -443,7 +510,7 @@ function DraggableCard({ lead, onOpen }: { lead: Lead; onOpen: (l: Lead) => void
           <GripVertical className="h-3.5 w-3.5" />
         </button>
         <button type="button" onClick={() => onOpen(lead)} className="flex-1 text-left min-w-0">
-          <LeadCard lead={lead} />
+          <LeadCard lead={lead} serviceType={serviceType} />
         </button>
       </div>
     </div>
@@ -457,7 +524,7 @@ function TemperatureIcon({ value }: { value: Temperature | null }) {
   return <Icon className={`h-3.5 w-3.5 ${t.tone}`} aria-label={t.label} />;
 }
 
-function LeadCard({ lead, dragging = false }: { lead: Lead; dragging?: boolean }) {
+function LeadCard({ lead, serviceType = null, dragging = false }: { lead: Lead; serviceType?: ServiceTypeLite | null; dragging?: boolean }) {
   return (
     <div
       className={`rounded-2xl border border-border bg-card p-3 ${
@@ -470,9 +537,17 @@ function LeadCard({ lead, dragging = false }: { lead: Lead; dragging?: boolean }
       </div>
       {lead.company && <p className="text-xs text-muted-foreground truncate">{lead.company}</p>}
       <div className="mt-2 flex items-center justify-between gap-2">
-        {lead.segment ? (
-          <Badge variant="outline" className="rounded-full text-[10px] font-normal">{lead.segment}</Badge>
-        ) : <span />}
+        <div className="flex min-w-0 flex-wrap items-center gap-1">
+          {lead.segment ? (
+            <Badge variant="outline" className="rounded-full text-[10px] font-normal">{lead.segment}</Badge>
+          ) : null}
+          {serviceType ? (
+            <Badge variant="outline" className="rounded-full text-[10px] font-normal gap-1">
+              <span className="h-1.5 w-1.5 rounded-full shrink-0" style={{ background: serviceType.color }} />
+              {serviceType.name}
+            </Badge>
+          ) : null}
+        </div>
         {lead.estimated_value ? (
           <p className="text-xs font-semibold text-emerald-500 dark:text-emerald-400">
             {brl(Number(lead.estimated_value))}
