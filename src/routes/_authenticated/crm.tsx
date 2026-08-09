@@ -695,7 +695,7 @@ function LeadDrawer({
 
   return (
     <Sheet open={!!lead} onOpenChange={o => !o && onClose()}>
-      <SheetContent className="w-full sm:max-w-xl overflow-y-auto">
+      <SheetContent className="w-full sm:max-w-2xl overflow-y-auto">
         <SheetHeader>
           <SheetTitle>{lead.name}</SheetTitle>
           <SheetDescription>{lead.company ?? "Sem empresa"}</SheetDescription>
@@ -1106,7 +1106,7 @@ function NewLeadModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl max-h-[88vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-3xl max-h-[88vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Novo lead</DialogTitle>
           <DialogDescription>Cadastre o contato e, se quiser, já preencha o briefing inicial.</DialogDescription>
