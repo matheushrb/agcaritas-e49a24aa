@@ -96,6 +96,21 @@ const TEMPERATURES: { value: Temperature; label: string; icon: any; tone: string
   { value: "hot",  label: "Quente",icon: Flame,       tone: "text-rose-500" },
 ];
 
+const LEAD_SOURCES = ["Indicação", "Instagram", "Facebook", "Google Ads", "Site", "Evento", "Prospecção ativa", "Outro"] as const;
+
+type ClientLite = { id: string; name: string; company: string | null };
+
+function useClientsLite() {
+  return useQuery({
+    queryKey: ["clients-lite"],
+    queryFn: async (): Promise<ClientLite[]> => {
+      const { data, error } = await supabase.from("clients").select("id,name,company").order("name");
+      if (error) throw error;
+      return (data ?? []) as ClientLite[];
+    },
+  });
+}
+
 const brl = (v: number | null) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 })
     .format(v ?? 0);
@@ -130,6 +145,7 @@ function CrmPage() {
   const { data: leads = [], isLoading } = useLeads();
   const { data: stages = [] } = useQuery({ queryKey: stagesKey, queryFn: fetchStages });
   const { data: templates = [] } = useQuery({ queryKey: ["briefing_templates"], queryFn: fetchBriefingTemplates });
+  const { data: clients = [] } = useClientsLite();
   const qc = useQueryClient();
   const navigate = useNavigate();
 
@@ -322,6 +338,7 @@ function CrmPage() {
         lead={openLead}
         stages={stages}
         templates={templates}
+        clients={clients}
         onClose={() => setOpenLeadId(null)}
         onPatch={(values) => openLead && updateLead.mutate({ id: openLead.id, values })}
         onAdvance={dir => {
@@ -337,7 +354,7 @@ function CrmPage() {
       />
 
       {/* Modal new lead */}
-      <NewLeadModal open={modalOpen} onOpenChange={setModalOpen} segments={segments} stages={stages} templates={templates} />
+      <NewLeadModal open={modalOpen} onOpenChange={setModalOpen} segments={segments} stages={stages} templates={templates} clients={clients} />
 
       {/* Banner "ganho" → plano de marketing */}
       {wonBanner && (
@@ -476,11 +493,12 @@ function LeadCard({ lead, dragging = false }: { lead: Lead; dragging?: boolean }
 
 // ---------- Drawer ----------
 function LeadDrawer({
-  lead, stages, templates, onClose, onPatch, onAdvance, onCreateProposal,
+  lead, stages, templates, clients, onClose, onPatch, onAdvance, onCreateProposal,
 }: {
   lead: Lead | null;
   stages: PipelineStage[];
   templates: BriefingTemplate[];
+  clients: ClientLite[];
   onClose: () => void;
   onPatch: (values: Record<string, any>) => void;
   onAdvance: (dir: -1 | 1) => void;
@@ -635,7 +653,32 @@ function LeadDrawer({
             <InfoRow icon={Mail} label="Email" value={lead.email ?? "—"} />
             <InfoRow icon={Phone} label="Telefone" value={lead.phone ?? "—"} />
             <InfoRow icon={Tag} label="Segmento" value={lead.segment ?? "—"} />
-            <InfoRow icon={FileText} label="Origem" value={lead.source ?? "—"} />
+            <div>
+              <Label className="text-xs flex items-center gap-1.5"><FileText className="size-3.5" />Origem</Label>
+              <Select value={lead.source ?? undefined} onValueChange={v => onPatch({ source: v })}>
+                <SelectTrigger className="mt-1"><SelectValue placeholder="Definir origem" /></SelectTrigger>
+                <SelectContent>
+                  {LEAD_SOURCES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label className="text-xs flex items-center gap-1.5"><Building2 className="size-3.5" />Cliente vinculado</Label>
+              <Select
+                value={lead.client_id ?? "none"}
+                onValueChange={v => onPatch({ client_id: v === "none" ? null : v })}
+              >
+                <SelectTrigger className="mt-1"><SelectValue placeholder="Nenhum cliente" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Nenhum cliente</SelectItem>
+                  {clients.map(c => (
+                    <SelectItem key={c.id} value={c.id}>{c.name}{c.company ? ` · ${c.company}` : ""}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
 
             <div>
               <Label className="text-xs">Observações</Label>
@@ -778,18 +821,19 @@ function InfoRow({
 
 // ---------- Modal ----------
 function NewLeadModal({
-  open, onOpenChange, segments, stages, templates,
+  open, onOpenChange, segments, stages, templates, clients,
 }: {
   open: boolean;
   onOpenChange: (o: boolean) => void;
   segments: string[];
   stages: PipelineStage[];
   templates: BriefingTemplate[];
+  clients: ClientLite[];
 }) {
   const qc = useQueryClient();
   const empty = {
     name: "", company: "", email: "", phone: "",
-    segment: "", estimated_value: "", stage_id: "", source: "",
+    segment: "", estimated_value: "", stage_id: "", source: "", client_id: "",
     temperature: "warm" as Temperature, briefing_template_id: "",
   };
   const [form, setForm] = useState(empty);
@@ -814,6 +858,7 @@ function NewLeadModal({
         phone: form.phone.trim() || null,
         segment: form.segment.trim() || null,
         source: form.source.trim() || null,
+        client_id: form.client_id || null,
         estimated_value: form.estimated_value ? Number(form.estimated_value) : null,
         stage_id: form.stage_id || null,
         probability: stage?.default_probability ?? 0,
@@ -845,6 +890,20 @@ function NewLeadModal({
           <Field label="Nome*" className="col-span-2">
             <Input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} />
           </Field>
+          <Field label="Cliente vinculado">
+            <Select
+              value={form.client_id || "none"}
+              onValueChange={v => setForm({ ...form, client_id: v === "none" ? "" : v })}
+            >
+              <SelectTrigger><SelectValue placeholder="Nenhum" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">Nenhum</SelectItem>
+                {clients.map(c => (
+                  <SelectItem key={c.id} value={c.id}>{c.name}{c.company ? ` · ${c.company}` : ""}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </Field>
           <Field label="Empresa">
             <Input value={form.company} onChange={e => setForm({ ...form, company: e.target.value })} />
           </Field>
@@ -873,12 +932,14 @@ function NewLeadModal({
             />
           </Field>
           <Field label="Origem">
-            <Input
-              value={form.source}
-              onChange={e => setForm({ ...form, source: e.target.value })}
-              placeholder="Indicação, Instagram, Site…"
-            />
+            <Select value={form.source || undefined} onValueChange={v => setForm({ ...form, source: v })}>
+              <SelectTrigger><SelectValue placeholder="Selecionar origem" /></SelectTrigger>
+              <SelectContent>
+                {LEAD_SOURCES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+              </SelectContent>
+            </Select>
           </Field>
+
           <Field label="Etapa inicial">
             <Select value={form.stage_id} onValueChange={v => setForm({ ...form, stage_id: v })}>
               <SelectTrigger><SelectValue placeholder="Etapa" /></SelectTrigger>
