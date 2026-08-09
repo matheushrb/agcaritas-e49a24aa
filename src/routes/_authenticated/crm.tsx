@@ -1404,10 +1404,11 @@ function InfoRow({
 
 // ---------- Modal ----------
 function NewLeadModal({
-  open, onOpenChange, segments, stages, templates, clients, serviceTypes, teamMembers,
+  open, onOpenChange, initialStageId = null, segments, stages, templates, clients, serviceTypes, teamMembers,
 }: {
   open: boolean;
-  onOpenChange: (o: boolean) => void;
+  initialStageId?: string | null;
+
   segments: string[];
   stages: PipelineStage[];
   templates: BriefingTemplate[];
