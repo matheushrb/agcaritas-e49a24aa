@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { LeadMeetingsTab } from "@/components/crm/lead-meetings-tab";
+import { LeadOrgTab } from "@/components/crm/lead-org-tab";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
