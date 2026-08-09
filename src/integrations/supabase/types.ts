@@ -1237,6 +1237,7 @@ export type Database = {
           owner_id: string | null
           phone: string | null
           probability: number
+          scope_items: Json
           segment: string | null
           service_type_id: string | null
           source: string | null
@@ -1263,6 +1264,7 @@ export type Database = {
           owner_id?: string | null
           phone?: string | null
           probability?: number
+          scope_items?: Json
           segment?: string | null
           service_type_id?: string | null
           source?: string | null
@@ -1289,6 +1291,7 @@ export type Database = {
           owner_id?: string | null
           phone?: string | null
           probability?: number
+          scope_items?: Json
           segment?: string | null
           service_type_id?: string | null
           source?: string | null
