@@ -390,7 +390,7 @@ type FormState = {
   opening_date: string;
   size: string;
   segment: string;
-  status: string;
+  
   website: string;
   instagram: string;
   linkedin: string;
