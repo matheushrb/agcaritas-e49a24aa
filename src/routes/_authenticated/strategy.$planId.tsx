@@ -25,7 +25,7 @@ type Plan = {
   leads: { name: string } | null;
 };
 
-const TOOLS: { key: string; label: string; render: (planId: string) => JSX.Element }[] = [
+const TOOLS: { key: string; label: string; render: (planId: string) => React.ReactNode }[] = [
   { key: "swot", label: "SWOT", render: id => <SwotBoard planId={id} /> },
   { key: "roadmap", label: "Roadmap", render: id => <RoadmapTimeline planId={id} /> },
   { key: "personas", label: "Personas", render: id => <PersonasBoard planId={id} /> },

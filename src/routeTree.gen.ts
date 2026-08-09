@@ -37,6 +37,7 @@ import { Route as AuthenticatedStrategyIndexRouteImport } from './routes/_authen
 import { Route as AuthenticatedProjectsIndexRouteImport } from './routes/_authenticated/projects.index'
 import { Route as AuthenticatedInvoicesIndexRouteImport } from './routes/_authenticated/invoices.index'
 import { Route as AuthenticatedTeamMemberIdRouteImport } from './routes/_authenticated/team.$memberId'
+import { Route as AuthenticatedStrategyPlanIdRouteImport } from './routes/_authenticated/strategy.$planId'
 import { Route as AuthenticatedProjectsProjectIdRouteImport } from './routes/_authenticated/projects.$projectId'
 import { Route as AuthenticatedInvoicesInvoiceIdRouteImport } from './routes/_authenticated/invoices.$invoiceId'
 import { Route as AuthenticatedClientsClientIdRouteImport } from './routes/_authenticated/clients.$clientId'
@@ -186,6 +187,12 @@ const AuthenticatedTeamMemberIdRoute =
     path: '/$memberId',
     getParentRoute: () => AuthenticatedTeamRoute,
   } as any)
+const AuthenticatedStrategyPlanIdRoute =
+  AuthenticatedStrategyPlanIdRouteImport.update({
+    id: '/strategy/$planId',
+    path: '/strategy/$planId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedProjectsProjectIdRoute =
   AuthenticatedProjectsProjectIdRouteImport.update({
     id: '/projects/$projectId',
@@ -231,6 +238,7 @@ export interface FileRoutesByFullPath {
   '/clients/$clientId': typeof AuthenticatedClientsClientIdRoute
   '/invoices/$invoiceId': typeof AuthenticatedInvoicesInvoiceIdRoute
   '/projects/$projectId': typeof AuthenticatedProjectsProjectIdRoute
+  '/strategy/$planId': typeof AuthenticatedStrategyPlanIdRoute
   '/team/$memberId': typeof AuthenticatedTeamMemberIdRoute
   '/invoices/': typeof AuthenticatedInvoicesIndexRoute
   '/projects/': typeof AuthenticatedProjectsIndexRoute
@@ -262,6 +270,7 @@ export interface FileRoutesByTo {
   '/clients/$clientId': typeof AuthenticatedClientsClientIdRoute
   '/invoices/$invoiceId': typeof AuthenticatedInvoicesInvoiceIdRoute
   '/projects/$projectId': typeof AuthenticatedProjectsProjectIdRoute
+  '/strategy/$planId': typeof AuthenticatedStrategyPlanIdRoute
   '/team/$memberId': typeof AuthenticatedTeamMemberIdRoute
   '/invoices': typeof AuthenticatedInvoicesIndexRoute
   '/projects': typeof AuthenticatedProjectsIndexRoute
@@ -296,6 +305,7 @@ export interface FileRoutesById {
   '/_authenticated/clients/$clientId': typeof AuthenticatedClientsClientIdRoute
   '/_authenticated/invoices/$invoiceId': typeof AuthenticatedInvoicesInvoiceIdRoute
   '/_authenticated/projects/$projectId': typeof AuthenticatedProjectsProjectIdRoute
+  '/_authenticated/strategy/$planId': typeof AuthenticatedStrategyPlanIdRoute
   '/_authenticated/team/$memberId': typeof AuthenticatedTeamMemberIdRoute
   '/_authenticated/invoices/': typeof AuthenticatedInvoicesIndexRoute
   '/_authenticated/projects/': typeof AuthenticatedProjectsIndexRoute
@@ -330,6 +340,7 @@ export interface FileRouteTypes {
     | '/clients/$clientId'
     | '/invoices/$invoiceId'
     | '/projects/$projectId'
+    | '/strategy/$planId'
     | '/team/$memberId'
     | '/invoices/'
     | '/projects/'
@@ -361,6 +372,7 @@ export interface FileRouteTypes {
     | '/clients/$clientId'
     | '/invoices/$invoiceId'
     | '/projects/$projectId'
+    | '/strategy/$planId'
     | '/team/$memberId'
     | '/invoices'
     | '/projects'
@@ -394,6 +406,7 @@ export interface FileRouteTypes {
     | '/_authenticated/clients/$clientId'
     | '/_authenticated/invoices/$invoiceId'
     | '/_authenticated/projects/$projectId'
+    | '/_authenticated/strategy/$planId'
     | '/_authenticated/team/$memberId'
     | '/_authenticated/invoices/'
     | '/_authenticated/projects/'
@@ -607,6 +620,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedTeamMemberIdRouteImport
       parentRoute: typeof AuthenticatedTeamRoute
     }
+    '/_authenticated/strategy/$planId': {
+      id: '/_authenticated/strategy/$planId'
+      path: '/strategy/$planId'
+      fullPath: '/strategy/$planId'
+      preLoaderRoute: typeof AuthenticatedStrategyPlanIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/projects/$projectId': {
       id: '/_authenticated/projects/$projectId'
       path: '/projects/$projectId'
@@ -676,6 +696,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedTeamRoute: typeof AuthenticatedTeamRouteWithChildren
   AuthenticatedInvoicesInvoiceIdRoute: typeof AuthenticatedInvoicesInvoiceIdRoute
   AuthenticatedProjectsProjectIdRoute: typeof AuthenticatedProjectsProjectIdRoute
+  AuthenticatedStrategyPlanIdRoute: typeof AuthenticatedStrategyPlanIdRoute
   AuthenticatedInvoicesIndexRoute: typeof AuthenticatedInvoicesIndexRoute
   AuthenticatedProjectsIndexRoute: typeof AuthenticatedProjectsIndexRoute
   AuthenticatedStrategyIndexRoute: typeof AuthenticatedStrategyIndexRoute
@@ -702,6 +723,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedTeamRoute: AuthenticatedTeamRouteWithChildren,
   AuthenticatedInvoicesInvoiceIdRoute: AuthenticatedInvoicesInvoiceIdRoute,
   AuthenticatedProjectsProjectIdRoute: AuthenticatedProjectsProjectIdRoute,
+  AuthenticatedStrategyPlanIdRoute: AuthenticatedStrategyPlanIdRoute,
   AuthenticatedInvoicesIndexRoute: AuthenticatedInvoicesIndexRoute,
   AuthenticatedProjectsIndexRoute: AuthenticatedProjectsIndexRoute,
   AuthenticatedStrategyIndexRoute: AuthenticatedStrategyIndexRoute,
