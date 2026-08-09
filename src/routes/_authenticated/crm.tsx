@@ -1408,6 +1408,8 @@ function NewLeadModal({
 }: {
   open: boolean;
   initialStageId?: string | null;
+  onOpenChange: (o: boolean) => void;
+
 
   segments: string[];
   stages: PipelineStage[];
