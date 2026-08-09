@@ -731,6 +731,7 @@ function LeadDrawer({
           <TabsList className="w-full">
             <TabsTrigger value="info" className="flex-1">Dados</TabsTrigger>
             <TabsTrigger value="briefing" className="flex-1">Briefing</TabsTrigger>
+            <TabsTrigger value="meetings" className="flex-1">Reuniões</TabsTrigger>
             <TabsTrigger value="history" className="flex-1">Histórico</TabsTrigger>
           </TabsList>
 
