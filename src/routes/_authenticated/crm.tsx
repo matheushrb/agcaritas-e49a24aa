@@ -939,6 +939,10 @@ function LeadDrawer({
             />
           </TabsContent>
 
+          {/* --- Plano de ação --- */}
+          <TabsContent value="plan" className="mt-4">
+            <LeadPlanTab leadId={lead.id} leadName={lead.name} organizationId={lead.organization_id} />
+          </TabsContent>
 
 
           <TabsContent value="history" className="mt-4 space-y-4">
