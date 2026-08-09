@@ -493,11 +493,12 @@ function LeadCard({ lead, dragging = false }: { lead: Lead; dragging?: boolean }
 
 // ---------- Drawer ----------
 function LeadDrawer({
-  lead, stages, templates, onClose, onPatch, onAdvance, onCreateProposal,
+  lead, stages, templates, clients, onClose, onPatch, onAdvance, onCreateProposal,
 }: {
   lead: Lead | null;
   stages: PipelineStage[];
   templates: BriefingTemplate[];
+  clients: ClientLite[];
   onClose: () => void;
   onPatch: (values: Record<string, any>) => void;
   onAdvance: (dir: -1 | 1) => void;
