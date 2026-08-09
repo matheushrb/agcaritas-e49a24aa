@@ -225,6 +225,8 @@ function CrmPage() {
   const [serviceTypeFilter, setServiceTypeFilter] = useState<string>("all");
   const [openLeadId, setOpenLeadId] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
+  const [newLeadStage, setNewLeadStage] = useState<string | null>(null);
+
   const [dragId, setDragId] = useState<string | null>(null);
   const [wonBanner, setWonBanner] = useState<Lead | null>(null);
   const searchParams = Route.useSearch();
