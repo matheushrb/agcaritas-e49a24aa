@@ -281,6 +281,17 @@ function CrmPage() {
   const wonLeads = leads.filter(l => l.stage_id && stageById.get(l.stage_id)?.is_won);
   const wonValue = wonLeads.reduce((a, l) => a + Number(l.estimated_value ?? 0), 0);
   const conversion = leads.length ? Math.round((wonLeads.length / leads.length) * 100) : 0;
+  const upcomingContacts = useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const limit = new Date(today);
+    limit.setDate(limit.getDate() + 7);
+    return leads.filter(l => {
+      if (!l.next_contact_at) return false;
+      const d = new Date(String(l.next_contact_at).slice(0, 10) + "T00:00:00");
+      return d.getTime() >= today.getTime() && d.getTime() <= limit.getTime();
+    }).length;
+  }, [leads]);
   const weighted = leads
     .filter(l => !isClosed(l))
     .reduce((a, l) => a + Number(l.estimated_value ?? 0) * (Number(l.probability ?? 0) / 100), 0);
