@@ -17,7 +17,6 @@ import { Route as PTokenRouteImport } from './routes/p.$token'
 import { Route as AuthenticatedTeamRouteImport } from './routes/_authenticated/team'
 import { Route as AuthenticatedTasksRouteImport } from './routes/_authenticated/tasks'
 import { Route as AuthenticatedSuppliersRouteImport } from './routes/_authenticated/suppliers'
-import { Route as AuthenticatedStrategyRouteImport } from './routes/_authenticated/strategy'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedProposalsRouteImport } from './routes/_authenticated/proposals'
 import { Route as AuthenticatedNotificationsRouteImport } from './routes/_authenticated/notifications'
@@ -34,6 +33,7 @@ import { Route as AuthenticatedClientsRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedCampaignsRouteImport } from './routes/_authenticated/campaigns'
 import { Route as AuthenticatedCalendarRouteImport } from './routes/_authenticated/calendar'
 import { Route as AuthenticatedTeamIndexRouteImport } from './routes/_authenticated/team.index'
+import { Route as AuthenticatedStrategyIndexRouteImport } from './routes/_authenticated/strategy.index'
 import { Route as AuthenticatedProjectsIndexRouteImport } from './routes/_authenticated/projects.index'
 import { Route as AuthenticatedInvoicesIndexRouteImport } from './routes/_authenticated/invoices.index'
 import { Route as AuthenticatedTeamMemberIdRouteImport } from './routes/_authenticated/team.$memberId'
@@ -78,11 +78,6 @@ const AuthenticatedTasksRoute = AuthenticatedTasksRouteImport.update({
 const AuthenticatedSuppliersRoute = AuthenticatedSuppliersRouteImport.update({
   id: '/suppliers',
   path: '/suppliers',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedStrategyRoute = AuthenticatedStrategyRouteImport.update({
-  id: '/strategy',
-  path: '/strategy',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
@@ -167,6 +162,12 @@ const AuthenticatedTeamIndexRoute = AuthenticatedTeamIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AuthenticatedTeamRoute,
 } as any)
+const AuthenticatedStrategyIndexRoute =
+  AuthenticatedStrategyIndexRouteImport.update({
+    id: '/strategy/',
+    path: '/strategy/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedProjectsIndexRoute =
   AuthenticatedProjectsIndexRouteImport.update({
     id: '/projects/',
@@ -223,7 +224,6 @@ export interface FileRoutesByFullPath {
   '/notifications': typeof AuthenticatedNotificationsRoute
   '/proposals': typeof AuthenticatedProposalsRoute
   '/settings': typeof AuthenticatedSettingsRoute
-  '/strategy': typeof AuthenticatedStrategyRoute
   '/suppliers': typeof AuthenticatedSuppliersRoute
   '/tasks': typeof AuthenticatedTasksRoute
   '/team': typeof AuthenticatedTeamRouteWithChildren
@@ -234,6 +234,7 @@ export interface FileRoutesByFullPath {
   '/team/$memberId': typeof AuthenticatedTeamMemberIdRoute
   '/invoices/': typeof AuthenticatedInvoicesIndexRoute
   '/projects/': typeof AuthenticatedProjectsIndexRoute
+  '/strategy/': typeof AuthenticatedStrategyIndexRoute
   '/team/': typeof AuthenticatedTeamIndexRoute
 }
 export interface FileRoutesByTo {
@@ -255,7 +256,6 @@ export interface FileRoutesByTo {
   '/notifications': typeof AuthenticatedNotificationsRoute
   '/proposals': typeof AuthenticatedProposalsRoute
   '/settings': typeof AuthenticatedSettingsRoute
-  '/strategy': typeof AuthenticatedStrategyRoute
   '/suppliers': typeof AuthenticatedSuppliersRoute
   '/tasks': typeof AuthenticatedTasksRoute
   '/p/$token': typeof PTokenRoute
@@ -265,6 +265,7 @@ export interface FileRoutesByTo {
   '/team/$memberId': typeof AuthenticatedTeamMemberIdRoute
   '/invoices': typeof AuthenticatedInvoicesIndexRoute
   '/projects': typeof AuthenticatedProjectsIndexRoute
+  '/strategy': typeof AuthenticatedStrategyIndexRoute
   '/team': typeof AuthenticatedTeamIndexRoute
 }
 export interface FileRoutesById {
@@ -288,7 +289,6 @@ export interface FileRoutesById {
   '/_authenticated/notifications': typeof AuthenticatedNotificationsRoute
   '/_authenticated/proposals': typeof AuthenticatedProposalsRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
-  '/_authenticated/strategy': typeof AuthenticatedStrategyRoute
   '/_authenticated/suppliers': typeof AuthenticatedSuppliersRoute
   '/_authenticated/tasks': typeof AuthenticatedTasksRoute
   '/_authenticated/team': typeof AuthenticatedTeamRouteWithChildren
@@ -299,6 +299,7 @@ export interface FileRoutesById {
   '/_authenticated/team/$memberId': typeof AuthenticatedTeamMemberIdRoute
   '/_authenticated/invoices/': typeof AuthenticatedInvoicesIndexRoute
   '/_authenticated/projects/': typeof AuthenticatedProjectsIndexRoute
+  '/_authenticated/strategy/': typeof AuthenticatedStrategyIndexRoute
   '/_authenticated/team/': typeof AuthenticatedTeamIndexRoute
 }
 export interface FileRouteTypes {
@@ -322,7 +323,6 @@ export interface FileRouteTypes {
     | '/notifications'
     | '/proposals'
     | '/settings'
-    | '/strategy'
     | '/suppliers'
     | '/tasks'
     | '/team'
@@ -333,6 +333,7 @@ export interface FileRouteTypes {
     | '/team/$memberId'
     | '/invoices/'
     | '/projects/'
+    | '/strategy/'
     | '/team/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -354,7 +355,6 @@ export interface FileRouteTypes {
     | '/notifications'
     | '/proposals'
     | '/settings'
-    | '/strategy'
     | '/suppliers'
     | '/tasks'
     | '/p/$token'
@@ -364,6 +364,7 @@ export interface FileRouteTypes {
     | '/team/$memberId'
     | '/invoices'
     | '/projects'
+    | '/strategy'
     | '/team'
   id:
     | '__root__'
@@ -386,7 +387,6 @@ export interface FileRouteTypes {
     | '/_authenticated/notifications'
     | '/_authenticated/proposals'
     | '/_authenticated/settings'
-    | '/_authenticated/strategy'
     | '/_authenticated/suppliers'
     | '/_authenticated/tasks'
     | '/_authenticated/team'
@@ -397,6 +397,7 @@ export interface FileRouteTypes {
     | '/_authenticated/team/$memberId'
     | '/_authenticated/invoices/'
     | '/_authenticated/projects/'
+    | '/_authenticated/strategy/'
     | '/_authenticated/team/'
   fileRoutesById: FileRoutesById
 }
@@ -464,13 +465,6 @@ declare module '@tanstack/react-router' {
       path: '/suppliers'
       fullPath: '/suppliers'
       preLoaderRoute: typeof AuthenticatedSuppliersRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/strategy': {
-      id: '/_authenticated/strategy'
-      path: '/strategy'
-      fullPath: '/strategy'
-      preLoaderRoute: typeof AuthenticatedStrategyRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/settings': {
@@ -585,6 +579,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedTeamIndexRouteImport
       parentRoute: typeof AuthenticatedTeamRoute
     }
+    '/_authenticated/strategy/': {
+      id: '/_authenticated/strategy/'
+      path: '/strategy'
+      fullPath: '/strategy/'
+      preLoaderRoute: typeof AuthenticatedStrategyIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/projects/': {
       id: '/_authenticated/projects/'
       path: '/projects'
@@ -670,7 +671,6 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedNotificationsRoute: typeof AuthenticatedNotificationsRoute
   AuthenticatedProposalsRoute: typeof AuthenticatedProposalsRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
-  AuthenticatedStrategyRoute: typeof AuthenticatedStrategyRoute
   AuthenticatedSuppliersRoute: typeof AuthenticatedSuppliersRoute
   AuthenticatedTasksRoute: typeof AuthenticatedTasksRoute
   AuthenticatedTeamRoute: typeof AuthenticatedTeamRouteWithChildren
@@ -678,6 +678,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedProjectsProjectIdRoute: typeof AuthenticatedProjectsProjectIdRoute
   AuthenticatedInvoicesIndexRoute: typeof AuthenticatedInvoicesIndexRoute
   AuthenticatedProjectsIndexRoute: typeof AuthenticatedProjectsIndexRoute
+  AuthenticatedStrategyIndexRoute: typeof AuthenticatedStrategyIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -696,7 +697,6 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedNotificationsRoute: AuthenticatedNotificationsRoute,
   AuthenticatedProposalsRoute: AuthenticatedProposalsRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
-  AuthenticatedStrategyRoute: AuthenticatedStrategyRoute,
   AuthenticatedSuppliersRoute: AuthenticatedSuppliersRoute,
   AuthenticatedTasksRoute: AuthenticatedTasksRoute,
   AuthenticatedTeamRoute: AuthenticatedTeamRouteWithChildren,
@@ -704,6 +704,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedProjectsProjectIdRoute: AuthenticatedProjectsProjectIdRoute,
   AuthenticatedInvoicesIndexRoute: AuthenticatedInvoicesIndexRoute,
   AuthenticatedProjectsIndexRoute: AuthenticatedProjectsIndexRoute,
+  AuthenticatedStrategyIndexRoute: AuthenticatedStrategyIndexRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
