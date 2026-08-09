@@ -1245,6 +1245,7 @@ export type Database = {
           stage_id: string | null
           temperature: string | null
           updated_at: string
+          we_approached: boolean | null
         }
         Insert: {
           briefing?: Json
@@ -1272,6 +1273,7 @@ export type Database = {
           stage_id?: string | null
           temperature?: string | null
           updated_at?: string
+          we_approached?: boolean | null
         }
         Update: {
           briefing?: Json
@@ -1299,6 +1301,7 @@ export type Database = {
           stage_id?: string | null
           temperature?: string | null
           updated_at?: string
+          we_approached?: boolean | null
         }
         Relationships: [
           {
