@@ -568,12 +568,15 @@ function LeadCard({ lead, serviceType = null, dragging = false }: { lead: Lead; 
 
 // ---------- Drawer ----------
 function LeadDrawer({
-  lead, stages, templates, clients, onClose, onPatch, onAdvance, onCreateProposal,
+  lead, stages, templates, clients, segments, serviceTypes, teamMembers, onClose, onPatch, onAdvance, onCreateProposal,
 }: {
   lead: Lead | null;
   stages: PipelineStage[];
   templates: BriefingTemplate[];
   clients: ClientLite[];
+  segments: string[];
+  serviceTypes: ServiceTypeLite[];
+  teamMembers: MemberLite[];
   onClose: () => void;
   onPatch: (values: Record<string, any>) => void;
   onAdvance: (dir: -1 | 1) => void;
@@ -721,13 +724,59 @@ function LeadDrawer({
                   onBlur={e => onPatch({ expected_close_date: e.target.value || null })}
                 />
               </div>
+              <div>
+                <Label className="text-xs">Próximo contato previsto</Label>
+                <Input
+                  type="date" className="mt-1"
+                  defaultValue={lead.next_contact_at ?? ""}
+                  onBlur={e => onPatch({ next_contact_at: e.target.value || null })}
+                />
+              </div>
             </div>
 
-            <InfoRow icon={User} label="Responsável" value={lead.owner_id ? "Atribuído" : "Sem responsável"} />
+            <div>
+              <Label className="text-xs flex items-center gap-1.5"><User className="size-3.5" />Responsável</Label>
+              <Select
+                value={lead.owner_id ?? "none"}
+                onValueChange={v => onPatch({ owner_id: v === "none" ? null : v })}
+              >
+                <SelectTrigger className="mt-1"><SelectValue placeholder="Sem responsável" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Sem responsável</SelectItem>
+                  {teamMembers.map(m => (
+                    <SelectItem key={m.id} value={m.id}>{memberLabel(m)}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
             <InfoRow icon={Building2} label="Empresa" value={lead.company ?? "—"} />
             <InfoRow icon={Mail} label="Email" value={lead.email ?? "—"} />
             <InfoRow icon={Phone} label="Telefone" value={lead.phone ?? "—"} />
-            <InfoRow icon={Tag} label="Segmento" value={lead.segment ?? "—"} />
+
+            <div>
+              <Label className="text-xs flex items-center gap-1.5"><Tag className="size-3.5" />Segmento</Label>
+              <Select value={lead.segment ?? undefined} onValueChange={v => onPatch({ segment: v })}>
+                <SelectTrigger className="mt-1"><SelectValue placeholder="Definir segmento" /></SelectTrigger>
+                <SelectContent>
+                  {segments.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label className="text-xs flex items-center gap-1.5"><Sparkles className="size-3.5" />Tipo de serviço</Label>
+              <Select
+                value={lead.service_type_id ?? undefined}
+                onValueChange={v => onPatch({ service_type_id: v })}
+              >
+                <SelectTrigger className="mt-1"><SelectValue placeholder="Definir tipo de serviço" /></SelectTrigger>
+                <SelectContent>
+                  {serviceTypes.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+
             <div>
               <Label className="text-xs flex items-center gap-1.5"><FileText className="size-3.5" />Origem</Label>
               <Select value={lead.source ?? undefined} onValueChange={v => onPatch({ source: v })}>
