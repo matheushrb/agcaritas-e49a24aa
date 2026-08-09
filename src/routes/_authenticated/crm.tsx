@@ -503,13 +503,15 @@ function CrmPage() {
 
 // ---------- Column ----------
 function Column({
-  stage, leads, serviceTypeById, teamMembers, onOpen,
+  stage, leads, serviceTypeById, teamMembers, activityCounts, onOpen, onToggleFavorite,
 }: {
   stage: PipelineStage;
   leads: Lead[];
   serviceTypeById: Map<string, ServiceTypeLite>;
   teamMembers: MemberLite[];
+  activityCounts: Map<string, number>;
   onOpen: (l: Lead) => void;
+  onToggleFavorite: (l: Lead) => void;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: stage.id });
   const total = leads.reduce((a, l) => a + Number(l.estimated_value ?? 0), 0);
@@ -536,7 +538,9 @@ function Column({
             lead={l}
             serviceType={(l.service_type_id && serviceTypeById.get(l.service_type_id)) || null}
             teamMembers={teamMembers}
+            activityCount={activityCounts.get(l.id) ?? 0}
             onOpen={onOpen}
+            onToggleFavorite={onToggleFavorite}
           />
         ))}
         {leads.length === 0 && (
@@ -549,7 +553,10 @@ function Column({
   );
 }
 
-function DraggableCard({ lead, serviceType, teamMembers, onOpen }: { lead: Lead; serviceType: ServiceTypeLite | null; teamMembers: MemberLite[]; onOpen: (l: Lead) => void }) {
+function DraggableCard({ lead, serviceType, teamMembers, activityCount, onOpen, onToggleFavorite }: {
+  lead: Lead; serviceType: ServiceTypeLite | null; teamMembers: MemberLite[];
+  activityCount: number; onOpen: (l: Lead) => void; onToggleFavorite: (l: Lead) => void;
+}) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id: lead.id });
   return (
     <div ref={setNodeRef} style={{ opacity: isDragging ? 0.4 : 1 }} className="group">
@@ -563,7 +570,13 @@ function DraggableCard({ lead, serviceType, teamMembers, onOpen }: { lead: Lead;
           <GripVertical className="h-3.5 w-3.5" />
         </button>
         <button type="button" onClick={() => onOpen(lead)} className="flex-1 text-left min-w-0">
-          <LeadCard lead={lead} serviceType={serviceType} teamMembers={teamMembers} />
+          <LeadCard
+            lead={lead}
+            serviceType={serviceType}
+            teamMembers={teamMembers}
+            activityCount={activityCount}
+            onToggleFavorite={onToggleFavorite}
+          />
         </button>
       </div>
     </div>
