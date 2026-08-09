@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { LeadMeetingsTab } from "@/components/crm/lead-meetings-tab";
+import { LeadOrgTab } from "@/components/crm/lead-org-tab";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -77,6 +78,7 @@ interface Lead {
   next_contact_at: string | null;
   we_approached: boolean | null;
   scope_items: ScopeItem[];
+  sectors: string[];
 }
 
 interface LeadActivity {
@@ -733,6 +735,7 @@ function LeadDrawer({
             <TabsTrigger value="info" className="flex-1">Dados</TabsTrigger>
             <TabsTrigger value="briefing" className="flex-1">Briefing</TabsTrigger>
             <TabsTrigger value="meetings" className="flex-1">Reuniões</TabsTrigger>
+            <TabsTrigger value="org" className="flex-1">Organização</TabsTrigger>
             <TabsTrigger value="history" className="flex-1">Histórico</TabsTrigger>
           </TabsList>
 
@@ -924,6 +927,17 @@ function LeadDrawer({
           <TabsContent value="meetings" className="mt-4">
             <LeadMeetingsTab leadId={lead.id} organizationId={lead.organization_id} />
           </TabsContent>
+
+          {/* --- Organização --- */}
+          <TabsContent value="org" className="mt-4">
+            <LeadOrgTab
+              leadId={lead.id}
+              organizationId={lead.organization_id}
+              sectors={(lead.sectors as string[]) ?? []}
+              onSectorsChange={(sectors) => onPatch({ sectors })}
+            />
+          </TabsContent>
+
 
 
           <TabsContent value="history" className="mt-4 space-y-4">

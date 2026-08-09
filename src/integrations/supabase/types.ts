@@ -1278,6 +1278,66 @@ export type Database = {
           },
         ]
       }
+      lead_stakeholders: {
+        Row: {
+          channel: string | null
+          created_at: string
+          email: string | null
+          id: string
+          is_main_contact: boolean
+          lead_id: string
+          name: string
+          notes: string | null
+          organization_id: string
+          phone: string | null
+          role: string | null
+          role_type: string | null
+        }
+        Insert: {
+          channel?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          is_main_contact?: boolean
+          lead_id: string
+          name: string
+          notes?: string | null
+          organization_id: string
+          phone?: string | null
+          role?: string | null
+          role_type?: string | null
+        }
+        Update: {
+          channel?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          is_main_contact?: boolean
+          lead_id?: string
+          name?: string
+          notes?: string | null
+          organization_id?: string
+          phone?: string | null
+          role?: string | null
+          role_type?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lead_stakeholders_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lead_stakeholders_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       leads: {
         Row: {
           briefing: Json
@@ -1298,6 +1358,7 @@ export type Database = {
           phone: string | null
           probability: number
           scope_items: Json
+          sectors: Json
           segment: string | null
           service_type_id: string | null
           source: string | null
@@ -1326,6 +1387,7 @@ export type Database = {
           phone?: string | null
           probability?: number
           scope_items?: Json
+          sectors?: Json
           segment?: string | null
           service_type_id?: string | null
           source?: string | null
@@ -1354,6 +1416,7 @@ export type Database = {
           phone?: string | null
           probability?: number
           scope_items?: Json
+          sectors?: Json
           segment?: string | null
           service_type_id?: string | null
           source?: string | null
