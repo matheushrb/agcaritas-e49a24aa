@@ -1199,120 +1199,134 @@ function NewLeadModal({
               <span className="cw-choice-desc">O lead chegou até nós</span>
             </button>
           </div>
-        </div>
 
-        <div className="grid grid-cols-2 gap-3">
-          <Field label="Nome*" className="col-span-2">
-            <Input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} />
-          </Field>
-          <Field label="Cliente vinculado">
-            <Select
-              value={form.client_id || "none"}
-              onValueChange={v => setForm({ ...form, client_id: v === "none" ? "" : v })}
-            >
-              <SelectTrigger><SelectValue placeholder="Nenhum" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">Nenhum</SelectItem>
-                {clients.map(c => (
-                  <SelectItem key={c.id} value={c.id}>{c.name}{c.company ? ` · ${c.company}` : ""}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </Field>
-          <Field label="Empresa">
-            <Input value={form.company} onChange={e => setForm({ ...form, company: e.target.value })} />
-          </Field>
-          <Field label="Segmento">
-            <Select value={form.segment || undefined} onValueChange={v => setForm({ ...form, segment: v })}>
-              <SelectTrigger><SelectValue placeholder="Selecionar segmento" /></SelectTrigger>
-              <SelectContent>
-                {segments.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-              </SelectContent>
-            </Select>
-          </Field>
-          <Field label="Tipo de serviço *">
-            <Select value={form.service_type_id || undefined} onValueChange={v => setForm({ ...form, service_type_id: v })}>
-              <SelectTrigger><SelectValue placeholder="Selecionar tipo de serviço" /></SelectTrigger>
-              <SelectContent>
-                {serviceTypes.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
-              </SelectContent>
-            </Select>
-          </Field>
-          <Field label="Responsável">
-            <Select
-              value={form.owner_id || "none"}
-              onValueChange={v => setForm({ ...form, owner_id: v === "none" ? "" : v })}
-            >
-              <SelectTrigger><SelectValue placeholder="Sem responsável" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">Sem responsável</SelectItem>
-                {teamMembers.map(m => <SelectItem key={m.id} value={m.id}>{memberLabel(m)}</SelectItem>)}
-              </SelectContent>
-            </Select>
-          </Field>
-          <Field label="Próximo contato previsto">
-            <Input
-              type="date"
-              value={form.next_contact_at}
-              onChange={e => setForm({ ...form, next_contact_at: e.target.value })}
-            />
-          </Field>
-
-          <Field label="Telefone">
-            <Input value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} />
-          </Field>
-          <Field label="Email">
-            <Input type="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} />
-          </Field>
-          <Field label="Origem">
-            <Select value={form.source || undefined} onValueChange={v => setForm({ ...form, source: v })}>
-              <SelectTrigger><SelectValue placeholder="Selecionar origem" /></SelectTrigger>
-              <SelectContent>
-                {LEAD_SOURCES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-              </SelectContent>
-            </Select>
-          </Field>
-
-          <Field label="Etapa inicial">
-            <Select value={form.stage_id} onValueChange={v => setForm({ ...form, stage_id: v })}>
-              <SelectTrigger><SelectValue placeholder="Etapa" /></SelectTrigger>
-              <SelectContent>
-                {stages.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
-              </SelectContent>
-            </Select>
-          </Field>
-          <Field label="Temperatura">
-            <Select value={form.temperature} onValueChange={v => setForm({ ...form, temperature: v as Temperature })}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {TEMPERATURES.map(t => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}
-              </SelectContent>
-            </Select>
-          </Field>
-          <Field label="Modelo de briefing" className="col-span-2">
-            <Select
-              value={form.briefing_template_id || undefined}
-              onValueChange={v => setForm({ ...form, briefing_template_id: v })}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder={briefingTemplates.length ? "Opcional — escolher modelo" : "Nenhum modelo cadastrado"} />
-              </SelectTrigger>
-              <SelectContent>
-                {briefingTemplates.map(t => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}
-              </SelectContent>
-            </Select>
-          </Field>
-        </div>
-
-        <ScopeBuilder items={scopeItems} onChange={setScopeItems} taskTypes={taskTypes} />
-
-
-
-        {template && (
-          <div className="border-t border-border pt-4">
-            <BriefingForm template={template} data={briefing} onChange={setBriefing} />
+          <div className="cw-section">
+            <div className="cw-section-head"><h4>Contato</h4></div>
+            <div className="cw-grid cw-grid-2">
+              <div className="cw-field cw-span-full">
+                <label className="cw-label">Nome*</label>
+                <input className="cw-input" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} />
+              </div>
+              <div className="cw-field">
+                <label className="cw-label">Empresa</label>
+                <input className="cw-input" value={form.company} onChange={e => setForm({ ...form, company: e.target.value })} />
+              </div>
+              <div className="cw-field">
+                <label className="cw-label">Telefone</label>
+                <input className="cw-input" value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} />
+              </div>
+              <div className="cw-field">
+                <label className="cw-label">Email</label>
+                <input className="cw-input" type="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} />
+              </div>
+            </div>
           </div>
-        )}
+
+          <div className="cw-section">
+            <div className="cw-section-head"><h4>Classificação comercial</h4></div>
+            <div className="cw-grid cw-grid-2">
+              <div className="cw-field">
+                <label className="cw-label">Cliente vinculado</label>
+                <select
+                  className="cw-select"
+                  value={form.client_id || "none"}
+                  onChange={e => setForm({ ...form, client_id: e.target.value === "none" ? "" : e.target.value })}
+                >
+                  <option value="none">Nenhum</option>
+                  {clients.map(c => (
+                    <option key={c.id} value={c.id}>{c.name}{c.company ? ` · ${c.company}` : ""}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="cw-field">
+                <label className="cw-label">Segmento</label>
+                <select className="cw-select" value={form.segment} onChange={e => setForm({ ...form, segment: e.target.value })}>
+                  <option value="">Selecionar segmento</option>
+                  {segments.map(s => <option key={s} value={s}>{s}</option>)}
+                </select>
+              </div>
+              <div className="cw-field">
+                <label className="cw-label">Tipo de serviço *</label>
+                <select className="cw-select" value={form.service_type_id} onChange={e => setForm({ ...form, service_type_id: e.target.value })}>
+                  <option value="">Selecionar tipo de serviço</option>
+                  {serviceTypes.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                </select>
+              </div>
+              <div className="cw-field">
+                <label className="cw-label">Origem</label>
+                <select className="cw-select" value={form.source} onChange={e => setForm({ ...form, source: e.target.value })}>
+                  <option value="">Selecionar origem</option>
+                  {LEAD_SOURCES.map(s => <option key={s} value={s}>{s}</option>)}
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div className="cw-section">
+            <div className="cw-section-head"><h4>Funil e acompanhamento</h4></div>
+            <div className="cw-grid cw-grid-2">
+              <div className="cw-field">
+                <label className="cw-label">Etapa inicial</label>
+                <select className="cw-select" value={form.stage_id} onChange={e => setForm({ ...form, stage_id: e.target.value })}>
+                  <option value="">Etapa</option>
+                  {stages.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                </select>
+              </div>
+              <div className="cw-field">
+                <label className="cw-label">Temperatura</label>
+                <select className="cw-select" value={form.temperature} onChange={e => setForm({ ...form, temperature: e.target.value as Temperature })}>
+                  {TEMPERATURES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+                </select>
+              </div>
+              <div className="cw-field">
+                <label className="cw-label">Responsável</label>
+                <select
+                  className="cw-select"
+                  value={form.owner_id || "none"}
+                  onChange={e => setForm({ ...form, owner_id: e.target.value === "none" ? "" : e.target.value })}
+                >
+                  <option value="none">Sem responsável</option>
+                  {teamMembers.map(m => <option key={m.id} value={m.id}>{memberLabel(m)}</option>)}
+                </select>
+              </div>
+              <div className="cw-field">
+                <label className="cw-label">Próximo contato previsto</label>
+                <input
+                  className="cw-input"
+                  type="date"
+                  value={form.next_contact_at}
+                  onChange={e => setForm({ ...form, next_contact_at: e.target.value })}
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="cw-section">
+            <div className="cw-section-head"><h4>Escopo estimado</h4></div>
+            <ScopeBuilder items={scopeItems} onChange={setScopeItems} taskTypes={taskTypes} />
+          </div>
+
+          <div className="cw-section">
+            <div className="cw-section-head"><h4>Briefing inicial</h4></div>
+            <div className="cw-field">
+              <label className="cw-label">Modelo de briefing</label>
+              <select
+                className="cw-select"
+                value={form.briefing_template_id}
+                onChange={e => setForm({ ...form, briefing_template_id: e.target.value })}
+              >
+                <option value="">{briefingTemplates.length ? "Opcional — escolher modelo" : "Nenhum modelo cadastrado"}</option>
+                {briefingTemplates.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+              </select>
+            </div>
+            {template && (
+              <div className="mt-4">
+                <BriefingForm template={template} data={briefing} onChange={setBriefing} />
+              </div>
+            )}
+          </div>
+        </div>
+
 
         <DialogFooter>
           <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancelar</Button>
