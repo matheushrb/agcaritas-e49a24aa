@@ -803,6 +803,7 @@ function LeadDrawer({
   const [activity, setActivity] = useState({ kind: "note", title: "", notes: "", due_date: "" });
   const [briefing, setBriefing] = useState<BriefingData>({});
   const [scopeItems, setScopeItems] = useState<ScopeItem[]>([]);
+  const [interestDraft, setInterestDraft] = useState("");
 
   useEffect(() => { setBriefing((lead?.briefing as BriefingData) ?? {}); }, [lead?.id]);
   useEffect(() => { setScopeItems((lead?.scope_items as ScopeItem[]) ?? []); }, [lead?.id]);
