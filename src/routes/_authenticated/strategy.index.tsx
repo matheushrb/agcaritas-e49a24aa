@@ -5,7 +5,7 @@ import "@/windows.css";
 
 const sb = supabase as any;
 
-export const Route = createFileRoute("/_authenticated/strategy")({
+export const Route = createFileRoute("/_authenticated/strategy/")({
   head: () => ({ meta: [{ title: "Planejamento Estratégico · Caritas" }] }),
   component: StrategyListPage,
 });

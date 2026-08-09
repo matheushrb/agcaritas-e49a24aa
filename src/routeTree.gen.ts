@@ -17,6 +17,7 @@ import { Route as PTokenRouteImport } from './routes/p.$token'
 import { Route as AuthenticatedTeamRouteImport } from './routes/_authenticated/team'
 import { Route as AuthenticatedTasksRouteImport } from './routes/_authenticated/tasks'
 import { Route as AuthenticatedSuppliersRouteImport } from './routes/_authenticated/suppliers'
+import { Route as AuthenticatedStrategyRouteImport } from './routes/_authenticated/strategy'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedProposalsRouteImport } from './routes/_authenticated/proposals'
 import { Route as AuthenticatedNotificationsRouteImport } from './routes/_authenticated/notifications'
@@ -77,6 +78,11 @@ const AuthenticatedTasksRoute = AuthenticatedTasksRouteImport.update({
 const AuthenticatedSuppliersRoute = AuthenticatedSuppliersRouteImport.update({
   id: '/suppliers',
   path: '/suppliers',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedStrategyRoute = AuthenticatedStrategyRouteImport.update({
+  id: '/strategy',
+  path: '/strategy',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
@@ -217,6 +223,7 @@ export interface FileRoutesByFullPath {
   '/notifications': typeof AuthenticatedNotificationsRoute
   '/proposals': typeof AuthenticatedProposalsRoute
   '/settings': typeof AuthenticatedSettingsRoute
+  '/strategy': typeof AuthenticatedStrategyRoute
   '/suppliers': typeof AuthenticatedSuppliersRoute
   '/tasks': typeof AuthenticatedTasksRoute
   '/team': typeof AuthenticatedTeamRouteWithChildren
@@ -248,6 +255,7 @@ export interface FileRoutesByTo {
   '/notifications': typeof AuthenticatedNotificationsRoute
   '/proposals': typeof AuthenticatedProposalsRoute
   '/settings': typeof AuthenticatedSettingsRoute
+  '/strategy': typeof AuthenticatedStrategyRoute
   '/suppliers': typeof AuthenticatedSuppliersRoute
   '/tasks': typeof AuthenticatedTasksRoute
   '/p/$token': typeof PTokenRoute
@@ -280,6 +288,7 @@ export interface FileRoutesById {
   '/_authenticated/notifications': typeof AuthenticatedNotificationsRoute
   '/_authenticated/proposals': typeof AuthenticatedProposalsRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
+  '/_authenticated/strategy': typeof AuthenticatedStrategyRoute
   '/_authenticated/suppliers': typeof AuthenticatedSuppliersRoute
   '/_authenticated/tasks': typeof AuthenticatedTasksRoute
   '/_authenticated/team': typeof AuthenticatedTeamRouteWithChildren
@@ -313,6 +322,7 @@ export interface FileRouteTypes {
     | '/notifications'
     | '/proposals'
     | '/settings'
+    | '/strategy'
     | '/suppliers'
     | '/tasks'
     | '/team'
@@ -344,6 +354,7 @@ export interface FileRouteTypes {
     | '/notifications'
     | '/proposals'
     | '/settings'
+    | '/strategy'
     | '/suppliers'
     | '/tasks'
     | '/p/$token'
@@ -375,6 +386,7 @@ export interface FileRouteTypes {
     | '/_authenticated/notifications'
     | '/_authenticated/proposals'
     | '/_authenticated/settings'
+    | '/_authenticated/strategy'
     | '/_authenticated/suppliers'
     | '/_authenticated/tasks'
     | '/_authenticated/team'
@@ -452,6 +464,13 @@ declare module '@tanstack/react-router' {
       path: '/suppliers'
       fullPath: '/suppliers'
       preLoaderRoute: typeof AuthenticatedSuppliersRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/strategy': {
+      id: '/_authenticated/strategy'
+      path: '/strategy'
+      fullPath: '/strategy'
+      preLoaderRoute: typeof AuthenticatedStrategyRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/settings': {
@@ -651,6 +670,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedNotificationsRoute: typeof AuthenticatedNotificationsRoute
   AuthenticatedProposalsRoute: typeof AuthenticatedProposalsRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
+  AuthenticatedStrategyRoute: typeof AuthenticatedStrategyRoute
   AuthenticatedSuppliersRoute: typeof AuthenticatedSuppliersRoute
   AuthenticatedTasksRoute: typeof AuthenticatedTasksRoute
   AuthenticatedTeamRoute: typeof AuthenticatedTeamRouteWithChildren
@@ -676,6 +696,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedNotificationsRoute: AuthenticatedNotificationsRoute,
   AuthenticatedProposalsRoute: AuthenticatedProposalsRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
+  AuthenticatedStrategyRoute: AuthenticatedStrategyRoute,
   AuthenticatedSuppliersRoute: AuthenticatedSuppliersRoute,
   AuthenticatedTasksRoute: AuthenticatedTasksRoute,
   AuthenticatedTeamRoute: AuthenticatedTeamRouteWithChildren,
@@ -698,13 +719,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
