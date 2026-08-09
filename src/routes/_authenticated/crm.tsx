@@ -587,8 +587,11 @@ function initialsOf(name: string) {
 }
 
 function LeadCard({
-  lead, serviceType = null, teamMembers = [], dragging = false,
-}: { lead: Lead; serviceType?: ServiceTypeLite | null; teamMembers?: MemberLite[]; dragging?: boolean }) {
+  lead, serviceType = null, teamMembers = [], dragging = false, activityCount = 0, onToggleFavorite,
+}: {
+  lead: Lead; serviceType?: ServiceTypeLite | null; teamMembers?: MemberLite[]; dragging?: boolean;
+  activityCount?: number; onToggleFavorite?: (l: Lead) => void;
+}) {
   const owner = lead.owner_id ? teamMembers.find(m => m.id === lead.owner_id) ?? null : null;
   const ownerName = owner ? memberLabel(owner) : null;
   const avatarColor = owner
@@ -596,6 +599,11 @@ function LeadCard({
     : AVATAR_COLORS[0];
 
   const tempColor = lead.temperature ? TEMP_BORDER[lead.temperature] : null;
+  const favorite = Boolean((lead as any).is_favorite);
+  const approach =
+    (lead as any).we_approached === true ? "Nós abordamos"
+    : (lead as any).we_approached === false ? "Fomos abordados"
+    : null;
 
   let nextContact: { label: string; late: boolean } | null = null;
   if (lead.next_contact_at) {
@@ -614,7 +622,23 @@ function LeadCard({
     >
       <div className="flex items-start justify-between gap-2">
         <p className="text-sm font-medium truncate">{lead.name}</p>
-        <TemperatureIcon value={lead.temperature} />
+        <div className="flex items-center gap-1 shrink-0">
+          <TemperatureIcon value={lead.temperature} />
+          {onToggleFavorite ? (
+            <span
+              role="button"
+              tabIndex={-1}
+              aria-label={favorite ? "Desfavoritar" : "Favoritar"}
+              onClick={(e) => { e.stopPropagation(); onToggleFavorite(lead); }}
+              onPointerDown={(e) => e.stopPropagation()}
+              className="cursor-pointer"
+            >
+              <Star className={`h-3.5 w-3.5 ${favorite ? "fill-current text-amber-400" : "text-muted-foreground"}`} />
+            </span>
+          ) : favorite ? (
+            <Star className="h-3.5 w-3.5 fill-current text-amber-400" />
+          ) : null}
+        </div>
       </div>
 
       {(lead.company || lead.client_id) && (
@@ -626,6 +650,12 @@ function LeadCard({
             </span>
           )}
         </div>
+      )}
+
+      {approach && (
+        <span className="mt-1 inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-[10px] text-muted-foreground">
+          {approach}
+        </span>
       )}
 
       {ownerName && (
@@ -650,6 +680,11 @@ function LeadCard({
               <span className="h-1.5 w-1.5 rounded-full shrink-0" style={{ background: serviceType.color }} />
               {serviceType.name}
             </Badge>
+          ) : null}
+          {activityCount > 0 ? (
+            <span className="inline-flex items-center gap-0.5 text-[10px] text-muted-foreground">
+              <MessageSquare className="h-3 w-3" /> {activityCount}
+            </span>
           ) : null}
         </div>
         {lead.estimated_value ? (
