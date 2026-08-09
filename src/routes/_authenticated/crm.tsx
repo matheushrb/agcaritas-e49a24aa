@@ -468,6 +468,8 @@ function CrmPage() {
                 activityCounts={activityCounts}
                 onOpen={l => setOpenLeadId(l.id)}
                 onToggleFavorite={toggleFavorite}
+                onAddLead={() => { setNewLeadStage(stage.id); setModalOpen(true); }}
+
               />
             ))}
           </div>
