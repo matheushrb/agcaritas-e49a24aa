@@ -912,31 +912,145 @@ function LeadDrawer({
           <TabsContent value="info" className="mt-4 space-y-3">
             <div className="cw">
               <div className="cw-grid cw-grid-2">
-                <button type="button" className={`cw-choice${lead.we_approached === true ? " is-on" : ""}`} onClick={() => onPatch({ we_approached: true })}>
-                  <span className="cw-choice-title"><Send size={15} /> Nós abordamos</span>
-                  <span className="cw-choice-desc">Prospecção ativa da agência</span>
-                </button>
-                <button type="button" className={`cw-choice${lead.we_approached === false ? " is-on" : ""}`} onClick={() => onPatch({ we_approached: false })}>
-                  <span className="cw-choice-title"><Inbox size={15} /> Fomos abordados</span>
-                  <span className="cw-choice-desc">O lead chegou até nós</span>
-                </button>
+                <div className="cw-field">
+                  <label className="cw-label">Origem do contato</label>
+                  <div className="cw-grid cw-grid-2">
+                    <button type="button" className={`cw-choice${lead.we_approached === true ? " is-on" : ""}`} onClick={() => onPatch({ we_approached: true })}>
+                      <span className="cw-choice-title"><Send size={15} /> Nós abordamos</span>
+                      <span className="cw-choice-desc">Prospecção ativa da agência</span>
+                    </button>
+                    <button type="button" className={`cw-choice${lead.we_approached === false ? " is-on" : ""}`} onClick={() => onPatch({ we_approached: false })}>
+                      <span className="cw-choice-title"><Inbox size={15} /> Fomos abordados</span>
+                      <span className="cw-choice-desc">O lead chegou até nós</span>
+                    </button>
+                  </div>
+                </div>
+                <div className="cw-field">
+                  <label className="cw-label">Temperatura</label>
+                  <div className="cw-grid cw-grid-3">
+                    {TEMPERATURES.map(t => {
+                      const Ico = t.icon;
+                      return (
+                        <button
+                          key={t.value}
+                          type="button"
+                          className={`cw-choice${lead.temperature === t.value ? " is-on" : ""}`}
+                          onClick={() => onPatch({ temperature: t.value })}
+                        >
+                          <span className="cw-choice-title"><Ico size={15} /> {t.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
               </div>
             </div>
             <div className="cw">
               <div className="cw-section" style={{ borderTop: "none", marginTop: 0, paddingTop: 0 }}>
-                <div className="cw-section-head"><h4>Funil</h4></div>
+                <div className="cw-section-head"><h4>Propriedades</h4></div>
                 <div className="cw-grid cw-grid-2">
                   <div className="cw-field">
-                    <label className="cw-label">Temperatura</label>
+                    <label className="cw-label">Responsável</label>
                     <select
                       className="cw-select"
-                      value={lead.temperature ?? ""}
-                      onChange={e => onPatch({ temperature: e.target.value })}
+                      value={lead.owner_id ?? "none"}
+                      onChange={e => onPatch({ owner_id: e.target.value === "none" ? null : e.target.value })}
                     >
-                      <option value="" disabled>Definir</option>
-                      {TEMPERATURES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+                      <option value="none">Sem responsável</option>
+                      {teamMembers.map(m => <option key={m.id} value={m.id}>{memberLabel(m)}</option>)}
                     </select>
                   </div>
+                  <div className="cw-field">
+                    <label className="cw-label">Origem</label>
+                    <select
+                      className="cw-select"
+                      value={lead.source ?? ""}
+                      onChange={e => onPatch({ source: e.target.value })}
+                    >
+                      <option value="" disabled>Definir origem</option>
+                      {LEAD_SOURCES.map(s => <option key={s} value={s}>{s}</option>)}
+                    </select>
+                  </div>
+                  <div className="cw-field">
+                    <label className="cw-label">Segmento</label>
+                    <select
+                      className="cw-select"
+                      value={lead.segment ?? ""}
+                      onChange={e => onPatch({ segment: e.target.value })}
+                    >
+                      <option value="" disabled>Definir segmento</option>
+                      {segments.map(s => <option key={s} value={s}>{s}</option>)}
+                    </select>
+                  </div>
+                  <div className="cw-field">
+                    <label className="cw-label">Tipo de serviço</label>
+                    <select
+                      className="cw-select"
+                      value={lead.service_type_id ?? ""}
+                      onChange={e => onPatch({ service_type_id: e.target.value })}
+                    >
+                      <option value="" disabled>Definir tipo de serviço</option>
+                      {serviceTypes.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                    </select>
+                  </div>
+                  <div className="cw-field cw-span-full">
+                    <label className="cw-label">Cliente vinculado</label>
+                    <select
+                      className="cw-select"
+                      value={lead.client_id ?? "none"}
+                      onChange={e => onPatch({ client_id: e.target.value === "none" ? null : e.target.value })}
+                    >
+                      <option value="none">Nenhum cliente</option>
+                      {clients.map(c => (
+                        <option key={c.id} value={c.id}>{c.name}{c.company ? ` · ${c.company}` : ""}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <div className="cw-section">
+                <div className="cw-section-head"><h4>Dados da empresa e contato</h4></div>
+                <div className="cw-grid cw-grid-2">
+                  <div className="cw-field">
+                    <label className="cw-label">Nome da empresa</label>
+                    <input
+                      className="cw-input"
+                      defaultValue={lead.company ?? ""}
+                      onBlur={e => onPatch({ company: e.target.value || null })}
+                    />
+                  </div>
+                  <div className="cw-field">
+                    <label className="cw-label">Nome do contato</label>
+                    <input
+                      className="cw-input"
+                      defaultValue={lead.name ?? ""}
+                      onBlur={e => onPatch({ name: e.target.value || lead.name })}
+                    />
+                  </div>
+                  <div className="cw-field">
+                    <label className="cw-label">E-mail</label>
+                    <input
+                      className="cw-input"
+                      type="email"
+                      defaultValue={lead.email ?? ""}
+                      onBlur={e => onPatch({ email: e.target.value || null })}
+                    />
+                  </div>
+                  <div className="cw-field">
+                    <label className="cw-label">Telefone / WhatsApp</label>
+                    <input
+                      className="cw-input"
+                      defaultValue={lead.phone ?? ""}
+                      onBlur={e => onPatch({ phone: e.target.value || null })}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="cw-section">
+                <div className="cw-section-head"><h4>Informações comerciais</h4></div>
+                <div className="cw-grid cw-grid-3">
                   <div className="cw-field">
                     <label className="cw-label">Probabilidade (%)</label>
                     <input
@@ -966,74 +1080,8 @@ function LeadDrawer({
                   </div>
                 </div>
               </div>
-
-              <div className="cw-section">
-                <div className="cw-section-head"><h4>Classificação</h4></div>
-                <div className="cw-grid cw-grid-2">
-                  <div className="cw-field">
-                    <label className="cw-label">Responsável</label>
-                    <select
-                      className="cw-select"
-                      value={lead.owner_id ?? "none"}
-                      onChange={e => onPatch({ owner_id: e.target.value === "none" ? null : e.target.value })}
-                    >
-                      <option value="none">Sem responsável</option>
-                      {teamMembers.map(m => <option key={m.id} value={m.id}>{memberLabel(m)}</option>)}
-                    </select>
-                  </div>
-                  <div className="cw-field">
-                    <label className="cw-label">Segmento</label>
-                    <select
-                      className="cw-select"
-                      value={lead.segment ?? ""}
-                      onChange={e => onPatch({ segment: e.target.value })}
-                    >
-                      <option value="" disabled>Definir segmento</option>
-                      {segments.map(s => <option key={s} value={s}>{s}</option>)}
-                    </select>
-                  </div>
-                  <div className="cw-field">
-                    <label className="cw-label">Tipo de serviço</label>
-                    <select
-                      className="cw-select"
-                      value={lead.service_type_id ?? ""}
-                      onChange={e => onPatch({ service_type_id: e.target.value })}
-                    >
-                      <option value="" disabled>Definir tipo de serviço</option>
-                      {serviceTypes.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-                    </select>
-                  </div>
-                  <div className="cw-field">
-                    <label className="cw-label">Origem</label>
-                    <select
-                      className="cw-select"
-                      value={lead.source ?? ""}
-                      onChange={e => onPatch({ source: e.target.value })}
-                    >
-                      <option value="" disabled>Definir origem</option>
-                      {LEAD_SOURCES.map(s => <option key={s} value={s}>{s}</option>)}
-                    </select>
-                  </div>
-                  <div className="cw-field cw-span-full">
-                    <label className="cw-label">Cliente vinculado</label>
-                    <select
-                      className="cw-select"
-                      value={lead.client_id ?? "none"}
-                      onChange={e => onPatch({ client_id: e.target.value === "none" ? null : e.target.value })}
-                    >
-                      <option value="none">Nenhum cliente</option>
-                      {clients.map(c => (
-                        <option key={c.id} value={c.id}>{c.name}{c.company ? ` · ${c.company}` : ""}</option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-              </div>
             </div>
 
-            <InfoRow icon={Building2} label="Empresa" value={lead.company ?? "—"} />
-            <InfoRow icon={Mail} label="Email" value={lead.email ?? "—"} />
-            <InfoRow icon={Phone} label="Telefone" value={lead.phone ?? "—"} />
 
 
             <div className="space-y-2">
