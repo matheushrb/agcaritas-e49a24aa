@@ -754,45 +754,119 @@ function LeadDrawer({
                 </button>
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label className="text-xs">Temperatura</Label>
-                <Select
-                  value={lead.temperature ?? undefined}
-                  onValueChange={v => onPatch({ temperature: v })}
-                >
-                  <SelectTrigger className="mt-1"><SelectValue placeholder="Definir" /></SelectTrigger>
-                  <SelectContent>
-                    {TEMPERATURES.map(t => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}
-                  </SelectContent>
-                </Select>
+            <div className="cw">
+              <div className="cw-section" style={{ borderTop: "none", marginTop: 0, paddingTop: 0 }}>
+                <div className="cw-section-head"><h4>Funil</h4></div>
+                <div className="cw-grid cw-grid-2">
+                  <div className="cw-field">
+                    <label className="cw-label">Temperatura</label>
+                    <select
+                      className="cw-select"
+                      value={lead.temperature ?? ""}
+                      onChange={e => onPatch({ temperature: e.target.value })}
+                    >
+                      <option value="" disabled>Definir</option>
+                      {TEMPERATURES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+                    </select>
+                  </div>
+                  <div className="cw-field">
+                    <label className="cw-label">Probabilidade (%)</label>
+                    <input
+                      className="cw-input"
+                      type="number" min={0} max={100}
+                      defaultValue={lead.probability ?? 0}
+                      onBlur={e => onPatch({ probability: Number(e.target.value) || 0 })}
+                    />
+                  </div>
+                  <div className="cw-field">
+                    <label className="cw-label">Fechamento previsto</label>
+                    <input
+                      className="cw-input"
+                      type="date"
+                      defaultValue={lead.expected_close_date ?? ""}
+                      onBlur={e => onPatch({ expected_close_date: e.target.value || null })}
+                    />
+                  </div>
+                  <div className="cw-field">
+                    <label className="cw-label">Próximo contato previsto</label>
+                    <input
+                      className="cw-input"
+                      type="date"
+                      defaultValue={lead.next_contact_at ?? ""}
+                      onBlur={e => onPatch({ next_contact_at: e.target.value || null })}
+                    />
+                  </div>
+                </div>
               </div>
-              <div>
-                <Label className="text-xs">Probabilidade (%)</Label>
-                <Input
-                  type="number" min={0} max={100} className="mt-1"
-                  defaultValue={lead.probability ?? 0}
-                  onBlur={e => onPatch({ probability: Number(e.target.value) || 0 })}
-                />
-              </div>
-              <div>
 
-                <Label className="text-xs">Fechamento previsto</Label>
-                <Input
-                  type="date" className="mt-1"
-                  defaultValue={lead.expected_close_date ?? ""}
-                  onBlur={e => onPatch({ expected_close_date: e.target.value || null })}
-                />
-              </div>
-              <div>
-                <Label className="text-xs">Próximo contato previsto</Label>
-                <Input
-                  type="date" className="mt-1"
-                  defaultValue={lead.next_contact_at ?? ""}
-                  onBlur={e => onPatch({ next_contact_at: e.target.value || null })}
-                />
+              <div className="cw-section">
+                <div className="cw-section-head"><h4>Classificação</h4></div>
+                <div className="cw-grid cw-grid-2">
+                  <div className="cw-field">
+                    <label className="cw-label">Responsável</label>
+                    <select
+                      className="cw-select"
+                      value={lead.owner_id ?? "none"}
+                      onChange={e => onPatch({ owner_id: e.target.value === "none" ? null : e.target.value })}
+                    >
+                      <option value="none">Sem responsável</option>
+                      {teamMembers.map(m => <option key={m.id} value={m.id}>{memberLabel(m)}</option>)}
+                    </select>
+                  </div>
+                  <div className="cw-field">
+                    <label className="cw-label">Segmento</label>
+                    <select
+                      className="cw-select"
+                      value={lead.segment ?? ""}
+                      onChange={e => onPatch({ segment: e.target.value })}
+                    >
+                      <option value="" disabled>Definir segmento</option>
+                      {segments.map(s => <option key={s} value={s}>{s}</option>)}
+                    </select>
+                  </div>
+                  <div className="cw-field">
+                    <label className="cw-label">Tipo de serviço</label>
+                    <select
+                      className="cw-select"
+                      value={lead.service_type_id ?? ""}
+                      onChange={e => onPatch({ service_type_id: e.target.value })}
+                    >
+                      <option value="" disabled>Definir tipo de serviço</option>
+                      {serviceTypes.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                    </select>
+                  </div>
+                  <div className="cw-field">
+                    <label className="cw-label">Origem</label>
+                    <select
+                      className="cw-select"
+                      value={lead.source ?? ""}
+                      onChange={e => onPatch({ source: e.target.value })}
+                    >
+                      <option value="" disabled>Definir origem</option>
+                      {LEAD_SOURCES.map(s => <option key={s} value={s}>{s}</option>)}
+                    </select>
+                  </div>
+                  <div className="cw-field cw-span-full">
+                    <label className="cw-label">Cliente vinculado</label>
+                    <select
+                      className="cw-select"
+                      value={lead.client_id ?? "none"}
+                      onChange={e => onPatch({ client_id: e.target.value === "none" ? null : e.target.value })}
+                    >
+                      <option value="none">Nenhum cliente</option>
+                      {clients.map(c => (
+                        <option key={c.id} value={c.id}>{c.name}{c.company ? ` · ${c.company}` : ""}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
               </div>
             </div>
+
+            <InfoRow icon={Building2} label="Empresa" value={lead.company ?? "—"} />
+            <InfoRow icon={Mail} label="Email" value={lead.email ?? "—"} />
+            <InfoRow icon={Phone} label="Telefone" value={lead.phone ?? "—"} />
+
 
             <div className="space-y-2">
               <ScopeBuilder items={scopeItems} onChange={setScopeItems} taskTypes={taskTypes} />
