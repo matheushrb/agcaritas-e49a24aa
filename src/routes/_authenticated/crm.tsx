@@ -682,11 +682,16 @@ function LeadCard({
     : AVATAR_COLORS[0];
 
   const tempColor = lead.temperature ? TEMP_BORDER[lead.temperature] : null;
+  const temp = TEMPERATURES.find(t => t.value === lead.temperature) ?? null;
+  const TempIcon = temp?.icon ?? null;
   const favorite = Boolean((lead as any).is_favorite);
   const approach =
     (lead as any).we_approached === true ? "Nós abordamos"
     : (lead as any).we_approached === false ? "Fomos abordados"
     : null;
+
+  const title = lead.company || lead.name;
+  const contact = lead.company ? lead.name : null;
 
   let nextContact: { label: string; late: boolean } | null = null;
   if (lead.next_contact_at) {
@@ -703,100 +708,123 @@ function LeadCard({
       }`}
       style={tempColor ? { borderLeft: `3px solid ${tempColor}` } : { borderLeftWidth: 3 }}
     >
+      {/* Identificação */}
       <div className="flex items-start justify-between gap-2">
-        <p className="text-sm font-medium truncate">{lead.name}</p>
-        <div className="flex items-center gap-1 shrink-0">
-          <TemperatureIcon value={lead.temperature} />
-          {onToggleFavorite ? (
-            <span
-              role="button"
-              tabIndex={-1}
-              aria-label={favorite ? "Desfavoritar" : "Favoritar"}
-              onClick={(e) => { e.stopPropagation(); onToggleFavorite(lead); }}
-              onPointerDown={(e) => e.stopPropagation()}
-              className="cursor-pointer"
-            >
-              <Star className={`h-3.5 w-3.5 ${favorite ? "fill-current text-amber-400" : "text-muted-foreground"}`} />
-            </span>
-          ) : favorite ? (
-            <Star className="h-3.5 w-3.5 fill-current text-amber-400" />
-          ) : null}
+        <div className="min-w-0">
+          <p className="text-sm font-semibold truncate">{title}</p>
+          {contact && <p className="text-xs text-muted-foreground truncate">{contact}</p>}
+          {lead.segment && <p className="text-[11px] text-primary truncate">{lead.segment}</p>}
         </div>
+        {onToggleFavorite ? (
+          <span
+            role="button"
+            tabIndex={-1}
+            aria-label={favorite ? "Desfavoritar" : "Favoritar"}
+            onClick={(e) => { e.stopPropagation(); onToggleFavorite(lead); }}
+            onPointerDown={(e) => e.stopPropagation()}
+            className="shrink-0 cursor-pointer"
+          >
+            <Star className={`h-3.5 w-3.5 ${favorite ? "fill-current text-amber-400" : "text-muted-foreground"}`} />
+          </span>
+        ) : favorite ? (
+          <Star className="h-3.5 w-3.5 shrink-0 fill-current text-amber-400" />
+        ) : null}
       </div>
 
-      {(lead.company || lead.client_id) && (
-        <div className="flex items-center gap-1.5 min-w-0">
-          {lead.company && <p className="text-xs text-muted-foreground truncate">{lead.company}</p>}
-          {lead.client_id && (
-            <span className="inline-flex items-center gap-0.5 text-[10px] text-emerald-600 dark:text-emerald-400 shrink-0">
-              <CheckCircle2 className="h-3 w-3" /> Cliente
+      {/* Origem + temperatura */}
+      <div className="mt-2 flex flex-wrap items-center gap-1.5">
+        {approach && (
+          <span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-[10px] text-muted-foreground">
+            {approach}
+          </span>
+        )}
+        {temp && (
+          <span
+            className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium"
+            style={{ background: `${tempColor}1A`, color: tempColor ?? undefined }}
+          >
+            {TempIcon && <TempIcon className="h-3 w-3" />}
+            {temp.label}
+          </span>
+        )}
+        {lead.client_id && (
+          <span className="inline-flex items-center gap-0.5 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] text-emerald-600 dark:text-emerald-400">
+            <CheckCircle2 className="h-3 w-3" /> Cliente
+          </span>
+        )}
+      </div>
+
+      {/* Métricas */}
+      <div className="mt-2.5 space-y-1.5">
+        {lead.estimated_value ? (
+          <div className="flex items-baseline justify-between gap-2">
+            <span className="text-[10px] text-muted-foreground">Valor estimado</span>
+            <span className="text-xs font-semibold tabular-nums">{brl(Number(lead.estimated_value))}</span>
+          </div>
+        ) : null}
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-[10px] text-muted-foreground shrink-0">Probabilidade</span>
+          <div className="flex flex-1 items-center gap-2">
+            <div className="h-1 flex-1 rounded-full bg-muted overflow-hidden">
+              <div className="h-full rounded-full bg-primary" style={{ width: `${lead.probability ?? 0}%` }} />
+            </div>
+            <span className="text-[10px] tabular-nums text-muted-foreground">{lead.probability ?? 0}%</span>
+          </div>
+        </div>
+        {nextContact && (
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-[10px] text-muted-foreground">Próximo contato</span>
+            <span
+              className={`inline-flex items-center gap-1 text-[10px] ${
+                nextContact.late ? "font-medium text-[#E24B4A]" : "text-muted-foreground"
+              }`}
+            >
+              <CalendarDays className="h-3 w-3" /> {nextContact.label}
+            </span>
+          </div>
+        )}
+      </div>
+
+      {/* Responsável + atividade */}
+      {(ownerName || activityCount > 0) && (
+        <div className="mt-2.5 flex items-center justify-between gap-2">
+          {ownerName ? (
+            <div className="flex min-w-0 items-center gap-1.5">
+              <span
+                className="grid h-5 w-5 shrink-0 place-items-center rounded-full text-[9px] font-semibold text-white"
+                style={{ background: avatarColor }}
+              >
+                {initialsOf(ownerName)}
+              </span>
+              <span className="text-[11px] text-muted-foreground truncate">{ownerName}</span>
+            </div>
+          ) : <span />}
+          {activityCount > 0 && (
+            <span className="inline-flex shrink-0 items-center gap-0.5 text-[10px] text-muted-foreground">
+              <MessageSquare className="h-3 w-3" /> {activityCount}
             </span>
           )}
         </div>
       )}
 
-      {approach && (
-        <span className="mt-1 inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-[10px] text-muted-foreground">
-          {approach}
-        </span>
-      )}
-
-      {ownerName && (
-        <div className="mt-2 flex items-center gap-1.5 min-w-0">
-          <span
-            className="grid h-5 w-5 shrink-0 place-items-center rounded-full text-[9px] font-semibold text-white"
-            style={{ background: avatarColor }}
-          >
-            {initialsOf(ownerName)}
-          </span>
-          <span className="text-[11px] text-muted-foreground truncate">{ownerName}</span>
-        </div>
-      )}
-
-      <div className="mt-2 flex items-center justify-between gap-2">
-        <div className="flex min-w-0 flex-wrap items-center gap-1">
-          {lead.segment ? (
-            <Badge variant="outline" className="rounded-full text-[10px] font-normal">{lead.segment}</Badge>
-          ) : null}
+      {/* Tags */}
+      {(serviceType || ((lead as any).interests as string[] | undefined)?.length) ? (
+        <div className="mt-2.5 flex flex-wrap items-center gap-1 border-t border-border pt-2.5">
           {serviceType ? (
             <Badge variant="outline" className="rounded-full text-[10px] font-normal gap-1">
               <span className="h-1.5 w-1.5 rounded-full shrink-0" style={{ background: serviceType.color }} />
               {serviceType.name}
             </Badge>
           ) : null}
-          {activityCount > 0 ? (
-            <span className="inline-flex items-center gap-0.5 text-[10px] text-muted-foreground">
-              <MessageSquare className="h-3 w-3" /> {activityCount}
-            </span>
-          ) : null}
+          {(((lead as any).interests as string[]) ?? []).slice(0, 2).map(i => (
+            <Badge key={i} variant="outline" className="rounded-full text-[10px] font-normal">{i}</Badge>
+          ))}
         </div>
-        {lead.estimated_value ? (
-          <p className="text-xs font-semibold text-emerald-500 dark:text-emerald-400">
-            {brl(Number(lead.estimated_value))}
-          </p>
-        ) : null}
-      </div>
-      {(lead.probability ?? 0) > 0 && (
-        <div className="mt-2 flex items-center gap-2">
-          <div className="h-1 flex-1 rounded-full bg-muted overflow-hidden">
-            <div className="h-full rounded-full bg-primary" style={{ width: `${lead.probability}%` }} />
-          </div>
-          <span className="text-[10px] tabular-nums text-muted-foreground">{lead.probability}%</span>
-        </div>
-      )}
-      {nextContact && (
-        <div
-          className={`mt-2 flex items-center gap-1 text-[10px] ${
-            nextContact.late ? "font-medium text-[#E24B4A]" : "text-muted-foreground"
-          }`}
-        >
-          <CalendarDays className="h-3 w-3" />
-          <span>Próximo contato: {nextContact.label}</span>
-        </div>
-      )}
+      ) : null}
     </div>
   );
 }
+
 
 
 // ---------- Drawer ----------
