@@ -225,6 +225,8 @@ function CrmPage() {
   const [serviceTypeFilter, setServiceTypeFilter] = useState<string>("all");
   const [openLeadId, setOpenLeadId] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
+  const [newLeadStage, setNewLeadStage] = useState<string | null>(null);
+
   const [dragId, setDragId] = useState<string | null>(null);
   const [wonBanner, setWonBanner] = useState<Lead | null>(null);
   const searchParams = Route.useSearch();
@@ -381,27 +383,59 @@ function CrmPage() {
 
   return (
     <div className="space-y-5">
-      <header className="flex flex-wrap items-end justify-between gap-4">
+      <header className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-muted-foreground">
-            Prospecção
-          </p>
-          <h1 className="mt-1 font-display text-3xl font-bold tracking-tight">Pipeline de vendas</h1>
+          <h1 className="font-display text-3xl font-bold tracking-tight">
+            <span className="text-primary">CRM</span> <span className="text-muted-foreground/60">/</span> Pipeline Comercial
+          </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Arraste os cards entre as etapas. As etapas do funil são configuráveis em Configurações › Funil CRM.
+            Acompanhe suas oportunidades comerciais e avance mais negócios.
           </p>
         </div>
-        <Button className="rounded-full gap-2" onClick={() => setModalOpen(true)}>
-          <Plus className="h-4 w-4" /> Novo lead
-        </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="relative min-w-[240px]">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder="Buscar leads, empresas, contatos..."
+              className="pl-9 rounded-full bg-card border-border"
+              value={query}
+              onChange={e => setQuery(e.target.value)}
+            />
+          </div>
+          <Select value={segment} onValueChange={setSegment}>
+            <SelectTrigger className="w-[170px] rounded-full">
+              <SelectValue placeholder="Segmento" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos os segmentos</SelectItem>
+              {segments.map(s => (
+                <SelectItem key={s} value={s}>{s}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={serviceTypeFilter} onValueChange={setServiceTypeFilter}>
+            <SelectTrigger className="w-[170px] rounded-full">
+              <SelectValue placeholder="Tipo de serviço" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos os serviços</SelectItem>
+              {serviceTypes.map(s => (
+                <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Button className="rounded-full gap-2" onClick={() => { setNewLeadStage(null); setModalOpen(true); }}>
+            <Plus className="h-4 w-4" /> Novo lead
+          </Button>
+        </div>
       </header>
 
       {/* KPIs */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-        <KpiCard label="Pipeline em aberto" value={brl(pipeline)} icon={TrendingUp} tone="text-blue-500" />
-        <KpiCard label="Previsão ponderada" value={brl(weighted)} icon={Target} tone="text-violet-500" />
-        <KpiCard label="Receita ganha" value={brl(wonValue)} icon={DollarSign} tone="text-emerald-500" />
-        <KpiCard label="Taxa de conversão" value={`${conversion}%`} icon={CheckCircle2} tone="text-amber-500" />
+        <KpiCard label="Pipeline em aberto" value={brl(pipeline)} icon={TrendingUp} tone="text-blue-500" subtitle={`${leads.length} leads`} />
+        <KpiCard label="Previsão ponderada" value={brl(weighted)} icon={Target} tone="text-violet-500" subtitle="Baseado na probabilidade" />
+        <KpiCard label="Receita ganha" value={brl(wonValue)} icon={DollarSign} tone="text-emerald-500" subtitle={`${wonLeads.length} negócios`} />
+        <KpiCard label="Taxa de conversão" value={`${conversion}%`} icon={CheckCircle2} tone="text-amber-500" subtitle="Do total de leads" />
         <KpiCard
           label="Próximos contatos"
           value={String(upcomingContacts)}
@@ -411,43 +445,10 @@ function CrmPage() {
         />
       </div>
 
-      {/* Filters */}
-      <div className="flex flex-wrap items-center gap-3">
-        <div className="relative flex-1 min-w-[220px] max-w-md">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder="Buscar por nome, empresa ou email"
-            className="pl-9 rounded-full bg-card border-border"
-            value={query}
-            onChange={e => setQuery(e.target.value)}
-          />
-        </div>
-        <Select value={segment} onValueChange={setSegment}>
-          <SelectTrigger className="w-[200px] rounded-full">
-            <SelectValue placeholder="Segmento" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Todos os segmentos</SelectItem>
-            {segments.map(s => (
-              <SelectItem key={s} value={s}>{s}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Select value={serviceTypeFilter} onValueChange={setServiceTypeFilter}>
-          <SelectTrigger className="w-[200px] rounded-full">
-            <SelectValue placeholder="Tipo de serviço" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Todos os serviços</SelectItem>
-            {serviceTypes.map(s => (
-              <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <p className="ml-auto text-xs text-muted-foreground">
-          {filtered.length} de {leads.length} leads
-        </p>
-      </div>
+      <p className="text-xs text-muted-foreground">
+        {filtered.length} de {leads.length} leads
+      </p>
+
 
       {/* Kanban */}
       {isLoading || stages.length === 0 ? (
@@ -467,6 +468,8 @@ function CrmPage() {
                 activityCounts={activityCounts}
                 onOpen={l => setOpenLeadId(l.id)}
                 onToggleFavorite={toggleFavorite}
+                onAddLead={() => { setNewLeadStage(stage.id); setModalOpen(true); }}
+
               />
             ))}
           </div>
@@ -508,7 +511,7 @@ function CrmPage() {
       />
 
       {/* Modal new lead */}
-      <NewLeadModal open={modalOpen} onOpenChange={setModalOpen} segments={segments} stages={stages} templates={templates} clients={clients} serviceTypes={serviceTypes} teamMembers={teamMembers} />
+      <NewLeadModal open={modalOpen} onOpenChange={setModalOpen} initialStageId={newLeadStage} segments={segments} stages={stages} templates={templates} clients={clients} serviceTypes={serviceTypes} teamMembers={teamMembers} />
 
       {/* Banner "ganho" → plano de marketing */}
       {wonBanner && (
@@ -556,7 +559,7 @@ function CrmPage() {
 
 // ---------- Column ----------
 function Column({
-  stage, leads, serviceTypeById, teamMembers, activityCounts, onOpen, onToggleFavorite,
+  stage, leads, serviceTypeById, teamMembers, activityCounts, onOpen, onToggleFavorite, onAddLead,
 }: {
   stage: PipelineStage;
   leads: Lead[];
@@ -565,6 +568,7 @@ function Column({
   activityCounts: Map<string, number>;
   onOpen: (l: Lead) => void;
   onToggleFavorite: (l: Lead) => void;
+  onAddLead?: () => void;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: stage.id });
   const total = leads.reduce((a, l) => a + Number(l.estimated_value ?? 0), 0);
@@ -572,17 +576,20 @@ function Column({
   return (
     <div
       ref={setNodeRef}
-      className={`rounded-3xl border p-3 transition-colors ${
+      className={`flex flex-col rounded-3xl border p-3 transition-colors ${
         isOver ? "border-primary bg-primary/5" : "border-border bg-card/40"
       }`}
     >
-      <div className="flex items-center justify-between mb-3 px-1">
-        <div className="flex items-center gap-2 min-w-0">
-          <span className="h-2 w-2 rounded-full shrink-0" style={{ background: stage.color }} />
+      <div className="mb-3 px-1">
+        <div className="flex items-center justify-between gap-2">
           <p className="text-sm font-semibold truncate">{stage.name}</p>
-          <Badge variant="secondary" className="rounded-full text-[10px]">{leads.length}</Badge>
+          <span className="h-2 w-2 rounded-full shrink-0" style={{ background: stage.color }} />
         </div>
-        <p className="text-[10px] text-muted-foreground">{brl(total)}</p>
+        <div className="mt-0.5 flex items-baseline justify-between gap-2">
+          <span className="text-[11px] text-muted-foreground">{leads.length} leads</span>
+          <span className="text-[11px] font-medium text-muted-foreground tabular-nums">{brl(total)}</span>
+        </div>
+        <div className="mt-2 h-[2px] rounded-full" style={{ background: stage.color, opacity: 0.6 }} />
       </div>
       <div className="space-y-2 min-h-[120px]">
         {leads.map(l => (
@@ -602,9 +609,19 @@ function Column({
           </div>
         )}
       </div>
+      {onAddLead && (
+        <button
+          type="button"
+          onClick={onAddLead}
+          className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-2xl py-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+        >
+          <Plus className="h-3.5 w-3.5" /> Adicionar lead
+        </button>
+      )}
     </div>
   );
 }
+
 
 function DraggableCard({ lead, serviceType, teamMembers, activityCount, onOpen, onToggleFavorite }: {
   lead: Lead; serviceType: ServiceTypeLite | null; teamMembers: MemberLite[];
@@ -665,11 +682,16 @@ function LeadCard({
     : AVATAR_COLORS[0];
 
   const tempColor = lead.temperature ? TEMP_BORDER[lead.temperature] : null;
+  const temp = TEMPERATURES.find(t => t.value === lead.temperature) ?? null;
+  const TempIcon = temp?.icon ?? null;
   const favorite = Boolean((lead as any).is_favorite);
   const approach =
     (lead as any).we_approached === true ? "Nós abordamos"
     : (lead as any).we_approached === false ? "Fomos abordados"
     : null;
+
+  const title = lead.company || lead.name;
+  const contact = lead.company ? lead.name : null;
 
   let nextContact: { label: string; late: boolean } | null = null;
   if (lead.next_contact_at) {
@@ -686,100 +708,123 @@ function LeadCard({
       }`}
       style={tempColor ? { borderLeft: `3px solid ${tempColor}` } : { borderLeftWidth: 3 }}
     >
+      {/* Identificação */}
       <div className="flex items-start justify-between gap-2">
-        <p className="text-sm font-medium truncate">{lead.name}</p>
-        <div className="flex items-center gap-1 shrink-0">
-          <TemperatureIcon value={lead.temperature} />
-          {onToggleFavorite ? (
-            <span
-              role="button"
-              tabIndex={-1}
-              aria-label={favorite ? "Desfavoritar" : "Favoritar"}
-              onClick={(e) => { e.stopPropagation(); onToggleFavorite(lead); }}
-              onPointerDown={(e) => e.stopPropagation()}
-              className="cursor-pointer"
-            >
-              <Star className={`h-3.5 w-3.5 ${favorite ? "fill-current text-amber-400" : "text-muted-foreground"}`} />
-            </span>
-          ) : favorite ? (
-            <Star className="h-3.5 w-3.5 fill-current text-amber-400" />
-          ) : null}
+        <div className="min-w-0">
+          <p className="text-sm font-semibold truncate">{title}</p>
+          {contact && <p className="text-xs text-muted-foreground truncate">{contact}</p>}
+          {lead.segment && <p className="text-[11px] text-primary truncate">{lead.segment}</p>}
         </div>
+        {onToggleFavorite ? (
+          <span
+            role="button"
+            tabIndex={-1}
+            aria-label={favorite ? "Desfavoritar" : "Favoritar"}
+            onClick={(e) => { e.stopPropagation(); onToggleFavorite(lead); }}
+            onPointerDown={(e) => e.stopPropagation()}
+            className="shrink-0 cursor-pointer"
+          >
+            <Star className={`h-3.5 w-3.5 ${favorite ? "fill-current text-amber-400" : "text-muted-foreground"}`} />
+          </span>
+        ) : favorite ? (
+          <Star className="h-3.5 w-3.5 shrink-0 fill-current text-amber-400" />
+        ) : null}
       </div>
 
-      {(lead.company || lead.client_id) && (
-        <div className="flex items-center gap-1.5 min-w-0">
-          {lead.company && <p className="text-xs text-muted-foreground truncate">{lead.company}</p>}
-          {lead.client_id && (
-            <span className="inline-flex items-center gap-0.5 text-[10px] text-emerald-600 dark:text-emerald-400 shrink-0">
-              <CheckCircle2 className="h-3 w-3" /> Cliente
+      {/* Origem + temperatura */}
+      <div className="mt-2 flex flex-wrap items-center gap-1.5">
+        {approach && (
+          <span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-[10px] text-muted-foreground">
+            {approach}
+          </span>
+        )}
+        {temp && (
+          <span
+            className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium"
+            style={{ background: `${tempColor}1A`, color: tempColor ?? undefined }}
+          >
+            {TempIcon && <TempIcon className="h-3 w-3" />}
+            {temp.label}
+          </span>
+        )}
+        {lead.client_id && (
+          <span className="inline-flex items-center gap-0.5 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] text-emerald-600 dark:text-emerald-400">
+            <CheckCircle2 className="h-3 w-3" /> Cliente
+          </span>
+        )}
+      </div>
+
+      {/* Métricas */}
+      <div className="mt-2.5 space-y-1.5">
+        {lead.estimated_value ? (
+          <div className="flex items-baseline justify-between gap-2">
+            <span className="text-[10px] text-muted-foreground">Valor estimado</span>
+            <span className="text-xs font-semibold tabular-nums">{brl(Number(lead.estimated_value))}</span>
+          </div>
+        ) : null}
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-[10px] text-muted-foreground shrink-0">Probabilidade</span>
+          <div className="flex flex-1 items-center gap-2">
+            <div className="h-1 flex-1 rounded-full bg-muted overflow-hidden">
+              <div className="h-full rounded-full bg-primary" style={{ width: `${lead.probability ?? 0}%` }} />
+            </div>
+            <span className="text-[10px] tabular-nums text-muted-foreground">{lead.probability ?? 0}%</span>
+          </div>
+        </div>
+        {nextContact && (
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-[10px] text-muted-foreground">Próximo contato</span>
+            <span
+              className={`inline-flex items-center gap-1 text-[10px] ${
+                nextContact.late ? "font-medium text-[#E24B4A]" : "text-muted-foreground"
+              }`}
+            >
+              <CalendarDays className="h-3 w-3" /> {nextContact.label}
+            </span>
+          </div>
+        )}
+      </div>
+
+      {/* Responsável + atividade */}
+      {(ownerName || activityCount > 0) && (
+        <div className="mt-2.5 flex items-center justify-between gap-2">
+          {ownerName ? (
+            <div className="flex min-w-0 items-center gap-1.5">
+              <span
+                className="grid h-5 w-5 shrink-0 place-items-center rounded-full text-[9px] font-semibold text-white"
+                style={{ background: avatarColor }}
+              >
+                {initialsOf(ownerName)}
+              </span>
+              <span className="text-[11px] text-muted-foreground truncate">{ownerName}</span>
+            </div>
+          ) : <span />}
+          {activityCount > 0 && (
+            <span className="inline-flex shrink-0 items-center gap-0.5 text-[10px] text-muted-foreground">
+              <MessageSquare className="h-3 w-3" /> {activityCount}
             </span>
           )}
         </div>
       )}
 
-      {approach && (
-        <span className="mt-1 inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-[10px] text-muted-foreground">
-          {approach}
-        </span>
-      )}
-
-      {ownerName && (
-        <div className="mt-2 flex items-center gap-1.5 min-w-0">
-          <span
-            className="grid h-5 w-5 shrink-0 place-items-center rounded-full text-[9px] font-semibold text-white"
-            style={{ background: avatarColor }}
-          >
-            {initialsOf(ownerName)}
-          </span>
-          <span className="text-[11px] text-muted-foreground truncate">{ownerName}</span>
-        </div>
-      )}
-
-      <div className="mt-2 flex items-center justify-between gap-2">
-        <div className="flex min-w-0 flex-wrap items-center gap-1">
-          {lead.segment ? (
-            <Badge variant="outline" className="rounded-full text-[10px] font-normal">{lead.segment}</Badge>
-          ) : null}
+      {/* Tags */}
+      {(serviceType || ((lead as any).interests as string[] | undefined)?.length) ? (
+        <div className="mt-2.5 flex flex-wrap items-center gap-1 border-t border-border pt-2.5">
           {serviceType ? (
             <Badge variant="outline" className="rounded-full text-[10px] font-normal gap-1">
               <span className="h-1.5 w-1.5 rounded-full shrink-0" style={{ background: serviceType.color }} />
               {serviceType.name}
             </Badge>
           ) : null}
-          {activityCount > 0 ? (
-            <span className="inline-flex items-center gap-0.5 text-[10px] text-muted-foreground">
-              <MessageSquare className="h-3 w-3" /> {activityCount}
-            </span>
-          ) : null}
+          {(((lead as any).interests as string[]) ?? []).slice(0, 2).map(i => (
+            <Badge key={i} variant="outline" className="rounded-full text-[10px] font-normal">{i}</Badge>
+          ))}
         </div>
-        {lead.estimated_value ? (
-          <p className="text-xs font-semibold text-emerald-500 dark:text-emerald-400">
-            {brl(Number(lead.estimated_value))}
-          </p>
-        ) : null}
-      </div>
-      {(lead.probability ?? 0) > 0 && (
-        <div className="mt-2 flex items-center gap-2">
-          <div className="h-1 flex-1 rounded-full bg-muted overflow-hidden">
-            <div className="h-full rounded-full bg-primary" style={{ width: `${lead.probability}%` }} />
-          </div>
-          <span className="text-[10px] tabular-nums text-muted-foreground">{lead.probability}%</span>
-        </div>
-      )}
-      {nextContact && (
-        <div
-          className={`mt-2 flex items-center gap-1 text-[10px] ${
-            nextContact.late ? "font-medium text-[#E24B4A]" : "text-muted-foreground"
-          }`}
-        >
-          <CalendarDays className="h-3 w-3" />
-          <span>Próximo contato: {nextContact.label}</span>
-        </div>
-      )}
+      ) : null}
     </div>
   );
 }
+
 
 
 // ---------- Drawer ----------
@@ -1359,10 +1404,13 @@ function InfoRow({
 
 // ---------- Modal ----------
 function NewLeadModal({
-  open, onOpenChange, segments, stages, templates, clients, serviceTypes, teamMembers,
+  open, onOpenChange, initialStageId = null, segments, stages, templates, clients, serviceTypes, teamMembers,
 }: {
   open: boolean;
+  initialStageId?: string | null;
   onOpenChange: (o: boolean) => void;
+
+
   segments: string[];
   stages: PipelineStage[];
   templates: BriefingTemplate[];
@@ -1387,8 +1435,11 @@ function NewLeadModal({
   const [briefing, setBriefing] = useState<BriefingData>({});
 
   useEffect(() => {
-    if (open && !form.stage_id && stages[0]) setForm(f => ({ ...f, stage_id: stages[0].id }));
-  }, [open, stages]);
+    if (!open) return;
+    if (initialStageId) setForm(f => ({ ...f, stage_id: initialStageId }));
+    else if (!form.stage_id && stages[0]) setForm(f => ({ ...f, stage_id: stages[0].id }));
+  }, [open, stages, initialStageId]);
+
 
   const briefingTemplates = templates.filter(t => t.template_type === "briefing");
   const template = briefingTemplates.find(t => t.id === form.briefing_template_id) ?? null;
