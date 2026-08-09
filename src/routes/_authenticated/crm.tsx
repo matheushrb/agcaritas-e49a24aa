@@ -1051,6 +1051,19 @@ function NewLeadModal({
           <DialogDescription>Cadastre o contato e, se quiser, já preencha o briefing inicial.</DialogDescription>
         </DialogHeader>
 
+        <div className="cw">
+          <div className="cw-grid cw-grid-2">
+            <button type="button" className={`cw-choice${form.approach === "we" ? " is-on" : ""}`} onClick={() => setForm({ ...form, approach: "we" })}>
+              <span className="cw-choice-title"><Send size={15} /> Nós abordamos</span>
+              <span className="cw-choice-desc">Prospecção ativa da agência</span>
+            </button>
+            <button type="button" className={`cw-choice${form.approach === "them" ? " is-on" : ""}`} onClick={() => setForm({ ...form, approach: "them" })}>
+              <span className="cw-choice-title"><Inbox size={15} /> Fomos abordados</span>
+              <span className="cw-choice-desc">O lead chegou até nós</span>
+            </button>
+          </div>
+        </div>
+
         <div className="grid grid-cols-2 gap-3">
           <Field label="Nome*" className="col-span-2">
             <Input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} />
