@@ -1398,52 +1398,76 @@ function NewLeadModal({
 
         <div className="cw">
           <div className="cw-grid cw-grid-2">
-            <button type="button" className={`cw-choice${form.approach === "we" ? " is-on" : ""}`} onClick={() => setForm({ ...form, approach: "we" })}>
-              <span className="cw-choice-title"><Send size={15} /> Nós abordamos</span>
-              <span className="cw-choice-desc">Prospecção ativa da agência</span>
-            </button>
-            <button type="button" className={`cw-choice${form.approach === "them" ? " is-on" : ""}`} onClick={() => setForm({ ...form, approach: "them" })}>
-              <span className="cw-choice-title"><Inbox size={15} /> Fomos abordados</span>
-              <span className="cw-choice-desc">O lead chegou até nós</span>
-            </button>
-          </div>
-
-          <div className="cw-section">
-            <div className="cw-section-head"><h4>Contato</h4></div>
-            <div className="cw-grid cw-grid-2">
-              <div className="cw-field cw-span-full">
-                <label className="cw-label">Nome*</label>
-                <input className="cw-input" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} />
+            <div className="cw-field">
+              <label className="cw-label">Origem do contato</label>
+              <div className="cw-grid cw-grid-2">
+                <button type="button" className={`cw-choice${form.approach === "we" ? " is-on" : ""}`} onClick={() => setForm({ ...form, approach: "we" })}>
+                  <span className="cw-choice-title"><Send size={15} /> Nós abordamos</span>
+                  <span className="cw-choice-desc">Prospecção ativa da agência</span>
+                </button>
+                <button type="button" className={`cw-choice${form.approach === "them" ? " is-on" : ""}`} onClick={() => setForm({ ...form, approach: "them" })}>
+                  <span className="cw-choice-title"><Inbox size={15} /> Fomos abordados</span>
+                  <span className="cw-choice-desc">O lead chegou até nós</span>
+                </button>
               </div>
-              <div className="cw-field">
-                <label className="cw-label">Empresa</label>
-                <input className="cw-input" value={form.company} onChange={e => setForm({ ...form, company: e.target.value })} />
-              </div>
-              <div className="cw-field">
-                <label className="cw-label">Telefone</label>
-                <input className="cw-input" value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} />
-              </div>
-              <div className="cw-field">
-                <label className="cw-label">Email</label>
-                <input className="cw-input" type="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} />
+            </div>
+            <div className="cw-field">
+              <label className="cw-label">Temperatura</label>
+              <div className="cw-grid cw-grid-3">
+                {TEMPERATURES.map(t => {
+                  const Ico = t.icon;
+                  return (
+                    <button
+                      key={t.value}
+                      type="button"
+                      className={`cw-choice${form.temperature === t.value ? " is-on" : ""}`}
+                      onClick={() => setForm({ ...form, temperature: t.value })}
+                    >
+                      <span className="cw-choice-title"><Ico size={15} /> {t.label}</span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
           </div>
 
           <div className="cw-section">
-            <div className="cw-section-head"><h4>Classificação comercial</h4></div>
-            <div className="cw-grid cw-grid-2">
+            <div className="cw-section-head"><h4>Propriedades</h4></div>
+            <div className="cw-grid cw-grid-3">
               <div className="cw-field">
-                <label className="cw-label">Cliente vinculado</label>
+                <label className="cw-label">Etapa do pipeline</label>
                 <select
                   className="cw-select"
-                  value={form.client_id || "none"}
-                  onChange={e => setForm({ ...form, client_id: e.target.value === "none" ? "" : e.target.value })}
+                  value={form.stage_id}
+                  onChange={e => {
+                    const st = stages.find(s => s.id === e.target.value);
+                    setForm(f => ({
+                      ...f,
+                      stage_id: e.target.value,
+                      probability: f.probability || (st?.default_probability != null ? String(st.default_probability) : ""),
+                    }));
+                  }}
                 >
-                  <option value="none">Nenhum</option>
-                  {clients.map(c => (
-                    <option key={c.id} value={c.id}>{c.name}{c.company ? ` · ${c.company}` : ""}</option>
-                  ))}
+                  <option value="">Etapa</option>
+                  {stages.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                </select>
+              </div>
+              <div className="cw-field">
+                <label className="cw-label">Responsável</label>
+                <select
+                  className="cw-select"
+                  value={form.owner_id || "none"}
+                  onChange={e => setForm({ ...form, owner_id: e.target.value === "none" ? "" : e.target.value })}
+                >
+                  <option value="none">Sem responsável</option>
+                  {teamMembers.map(m => <option key={m.id} value={m.id}>{memberLabel(m)}</option>)}
+                </select>
+              </div>
+              <div className="cw-field">
+                <label className="cw-label">Fonte / Origem</label>
+                <select className="cw-select" value={form.source} onChange={e => setForm({ ...form, source: e.target.value })}>
+                  <option value="">Selecionar origem</option>
+                  {LEAD_SOURCES.map(s => <option key={s} value={s}>{s}</option>)}
                 </select>
               </div>
               <div className="cw-field">
@@ -1461,49 +1485,53 @@ function NewLeadModal({
                 </select>
               </div>
               <div className="cw-field">
-                <label className="cw-label">Origem</label>
-                <select className="cw-select" value={form.source} onChange={e => setForm({ ...form, source: e.target.value })}>
-                  <option value="">Selecionar origem</option>
-                  {LEAD_SOURCES.map(s => <option key={s} value={s}>{s}</option>)}
+                <label className="cw-label">Cliente vinculado</label>
+                <select
+                  className="cw-select"
+                  value={form.client_id || "none"}
+                  onChange={e => setForm({ ...form, client_id: e.target.value === "none" ? "" : e.target.value })}
+                >
+                  <option value="none">Nenhum</option>
+                  {clients.map(c => (
+                    <option key={c.id} value={c.id}>{c.name}{c.company ? ` · ${c.company}` : ""}</option>
+                  ))}
                 </select>
               </div>
             </div>
           </div>
 
           <div className="cw-section">
-            <div className="cw-section-head"><h4>Funil e acompanhamento</h4></div>
+            <div className="cw-section-head"><h4>Dados da empresa e contato</h4></div>
             <div className="cw-grid cw-grid-2">
               <div className="cw-field">
-                <label className="cw-label">Etapa inicial</label>
-                <select className="cw-select" value={form.stage_id} onChange={e => setForm({ ...form, stage_id: e.target.value })}>
-                  <option value="">Etapa</option>
-                  {stages.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-                </select>
+                <label className="cw-label">Nome da empresa</label>
+                <input className="cw-input" value={form.company} onChange={e => setForm({ ...form, company: e.target.value })} />
               </div>
               <div className="cw-field">
-                <label className="cw-label">Temperatura</label>
-                <select className="cw-select" value={form.temperature} onChange={e => setForm({ ...form, temperature: e.target.value as Temperature })}>
-                  {TEMPERATURES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
-                </select>
+                <label className="cw-label">Nome do contato*</label>
+                <input className="cw-input" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} />
               </div>
               <div className="cw-field">
-                <label className="cw-label">Responsável</label>
-                <select
-                  className="cw-select"
-                  value={form.owner_id || "none"}
-                  onChange={e => setForm({ ...form, owner_id: e.target.value === "none" ? "" : e.target.value })}
-                >
-                  <option value="none">Sem responsável</option>
-                  {teamMembers.map(m => <option key={m.id} value={m.id}>{memberLabel(m)}</option>)}
-                </select>
+                <label className="cw-label">E-mail</label>
+                <input className="cw-input" type="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} />
               </div>
               <div className="cw-field">
-                <label className="cw-label">Próximo contato previsto</label>
+                <label className="cw-label">Telefone / WhatsApp</label>
+                <input className="cw-input" value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} />
+              </div>
+            </div>
+          </div>
+
+          <div className="cw-section">
+            <div className="cw-section-head"><h4>Informações comerciais</h4></div>
+            <div className="cw-grid cw-grid-3">
+              <div className="cw-field">
+                <label className="cw-label">Probabilidade de fechamento (%)</label>
                 <input
                   className="cw-input"
-                  type="date"
-                  value={form.next_contact_at}
-                  onChange={e => setForm({ ...form, next_contact_at: e.target.value })}
+                  type="number" min={0} max={100}
+                  value={form.probability}
+                  onChange={e => setForm({ ...form, probability: e.target.value })}
                 />
               </div>
               <div className="cw-field">
@@ -1513,6 +1541,15 @@ function NewLeadModal({
                   type="date"
                   value={form.expected_close_date}
                   onChange={e => setForm({ ...form, expected_close_date: e.target.value })}
+                />
+              </div>
+              <div className="cw-field">
+                <label className="cw-label">Próximo contato previsto</label>
+                <input
+                  className="cw-input"
+                  type="date"
+                  value={form.next_contact_at}
+                  onChange={e => setForm({ ...form, next_contact_at: e.target.value })}
                 />
               </div>
             </div>
