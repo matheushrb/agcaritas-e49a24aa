@@ -354,7 +354,7 @@ function CrmPage() {
       />
 
       {/* Modal new lead */}
-      <NewLeadModal open={modalOpen} onOpenChange={setModalOpen} segments={segments} stages={stages} templates={templates} />
+      <NewLeadModal open={modalOpen} onOpenChange={setModalOpen} segments={segments} stages={stages} templates={templates} clients={clients} />
 
       {/* Banner "ganho" → plano de marketing */}
       {wonBanner && (
