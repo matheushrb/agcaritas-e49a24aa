@@ -1330,7 +1330,7 @@ function NewLeadModal({
     service_type_id: "", owner_id: "", next_contact_at: "",
     temperature: "warm" as Temperature, briefing_template_id: "",
     approach: "" as "" | "we" | "them",
-    expected_close_date: "", notes: "",
+    expected_close_date: "", notes: "", probability: "",
   };
   const [form, setForm] = useState(empty);
   const [interests, setInterests] = useState<string[]>([]);
@@ -1368,7 +1368,7 @@ function NewLeadModal({
         scope_items: scopeItems.filter(i => i.title.trim()),
         estimated_value: scopeItems.reduce((a, i) => a + Number(i.qty || 0) * Number(i.unit_price || 0), 0),
         stage_id: form.stage_id || null,
-        probability: stage?.default_probability ?? 0,
+        probability: form.probability ? Number(form.probability) : (stage?.default_probability ?? 0),
         temperature: form.temperature,
         briefing_template_id: form.briefing_template_id || null,
         briefing,
