@@ -1340,6 +1340,8 @@ function NewLeadModal({
       onOpenChange(false);
       setForm({ ...empty, stage_id: stages[0]?.id ?? "" });
       setScopeItems([]);
+      setInterests([]);
+      setInterestDraft("");
       setBriefing({});
     },
     onError: (e: any) => toast.error(e?.message ?? "Erro ao criar lead"),
