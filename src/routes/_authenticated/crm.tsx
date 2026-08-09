@@ -559,7 +559,7 @@ function CrmPage() {
 
 // ---------- Column ----------
 function Column({
-  stage, leads, serviceTypeById, teamMembers, activityCounts, onOpen, onToggleFavorite,
+  stage, leads, serviceTypeById, teamMembers, activityCounts, onOpen, onToggleFavorite, onAddLead,
 }: {
   stage: PipelineStage;
   leads: Lead[];
@@ -568,6 +568,7 @@ function Column({
   activityCounts: Map<string, number>;
   onOpen: (l: Lead) => void;
   onToggleFavorite: (l: Lead) => void;
+  onAddLead?: () => void;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: stage.id });
   const total = leads.reduce((a, l) => a + Number(l.estimated_value ?? 0), 0);
@@ -575,17 +576,20 @@ function Column({
   return (
     <div
       ref={setNodeRef}
-      className={`rounded-3xl border p-3 transition-colors ${
+      className={`flex flex-col rounded-3xl border p-3 transition-colors ${
         isOver ? "border-primary bg-primary/5" : "border-border bg-card/40"
       }`}
     >
-      <div className="flex items-center justify-between mb-3 px-1">
-        <div className="flex items-center gap-2 min-w-0">
-          <span className="h-2 w-2 rounded-full shrink-0" style={{ background: stage.color }} />
+      <div className="mb-3 px-1">
+        <div className="flex items-center justify-between gap-2">
           <p className="text-sm font-semibold truncate">{stage.name}</p>
-          <Badge variant="secondary" className="rounded-full text-[10px]">{leads.length}</Badge>
+          <span className="h-2 w-2 rounded-full shrink-0" style={{ background: stage.color }} />
         </div>
-        <p className="text-[10px] text-muted-foreground">{brl(total)}</p>
+        <div className="mt-0.5 flex items-baseline justify-between gap-2">
+          <span className="text-[11px] text-muted-foreground">{leads.length} leads</span>
+          <span className="text-[11px] font-medium text-muted-foreground tabular-nums">{brl(total)}</span>
+        </div>
+        <div className="mt-2 h-[2px] rounded-full" style={{ background: stage.color, opacity: 0.6 }} />
       </div>
       <div className="space-y-2 min-h-[120px]">
         {leads.map(l => (
@@ -605,9 +609,19 @@ function Column({
           </div>
         )}
       </div>
+      {onAddLead && (
+        <button
+          type="button"
+          onClick={onAddLead}
+          className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-2xl py-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+        >
+          <Plus className="h-3.5 w-3.5" /> Adicionar lead
+        </button>
+      )}
     </div>
   );
 }
+
 
 function DraggableCard({ lead, serviceType, teamMembers, activityCount, onOpen, onToggleFavorite }: {
   lead: Lead; serviceType: ServiceTypeLite | null; teamMembers: MemberLite[];
