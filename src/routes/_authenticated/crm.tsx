@@ -986,6 +986,9 @@ function NewLeadModal({
         segment: form.segment.trim() || null,
         source: form.source.trim() || null,
         client_id: form.client_id || null,
+        service_type_id: form.service_type_id || null,
+        owner_id: form.owner_id || null,
+        next_contact_at: form.next_contact_at || null,
         estimated_value: form.estimated_value ? Number(form.estimated_value) : null,
         stage_id: form.stage_id || null,
         probability: stage?.default_probability ?? 0,
@@ -1035,16 +1038,41 @@ function NewLeadModal({
             <Input value={form.company} onChange={e => setForm({ ...form, company: e.target.value })} />
           </Field>
           <Field label="Segmento">
-            <Input
-              value={form.segment}
-              onChange={e => setForm({ ...form, segment: e.target.value })}
-              list="crm-segments"
-              placeholder="Ex: Moda, Saúde, Imóveis"
-            />
-            <datalist id="crm-segments">
-              {segments.map(s => <option key={s} value={s} />)}
-            </datalist>
+            <Select value={form.segment || undefined} onValueChange={v => setForm({ ...form, segment: v })}>
+              <SelectTrigger><SelectValue placeholder="Selecionar segmento" /></SelectTrigger>
+              <SelectContent>
+                {segments.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+              </SelectContent>
+            </Select>
           </Field>
+          <Field label="Tipo de serviço *">
+            <Select value={form.service_type_id || undefined} onValueChange={v => setForm({ ...form, service_type_id: v })}>
+              <SelectTrigger><SelectValue placeholder="Selecionar tipo de serviço" /></SelectTrigger>
+              <SelectContent>
+                {serviceTypes.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </Field>
+          <Field label="Responsável">
+            <Select
+              value={form.owner_id || "none"}
+              onValueChange={v => setForm({ ...form, owner_id: v === "none" ? "" : v })}
+            >
+              <SelectTrigger><SelectValue placeholder="Sem responsável" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">Sem responsável</SelectItem>
+                {teamMembers.map(m => <SelectItem key={m.id} value={m.id}>{memberLabel(m)}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </Field>
+          <Field label="Próximo contato previsto">
+            <Input
+              type="date"
+              value={form.next_contact_at}
+              onChange={e => setForm({ ...form, next_contact_at: e.target.value })}
+            />
+          </Field>
+
           <Field label="Telefone">
             <Input value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} />
           </Field>
