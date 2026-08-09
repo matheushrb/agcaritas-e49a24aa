@@ -928,6 +928,17 @@ function LeadDrawer({
             <LeadMeetingsTab leadId={lead.id} organizationId={lead.organization_id} />
           </TabsContent>
 
+          {/* --- Organização --- */}
+          <TabsContent value="org" className="mt-4">
+            <LeadOrgTab
+              leadId={lead.id}
+              organizationId={lead.organization_id}
+              sectors={(lead.sectors as string[]) ?? []}
+              onSectorsChange={(sectors) => onPatch({ sectors })}
+            />
+          </TabsContent>
+
+
 
           <TabsContent value="history" className="mt-4 space-y-4">
             <div className="rounded-2xl border border-border p-3 space-y-2">
