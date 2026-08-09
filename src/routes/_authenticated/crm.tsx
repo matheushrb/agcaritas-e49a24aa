@@ -29,7 +29,7 @@ import {
   Search, Plus, ChevronLeft, ChevronRight, FileText, Building2, Mail,
   Phone, Tag, DollarSign, User, GripVertical, TrendingUp, Target,
   Sparkles, X, Flame, Snowflake, Thermometer, CalendarDays, CheckCircle2, Clock, Trash2,
-  Send, Inbox,
+  Send, Inbox, Star, MessageSquare,
 } from "lucide-react";
 import "@/windows.css";
 import { toast } from "sonner";
