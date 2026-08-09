@@ -49,7 +49,21 @@ type Client = {
   email: string | null;
   phone: string | null;
   tax_id: string | null;
+  created_at: string;
 };
+
+function computeClientStatus(
+  c: { id: string; created_at: string },
+  activeIds: Set<string>,
+  prospectIds: Set<string>,
+): "active" | "prospect" | "inactive" {
+  if (activeIds.has(c.id)) return "active";
+  if (prospectIds.has(c.id)) return "prospect";
+  const days = (Date.now() - new Date(c.created_at).getTime()) / 86400000;
+  if (days >= 45) return "inactive";
+  return "prospect";
+}
+
 
 function ClientsPage() {
   const qc = useQueryClient();
@@ -75,12 +89,39 @@ function ClientsPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("clients")
-        .select("id,name,status,segment,email,phone,tax_id")
+        .select("id,name,status,segment,email,phone,tax_id,created_at")
         .order("name");
       if (error) throw error;
       return (data ?? []) as Client[];
     },
   });
+
+  const { data: activeClientIds = new Set<string>() } = useQuery<Set<string>>({
+    queryKey: ["clients-active-ids"],
+    queryFn: async () => {
+      const [p, t] = await Promise.all([
+        supabase.from("projects").select("client_id").not("client_id", "is", null),
+        supabase.from("tasks").select("client_id").not("client_id", "is", null),
+      ]);
+      if (p.error) throw p.error;
+      if (t.error) throw t.error;
+      const s = new Set<string>();
+      for (const r of [...(p.data ?? []), ...(t.data ?? [])]) if (r.client_id) s.add(r.client_id as string);
+      return s;
+    },
+  });
+
+  const { data: prospectClientIds = new Set<string>() } = useQuery<Set<string>>({
+    queryKey: ["clients-prospect-ids"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("leads").select("client_id").not("client_id", "is", null);
+      if (error) throw error;
+      const s = new Set<string>();
+      for (const r of data ?? []) if (r.client_id) s.add(r.client_id as string);
+      return s;
+    },
+  });
+
 
   const { data: editingClient } = useQuery({
     queryKey: ["client-edit", editingId],
@@ -98,10 +139,11 @@ function ClientsPage() {
       const s = search.toLowerCase();
       arr = arr.filter(c => c.name.toLowerCase().includes(s) || (c.email ?? "").toLowerCase().includes(s));
     }
-    if (status !== "all") arr = arr.filter(c => (c.status ?? "prospect") === status);
+    if (status !== "all") arr = arr.filter(c => computeClientStatus(c, activeClientIds, prospectClientIds) === status);
     if (segment !== "all") arr = arr.filter(c => c.segment === segment);
     return arr;
-  }, [clients, search, status, segment]);
+  }, [clients, search, status, segment, activeClientIds, prospectClientIds]);
+
 
   const create = useMutation({
     mutationFn: async (input: Record<string, unknown>) => {
@@ -170,7 +212,7 @@ function ClientsPage() {
               <SelectTrigger className="w-[150px] rounded-full"><SelectValue placeholder="Status" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todos status</SelectItem>
-                {Object.entries(STATUS).map(([k, v]) => <SelectItem key={k} value={k}>{v.label}</SelectItem>)}
+                {(["active", "prospect", "inactive"] as const).map(k => <SelectItem key={k} value={k}>{STATUS[k].label}</SelectItem>)}
               </SelectContent>
             </Select>
             <Select value={segment} onValueChange={setSegment}>
@@ -228,8 +270,8 @@ function ClientsPage() {
                             {c.phone && <div className="inline-flex items-center gap-1.5"><Phone className="h-3.5 w-3.5" />{c.phone}</div>}
                           </div>
                         </div>
-                        <Badge className={cn("rounded-full shrink-0 self-center", STATUS[c.status ?? "prospect"]?.color ?? "bg-muted")}>
-                          {STATUS[c.status ?? "prospect"]?.label ?? "—"}
+                        <Badge className={cn("rounded-full shrink-0 self-center", STATUS[computeClientStatus(c, activeClientIds, prospectClientIds)]?.color ?? "bg-muted")}>
+                          {STATUS[computeClientStatus(c, activeClientIds, prospectClientIds)]?.label ?? "—"}
                         </Badge>
                       </div>
                     </button>
@@ -304,7 +346,7 @@ function ClientsPage() {
           opening_date: editingClient.opening_date ?? "",
           size: editingClient.size ?? "",
           segment: editingClient.segment ?? "",
-          status: editingClient.status ?? "prospect",
+          
           website: editingClient.website ?? "",
           instagram: editingClient.instagram ?? "",
           linkedin: editingClient.linkedin ?? "",
@@ -348,7 +390,7 @@ type FormState = {
   opening_date: string;
   size: string;
   segment: string;
-  status: string;
+  
   website: string;
   instagram: string;
   linkedin: string;
@@ -375,7 +417,7 @@ const initialForm: FormState = {
   person_type: "PJ",
   tax_id: "", name: "", legal_name: "", trade_name: "",
   state_registration: "", municipal_registration: "", cnae: "", legal_nature: "",
-  opening_date: "", size: "", segment: "", status: "prospect",
+  opening_date: "", size: "", segment: "",
   website: "", instagram: "", linkedin: "",
   email: "", phone: "",
   contact_name: "", contact_role: "", contact_email: "", contact_phone: "",
@@ -486,7 +528,7 @@ export function NewClientDialog({
       opening_date: form.opening_date || null,
       size: form.size || null,
       segment: form.segment || null,
-      status: form.status,
+      
       website: form.website || null,
       instagram: form.instagram || null,
       linkedin: form.linkedin || null,
@@ -558,14 +600,6 @@ export function NewClientDialog({
                     </div>
                   )}
                 </div>
-              </DialogField>
-              <DialogField label="Status">
-                <Select value={form.status} onValueChange={v => set("status", v)}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {Object.entries(STATUS).map(([k, v]) => <SelectItem key={k} value={k}>{v.label}</SelectItem>)}
-                  </SelectContent>
-                </Select>
               </DialogField>
             </div>
 

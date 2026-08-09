@@ -276,6 +276,35 @@ function CrmPage() {
     onSuccess: () => qc.invalidateQueries({ queryKey: leadsKey }),
   });
 
+  const createClientFromLead = useMutation({
+    mutationFn: async (lead: Lead) => {
+      const org = await currentOrgId();
+      const { data, error } = await supabase
+        .from("clients")
+        .insert({
+          organization_id: org,
+          name: lead.company || lead.name,
+          segment: lead.segment,
+          email: lead.email,
+          phone: lead.phone,
+          contact_name: lead.name,
+          contact_email: lead.email,
+          contact_phone: lead.phone,
+        })
+        .select("id")
+        .single();
+      if (error) throw error;
+      return { clientId: data.id as string, leadId: lead.id };
+    },
+    onSuccess: ({ clientId, leadId }) => {
+      updateLead.mutate({ id: leadId, values: { client_id: clientId } });
+      qc.invalidateQueries({ queryKey: ["clients-list"] });
+      toast.success("Cliente criado e vinculado ao lead");
+      setWonBanner(b => (b ? { ...b, client_id: clientId } : b));
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   const moveToStage = (lead: Lead, stage: PipelineStage) => {
     updateLead.mutate({
       id: lead.id,
@@ -432,6 +461,17 @@ function CrmPage() {
               <p className="font-medium">Lead ganho: {wonBanner.name}</p>
               <p className="text-xs text-muted-foreground">Criar um Plano de Marketing para este cliente?</p>
             </div>
+            {!wonBanner.client_id && (
+              <Button
+                size="sm"
+                variant="outline"
+                className="rounded-full ml-2"
+                disabled={createClientFromLead.isPending}
+                onClick={() => createClientFromLead.mutate(wonBanner)}
+              >
+                Criar cliente
+              </Button>
+            )}
             <Button
               size="sm"
               className="rounded-full ml-2"
