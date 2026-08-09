@@ -417,7 +417,7 @@ const initialForm: FormState = {
   person_type: "PJ",
   tax_id: "", name: "", legal_name: "", trade_name: "",
   state_registration: "", municipal_registration: "", cnae: "", legal_nature: "",
-  opening_date: "", size: "", segment: "", status: "prospect",
+  opening_date: "", size: "", segment: "",
   website: "", instagram: "", linkedin: "",
   email: "", phone: "",
   contact_name: "", contact_role: "", contact_email: "", contact_phone: "",
