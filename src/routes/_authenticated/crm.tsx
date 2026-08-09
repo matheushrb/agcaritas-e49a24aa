@@ -77,6 +77,7 @@ interface Lead {
   next_contact_at: string | null;
   we_approached: boolean | null;
   scope_items: ScopeItem[];
+  sectors: string[];
 }
 
 interface LeadActivity {
