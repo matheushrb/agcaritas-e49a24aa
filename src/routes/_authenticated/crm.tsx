@@ -414,7 +414,9 @@ function CrmPage() {
                 leads={byStage.get(stage.id) ?? []}
                 serviceTypeById={serviceTypeById}
                 teamMembers={teamMembers}
+                activityCounts={activityCounts}
                 onOpen={l => setOpenLeadId(l.id)}
+                onToggleFavorite={toggleFavorite}
               />
             ))}
           </div>
@@ -424,6 +426,7 @@ function CrmPage() {
                 lead={dragging}
                 serviceType={(dragging.service_type_id && serviceTypeById.get(dragging.service_type_id)) || null}
                 teamMembers={teamMembers}
+                activityCount={activityCounts.get(dragging.id) ?? 0}
                 dragging
               />
             ) : null}
