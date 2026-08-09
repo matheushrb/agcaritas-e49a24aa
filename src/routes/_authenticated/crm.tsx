@@ -1471,8 +1471,60 @@ function NewLeadModal({
                   onChange={e => setForm({ ...form, next_contact_at: e.target.value })}
                 />
               </div>
+              <div className="cw-field">
+                <label className="cw-label">Data de fechamento esperada</label>
+                <input
+                  className="cw-input"
+                  type="date"
+                  value={form.expected_close_date}
+                  onChange={e => setForm({ ...form, expected_close_date: e.target.value })}
+                />
+              </div>
             </div>
           </div>
+
+          <div className="cw-section">
+            <div className="cw-section-head"><h4>Interesses e observações</h4></div>
+            <div className="cw-grid cw-grid-2">
+              <div className="cw-field">
+                <label className="cw-label">Interesses</label>
+                {interests.length > 0 && (
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 6 }}>
+                    {interests.map(item => (
+                      <span key={item} className="cw-chip is-neutral">
+                        {item}
+                        <button type="button" onClick={() => setInterests(interests.filter(i => i !== item))}>×</button>
+                      </span>
+                    ))}
+                  </div>
+                )}
+                <input
+                  className="cw-input"
+                  value={interestDraft}
+                  placeholder="Ex: Planejamento estratégico, Consultoria..."
+                  onChange={e => setInterestDraft(e.target.value)}
+                  onKeyDown={e => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      const v = interestDraft.trim();
+                      if (v && !interests.includes(v)) setInterests([...interests, v]);
+                      setInterestDraft("");
+                    }
+                  }}
+                />
+              </div>
+              <div className="cw-field">
+                <label className="cw-label">Observações</label>
+                <textarea
+                  className="cw-textarea"
+                  rows={4}
+                  value={form.notes}
+                  onChange={e => setForm({ ...form, notes: e.target.value })}
+                />
+              </div>
+            </div>
+          </div>
+
 
           <div className="cw-section">
             <div className="cw-section-head"><h4>Escopo estimado</h4></div>
