@@ -1295,8 +1295,11 @@ function NewLeadModal({
     service_type_id: "", owner_id: "", next_contact_at: "",
     temperature: "warm" as Temperature, briefing_template_id: "",
     approach: "" as "" | "we" | "them",
+    expected_close_date: "", notes: "",
   };
   const [form, setForm] = useState(empty);
+  const [interests, setInterests] = useState<string[]>([]);
+  const [interestDraft, setInterestDraft] = useState("");
   const [scopeItems, setScopeItems] = useState<ScopeItem[]>([]);
   const [briefing, setBriefing] = useState<BriefingData>({});
 
