@@ -413,6 +413,7 @@ function CrmPage() {
                 stage={stage}
                 leads={byStage.get(stage.id) ?? []}
                 serviceTypeById={serviceTypeById}
+                teamMembers={teamMembers}
                 onOpen={l => setOpenLeadId(l.id)}
               />
             ))}
