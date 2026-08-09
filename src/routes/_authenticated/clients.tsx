@@ -139,10 +139,11 @@ function ClientsPage() {
       const s = search.toLowerCase();
       arr = arr.filter(c => c.name.toLowerCase().includes(s) || (c.email ?? "").toLowerCase().includes(s));
     }
-    if (status !== "all") arr = arr.filter(c => (c.status ?? "prospect") === status);
+    if (status !== "all") arr = arr.filter(c => computeClientStatus(c, activeClientIds, prospectClientIds) === status);
     if (segment !== "all") arr = arr.filter(c => c.segment === segment);
     return arr;
-  }, [clients, search, status, segment]);
+  }, [clients, search, status, segment, activeClientIds, prospectClientIds]);
+
 
   const create = useMutation({
     mutationFn: async (input: Record<string, unknown>) => {
