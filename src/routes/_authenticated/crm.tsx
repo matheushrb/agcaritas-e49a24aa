@@ -858,6 +858,7 @@ function NewLeadModal({
         phone: form.phone.trim() || null,
         segment: form.segment.trim() || null,
         source: form.source.trim() || null,
+        client_id: form.client_id || null,
         estimated_value: form.estimated_value ? Number(form.estimated_value) : null,
         stage_id: form.stage_id || null,
         probability: stage?.default_probability ?? 0,
