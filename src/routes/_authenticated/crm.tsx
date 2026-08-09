@@ -821,18 +821,19 @@ function InfoRow({
 
 // ---------- Modal ----------
 function NewLeadModal({
-  open, onOpenChange, segments, stages, templates,
+  open, onOpenChange, segments, stages, templates, clients,
 }: {
   open: boolean;
   onOpenChange: (o: boolean) => void;
   segments: string[];
   stages: PipelineStage[];
   templates: BriefingTemplate[];
+  clients: ClientLite[];
 }) {
   const qc = useQueryClient();
   const empty = {
     name: "", company: "", email: "", phone: "",
-    segment: "", estimated_value: "", stage_id: "", source: "",
+    segment: "", estimated_value: "", stage_id: "", source: "", client_id: "",
     temperature: "warm" as Temperature, briefing_template_id: "",
   };
   const [form, setForm] = useState(empty);
