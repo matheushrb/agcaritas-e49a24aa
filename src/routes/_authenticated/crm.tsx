@@ -338,6 +338,7 @@ function CrmPage() {
         lead={openLead}
         stages={stages}
         templates={templates}
+        clients={clients}
         onClose={() => setOpenLeadId(null)}
         onPatch={(values) => openLead && updateLead.mutate({ id: openLead.id, values })}
         onAdvance={dir => {
