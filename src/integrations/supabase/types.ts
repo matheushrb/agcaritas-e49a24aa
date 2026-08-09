@@ -1350,6 +1350,8 @@ export type Database = {
           estimated_value: number | null
           expected_close_date: string | null
           id: string
+          interests: Json
+          is_favorite: boolean
           name: string
           next_contact_at: string | null
           notes: string | null
@@ -1379,6 +1381,8 @@ export type Database = {
           estimated_value?: number | null
           expected_close_date?: string | null
           id?: string
+          interests?: Json
+          is_favorite?: boolean
           name: string
           next_contact_at?: string | null
           notes?: string | null
@@ -1408,6 +1412,8 @@ export type Database = {
           estimated_value?: number | null
           expected_close_date?: string | null
           id?: string
+          interests?: Json
+          is_favorite?: boolean
           name?: string
           next_contact_at?: string | null
           notes?: string | null

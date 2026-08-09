@@ -29,7 +29,7 @@ import {
   Search, Plus, ChevronLeft, ChevronRight, FileText, Building2, Mail,
   Phone, Tag, DollarSign, User, GripVertical, TrendingUp, Target,
   Sparkles, X, Flame, Snowflake, Thermometer, CalendarDays, CheckCircle2, Clock, Trash2,
-  Send, Inbox,
+  Send, Inbox, Star, MessageSquare,
 } from "lucide-react";
 import "@/windows.css";
 import { toast } from "sonner";
@@ -193,6 +193,31 @@ function CrmPage() {
 
   const serviceTypeById = useMemo(() => new Map(serviceTypes.map(s => [s.id, s])), [serviceTypes]);
 
+  const { data: activityRows = [] } = useQuery({
+    queryKey: ["lead_activities", "counts"],
+    queryFn: async (): Promise<{ lead_id: string }[]> => {
+      const { data, error } = await supabase.from("lead_activities").select("lead_id");
+      if (error) throw error;
+      return (data ?? []) as { lead_id: string }[];
+    },
+  });
+  const { data: meetingRows = [] } = useQuery({
+    queryKey: ["lead_meetings", "counts"],
+    queryFn: async (): Promise<{ lead_id: string }[]> => {
+      const { data, error } = await supabase.from("lead_meetings").select("lead_id");
+      if (error) throw error;
+      return (data ?? []) as { lead_id: string }[];
+    },
+  });
+  const activityCounts = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const r of [...activityRows, ...meetingRows]) {
+      if (!r?.lead_id) continue;
+      map.set(r.lead_id, (map.get(r.lead_id) ?? 0) + 1);
+    }
+    return map;
+  }, [activityRows, meetingRows]);
+
   const [query, setQuery] = useState("");
   const [segment, setSegment] = useState<string>("all");
   const [serviceTypeFilter, setServiceTypeFilter] = useState<string>("all");
@@ -256,6 +281,17 @@ function CrmPage() {
   const wonLeads = leads.filter(l => l.stage_id && stageById.get(l.stage_id)?.is_won);
   const wonValue = wonLeads.reduce((a, l) => a + Number(l.estimated_value ?? 0), 0);
   const conversion = leads.length ? Math.round((wonLeads.length / leads.length) * 100) : 0;
+  const upcomingContacts = useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const limit = new Date(today);
+    limit.setDate(limit.getDate() + 7);
+    return leads.filter(l => {
+      if (!l.next_contact_at) return false;
+      const d = new Date(String(l.next_contact_at).slice(0, 10) + "T00:00:00");
+      return d.getTime() >= today.getTime() && d.getTime() <= limit.getTime();
+    }).length;
+  }, [leads]);
   const weighted = leads
     .filter(l => !isClosed(l))
     .reduce((a, l) => a + Number(l.estimated_value ?? 0) * (Number(l.probability ?? 0) / 100), 0);
@@ -278,6 +314,11 @@ function CrmPage() {
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: leadsKey }),
   });
+
+  const toggleFavorite = (lead: Lead) =>
+    updateLead.mutate({ id: lead.id, values: { is_favorite: !(lead as any).is_favorite } });
+
+
 
   const createClientFromLead = useMutation({
     mutationFn: async (lead: Lead) => {
@@ -354,11 +395,18 @@ function CrmPage() {
       </header>
 
       {/* KPIs */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         <KpiCard label="Pipeline em aberto" value={brl(pipeline)} icon={TrendingUp} tone="text-blue-500" />
         <KpiCard label="Previsão ponderada" value={brl(weighted)} icon={Target} tone="text-violet-500" />
         <KpiCard label="Receita ganha" value={brl(wonValue)} icon={DollarSign} tone="text-emerald-500" />
         <KpiCard label="Taxa de conversão" value={`${conversion}%`} icon={CheckCircle2} tone="text-amber-500" />
+        <KpiCard
+          label="Próximos contatos"
+          value={String(upcomingContacts)}
+          icon={CalendarDays}
+          tone="text-sky-500"
+          subtitle="Nos próximos 7 dias"
+        />
       </div>
 
       {/* Filters */}
@@ -414,7 +462,9 @@ function CrmPage() {
                 leads={byStage.get(stage.id) ?? []}
                 serviceTypeById={serviceTypeById}
                 teamMembers={teamMembers}
+                activityCounts={activityCounts}
                 onOpen={l => setOpenLeadId(l.id)}
+                onToggleFavorite={toggleFavorite}
               />
             ))}
           </div>
@@ -424,6 +474,7 @@ function CrmPage() {
                 lead={dragging}
                 serviceType={(dragging.service_type_id && serviceTypeById.get(dragging.service_type_id)) || null}
                 teamMembers={teamMembers}
+                activityCount={activityCounts.get(dragging.id) ?? 0}
                 dragging
               />
             ) : null}
@@ -503,13 +554,15 @@ function CrmPage() {
 
 // ---------- Column ----------
 function Column({
-  stage, leads, serviceTypeById, teamMembers, onOpen,
+  stage, leads, serviceTypeById, teamMembers, activityCounts, onOpen, onToggleFavorite,
 }: {
   stage: PipelineStage;
   leads: Lead[];
   serviceTypeById: Map<string, ServiceTypeLite>;
   teamMembers: MemberLite[];
+  activityCounts: Map<string, number>;
   onOpen: (l: Lead) => void;
+  onToggleFavorite: (l: Lead) => void;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: stage.id });
   const total = leads.reduce((a, l) => a + Number(l.estimated_value ?? 0), 0);
@@ -536,7 +589,9 @@ function Column({
             lead={l}
             serviceType={(l.service_type_id && serviceTypeById.get(l.service_type_id)) || null}
             teamMembers={teamMembers}
+            activityCount={activityCounts.get(l.id) ?? 0}
             onOpen={onOpen}
+            onToggleFavorite={onToggleFavorite}
           />
         ))}
         {leads.length === 0 && (
@@ -549,7 +604,10 @@ function Column({
   );
 }
 
-function DraggableCard({ lead, serviceType, teamMembers, onOpen }: { lead: Lead; serviceType: ServiceTypeLite | null; teamMembers: MemberLite[]; onOpen: (l: Lead) => void }) {
+function DraggableCard({ lead, serviceType, teamMembers, activityCount, onOpen, onToggleFavorite }: {
+  lead: Lead; serviceType: ServiceTypeLite | null; teamMembers: MemberLite[];
+  activityCount: number; onOpen: (l: Lead) => void; onToggleFavorite: (l: Lead) => void;
+}) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id: lead.id });
   return (
     <div ref={setNodeRef} style={{ opacity: isDragging ? 0.4 : 1 }} className="group">
@@ -563,7 +621,13 @@ function DraggableCard({ lead, serviceType, teamMembers, onOpen }: { lead: Lead;
           <GripVertical className="h-3.5 w-3.5" />
         </button>
         <button type="button" onClick={() => onOpen(lead)} className="flex-1 text-left min-w-0">
-          <LeadCard lead={lead} serviceType={serviceType} teamMembers={teamMembers} />
+          <LeadCard
+            lead={lead}
+            serviceType={serviceType}
+            teamMembers={teamMembers}
+            activityCount={activityCount}
+            onToggleFavorite={onToggleFavorite}
+          />
         </button>
       </div>
     </div>
@@ -587,8 +651,11 @@ function initialsOf(name: string) {
 }
 
 function LeadCard({
-  lead, serviceType = null, teamMembers = [], dragging = false,
-}: { lead: Lead; serviceType?: ServiceTypeLite | null; teamMembers?: MemberLite[]; dragging?: boolean }) {
+  lead, serviceType = null, teamMembers = [], dragging = false, activityCount = 0, onToggleFavorite,
+}: {
+  lead: Lead; serviceType?: ServiceTypeLite | null; teamMembers?: MemberLite[]; dragging?: boolean;
+  activityCount?: number; onToggleFavorite?: (l: Lead) => void;
+}) {
   const owner = lead.owner_id ? teamMembers.find(m => m.id === lead.owner_id) ?? null : null;
   const ownerName = owner ? memberLabel(owner) : null;
   const avatarColor = owner
@@ -596,6 +663,11 @@ function LeadCard({
     : AVATAR_COLORS[0];
 
   const tempColor = lead.temperature ? TEMP_BORDER[lead.temperature] : null;
+  const favorite = Boolean((lead as any).is_favorite);
+  const approach =
+    (lead as any).we_approached === true ? "Nós abordamos"
+    : (lead as any).we_approached === false ? "Fomos abordados"
+    : null;
 
   let nextContact: { label: string; late: boolean } | null = null;
   if (lead.next_contact_at) {
@@ -614,7 +686,23 @@ function LeadCard({
     >
       <div className="flex items-start justify-between gap-2">
         <p className="text-sm font-medium truncate">{lead.name}</p>
-        <TemperatureIcon value={lead.temperature} />
+        <div className="flex items-center gap-1 shrink-0">
+          <TemperatureIcon value={lead.temperature} />
+          {onToggleFavorite ? (
+            <span
+              role="button"
+              tabIndex={-1}
+              aria-label={favorite ? "Desfavoritar" : "Favoritar"}
+              onClick={(e) => { e.stopPropagation(); onToggleFavorite(lead); }}
+              onPointerDown={(e) => e.stopPropagation()}
+              className="cursor-pointer"
+            >
+              <Star className={`h-3.5 w-3.5 ${favorite ? "fill-current text-amber-400" : "text-muted-foreground"}`} />
+            </span>
+          ) : favorite ? (
+            <Star className="h-3.5 w-3.5 fill-current text-amber-400" />
+          ) : null}
+        </div>
       </div>
 
       {(lead.company || lead.client_id) && (
@@ -626,6 +714,12 @@ function LeadCard({
             </span>
           )}
         </div>
+      )}
+
+      {approach && (
+        <span className="mt-1 inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-[10px] text-muted-foreground">
+          {approach}
+        </span>
       )}
 
       {ownerName && (
@@ -650,6 +744,11 @@ function LeadCard({
               <span className="h-1.5 w-1.5 rounded-full shrink-0" style={{ background: serviceType.color }} />
               {serviceType.name}
             </Badge>
+          ) : null}
+          {activityCount > 0 ? (
+            <span className="inline-flex items-center gap-0.5 text-[10px] text-muted-foreground">
+              <MessageSquare className="h-3 w-3" /> {activityCount}
+            </span>
           ) : null}
         </div>
         {lead.estimated_value ? (
@@ -1501,8 +1600,8 @@ function Field({
 
 // ---------- KPI ----------
 function KpiCard({
-  label, value, icon: Icon, tone,
-}: { label: string; value: string; icon: any; tone: string }) {
+  label, value, icon: Icon, tone, subtitle,
+}: { label: string; value: string; icon: any; tone: string; subtitle?: string }) {
   return (
     <div className="rounded-3xl border border-border bg-card p-5">
       <div className="flex items-center justify-between">
@@ -1510,6 +1609,7 @@ function KpiCard({
         <Icon className={`h-4 w-4 ${tone}`} />
       </div>
       <p className="mt-2 font-display text-2xl font-bold tabular-nums">{value}</p>
+      {subtitle ? <p className="mt-1 text-[10px] text-muted-foreground">{subtitle}</p> : null}
     </div>
   );
 }
