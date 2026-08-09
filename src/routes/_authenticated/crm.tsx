@@ -919,7 +919,12 @@ function LeadDrawer({
             )}
           </TabsContent>
 
-          {/* --- Histórico --- */}
+          {/* --- Reuniões --- */}
+          <TabsContent value="meetings" className="mt-4">
+            <LeadMeetingsTab leadId={lead.id} organizationId={lead.organization_id} />
+          </TabsContent>
+
+
           <TabsContent value="history" className="mt-4 space-y-4">
             <div className="rounded-2xl border border-border p-3 space-y-2">
               <div className="grid grid-cols-2 gap-2">
