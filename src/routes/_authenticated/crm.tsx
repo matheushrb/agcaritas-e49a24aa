@@ -381,27 +381,59 @@ function CrmPage() {
 
   return (
     <div className="space-y-5">
-      <header className="flex flex-wrap items-end justify-between gap-4">
+      <header className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-muted-foreground">
-            Prospecção
-          </p>
-          <h1 className="mt-1 font-display text-3xl font-bold tracking-tight">Pipeline de vendas</h1>
+          <h1 className="font-display text-3xl font-bold tracking-tight">
+            <span className="text-primary">CRM</span> <span className="text-muted-foreground/60">/</span> Pipeline Comercial
+          </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Arraste os cards entre as etapas. As etapas do funil são configuráveis em Configurações › Funil CRM.
+            Acompanhe suas oportunidades comerciais e avance mais negócios.
           </p>
         </div>
-        <Button className="rounded-full gap-2" onClick={() => setModalOpen(true)}>
-          <Plus className="h-4 w-4" /> Novo lead
-        </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="relative min-w-[240px]">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder="Buscar leads, empresas, contatos..."
+              className="pl-9 rounded-full bg-card border-border"
+              value={query}
+              onChange={e => setQuery(e.target.value)}
+            />
+          </div>
+          <Select value={segment} onValueChange={setSegment}>
+            <SelectTrigger className="w-[170px] rounded-full">
+              <SelectValue placeholder="Segmento" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos os segmentos</SelectItem>
+              {segments.map(s => (
+                <SelectItem key={s} value={s}>{s}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={serviceTypeFilter} onValueChange={setServiceTypeFilter}>
+            <SelectTrigger className="w-[170px] rounded-full">
+              <SelectValue placeholder="Tipo de serviço" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos os serviços</SelectItem>
+              {serviceTypes.map(s => (
+                <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Button className="rounded-full gap-2" onClick={() => { setNewLeadStage(null); setModalOpen(true); }}>
+            <Plus className="h-4 w-4" /> Novo lead
+          </Button>
+        </div>
       </header>
 
       {/* KPIs */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-        <KpiCard label="Pipeline em aberto" value={brl(pipeline)} icon={TrendingUp} tone="text-blue-500" />
-        <KpiCard label="Previsão ponderada" value={brl(weighted)} icon={Target} tone="text-violet-500" />
-        <KpiCard label="Receita ganha" value={brl(wonValue)} icon={DollarSign} tone="text-emerald-500" />
-        <KpiCard label="Taxa de conversão" value={`${conversion}%`} icon={CheckCircle2} tone="text-amber-500" />
+        <KpiCard label="Pipeline em aberto" value={brl(pipeline)} icon={TrendingUp} tone="text-blue-500" subtitle={`${leads.length} leads`} />
+        <KpiCard label="Previsão ponderada" value={brl(weighted)} icon={Target} tone="text-violet-500" subtitle="Baseado na probabilidade" />
+        <KpiCard label="Receita ganha" value={brl(wonValue)} icon={DollarSign} tone="text-emerald-500" subtitle={`${wonLeads.length} negócios`} />
+        <KpiCard label="Taxa de conversão" value={`${conversion}%`} icon={CheckCircle2} tone="text-amber-500" subtitle="Do total de leads" />
         <KpiCard
           label="Próximos contatos"
           value={String(upcomingContacts)}
@@ -411,43 +443,10 @@ function CrmPage() {
         />
       </div>
 
-      {/* Filters */}
-      <div className="flex flex-wrap items-center gap-3">
-        <div className="relative flex-1 min-w-[220px] max-w-md">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder="Buscar por nome, empresa ou email"
-            className="pl-9 rounded-full bg-card border-border"
-            value={query}
-            onChange={e => setQuery(e.target.value)}
-          />
-        </div>
-        <Select value={segment} onValueChange={setSegment}>
-          <SelectTrigger className="w-[200px] rounded-full">
-            <SelectValue placeholder="Segmento" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Todos os segmentos</SelectItem>
-            {segments.map(s => (
-              <SelectItem key={s} value={s}>{s}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Select value={serviceTypeFilter} onValueChange={setServiceTypeFilter}>
-          <SelectTrigger className="w-[200px] rounded-full">
-            <SelectValue placeholder="Tipo de serviço" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Todos os serviços</SelectItem>
-            {serviceTypes.map(s => (
-              <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <p className="ml-auto text-xs text-muted-foreground">
-          {filtered.length} de {leads.length} leads
-        </p>
-      </div>
+      <p className="text-xs text-muted-foreground">
+        {filtered.length} de {leads.length} leads
+      </p>
+
 
       {/* Kanban */}
       {isLoading || stages.length === 0 ? (
