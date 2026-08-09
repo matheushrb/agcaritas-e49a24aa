@@ -917,12 +917,14 @@ function NewLeadModal({
             />
           </Field>
           <Field label="Origem">
-            <Input
-              value={form.source}
-              onChange={e => setForm({ ...form, source: e.target.value })}
-              placeholder="Indicação, Instagram, Site…"
-            />
+            <Select value={form.source || undefined} onValueChange={v => setForm({ ...form, source: v })}>
+              <SelectTrigger><SelectValue placeholder="Selecionar origem" /></SelectTrigger>
+              <SelectContent>
+                {LEAD_SOURCES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+              </SelectContent>
+            </Select>
           </Field>
+
           <Field label="Etapa inicial">
             <Select value={form.stage_id} onValueChange={v => setForm({ ...form, stage_id: v })}>
               <SelectTrigger><SelectValue placeholder="Etapa" /></SelectTrigger>
