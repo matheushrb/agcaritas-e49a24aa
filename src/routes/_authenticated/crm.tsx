@@ -96,6 +96,21 @@ const TEMPERATURES: { value: Temperature; label: string; icon: any; tone: string
   { value: "hot",  label: "Quente",icon: Flame,       tone: "text-rose-500" },
 ];
 
+const LEAD_SOURCES = ["Indicação", "Instagram", "Facebook", "Google Ads", "Site", "Evento", "Prospecção ativa", "Outro"] as const;
+
+type ClientLite = { id: string; name: string; company: string | null };
+
+function useClientsLite() {
+  return useQuery({
+    queryKey: ["clients-lite"],
+    queryFn: async (): Promise<ClientLite[]> => {
+      const { data, error } = await supabase.from("clients").select("id,name,company").order("name");
+      if (error) throw error;
+      return (data ?? []) as ClientLite[];
+    },
+  });
+}
+
 const brl = (v: number | null) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 })
     .format(v ?? 0);
