@@ -145,6 +145,7 @@ function CrmPage() {
   const { data: leads = [], isLoading } = useLeads();
   const { data: stages = [] } = useQuery({ queryKey: stagesKey, queryFn: fetchStages });
   const { data: templates = [] } = useQuery({ queryKey: ["briefing_templates"], queryFn: fetchBriefingTemplates });
+  const { data: clients = [] } = useClientsLite();
   const qc = useQueryClient();
   const navigate = useNavigate();
 
