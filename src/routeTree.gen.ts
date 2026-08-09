@@ -33,9 +33,11 @@ import { Route as AuthenticatedClientsRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedCampaignsRouteImport } from './routes/_authenticated/campaigns'
 import { Route as AuthenticatedCalendarRouteImport } from './routes/_authenticated/calendar'
 import { Route as AuthenticatedTeamIndexRouteImport } from './routes/_authenticated/team.index'
+import { Route as AuthenticatedStrategyIndexRouteImport } from './routes/_authenticated/strategy.index'
 import { Route as AuthenticatedProjectsIndexRouteImport } from './routes/_authenticated/projects.index'
 import { Route as AuthenticatedInvoicesIndexRouteImport } from './routes/_authenticated/invoices.index'
 import { Route as AuthenticatedTeamMemberIdRouteImport } from './routes/_authenticated/team.$memberId'
+import { Route as AuthenticatedStrategyPlanIdRouteImport } from './routes/_authenticated/strategy.$planId'
 import { Route as AuthenticatedProjectsProjectIdRouteImport } from './routes/_authenticated/projects.$projectId'
 import { Route as AuthenticatedInvoicesInvoiceIdRouteImport } from './routes/_authenticated/invoices.$invoiceId'
 import { Route as AuthenticatedClientsClientIdRouteImport } from './routes/_authenticated/clients.$clientId'
@@ -161,6 +163,12 @@ const AuthenticatedTeamIndexRoute = AuthenticatedTeamIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AuthenticatedTeamRoute,
 } as any)
+const AuthenticatedStrategyIndexRoute =
+  AuthenticatedStrategyIndexRouteImport.update({
+    id: '/strategy/',
+    path: '/strategy/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedProjectsIndexRoute =
   AuthenticatedProjectsIndexRouteImport.update({
     id: '/projects/',
@@ -178,6 +186,12 @@ const AuthenticatedTeamMemberIdRoute =
     id: '/$memberId',
     path: '/$memberId',
     getParentRoute: () => AuthenticatedTeamRoute,
+  } as any)
+const AuthenticatedStrategyPlanIdRoute =
+  AuthenticatedStrategyPlanIdRouteImport.update({
+    id: '/strategy/$planId',
+    path: '/strategy/$planId',
+    getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedProjectsProjectIdRoute =
   AuthenticatedProjectsProjectIdRouteImport.update({
@@ -224,9 +238,11 @@ export interface FileRoutesByFullPath {
   '/clients/$clientId': typeof AuthenticatedClientsClientIdRoute
   '/invoices/$invoiceId': typeof AuthenticatedInvoicesInvoiceIdRoute
   '/projects/$projectId': typeof AuthenticatedProjectsProjectIdRoute
+  '/strategy/$planId': typeof AuthenticatedStrategyPlanIdRoute
   '/team/$memberId': typeof AuthenticatedTeamMemberIdRoute
   '/invoices/': typeof AuthenticatedInvoicesIndexRoute
   '/projects/': typeof AuthenticatedProjectsIndexRoute
+  '/strategy/': typeof AuthenticatedStrategyIndexRoute
   '/team/': typeof AuthenticatedTeamIndexRoute
 }
 export interface FileRoutesByTo {
@@ -254,9 +270,11 @@ export interface FileRoutesByTo {
   '/clients/$clientId': typeof AuthenticatedClientsClientIdRoute
   '/invoices/$invoiceId': typeof AuthenticatedInvoicesInvoiceIdRoute
   '/projects/$projectId': typeof AuthenticatedProjectsProjectIdRoute
+  '/strategy/$planId': typeof AuthenticatedStrategyPlanIdRoute
   '/team/$memberId': typeof AuthenticatedTeamMemberIdRoute
   '/invoices': typeof AuthenticatedInvoicesIndexRoute
   '/projects': typeof AuthenticatedProjectsIndexRoute
+  '/strategy': typeof AuthenticatedStrategyIndexRoute
   '/team': typeof AuthenticatedTeamIndexRoute
 }
 export interface FileRoutesById {
@@ -287,9 +305,11 @@ export interface FileRoutesById {
   '/_authenticated/clients/$clientId': typeof AuthenticatedClientsClientIdRoute
   '/_authenticated/invoices/$invoiceId': typeof AuthenticatedInvoicesInvoiceIdRoute
   '/_authenticated/projects/$projectId': typeof AuthenticatedProjectsProjectIdRoute
+  '/_authenticated/strategy/$planId': typeof AuthenticatedStrategyPlanIdRoute
   '/_authenticated/team/$memberId': typeof AuthenticatedTeamMemberIdRoute
   '/_authenticated/invoices/': typeof AuthenticatedInvoicesIndexRoute
   '/_authenticated/projects/': typeof AuthenticatedProjectsIndexRoute
+  '/_authenticated/strategy/': typeof AuthenticatedStrategyIndexRoute
   '/_authenticated/team/': typeof AuthenticatedTeamIndexRoute
 }
 export interface FileRouteTypes {
@@ -320,9 +340,11 @@ export interface FileRouteTypes {
     | '/clients/$clientId'
     | '/invoices/$invoiceId'
     | '/projects/$projectId'
+    | '/strategy/$planId'
     | '/team/$memberId'
     | '/invoices/'
     | '/projects/'
+    | '/strategy/'
     | '/team/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -350,9 +372,11 @@ export interface FileRouteTypes {
     | '/clients/$clientId'
     | '/invoices/$invoiceId'
     | '/projects/$projectId'
+    | '/strategy/$planId'
     | '/team/$memberId'
     | '/invoices'
     | '/projects'
+    | '/strategy'
     | '/team'
   id:
     | '__root__'
@@ -382,9 +406,11 @@ export interface FileRouteTypes {
     | '/_authenticated/clients/$clientId'
     | '/_authenticated/invoices/$invoiceId'
     | '/_authenticated/projects/$projectId'
+    | '/_authenticated/strategy/$planId'
     | '/_authenticated/team/$memberId'
     | '/_authenticated/invoices/'
     | '/_authenticated/projects/'
+    | '/_authenticated/strategy/'
     | '/_authenticated/team/'
   fileRoutesById: FileRoutesById
 }
@@ -566,6 +592,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedTeamIndexRouteImport
       parentRoute: typeof AuthenticatedTeamRoute
     }
+    '/_authenticated/strategy/': {
+      id: '/_authenticated/strategy/'
+      path: '/strategy'
+      fullPath: '/strategy/'
+      preLoaderRoute: typeof AuthenticatedStrategyIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/projects/': {
       id: '/_authenticated/projects/'
       path: '/projects'
@@ -586,6 +619,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/team/$memberId'
       preLoaderRoute: typeof AuthenticatedTeamMemberIdRouteImport
       parentRoute: typeof AuthenticatedTeamRoute
+    }
+    '/_authenticated/strategy/$planId': {
+      id: '/_authenticated/strategy/$planId'
+      path: '/strategy/$planId'
+      fullPath: '/strategy/$planId'
+      preLoaderRoute: typeof AuthenticatedStrategyPlanIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/projects/$projectId': {
       id: '/_authenticated/projects/$projectId'
@@ -656,8 +696,10 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedTeamRoute: typeof AuthenticatedTeamRouteWithChildren
   AuthenticatedInvoicesInvoiceIdRoute: typeof AuthenticatedInvoicesInvoiceIdRoute
   AuthenticatedProjectsProjectIdRoute: typeof AuthenticatedProjectsProjectIdRoute
+  AuthenticatedStrategyPlanIdRoute: typeof AuthenticatedStrategyPlanIdRoute
   AuthenticatedInvoicesIndexRoute: typeof AuthenticatedInvoicesIndexRoute
   AuthenticatedProjectsIndexRoute: typeof AuthenticatedProjectsIndexRoute
+  AuthenticatedStrategyIndexRoute: typeof AuthenticatedStrategyIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -681,8 +723,10 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedTeamRoute: AuthenticatedTeamRouteWithChildren,
   AuthenticatedInvoicesInvoiceIdRoute: AuthenticatedInvoicesInvoiceIdRoute,
   AuthenticatedProjectsProjectIdRoute: AuthenticatedProjectsProjectIdRoute,
+  AuthenticatedStrategyPlanIdRoute: AuthenticatedStrategyPlanIdRoute,
   AuthenticatedInvoicesIndexRoute: AuthenticatedInvoicesIndexRoute,
   AuthenticatedProjectsIndexRoute: AuthenticatedProjectsIndexRoute,
+  AuthenticatedStrategyIndexRoute: AuthenticatedStrategyIndexRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =

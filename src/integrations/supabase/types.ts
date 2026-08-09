@@ -2529,6 +2529,336 @@ export type Database = {
           },
         ]
       }
+      strategic_actions: {
+        Row: {
+          created_at: string
+          due_date: string | null
+          id: string
+          notes: string | null
+          organization_id: string
+          plan_id: string
+          position: number
+          responsible: string | null
+          status: string
+          title: string
+        }
+        Insert: {
+          created_at?: string
+          due_date?: string | null
+          id?: string
+          notes?: string | null
+          organization_id: string
+          plan_id: string
+          position?: number
+          responsible?: string | null
+          status?: string
+          title: string
+        }
+        Update: {
+          created_at?: string
+          due_date?: string | null
+          id?: string
+          notes?: string | null
+          organization_id?: string
+          plan_id?: string
+          position?: number
+          responsible?: string | null
+          status?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "strategic_actions_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "strategic_actions_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "strategic_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      strategic_kpis: {
+        Row: {
+          category: string | null
+          created_at: string
+          current_value: number
+          id: string
+          name: string
+          organization_id: string
+          period: string | null
+          plan_id: string
+          target_value: number | null
+          unit: string | null
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          current_value?: number
+          id?: string
+          name: string
+          organization_id: string
+          period?: string | null
+          plan_id: string
+          target_value?: number | null
+          unit?: string | null
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          current_value?: number
+          id?: string
+          name?: string
+          organization_id?: string
+          period?: string | null
+          plan_id?: string
+          target_value?: number | null
+          unit?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "strategic_kpis_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "strategic_kpis_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "strategic_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      strategic_personas: {
+        Row: {
+          age_range: string | null
+          avatar_color: string | null
+          bio: string | null
+          created_at: string
+          fictional_quote: string | null
+          gender: string | null
+          goals: Json
+          id: string
+          location: string | null
+          motivations: Json
+          name: string
+          occupation: string | null
+          organization_id: string
+          pains: Json
+          plan_id: string
+          preferred_channels: Json
+        }
+        Insert: {
+          age_range?: string | null
+          avatar_color?: string | null
+          bio?: string | null
+          created_at?: string
+          fictional_quote?: string | null
+          gender?: string | null
+          goals?: Json
+          id?: string
+          location?: string | null
+          motivations?: Json
+          name: string
+          occupation?: string | null
+          organization_id: string
+          pains?: Json
+          plan_id: string
+          preferred_channels?: Json
+        }
+        Update: {
+          age_range?: string | null
+          avatar_color?: string | null
+          bio?: string | null
+          created_at?: string
+          fictional_quote?: string | null
+          gender?: string | null
+          goals?: Json
+          id?: string
+          location?: string | null
+          motivations?: Json
+          name?: string
+          occupation?: string | null
+          organization_id?: string
+          pains?: Json
+          plan_id?: string
+          preferred_channels?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "strategic_personas_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "strategic_personas_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "strategic_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      strategic_plans: {
+        Row: {
+          created_at: string
+          id: string
+          lead_id: string
+          name: string
+          organization_id: string
+          tools: Json
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          lead_id: string
+          name: string
+          organization_id: string
+          tools?: Json
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          lead_id?: string
+          name?: string
+          organization_id?: string
+          tools?: Json
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "strategic_plans_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "strategic_plans_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      strategic_roadmap_items: {
+        Row: {
+          category: string | null
+          created_at: string
+          description: string | null
+          end_date: string | null
+          id: string
+          organization_id: string
+          plan_id: string
+          position: number
+          start_date: string | null
+          status: string
+          target_quarter: string | null
+          title: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          organization_id: string
+          plan_id: string
+          position?: number
+          start_date?: string | null
+          status?: string
+          target_quarter?: string | null
+          title: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          organization_id?: string
+          plan_id?: string
+          position?: number
+          start_date?: string | null
+          status?: string
+          target_quarter?: string | null
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "strategic_roadmap_items_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "strategic_roadmap_items_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "strategic_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      strategic_swot_items: {
+        Row: {
+          created_at: string
+          description: string
+          id: string
+          organization_id: string
+          plan_id: string
+          position: number
+          quadrant: string
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          id?: string
+          organization_id: string
+          plan_id: string
+          position?: number
+          quadrant: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          id?: string
+          organization_id?: string
+          plan_id?: string
+          position?: number
+          quadrant?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "strategic_swot_items_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "strategic_swot_items_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "strategic_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       suppliers: {
         Row: {
           category: string | null
