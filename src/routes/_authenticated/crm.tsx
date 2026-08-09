@@ -79,6 +79,8 @@ interface Lead {
   we_approached: boolean | null;
   scope_items: ScopeItem[];
   sectors: string[];
+  interests?: string[] | null;
+  is_favorite?: boolean | null;
 }
 
 interface LeadActivity {
