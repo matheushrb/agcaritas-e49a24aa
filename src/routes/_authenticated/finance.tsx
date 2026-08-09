@@ -104,7 +104,7 @@ function FinancePage() {
           clients={clients}
           projects={projects}
           onNewEntry={() => setNewOpen(true)}
-          onNewInvoice={() => navigate({ to: "/invoices", search: { new: 1 } })}
+          onNewInvoice={() => navigate({ to: "/invoices", search: { new: "1" } })}
           onExport={() => exportCsv(charges, clients, projects)}
           onOpenInvoices={() => navigate({ to: "/invoices" })}
           onOpenEntries={() => setTab("movements")}

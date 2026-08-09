@@ -1218,6 +1218,66 @@ export type Database = {
           },
         ]
       }
+      lead_meetings: {
+        Row: {
+          conclusions: string | null
+          created_at: string
+          id: string
+          lead_id: string
+          meeting_date: string | null
+          meeting_time: string | null
+          next_steps: string | null
+          notes: string | null
+          organization_id: string
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          conclusions?: string | null
+          created_at?: string
+          id?: string
+          lead_id: string
+          meeting_date?: string | null
+          meeting_time?: string | null
+          next_steps?: string | null
+          notes?: string | null
+          organization_id: string
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          conclusions?: string | null
+          created_at?: string
+          id?: string
+          lead_id?: string
+          meeting_date?: string | null
+          meeting_time?: string | null
+          next_steps?: string | null
+          notes?: string | null
+          organization_id?: string
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lead_meetings_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lead_meetings_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       leads: {
         Row: {
           briefing: Json

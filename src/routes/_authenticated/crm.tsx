@@ -21,6 +21,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { LeadMeetingsTab } from "@/components/crm/lead-meetings-tab";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -731,6 +732,7 @@ function LeadDrawer({
           <TabsList className="w-full">
             <TabsTrigger value="info" className="flex-1">Dados</TabsTrigger>
             <TabsTrigger value="briefing" className="flex-1">Briefing</TabsTrigger>
+            <TabsTrigger value="meetings" className="flex-1">Reuniões</TabsTrigger>
             <TabsTrigger value="history" className="flex-1">Histórico</TabsTrigger>
           </TabsList>
 
@@ -918,7 +920,12 @@ function LeadDrawer({
             )}
           </TabsContent>
 
-          {/* --- Histórico --- */}
+          {/* --- Reuniões --- */}
+          <TabsContent value="meetings" className="mt-4">
+            <LeadMeetingsTab leadId={lead.id} organizationId={lead.organization_id} />
+          </TabsContent>
+
+
           <TabsContent value="history" className="mt-4 space-y-4">
             <div className="rounded-2xl border border-border p-3 space-y-2">
               <div className="grid grid-cols-2 gap-2">
