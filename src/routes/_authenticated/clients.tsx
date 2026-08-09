@@ -528,7 +528,7 @@ export function NewClientDialog({
       opening_date: form.opening_date || null,
       size: form.size || null,
       segment: form.segment || null,
-      status: form.status,
+      
       website: form.website || null,
       instagram: form.instagram || null,
       linkedin: form.linkedin || null,
