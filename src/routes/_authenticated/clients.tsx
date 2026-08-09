@@ -346,7 +346,7 @@ function ClientsPage() {
           opening_date: editingClient.opening_date ?? "",
           size: editingClient.size ?? "",
           segment: editingClient.segment ?? "",
-          status: editingClient.status ?? "prospect",
+          
           website: editingClient.website ?? "",
           instagram: editingClient.instagram ?? "",
           linkedin: editingClient.linkedin ?? "",
