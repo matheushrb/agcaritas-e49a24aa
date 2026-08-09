@@ -889,6 +889,20 @@ function NewLeadModal({
           <Field label="Nome*" className="col-span-2">
             <Input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} />
           </Field>
+          <Field label="Cliente vinculado">
+            <Select
+              value={form.client_id || "none"}
+              onValueChange={v => setForm({ ...form, client_id: v === "none" ? "" : v })}
+            >
+              <SelectTrigger><SelectValue placeholder="Nenhum" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">Nenhum</SelectItem>
+                {clients.map(c => (
+                  <SelectItem key={c.id} value={c.id}>{c.name}{c.company ? ` · ${c.company}` : ""}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </Field>
           <Field label="Empresa">
             <Input value={form.company} onChange={e => setForm({ ...form, company: e.target.value })} />
           </Field>
