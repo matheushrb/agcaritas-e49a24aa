@@ -1051,14 +1051,46 @@ function LeadDrawer({
 
 
 
-            <div>
-              <Label className="text-xs">Observações</Label>
-              <Textarea
-                rows={3} className="mt-1"
-                defaultValue={lead.notes ?? ""}
-                onBlur={e => onPatch({ notes: e.target.value || null })}
-              />
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label className="text-xs">Interesses</Label>
+                <div className="mt-1 flex flex-wrap gap-1.5">
+                  {(((lead.interests as string[]) ?? []).map(item => (
+                    <Badge key={item} variant="outline" className="rounded-full gap-1">
+                      {item}
+                      <button
+                        type="button"
+                        onClick={() => onPatch({ interests: ((lead.interests as string[]) ?? []).filter(i => i !== item) })}
+                      >×</button>
+                    </Badge>
+                  )))}
+                </div>
+                <Input
+                  className="mt-1"
+                  placeholder="Ex: Planejamento estratégico…"
+                  value={interestDraft}
+                  onChange={e => setInterestDraft(e.target.value)}
+                  onKeyDown={e => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      const v = interestDraft.trim();
+                      const cur = (lead.interests as string[]) ?? [];
+                      if (v && !cur.includes(v)) onPatch({ interests: [...cur, v] });
+                      setInterestDraft("");
+                    }
+                  }}
+                />
+              </div>
+              <div>
+                <Label className="text-xs">Observações</Label>
+                <Textarea
+                  rows={3} className="mt-1"
+                  defaultValue={lead.notes ?? ""}
+                  onBlur={e => onPatch({ notes: e.target.value || null })}
+                />
+              </div>
             </div>
+
 
             <Button className="w-full rounded-full gap-2" onClick={onCreateProposal}>
               <FileText className="h-4 w-4" /> Criar proposta
