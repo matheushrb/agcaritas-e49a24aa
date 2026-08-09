@@ -423,6 +423,7 @@ function CrmPage() {
               <LeadCard
                 lead={dragging}
                 serviceType={(dragging.service_type_id && serviceTypeById.get(dragging.service_type_id)) || null}
+                teamMembers={teamMembers}
                 dragging
               />
             ) : null}
