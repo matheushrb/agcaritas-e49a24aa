@@ -354,11 +354,18 @@ function CrmPage() {
       </header>
 
       {/* KPIs */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         <KpiCard label="Pipeline em aberto" value={brl(pipeline)} icon={TrendingUp} tone="text-blue-500" />
         <KpiCard label="Previsão ponderada" value={brl(weighted)} icon={Target} tone="text-violet-500" />
         <KpiCard label="Receita ganha" value={brl(wonValue)} icon={DollarSign} tone="text-emerald-500" />
         <KpiCard label="Taxa de conversão" value={`${conversion}%`} icon={CheckCircle2} tone="text-amber-500" />
+        <KpiCard
+          label="Próximos contatos"
+          value={String(upcomingContacts)}
+          icon={CalendarDays}
+          tone="text-sky-500"
+          subtitle="Nos próximos 7 dias"
+        />
       </div>
 
       {/* Filters */}
