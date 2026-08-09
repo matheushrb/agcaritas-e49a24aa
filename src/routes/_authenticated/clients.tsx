@@ -212,7 +212,7 @@ function ClientsPage() {
               <SelectTrigger className="w-[150px] rounded-full"><SelectValue placeholder="Status" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todos status</SelectItem>
-                {Object.entries(STATUS).map(([k, v]) => <SelectItem key={k} value={k}>{v.label}</SelectItem>)}
+                {(["active", "prospect", "inactive"] as const).map(k => <SelectItem key={k} value={k}>{STATUS[k].label}</SelectItem>)}
               </SelectContent>
             </Select>
             <Select value={segment} onValueChange={setSegment}>
