@@ -883,74 +883,7 @@ function LeadDrawer({
             </div>
 
 
-            <div>
-              <Label className="text-xs flex items-center gap-1.5"><User className="size-3.5" />Responsável</Label>
-              <Select
-                value={lead.owner_id ?? "none"}
-                onValueChange={v => onPatch({ owner_id: v === "none" ? null : v })}
-              >
-                <SelectTrigger className="mt-1"><SelectValue placeholder="Sem responsável" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">Sem responsável</SelectItem>
-                  {teamMembers.map(m => (
-                    <SelectItem key={m.id} value={m.id}>{memberLabel(m)}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
 
-            <InfoRow icon={Building2} label="Empresa" value={lead.company ?? "—"} />
-            <InfoRow icon={Mail} label="Email" value={lead.email ?? "—"} />
-            <InfoRow icon={Phone} label="Telefone" value={lead.phone ?? "—"} />
-
-            <div>
-              <Label className="text-xs flex items-center gap-1.5"><Tag className="size-3.5" />Segmento</Label>
-              <Select value={lead.segment ?? undefined} onValueChange={v => onPatch({ segment: v })}>
-                <SelectTrigger className="mt-1"><SelectValue placeholder="Definir segmento" /></SelectTrigger>
-                <SelectContent>
-                  {segments.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <Label className="text-xs flex items-center gap-1.5"><Sparkles className="size-3.5" />Tipo de serviço</Label>
-              <Select
-                value={lead.service_type_id ?? undefined}
-                onValueChange={v => onPatch({ service_type_id: v })}
-              >
-                <SelectTrigger className="mt-1"><SelectValue placeholder="Definir tipo de serviço" /></SelectTrigger>
-                <SelectContent>
-                  {serviceTypes.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <Label className="text-xs flex items-center gap-1.5"><FileText className="size-3.5" />Origem</Label>
-              <Select value={lead.source ?? undefined} onValueChange={v => onPatch({ source: v })}>
-                <SelectTrigger className="mt-1"><SelectValue placeholder="Definir origem" /></SelectTrigger>
-                <SelectContent>
-                  {LEAD_SOURCES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <Label className="text-xs flex items-center gap-1.5"><Building2 className="size-3.5" />Cliente vinculado</Label>
-              <Select
-                value={lead.client_id ?? "none"}
-                onValueChange={v => onPatch({ client_id: v === "none" ? null : v })}
-              >
-                <SelectTrigger className="mt-1"><SelectValue placeholder="Nenhum cliente" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">Nenhum cliente</SelectItem>
-                  {clients.map(c => (
-                    <SelectItem key={c.id} value={c.id}>{c.name}{c.company ? ` · ${c.company}` : ""}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
 
 
             <div>
