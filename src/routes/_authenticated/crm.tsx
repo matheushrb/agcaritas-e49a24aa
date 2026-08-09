@@ -315,6 +315,11 @@ function CrmPage() {
     onSuccess: () => qc.invalidateQueries({ queryKey: leadsKey }),
   });
 
+  const toggleFavorite = (lead: Lead) =>
+    updateLead.mutate({ id: lead.id, values: { is_favorite: !(lead as any).is_favorite } });
+
+
+
   const createClientFromLead = useMutation({
     mutationFn: async (lead: Lead) => {
       const org = await currentOrgId();
