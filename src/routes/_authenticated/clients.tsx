@@ -49,7 +49,21 @@ type Client = {
   email: string | null;
   phone: string | null;
   tax_id: string | null;
+  created_at: string;
 };
+
+function computeClientStatus(
+  c: { id: string; created_at: string },
+  activeIds: Set<string>,
+  prospectIds: Set<string>,
+): "active" | "prospect" | "inactive" {
+  if (activeIds.has(c.id)) return "active";
+  if (prospectIds.has(c.id)) return "prospect";
+  const days = (Date.now() - new Date(c.created_at).getTime()) / 86400000;
+  if (days >= 45) return "inactive";
+  return "prospect";
+}
+
 
 function ClientsPage() {
   const qc = useQueryClient();
