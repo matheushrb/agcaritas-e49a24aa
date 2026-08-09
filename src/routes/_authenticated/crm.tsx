@@ -79,6 +79,8 @@ interface Lead {
   we_approached: boolean | null;
   scope_items: ScopeItem[];
   sectors: string[];
+  interests?: string[] | null;
+  is_favorite?: boolean | null;
 }
 
 interface LeadActivity {
@@ -801,6 +803,7 @@ function LeadDrawer({
   const [activity, setActivity] = useState({ kind: "note", title: "", notes: "", due_date: "" });
   const [briefing, setBriefing] = useState<BriefingData>({});
   const [scopeItems, setScopeItems] = useState<ScopeItem[]>([]);
+  const [interestDraft, setInterestDraft] = useState("");
 
   useEffect(() => { setBriefing((lead?.briefing as BriefingData) ?? {}); }, [lead?.id]);
   useEffect(() => { setScopeItems((lead?.scope_items as ScopeItem[]) ?? []); }, [lead?.id]);
@@ -1051,14 +1054,46 @@ function LeadDrawer({
 
 
 
-            <div>
-              <Label className="text-xs">Observações</Label>
-              <Textarea
-                rows={3} className="mt-1"
-                defaultValue={lead.notes ?? ""}
-                onBlur={e => onPatch({ notes: e.target.value || null })}
-              />
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label className="text-xs">Interesses</Label>
+                <div className="mt-1 flex flex-wrap gap-1.5">
+                  {(((lead.interests as string[]) ?? []).map(item => (
+                    <Badge key={item} variant="outline" className="rounded-full gap-1">
+                      {item}
+                      <button
+                        type="button"
+                        onClick={() => onPatch({ interests: ((lead.interests as string[]) ?? []).filter(i => i !== item) })}
+                      >×</button>
+                    </Badge>
+                  )))}
+                </div>
+                <Input
+                  className="mt-1"
+                  placeholder="Ex: Planejamento estratégico…"
+                  value={interestDraft}
+                  onChange={e => setInterestDraft(e.target.value)}
+                  onKeyDown={e => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      const v = interestDraft.trim();
+                      const cur = (lead.interests as string[]) ?? [];
+                      if (v && !cur.includes(v)) onPatch({ interests: [...cur, v] });
+                      setInterestDraft("");
+                    }
+                  }}
+                />
+              </div>
+              <div>
+                <Label className="text-xs">Observações</Label>
+                <Textarea
+                  rows={3} className="mt-1"
+                  defaultValue={lead.notes ?? ""}
+                  onBlur={e => onPatch({ notes: e.target.value || null })}
+                />
+              </div>
             </div>
+
 
             <Button className="w-full rounded-full gap-2" onClick={onCreateProposal}>
               <FileText className="h-4 w-4" /> Criar proposta
@@ -1295,8 +1330,11 @@ function NewLeadModal({
     service_type_id: "", owner_id: "", next_contact_at: "",
     temperature: "warm" as Temperature, briefing_template_id: "",
     approach: "" as "" | "we" | "them",
+    expected_close_date: "", notes: "",
   };
   const [form, setForm] = useState(empty);
+  const [interests, setInterests] = useState<string[]>([]);
+  const [interestDraft, setInterestDraft] = useState("");
   const [scopeItems, setScopeItems] = useState<ScopeItem[]>([]);
   const [briefing, setBriefing] = useState<BriefingData>({});
 
@@ -1323,6 +1361,9 @@ function NewLeadModal({
         service_type_id: form.service_type_id || null,
         owner_id: form.owner_id || null,
         next_contact_at: form.next_contact_at || null,
+        expected_close_date: form.expected_close_date || null,
+        notes: form.notes.trim() || null,
+        interests,
         we_approached: form.approach === "we" ? true : form.approach === "them" ? false : null,
         scope_items: scopeItems.filter(i => i.title.trim()),
         estimated_value: scopeItems.reduce((a, i) => a + Number(i.qty || 0) * Number(i.unit_price || 0), 0),
@@ -1340,6 +1381,8 @@ function NewLeadModal({
       onOpenChange(false);
       setForm({ ...empty, stage_id: stages[0]?.id ?? "" });
       setScopeItems([]);
+      setInterests([]);
+      setInterestDraft("");
       setBriefing({});
     },
     onError: (e: any) => toast.error(e?.message ?? "Erro ao criar lead"),
@@ -1463,8 +1506,60 @@ function NewLeadModal({
                   onChange={e => setForm({ ...form, next_contact_at: e.target.value })}
                 />
               </div>
+              <div className="cw-field">
+                <label className="cw-label">Data de fechamento esperada</label>
+                <input
+                  className="cw-input"
+                  type="date"
+                  value={form.expected_close_date}
+                  onChange={e => setForm({ ...form, expected_close_date: e.target.value })}
+                />
+              </div>
             </div>
           </div>
+
+          <div className="cw-section">
+            <div className="cw-section-head"><h4>Interesses e observações</h4></div>
+            <div className="cw-grid cw-grid-2">
+              <div className="cw-field">
+                <label className="cw-label">Interesses</label>
+                {interests.length > 0 && (
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 6 }}>
+                    {interests.map(item => (
+                      <span key={item} className="cw-chip is-neutral">
+                        {item}
+                        <button type="button" onClick={() => setInterests(interests.filter(i => i !== item))}>×</button>
+                      </span>
+                    ))}
+                  </div>
+                )}
+                <input
+                  className="cw-input"
+                  value={interestDraft}
+                  placeholder="Ex: Planejamento estratégico, Consultoria..."
+                  onChange={e => setInterestDraft(e.target.value)}
+                  onKeyDown={e => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      const v = interestDraft.trim();
+                      if (v && !interests.includes(v)) setInterests([...interests, v]);
+                      setInterestDraft("");
+                    }
+                  }}
+                />
+              </div>
+              <div className="cw-field">
+                <label className="cw-label">Observações</label>
+                <textarea
+                  className="cw-textarea"
+                  rows={4}
+                  value={form.notes}
+                  onChange={e => setForm({ ...form, notes: e.target.value })}
+                />
+              </div>
+            </div>
+          </div>
+
 
           <div className="cw-section">
             <div className="cw-section-head"><h4>Escopo estimado</h4></div>
