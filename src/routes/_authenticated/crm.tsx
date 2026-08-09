@@ -695,7 +695,7 @@ function LeadDrawer({
 
   return (
     <Sheet open={!!lead} onOpenChange={o => !o && onClose()}>
-      <SheetContent className="w-full sm:max-w-xl overflow-y-auto">
+      <SheetContent className="w-full sm:max-w-2xl overflow-y-auto">
         <SheetHeader>
           <SheetTitle>{lead.name}</SheetTitle>
           <SheetDescription>{lead.company ?? "Sem empresa"}</SheetDescription>
