@@ -1024,6 +1024,70 @@ function LeadDrawer({
   );
 }
 
+// ---------- Plano de ação ----------
+function LeadPlanTab({ leadId, leadName, organizationId }: { leadId: string; leadName: string; organizationId: string }) {
+  const navigate = useNavigate();
+  const qc = useQueryClient();
+  const key = ["strategic_plans", leadId];
+
+  const { data: plan } = useQuery({
+    queryKey: key,
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("strategic_plans")
+        .select("id,name")
+        .eq("lead_id", leadId)
+        .order("created_at", { ascending: true })
+        .limit(1);
+      if (error) throw error;
+      return (data?.[0] ?? null) as { id: string; name: string } | null;
+    },
+  });
+
+  const createPlan = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("strategic_plans")
+        .insert({
+          organization_id: organizationId,
+          lead_id: leadId,
+          name: `Plano de ação — ${leadName}`,
+        })
+        .select("id")
+        .single();
+      if (error) throw error;
+      return data as { id: string };
+    },
+    onSuccess: (created) => {
+      qc.invalidateQueries({ queryKey: key });
+      qc.invalidateQueries({ queryKey: ["strategic_plans"] });
+      navigate({ to: "/strategy/$planId", params: { planId: created.id } });
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Erro ao criar plano"),
+  });
+
+  return (
+    <div className="cw space-y-3">
+      {plan ? (
+        <div className="cw-card cw-card-pad flex items-center justify-between gap-3">
+          <p className="truncate text-sm font-medium">{plan.name}</p>
+          <Link to="/strategy/$planId" params={{ planId: plan.id }} className="cw-btn cw-btn-primary">
+            Abrir plano de ação →
+          </Link>
+        </div>
+      ) : (
+        <div className="cw-card cw-card-pad space-y-3">
+          <p className="text-sm text-muted-foreground">Este lead ainda não tem um plano de ação.</p>
+          <button className="cw-btn cw-btn-primary" disabled={createPlan.isPending} onClick={() => createPlan.mutate()}>
+            + Criar plano de ação
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+
 function InfoRow({
   icon: Icon, label, value,
 }: { icon: any; label: string; value: string }) {
