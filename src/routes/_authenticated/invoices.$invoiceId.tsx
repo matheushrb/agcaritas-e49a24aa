@@ -1090,7 +1090,7 @@ function InvoiceDetailPage() {
           <div className="f3-card">
             <div className="f3-cardhead">
               <h3>Contato do cliente</h3>
-              {client && <Link to="/clients/$clientId" params={{ clientId: client.id }} className="f3-link">Ver cliente <ArrowRight size={12} /></Link>}
+              {client?.id && <Link to="/clients/$clientId" params={{ clientId: client.id }} className="f3-link">Ver cliente <ArrowRight size={12} /></Link>}
             </div>
             <div className="f3-contact">
               <div className="f3-avatar">{initials || "--"}</div>
