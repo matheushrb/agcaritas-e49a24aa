@@ -1231,12 +1231,14 @@ export type Database = {
           expected_close_date: string | null
           id: string
           name: string
+          next_contact_at: string | null
           notes: string | null
           organization_id: string
           owner_id: string | null
           phone: string | null
           probability: number
           segment: string | null
+          service_type_id: string | null
           source: string | null
           stage: Database["public"]["Enums"]["lead_stage"]
           stage_id: string | null
@@ -1255,12 +1257,14 @@ export type Database = {
           expected_close_date?: string | null
           id?: string
           name: string
+          next_contact_at?: string | null
           notes?: string | null
           organization_id: string
           owner_id?: string | null
           phone?: string | null
           probability?: number
           segment?: string | null
+          service_type_id?: string | null
           source?: string | null
           stage?: Database["public"]["Enums"]["lead_stage"]
           stage_id?: string | null
@@ -1279,12 +1283,14 @@ export type Database = {
           expected_close_date?: string | null
           id?: string
           name?: string
+          next_contact_at?: string | null
           notes?: string | null
           organization_id?: string
           owner_id?: string | null
           phone?: string | null
           probability?: number
           segment?: string | null
+          service_type_id?: string | null
           source?: string | null
           stage?: Database["public"]["Enums"]["lead_stage"]
           stage_id?: string | null
@@ -1311,6 +1317,13 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leads_service_type_id_fkey"
+            columns: ["service_type_id"]
+            isOneToOne: false
+            referencedRelation: "project_types"
             referencedColumns: ["id"]
           },
           {
