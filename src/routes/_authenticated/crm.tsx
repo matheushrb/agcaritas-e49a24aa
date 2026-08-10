@@ -1493,18 +1493,27 @@ function NewLeadModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[980px] w-[95vw] sm:max-w-[980px] max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2"><User size={18} /> Novo lead</DialogTitle>
+      <DialogContent className="max-w-[905px] w-[95vw] sm:max-w-[905px] max-h-[90vh] overflow-y-auto p-6">
+        <DialogHeader className="sr-only">
+          <DialogTitle>Novo lead</DialogTitle>
           <DialogDescription>Registre uma nova oportunidade comercial em seu pipeline.</DialogDescription>
         </DialogHeader>
 
-        <div className="cw">
-          {/* CRM02-06 / CRM02-07 — Origem do contato + Temperatura */}
-          <div className="cw-grid" style={{ display: "grid", gridTemplateColumns: "380px 1fr", gap: 16 }}>
+        <div className="cw crm02">
+          {/* CRM02-05 — Cabeçalho da janela */}
+          <div className="crm02-head">
+            <span className="crm02-head-ico"><Users size={19} /></span>
+            <div>
+              <h3>Novo lead</h3>
+              <p>Registre uma nova oportunidade comercial em seu pipeline.</p>
+            </div>
+          </div>
+
+          {/* CRM02-06 (355×85) / CRM02-07 (450×85) */}
+          <div className="crm02-toggles">
             <div className="cw-field">
-              <label className="cw-label">Origem do contato</label>
-              <div className="cw-grid cw-grid-2">
+              <label className="cw-label-ico"><Target size={14} /> Origem do contato</label>
+              <div className="cw-grid cw-grid-2" style={{ gap: 12 }}>
                 <button type="button" className={`cw-choice${form.approach === "we" ? " is-on" : ""}`} onClick={() => setForm({ ...form, approach: "we" })}>
                   <span className="cw-choice-title"><Send size={15} /> Nós abordamos</span>
                 </button>
@@ -1514,8 +1523,8 @@ function NewLeadModal({
               </div>
             </div>
             <div className="cw-field">
-              <label className="cw-label">Temperatura do lead</label>
-              <div className="cw-grid cw-grid-3">
+              <label className="cw-label-ico"><Thermometer size={14} /> Temperatura do lead</label>
+              <div className="cw-grid cw-grid-3" style={{ gap: 12 }}>
                 {TEMPERATURES.map(t => {
                   const Ico = t.icon;
                   return (
@@ -1533,9 +1542,9 @@ function NewLeadModal({
             </div>
           </div>
 
-          {/* CRM02-08 — linha única de propriedades */}
-          <div className="cw-section" style={{ borderTop: "none", paddingTop: 16, marginTop: 12 }}>
-            <div className="cw-grid" style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr) 150px", gap: 12 }}>
+          {/* CRM02-08 — linha única de propriedades (830×87) */}
+          <div className="crm02-props">
+
               <div className="cw-field">
                 <label className="cw-label">Etapa do pipeline *</label>
                 <select
