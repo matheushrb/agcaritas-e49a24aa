@@ -389,6 +389,36 @@ export function TaskWindow({
     },
   });
 
+  /* Subtarefas reais (linhas em tasks com parent_task_id). */
+  const { data: childRows = [] } = useQuery({
+    queryKey: ["task-subtasks", taskId],
+    enabled: !!taskId && open,
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("tasks")
+        .select("id,title,task_type_id,billing_value,billing_base_value,status,due_date")
+        .eq("parent_task_id", taskId!)
+        .order("created_at");
+      if (error) throw error;
+      return (data ?? []) as any[];
+    },
+  });
+
+  useEffect(() => {
+    if (!open || !isEdit) return;
+    setSubtasks(childRows.map((r: any) => ({
+      id: r.id,
+      rowId: r.id,
+      title: r.title ?? "",
+      task_type_id: r.task_type_id ?? null,
+      value: r.billing_base_value ?? r.billing_value ?? null,
+      status: r.status ?? "todo",
+      due_date: r.due_date ?? null,
+    })));
+    setRemovedSubtaskIds([]);
+  }, [childRows, open, isEdit]);
+
+
   useEffect(() => {
     if (!open) return;
     if (!isEdit) return;
