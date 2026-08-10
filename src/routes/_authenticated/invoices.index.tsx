@@ -67,6 +67,7 @@ type BillableTask = {
   aired_at?: string | null; aired_dates?: string[] | null;
   recorded_at?: string | null; recorded_dates?: string[] | null;
   task_type_id?: string | null;
+  parent_task_id?: string | null;
 };
 type BillableDeliverable = {
   key: string; // taskId::deliverableId
