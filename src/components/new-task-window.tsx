@@ -59,6 +59,17 @@ type DeliverableDraft = {
 };
 type ChecklistDraft = { id: string; title: string; done: boolean };
 
+/** Subtarefa real (linha própria em tasks, com parent_task_id) — pode ter tipo e valor próprios. */
+type SubtaskDraft = {
+  id: string;
+  rowId: string | null;
+  title: string;
+  task_type_id: string | null;
+  value: number | null;
+  status: string;
+  due_date: string | null;
+};
+
 /** Ao Vivo / Estreia — transmissões ligadas à tarefa. */
 type LiveDraft = {
   id: string; title: string; kind: "live" | "premiere"; platform: string;
