@@ -15,6 +15,7 @@ import { useTaskTypeStages } from "@/lib/task-types";
 import { CwDate, CwDateRange } from "@/components/cw-date";
 import { UnsavedChangesDialog, ConfirmDeleteDialog } from "@/components/confirm-dialogs";
 import { syncChargesFromTask } from "@/lib/billing-sync";
+import { computeStageWindows, stageAlert, fmtBr, type StageWindow } from "@/lib/stage-schedule";
 
 import "@/windows.css";
 
