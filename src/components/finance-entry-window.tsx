@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import {
   X, Save, Minus, Maximize2, PanelRight, Trash2, Receipt,
-  ArrowDownCircle, ArrowUpCircle, ChevronDown, Info,
+  ArrowDownCircle, ArrowUpCircle, ChevronDown, Info, Repeat,
 } from "lucide-react";
 import "@/windows.css";
 
