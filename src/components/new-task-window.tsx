@@ -744,7 +744,7 @@ export function TaskWindow({
         billing_value: s.value,
         due_date: s.due_date || dueDate || null,
         project_id: projectId || null,
-        client_id: clientId || null,
+        client_id: projectId ? (projects.find(p => p.id === projectId)?.client_id ?? null) : null,
         parent_task_id: parentId,
       };
       if (s.rowId) {
