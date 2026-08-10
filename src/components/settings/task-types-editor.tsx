@@ -79,6 +79,19 @@ function usePlatformOptions() {
   });
 }
 
+/** Tipos de tarefa cadastrados — a subtarefa pode ter um tipo diferente do da tarefa pai. */
+function useTaskTypeOptions() {
+  return useQuery<{ id: string; name: string }[]>({
+    queryKey: ["task-type-options"],
+    staleTime: 5 * 60_000,
+    queryFn: async () => {
+      const { data } = await (supabase as any)
+        .from("task_types").select("id,name").eq("active", true).order("name");
+      return (data ?? []) as { id: string; name: string }[];
+    },
+  });
+}
+
 
 
 const STATUS_GROUP_META: Record<StatusGroup, { label: string; dot: string }> = {
