@@ -8,6 +8,7 @@ import { Users, Plus, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 import { Rh01Overview } from "@/components/rh01-overview";
 import { Rh02People } from "@/components/rh02-people";
+import { Rh04Payroll } from "@/components/rh04-payroll";
 import { HrMemberDialog } from "@/components/hr-member-dialog";
 import { MEMBER_COLUMNS, CONTRACT_TYPES, costSummary, type HrMember } from "@/lib/hr";
 
@@ -15,14 +16,14 @@ const WRITABLE_KEYS = [
   "name","email","phone","role","specialty","level","status","hourly_rate","avatar_url",
   "cost_mode","monthly_salary","monthly_hours","default_task_rate","task_rate_overrides","cost_notes",
   "contract_type","area","admitted_on","birth_date","work_location","hr_notes",
-  "company_legal_name","company_tax_id","company_contact",
+  "company_legal_name","company_tax_id","company_contact","payment_day","pix_key","bank_info","salary_review_months","last_review_on",
 ] as const;
 
-type Tab = "overview" | "people";
+type Tab = "overview" | "people" | "payroll";
 
 export const Route = createFileRoute("/_authenticated/team/")({
   validateSearch: (s: Record<string, unknown>): { tab?: Tab; new?: string } => ({
-    tab: s.tab === "people" ? "people" : s.tab === "overview" ? "overview" : undefined,
+    tab: s.tab === "people" ? "people" : s.tab === "payroll" ? "payroll" : s.tab === "overview" ? "overview" : undefined,
     new: typeof s.new === "string" ? s.new : undefined,
   }),
   component: HrPage,
@@ -113,7 +114,7 @@ function HrPage() {
         </div>
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-1 rounded-full border border-border p-0.5">
-            {([["overview", "Visão geral"], ["people", "Pessoas"]] as const).map(([k, label]) => (
+            {([["overview", "Visão geral"], ["people", "Pessoas"], ["payroll", "Folha e remuneração"]] as const).map(([k, label]) => (
               <button
                 key={k}
                 onClick={() => navigate({ to: "/team", search: { tab: k } })}

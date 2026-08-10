@@ -8,6 +8,7 @@ import { Progress } from "@/components/ui/progress";
 import { ArrowLeft, Pencil, Mail, Phone, MapPin, CalendarDays, Building2, Clock, Wallet, Briefcase } from "lucide-react";
 import { toast } from "sonner";
 import { HrMemberDialog } from "@/components/hr-member-dialog";
+import { HrCompensationTab } from "@/components/hr-compensation";
 import {
   MEMBER_COLUMNS, CONTRACT_TYPES, STATUS_META, LEVEL_LABEL, initialsOf, costSummary,
   hourCost, monthlyCost, brl, brl2, fmtFull, fmtDay, type HrMember,
@@ -21,10 +22,10 @@ const WRITABLE_KEYS = [
   "name","email","phone","role","specialty","level","status","hourly_rate","avatar_url",
   "cost_mode","monthly_salary","monthly_hours","default_task_rate","task_rate_overrides","cost_notes",
   "contract_type","area","admitted_on","birth_date","work_location","hr_notes",
-  "company_legal_name","company_tax_id","company_contact",
+  "company_legal_name","company_tax_id","company_contact","payment_day","pix_key","bank_info","salary_review_months","last_review_on",
 ] as const;
 
-type ProfileTab = "professional" | "cost" | "activity";
+type ProfileTab = "professional" | "cost" | "compensation" | "activity";
 
 function MemberProfile() {
   const { memberId } = useParams({ from: "/_authenticated/team/$memberId" });
@@ -164,7 +165,7 @@ function MemberProfile() {
 
       {/* RH03-02 · abas */}
       <div className="flex items-center gap-1 rounded-full border border-border p-0.5 w-fit">
-        {([["professional", "Profissional"], ["cost", "Custo e capacidade"], ["activity", "Projetos e atividade"]] as const).map(([k, label]) => (
+        {([["professional", "Profissional"], ["cost", "Custo e capacidade"], ["compensation", "Remuneração"], ["activity", "Projetos e atividade"]] as const).map(([k, label]) => (
           <button
             key={k} onClick={() => setTab(k)}
             className={`px-3.5 py-1.5 rounded-full text-[13px] transition ${tab === k ? "bg-primary text-primary-foreground font-medium" : "hover:bg-muted"}`}
@@ -264,6 +265,10 @@ function MemberProfile() {
             </Card>
           )}
         </div>
+      )}
+
+      {tab === "compensation" && (
+        <HrCompensationTab member={member} onPatchMember={(patch) => save.mutate(patch)} />
       )}
 
       {tab === "activity" && (
