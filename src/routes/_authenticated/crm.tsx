@@ -1763,14 +1763,21 @@ function NewLeadModal({
               )}
             </div>
           </details>
+
+          {/* CRM02-13 — Rodapé com ações (830×50) */}
+          <div className="crm02-foot">
+            <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
+            <Button
+              className="gap-2 h-[42px] px-5"
+              onClick={() => create.mutate()}
+              disabled={!form.name.trim() || !form.service_type_id || create.isPending}
+            >
+              <CheckCircle2 size={16} />
+              {create.isPending ? "Salvando…" : "Salvar lead"}
+            </Button>
+          </div>
         </div>
 
-        <DialogFooter>
-          <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancelar</Button>
-          <Button onClick={() => create.mutate()} disabled={!form.name.trim() || !form.service_type_id || create.isPending}>
-            {create.isPending ? "Salvando…" : "Salvar lead"}
-          </Button>
-        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
