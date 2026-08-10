@@ -916,13 +916,18 @@ function StageRow({ stage, canUp, canDown, onMove, onPatch, onDelete }:{
                         <option value="live">Ao vivo</option>
                         <option value="premiere">Estreia</option>
                       </select>
-                      <Input
+                      <select
+                        className="h-7 rounded-lg border border-input bg-background px-2 text-xs w-36"
                         value={l.platform}
-                        onChange={e => draftLive(idx, { platform: e.target.value })}
-                        onBlur={() => commitLives(lives)}
-                        placeholder="Plataforma"
-                        className="h-7 text-xs rounded-lg w-32"
-                      />
+                        onChange={e => commitLives(lives.map((x, i) => (i === idx ? { ...x, platform: e.target.value } : x)))}
+                      >
+                        <option value="">Plataforma…</option>
+                        {platformOptions.map(p => <option key={p.id} value={p.name}>{p.name}</option>)}
+                        {l.platform && !platformOptions.some(p => p.name === l.platform) && (
+                          <option value={l.platform}>{l.platform}</option>
+                        )}
+                      </select>
+
 
                       <Button size="icon" variant="ghost" className="h-7 w-7 text-muted-foreground hover:text-destructive"
                         onClick={() => onPatch({ auto_live: lives.filter((_, i) => i !== idx) })}>
