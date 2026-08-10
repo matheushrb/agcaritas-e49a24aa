@@ -1012,6 +1012,88 @@ function StageRow({ stage, canUp, canDown, onMove, onPatch, onDelete }:{
                 </Button>
               </>
             )}
+
+            {panel === "subtasks" && (
+              <>
+                <div className="text-[11px] text-muted-foreground flex items-center gap-1">
+                  <GitBranch className="h-3 w-3" />
+                  Ao atingir esta etapa, estas <b>subtarefas</b> são criadas ligadas à tarefa — cada uma com seu próprio tipo de tarefa e valor.
+                </div>
+                <ul className="space-y-1.5">
+                  {subtasks.map((s, idx) => (
+                    <li key={idx} className="flex items-center gap-2">
+                      <Input
+                        value={s.title}
+                        onChange={e => draftSubtask(idx, { title: e.target.value })}
+                        onBlur={() => commitSubtasks(subtasks)}
+                        placeholder="Título da subtarefa"
+                        className="h-7 text-xs rounded-lg flex-1"
+                      />
+                      <select
+                        className="h-7 rounded-lg border border-input bg-background px-2 text-xs w-44"
+                        value={s.task_type_id ?? ""}
+                        onChange={e => commitSubtasks(subtasks.map((x, i) => (i === idx ? { ...x, task_type_id: e.target.value || null } : x)))}
+                      >
+                        <option value="">Mesmo tipo da tarefa pai</option>
+                        {typeOptions.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+                      </select>
+                      <Input
+                        type="number" min={0} step={0.01}
+                        value={s.value ?? ""}
+                        onChange={e => draftSubtask(idx, { value: e.target.value ? Number(e.target.value) : null })}
+                        onBlur={() => commitSubtasks(subtasks)}
+                        placeholder="R$"
+                        className="h-7 text-xs rounded-lg w-24"
+                      />
+                      <Button size="icon" variant="ghost" className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                        onClick={() => commitSubtasks(subtasks.filter((_, i) => i !== idx))}>
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
+                    </li>
+                  ))}
+                </ul>
+                <Button size="sm" variant="outline" className="h-7 rounded-full gap-1"
+                  onClick={() => commitSubtasks([...subtasks, { title: "", task_type_id: null, value: null }])}>
+                  <Plus className="h-3 w-3" /> Adicionar subtarefa
+                </Button>
+              </>
+            )}
+
+            {panel === "schedule" && (
+              <>
+                <div className="text-[11px] text-muted-foreground flex items-center gap-1">
+                  <CalendarClock className="h-3 w-3" />
+                  Prazo da etapa contado <b>em dias antes da entrega</b> da tarefa. Ex.: começa 5 dias antes e termina 4 dias antes.
+                </div>
+                <div className="flex items-center gap-3 flex-wrap">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-muted-foreground">Começa</span>
+                    <Input
+                      type="number" min={0} step={1} value={startOff}
+                      onChange={e => setStartOff(e.target.value)}
+                      onBlur={() => onPatch({ start_offset_days: startOff === "" ? null : Number(startOff) })}
+                      className="h-7 w-20 text-xs rounded-lg" placeholder="—"
+                    />
+                    <span className="text-xs text-muted-foreground">dias antes da entrega</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-muted-foreground">Termina</span>
+                    <Input
+                      type="number" min={0} step={1} value={endOff}
+                      onChange={e => setEndOff(e.target.value)}
+                      onBlur={() => onPatch({ end_offset_days: endOff === "" ? null : Number(endOff) })}
+                      className="h-7 w-20 text-xs rounded-lg" placeholder="—"
+                    />
+                    <span className="text-xs text-muted-foreground">dias antes da entrega</span>
+                  </div>
+                </div>
+                {startOff !== "" && endOff !== "" && Number(endOff) > Number(startOff) && (
+                  <p className="text-[11px] text-destructive">
+                    O término não pode ser mais cedo que o início — use um número menor em “Termina”.
+                  </p>
+                )}
+              </>
+            )}
           </div>
         </div>
       )}
