@@ -727,8 +727,6 @@ export function TaskWindow({
   });
 
 
-  const save = useMutation({
-    mutationFn: async () => {
   /** Cria/atualiza/remove as subtarefas reais ligadas à tarefa. */
   async function syncSubtasks(parentId: string, orgId: string) {
     if (removedSubtaskIds.length) {
