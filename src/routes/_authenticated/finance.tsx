@@ -135,7 +135,7 @@ function FinancePage() {
         />
       </div>
 
-      <FinanceEntryWindow open={newOpen} onOpenChange={setNewOpen} clients={clients} projects={projects} />
+      <FinanceEntryWindow open={newOpen} onOpenChange={setNewOpen} clients={clients} projects={projects} teamMembers={teamMembers} />
     </>
   );
 }
