@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
@@ -37,9 +37,6 @@ const PAYMENT_METHODS = [
   "PIX", "Boleto", "Boleto com PIX", "Transferência", "Cartão de crédito", "Dinheiro",
 ];
 
-const REVENUE_CATEGORIES = ["Mensalidade", "Projeto", "Tráfego pago", "Produção", "Consultoria", "Outros"];
-const EXPENSE_CATEGORIES = ["Pessoal", "Freelancer", "Fornecedores", "Ferramentas", "Marketing", "Impostos", "Outros"];
-
 const money = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
 type Props = {
@@ -48,12 +45,13 @@ type Props = {
   entry?: FinanceEntry | null;
   clients: { id: string; name: string }[];
   projects: { id: string; name: string }[];
+  teamMembers?: { id: string; name: string; payment_day?: number | null }[];
   defaultNature?: "revenue" | "expense";
   onSaved?: (id: string) => void;
 };
 
 export function FinanceEntryWindow({
-  open, onOpenChange, entry = null, clients, projects, defaultNature = "revenue", onSaved,
+  open, onOpenChange, entry = null, clients, projects, teamMembers = [], defaultNature = "revenue", onSaved,
 }: Props) {
   const qc = useQueryClient();
   const isEdit = !!entry?.id;
