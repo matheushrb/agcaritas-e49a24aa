@@ -212,6 +212,18 @@ export function NewProjectWizard({
     setTouched(true);
   };
 
+  /* Garantia: se as plataformas carregarem depois da escolha do tipo, aplica mesmo assim */
+  useEffect(() => {
+    if (!v.project_type || platforms.length === 0) return;
+    const t = typeOptions.find(o => o.value === v.project_type)?.raw as any;
+    const ids: string[] = Array.isArray(t?.platform_ids) ? t.platform_ids : [];
+    if (ids.length === 0) return;
+    const names = ids.map(id => (platforms as any[]).find(p => p.id === id)?.name).filter(Boolean) as string[];
+    const missing = names.filter(n => !v.social_platforms.includes(n));
+    if (missing.length) setV(p => ({ ...p, social_platforms: [...p.social_platforms, ...missing] }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [v.project_type, platforms.length, projectTypes.length]);
+
 
   const errors = {
     name: !v.name.trim(),
