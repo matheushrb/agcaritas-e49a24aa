@@ -645,6 +645,7 @@ function StageRow({ stage, canUp, canDown, onMove, onPatch, onDelete }:{
   const [checklist, setChecklist] = useState<string[]>(stage.auto_checklist ?? []);
   const [deliverables, setDeliverables] = useState<AutoDeliverable[]>(stage.auto_deliverables ?? []);
   const [lives, setLives] = useState<AutoLive[]>(stage.auto_live ?? []);
+  const { data: platformOptions = [] } = usePlatformOptions();
   const expanded = panel !== null;
   useEffect(() => { setName(stage.name); setWeight(stage.weight.toString()); }, [stage.id, stage.name, stage.weight]);
   useEffect(() => { setChecklist(stage.auto_checklist ?? []); }, [stage.id, stage.auto_checklist]);
