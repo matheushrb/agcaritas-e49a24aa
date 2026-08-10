@@ -1136,7 +1136,9 @@ function LeadDrawer({
                 className="w-full rounded-full"
                 onClick={() => onPatch({
                   scope_items: scopeItems.filter(i => i.title.trim()),
-                  estimated_value: scopeItems.reduce((a, i) => a + Number(i.qty || 0) * Number(i.unit_price || 0), 0),
+                  estimated_value: scopeItems.length
+          ? scopeItems.reduce((a, i) => a + Number(i.qty || 0) * Number(i.unit_price || 0), 0)
+          : (form.estimated_value ? Number(form.estimated_value) : 0),
                 })}
               >
                 Salvar escopo
@@ -1426,7 +1428,7 @@ function NewLeadModal({
     service_type_id: "", owner_id: "", next_contact_at: "",
     temperature: "warm" as Temperature, briefing_template_id: "",
     approach: "" as "" | "we" | "them",
-    expected_close_date: "", notes: "", probability: "",
+    expected_close_date: "", notes: "", probability: "", estimated_value: "",
   };
   const [form, setForm] = useState(empty);
   const [interests, setInterests] = useState<string[]>([]);
@@ -1465,7 +1467,9 @@ function NewLeadModal({
         interests,
         we_approached: form.approach === "we" ? true : form.approach === "them" ? false : null,
         scope_items: scopeItems.filter(i => i.title.trim()),
-        estimated_value: scopeItems.reduce((a, i) => a + Number(i.qty || 0) * Number(i.unit_price || 0), 0),
+        estimated_value: scopeItems.length
+          ? scopeItems.reduce((a, i) => a + Number(i.qty || 0) * Number(i.unit_price || 0), 0)
+          : (form.estimated_value ? Number(form.estimated_value) : 0),
         stage_id: form.stage_id || null,
         probability: form.probability ? Number(form.probability) : (stage?.default_probability ?? 0),
         temperature: form.temperature,
@@ -1493,7 +1497,7 @@ function NewLeadModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-[980px] w-[95vw] sm:max-w-[980px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2"><Users size={18} /> Novo lead</DialogTitle>
+          <DialogTitle className="flex items-center gap-2"><User size={18} /> Novo lead</DialogTitle>
           <DialogDescription>Registre uma nova oportunidade comercial em seu pipeline.</DialogDescription>
         </DialogHeader>
 
