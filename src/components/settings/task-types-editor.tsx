@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
@@ -101,6 +101,7 @@ export function TaskTypesEditor() {
 
   const { data: types = [] } = useQuery<TaskType[]>({
     queryKey: ["task-types"],
+    staleTime: 5 * 60_000,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("task_types")
@@ -113,6 +114,7 @@ export function TaskTypesEditor() {
 
   const { data: stagesByType = {} } = useQuery<Record<string, TaskTypeStage[]>>({
     queryKey: ["task-type-stages"],
+    staleTime: 5 * 60_000,
     queryFn: async () => {
       const { data, error } = await (supabase as any)
         .from("task_type_stages")
@@ -358,22 +360,32 @@ function TypeEditorPanel({ type, stages, onDelete, onDuplicate }:{
   const [defaultPrice, setDefaultPrice] = useState(type.default_price?.toString() ?? "");
 
   // Sync when switching type
-  useMemo(() => {
+  useEffect(() => {
     setName(type.name);
     setDescription(type.description ?? "");
     setColor(type.color);
     setIcon(type.icon ?? null);
     setBillingModel(type.default_billing_model ?? "");
     setDefaultPrice(type.default_price?.toString() ?? "");
-  }, [type.id]);
+  }, [type.id, type.name, type.description, type.color, type.icon, type.default_billing_model, type.default_price]);
 
   const updateType = useMutation({
     mutationFn: async (patch: Partial<TaskType>) => {
       const { error } = await supabase.from("task_types").update(patch).eq("id", type.id);
       if (error) throw error;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["task-types"] }),
-    onError: (e: Error) => toast.error(e.message),
+    onMutate: async (patch: Partial<TaskType>) => {
+      await qc.cancelQueries({ queryKey: ["task-types"] });
+      const previous = qc.getQueryData<TaskType[]>(["task-types"]);
+      qc.setQueryData<TaskType[]>(["task-types"], current =>
+        current?.map(item => item.id === type.id ? { ...item, ...patch } : item),
+      );
+      return { previous };
+    },
+    onError: (e: Error, _patch, context) => {
+      if (context?.previous) qc.setQueryData(["task-types"], context.previous);
+      toast.error(e.message);
+    },
   });
 
   const addStage = useMutation({
@@ -400,8 +412,22 @@ function TypeEditorPanel({ type, stages, onDelete, onDuplicate }:{
       const { error } = await supabase.from("task_type_stages").update(patch).eq("id", id);
       if (error) throw error;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["task-type-stages"] }),
-    onError: (e: Error) => toast.error(e.message),
+    onMutate: async ({ id, patch }) => {
+      await qc.cancelQueries({ queryKey: ["task-type-stages"] });
+      const previous = qc.getQueryData<Record<string, TaskTypeStage[]>>(["task-type-stages"]);
+      qc.setQueryData<Record<string, TaskTypeStage[]>>(["task-type-stages"], current => {
+        if (!current) return current;
+        return {
+          ...current,
+          [type.id]: (current[type.id] ?? []).map(item => item.id === id ? { ...item, ...patch } : item),
+        };
+      });
+      return { previous };
+    },
+    onError: (e: Error, _variables, context) => {
+      if (context?.previous) qc.setQueryData(["task-type-stages"], context.previous);
+      toast.error(e.message);
+    },
   });
 
   const deleteStage = useMutation({
@@ -685,7 +711,7 @@ function StageRow({ stage, canUp, canDown, onMove, onPatch, onDelete }:{
     <Button
       size="icon" variant="ghost"
       className={cn(
-        "h-8 w-8 rounded-full transition-colors",
+        "h-8 w-8 rounded-full transition-colors hover:bg-primary/10 hover:text-primary",
         count > 0 && "text-primary",
         panel === p && "bg-primary/10 text-primary ring-1 ring-primary/25",
       )}
@@ -704,7 +730,10 @@ function StageRow({ stage, canUp, canDown, onMove, onPatch, onDelete }:{
   );
 
   return (
-    <li className={cn("relative transition-colors", expanded ? "bg-primary/[0.045]" : "hover:bg-muted/20")}>
+    <li className={cn(
+      "relative bg-card transition-colors",
+      expanded ? "bg-primary/10" : "hover:bg-primary/[0.035]",
+    )}>
       <span
         className="absolute left-0 top-0 bottom-0 w-[3px]"
         style={{ backgroundColor: expanded ? stage.color : "transparent" }}
@@ -789,7 +818,7 @@ function StageRow({ stage, canUp, canDown, onMove, onPatch, onDelete }:{
 
       {expanded && (
         <div className="px-3 pb-3 pl-14">
-          <div className="rounded-xl border border-border bg-card p-3 space-y-2 shadow-sm">
+            <div className="rounded-xl border border-primary/20 bg-background p-3 space-y-2 shadow-sm">
             {panel === "checklist" && (
               <>
                 <div className="text-[11px] text-muted-foreground flex items-center gap-1">
@@ -879,14 +908,14 @@ function StageRow({ stage, canUp, canDown, onMove, onPatch, onDelete }:{
                       />
 
                       <Button size="icon" variant="ghost" className="h-7 w-7 text-muted-foreground hover:text-destructive"
-                        onClick={() => onPatch({ auto_deliverables: deliverables.filter((_, i) => i !== idx) })}>
+                        onClick={() => commitDeliverables(deliverables.filter((_, i) => i !== idx))}>
                         <Trash2 className="h-3 w-3" />
                       </Button>
                     </li>
                   ))}
                 </ul>
                 <Button size="sm" variant="outline" className="h-7 rounded-full gap-1"
-                  onClick={() => onPatch({ auto_deliverables: [...deliverables, { label: "", type: "video", platform: "", value: null }] })}>
+                  onClick={() => commitDeliverables([...deliverables, { label: "", type: "video", platform: "", value: null }])}>
                   <Plus className="h-3 w-3" /> Adicionar entregável
                 </Button>
               </>
@@ -930,14 +959,14 @@ function StageRow({ stage, canUp, canDown, onMove, onPatch, onDelete }:{
 
 
                       <Button size="icon" variant="ghost" className="h-7 w-7 text-muted-foreground hover:text-destructive"
-                        onClick={() => onPatch({ auto_live: lives.filter((_, i) => i !== idx) })}>
+                        onClick={() => commitLives(lives.filter((_, i) => i !== idx))}>
                         <Trash2 className="h-3 w-3" />
                       </Button>
                     </li>
                   ))}
                 </ul>
                 <Button size="sm" variant="outline" className="h-7 rounded-full gap-1"
-                  onClick={() => onPatch({ auto_live: [...lives, { title: "", kind: "live", platform: "" }] })}>
+                  onClick={() => commitLives([...lives, { title: "", kind: "live", platform: "" }])}>
                   <Plus className="h-3 w-3" /> Adicionar transmissão
                 </Button>
               </>
