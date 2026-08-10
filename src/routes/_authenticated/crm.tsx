@@ -1493,18 +1493,27 @@ function NewLeadModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[980px] w-[95vw] sm:max-w-[980px] max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2"><User size={18} /> Novo lead</DialogTitle>
+      <DialogContent className="max-w-[905px] w-[95vw] sm:max-w-[905px] max-h-[90vh] overflow-y-auto p-6">
+        <DialogHeader className="sr-only">
+          <DialogTitle>Novo lead</DialogTitle>
           <DialogDescription>Registre uma nova oportunidade comercial em seu pipeline.</DialogDescription>
         </DialogHeader>
 
-        <div className="cw">
-          {/* CRM02-06 / CRM02-07 — Origem do contato + Temperatura */}
-          <div className="cw-grid" style={{ display: "grid", gridTemplateColumns: "380px 1fr", gap: 16 }}>
+        <div className="cw crm02">
+          {/* CRM02-05 — Cabeçalho da janela */}
+          <div className="crm02-head">
+            <span className="crm02-head-ico"><User size={19} /></span>
+            <div>
+              <h3>Novo lead</h3>
+              <p>Registre uma nova oportunidade comercial em seu pipeline.</p>
+            </div>
+          </div>
+
+          {/* CRM02-06 (355×85) / CRM02-07 (450×85) */}
+          <div className="crm02-toggles">
             <div className="cw-field">
-              <label className="cw-label">Origem do contato</label>
-              <div className="cw-grid cw-grid-2">
+              <label className="cw-label-ico"><Target size={14} /> Origem do contato</label>
+              <div className="cw-grid cw-grid-2" style={{ gap: 12 }}>
                 <button type="button" className={`cw-choice${form.approach === "we" ? " is-on" : ""}`} onClick={() => setForm({ ...form, approach: "we" })}>
                   <span className="cw-choice-title"><Send size={15} /> Nós abordamos</span>
                 </button>
@@ -1514,8 +1523,8 @@ function NewLeadModal({
               </div>
             </div>
             <div className="cw-field">
-              <label className="cw-label">Temperatura do lead</label>
-              <div className="cw-grid cw-grid-3">
+              <label className="cw-label-ico"><Thermometer size={14} /> Temperatura do lead</label>
+              <div className="cw-grid cw-grid-3" style={{ gap: 12 }}>
                 {TEMPERATURES.map(t => {
                   const Ico = t.icon;
                   return (
@@ -1533,9 +1542,9 @@ function NewLeadModal({
             </div>
           </div>
 
-          {/* CRM02-08 — linha única de propriedades */}
-          <div className="cw-section" style={{ borderTop: "none", paddingTop: 16, marginTop: 12 }}>
-            <div className="cw-grid" style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr) 150px", gap: 12 }}>
+          {/* CRM02-08 — linha única de propriedades (830×87) */}
+          <div className="crm02-props">
+
               <div className="cw-field">
                 <label className="cw-label">Etapa do pipeline *</label>
                 <select
@@ -1599,8 +1608,8 @@ function NewLeadModal({
                   ))}
                 </select>
               </div>
-            </div>
           </div>
+
 
           {/* CRM02-09 — Dados da empresa e contato */}
           <div className="cw-section">
@@ -1620,7 +1629,10 @@ function NewLeadModal({
               </div>
               <div className="cw-field">
                 <label className="cw-label">Telefone / WhatsApp</label>
-                <input className="cw-input" value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} />
+                <div className="crm02-adorn has-r">
+                  <input className="cw-input" value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} />
+                  <span className="crm02-adorn-r is-wa"><Phone size={14} /></span>
+                </div>
               </div>
             </div>
           </div>
@@ -1630,52 +1642,65 @@ function NewLeadModal({
             <div className="cw-section-head"><h4>Informações comerciais</h4></div>
             <div className="cw-grid cw-grid-4">
               <div className="cw-field">
-                <label className="cw-label">Valor estimado</label>
-                <input
-                  className="cw-input"
-                  type="number" min={0} step="0.01"
-                  placeholder="R$ 0,00"
-                  value={scopeTotal > 0 ? String(scopeTotal) : form.estimated_value}
-                  disabled={scopeTotal > 0}
-                  onChange={e => setForm({ ...form, estimated_value: e.target.value })}
-                />
+                <label className="cw-label">Valor estimado *</label>
+                <div className="crm02-adorn has-l">
+                  <span className="crm02-adorn-l">R$</span>
+                  <input
+                    className="cw-input"
+                    type="number" min={0} step="0.01"
+                    placeholder="0,00"
+                    value={scopeTotal > 0 ? String(scopeTotal) : form.estimated_value}
+                    disabled={scopeTotal > 0}
+                    onChange={e => setForm({ ...form, estimated_value: e.target.value })}
+                  />
+                </div>
               </div>
               <div className="cw-field">
-                <label className="cw-label">Probabilidade de fechamento (%)</label>
-                <input
-                  className="cw-input"
-                  type="number" min={0} max={100}
-                  value={form.probability}
-                  onChange={e => setForm({ ...form, probability: e.target.value })}
-                />
+                <label className="cw-label">Probabilidade de fechamento *</label>
+                <div className="crm02-adorn has-r">
+                  <input
+                    className="cw-input"
+                    type="number" min={0} max={100}
+                    value={form.probability}
+                    onChange={e => setForm({ ...form, probability: e.target.value })}
+                  />
+                  <span className="crm02-adorn-r">%</span>
+                </div>
               </div>
               <div className="cw-field">
                 <label className="cw-label">Data de fechamento esperada</label>
-                <input
-                  className="cw-input"
-                  type="date"
-                  value={form.expected_close_date}
-                  onChange={e => setForm({ ...form, expected_close_date: e.target.value })}
-                />
+                <div className="crm02-adorn has-r">
+                  <input
+                    className="cw-input"
+                    type="date"
+                    value={form.expected_close_date}
+                    onChange={e => setForm({ ...form, expected_close_date: e.target.value })}
+                  />
+                  <span className="crm02-adorn-r"><CalendarDays size={14} /></span>
+                </div>
               </div>
               <div className="cw-field">
                 <label className="cw-label">Próximo contato</label>
-                <input
-                  className="cw-input"
-                  type="date"
-                  value={form.next_contact_at}
-                  onChange={e => setForm({ ...form, next_contact_at: e.target.value })}
-                />
+                <div className="crm02-adorn has-r">
+                  <input
+                    className="cw-input"
+                    type="date"
+                    value={form.next_contact_at}
+                    onChange={e => setForm({ ...form, next_contact_at: e.target.value })}
+                  />
+                  <span className="crm02-adorn-r"><CalendarDays size={14} /></span>
+                </div>
               </div>
             </div>
           </div>
 
+
           {/* CRM02-11 / CRM02-12 — Interesses e Observações lado a lado */}
           <div className="cw-section">
             <div className="cw-grid cw-grid-2">
-              <div className="cw-field cw-box" style={{ border: "1px solid var(--cw-divider)", borderRadius: 12, padding: 14 }}>
-                <label className="cw-label">Interesses / Escopo <span style={{ fontWeight: 400, opacity: .6 }}>(opcional)</span></label>
-                <p style={{ fontSize: 11, opacity: .6, margin: "0 0 8px" }}>Adicione os principais temas de interesse deste lead.</p>
+              <div className="cw-field crm02-panel">
+                <div className="crm02-panel-t">Interesses / Escopo <span>(opcional)</span></div>
+                <div className="crm02-panel-d">Adicione os principais temas de interesse deste lead.</div>
                 {interests.length > 0 && (
                   <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 6 }}>
                     {interests.map(item => (
@@ -1701,9 +1726,10 @@ function NewLeadModal({
                   }}
                 />
               </div>
-              <div className="cw-field cw-box" style={{ border: "1px solid var(--cw-divider)", borderRadius: 12, padding: 14 }}>
-                <label className="cw-label">Observações <span style={{ fontWeight: 400, opacity: .6 }}>(opcional)</span></label>
-                <p style={{ fontSize: 11, opacity: .6, margin: "0 0 8px" }}>Descreva o contexto, necessidades e próximos passos…</p>
+              <div className="cw-field crm02-panel">
+                <div className="crm02-panel-t">Observações <span>(opcional)</span></div>
+                <div className="crm02-panel-d">Descreva o contexto, necessidades e próximos passos…</div>
+
                 <textarea
                   className="cw-textarea"
                   rows={4}
@@ -1737,14 +1763,21 @@ function NewLeadModal({
               )}
             </div>
           </details>
+
+          {/* CRM02-13 — Rodapé com ações (830×50) */}
+          <div className="crm02-foot">
+            <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
+            <Button
+              className="gap-2 h-[42px] px-5"
+              onClick={() => create.mutate()}
+              disabled={!form.name.trim() || !form.service_type_id || create.isPending}
+            >
+              <CheckCircle2 size={16} />
+              {create.isPending ? "Salvando…" : "Salvar lead"}
+            </Button>
+          </div>
         </div>
 
-        <DialogFooter>
-          <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancelar</Button>
-          <Button onClick={() => create.mutate()} disabled={!form.name.trim() || !form.service_type_id || create.isPending}>
-            {create.isPending ? "Salvando…" : "Salvar lead"}
-          </Button>
-        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
