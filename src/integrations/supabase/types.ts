@@ -2924,6 +2924,8 @@ export type Database = {
       task_type_stages: {
         Row: {
           auto_checklist: Json
+          auto_deliverables: Json
+          auto_live: Json
           color: string
           created_at: string
           id: string
@@ -2937,6 +2939,8 @@ export type Database = {
         }
         Insert: {
           auto_checklist?: Json
+          auto_deliverables?: Json
+          auto_live?: Json
           color?: string
           created_at?: string
           id?: string
@@ -2950,6 +2954,8 @@ export type Database = {
         }
         Update: {
           auto_checklist?: Json
+          auto_deliverables?: Json
+          auto_live?: Json
           color?: string
           created_at?: string
           id?: string

@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
-import { Plus, Trash2, GripVertical, Layers, Palette, Copy, Pencil, ChevronRight, ChevronDown, ListChecks, Info, Radio, SlidersHorizontal, FileText } from "lucide-react";
+import { Plus, Trash2, GripVertical, Layers, Palette, Copy, Pencil, ChevronRight, ChevronDown, ListChecks, Info, Radio, SlidersHorizontal, FileText, Package } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -44,7 +44,22 @@ export type TaskTypeStage = {
   status_group: StatusGroup;
   weight: number;
   auto_checklist: string[];
+  auto_deliverables: AutoDeliverable[];
+  auto_live: AutoLive[];
 };
+
+/** Entregável criado automaticamente ao atingir a etapa. */
+export type AutoDeliverable = { label: string; platform: string; type: string; value: number | null };
+/** Transmissão ao vivo / estreia criada automaticamente ao atingir a etapa. */
+export type AutoLive = { title: string; kind: "live" | "premiere"; platform: string };
+
+export const AUTO_DELIVERABLE_TYPES = [
+  { value: "video", label: "Vídeo" },
+  { value: "graphic", label: "Gráfico / Arte" },
+  { value: "audio", label: "Áudio" },
+  { value: "broadcast", label: "Transmissão online" },
+  { value: "other", label: "Outro" },
+];
 
 const STATUS_GROUP_META: Record<StatusGroup, { label: string; dot: string }> = {
   todo:        { label: "A fazer",      dot: "bg-slate-400" },
@@ -86,12 +101,17 @@ export function TaskTypesEditor() {
     queryFn: async () => {
       const { data, error } = await (supabase as any)
         .from("task_type_stages")
-        .select("id,task_type_id,name,\"order\",color,status_group,weight,auto_checklist")
+        .select("id,task_type_id,name,\"order\",color,status_group,weight,auto_checklist,auto_deliverables,auto_live")
         .order("order");
       if (error) throw error;
       const map: Record<string, TaskTypeStage[]> = {};
       for (const s of (data ?? []) as any[]) {
-        const norm: TaskTypeStage = { ...s, auto_checklist: Array.isArray(s.auto_checklist) ? s.auto_checklist : [] };
+        const norm: TaskTypeStage = {
+          ...s,
+          auto_checklist: Array.isArray(s.auto_checklist) ? s.auto_checklist : [],
+          auto_deliverables: Array.isArray(s.auto_deliverables) ? s.auto_deliverables : [],
+          auto_live: Array.isArray(s.auto_live) ? s.auto_live : [],
+        };
         (map[s.task_type_id] ||= []).push(norm);
       }
       return map;
@@ -159,6 +179,8 @@ export function TaskTypesEditor() {
           status_group: s.status_group,
           weight: s.weight,
           auto_checklist: s.auto_checklist ?? [],
+          auto_deliverables: s.auto_deliverables ?? [],
+          auto_live: s.auto_live ?? [],
         }));
         await (supabase as any).from("task_type_stages").insert(payload);
       }
@@ -602,9 +624,12 @@ function StageRow({ stage, canUp, canDown, onMove, onPatch, onDelete }:{
 }) {
   const [name, setName] = useState(stage.name);
   const [weight, setWeight] = useState(stage.weight.toString());
-  const [expanded, setExpanded] = useState(false);
+  const [panel, setPanel] = useState<null | "checklist" | "deliverables" | "live">(null);
   const [newItem, setNewItem] = useState("");
   const checklist = stage.auto_checklist ?? [];
+  const deliverables = stage.auto_deliverables ?? [];
+  const lives = stage.auto_live ?? [];
+  const expanded = panel !== null;
   useMemo(() => { setName(stage.name); setWeight(stage.weight.toString()); }, [stage.id, stage.name, stage.weight]);
 
   function addItem() {
@@ -614,17 +639,52 @@ function StageRow({ stage, canUp, canDown, onMove, onPatch, onDelete }:{
     setNewItem("");
   }
   function removeItem(idx: number) {
-    const next = checklist.filter((_, i) => i !== idx);
-    onPatch({ auto_checklist: next });
+    onPatch({ auto_checklist: checklist.filter((_, i) => i !== idx) });
   }
   function updateItem(idx: number, value: string) {
     const next = [...checklist];
     next[idx] = value;
     onPatch({ auto_checklist: next });
   }
+  function patchDeliverable(idx: number, patch: Partial<AutoDeliverable>) {
+    const next = deliverables.map((d, i) => (i === idx ? { ...d, ...patch } : d));
+    onPatch({ auto_deliverables: next });
+  }
+  function patchLive(idx: number, patch: Partial<AutoLive>) {
+    const next = lives.map((l, i) => (i === idx ? { ...l, ...patch } : l));
+    onPatch({ auto_live: next });
+  }
+
+  const toggle = (p: "checklist" | "deliverables" | "live") => setPanel(cur => (cur === p ? null : p));
+
+  const tabBtn = (p: "checklist" | "deliverables" | "live", icon: React.ReactNode, count: number, title: string) => (
+    <Button
+      size="icon" variant="ghost"
+      className={cn(
+        "h-8 w-8 rounded-full transition-colors",
+        count > 0 && "text-primary",
+        panel === p && "bg-primary/10 text-primary ring-1 ring-primary/25",
+      )}
+      onClick={() => toggle(p)}
+      title={title}
+    >
+      <span className="relative inline-flex items-center">
+        {icon}
+        {count > 0 && (
+          <span className="absolute -top-1.5 -right-2 text-[9px] font-semibold bg-primary text-primary-foreground rounded-full min-w-[14px] h-[14px] px-1 flex items-center justify-center">
+            {count}
+          </span>
+        )}
+      </span>
+    </Button>
+  );
 
   return (
-    <li className="hover:bg-muted/30">
+    <li className={cn("relative transition-colors", expanded ? "bg-primary/[0.045]" : "hover:bg-muted/20")}>
+      <span
+        className="absolute left-0 top-0 bottom-0 w-[3px]"
+        style={{ backgroundColor: expanded ? stage.color : "transparent" }}
+      />
       <div className="flex items-center gap-2 px-3 py-2">
         <div className="flex flex-col">
           <button className="text-muted-foreground hover:text-foreground disabled:opacity-30" disabled={!canUp} onClick={() => onMove(-1)} title="Mover para cima">
@@ -637,7 +697,7 @@ function StageRow({ stage, canUp, canDown, onMove, onPatch, onDelete }:{
 
         <Popover>
           <PopoverTrigger asChild>
-            <button className="h-6 w-6 rounded-md shrink-0" style={{ backgroundColor: stage.color }} title="Cor" />
+            <button className="h-6 w-6 rounded-full shrink-0 ring-2 ring-background shadow-sm" style={{ backgroundColor: stage.color }} title="Cor" />
           </PopoverTrigger>
           <PopoverContent className="p-2 w-auto rounded-xl">
             <div className="flex gap-1.5 flex-wrap max-w-[180px]">
@@ -654,11 +714,11 @@ function StageRow({ stage, canUp, canDown, onMove, onPatch, onDelete }:{
           value={name}
           onChange={e => setName(e.target.value)}
           onBlur={() => name.trim() && name !== stage.name && onPatch({ name: name.trim() })}
-          className="h-8 flex-1 rounded-lg border-none shadow-none focus-visible:ring-1"
+          className="h-8 flex-1 rounded-lg border-none bg-transparent shadow-none font-medium focus-visible:ring-1"
         />
 
         <Select value={stage.status_group} onValueChange={v => onPatch({ status_group: v as StatusGroup })}>
-          <SelectTrigger className="h-8 rounded-lg w-40 text-xs">
+          <SelectTrigger className="h-8 rounded-lg w-40 text-xs bg-background">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -691,24 +751,12 @@ function StageRow({ stage, canUp, canDown, onMove, onPatch, onDelete }:{
           value={weight}
           onChange={e => setWeight(e.target.value)}
           onBlur={() => onPatch({ weight: Number(weight) || 1 })}
-          className="h-8 w-16 rounded-lg text-xs"
+          className="h-8 w-16 rounded-lg text-xs bg-background"
         />
 
-        <Button
-          size="icon" variant="ghost"
-          className={cn("h-8 w-8 rounded-full", checklist.length > 0 && "text-primary")}
-          onClick={() => setExpanded(v => !v)}
-          title="Checklist automático"
-        >
-          <span className="relative inline-flex items-center">
-            <ListChecks className="h-4 w-4" />
-            {checklist.length > 0 && (
-              <span className="absolute -top-1.5 -right-2 text-[9px] font-semibold bg-primary text-primary-foreground rounded-full min-w-[14px] h-[14px] px-1 flex items-center justify-center">
-                {checklist.length}
-              </span>
-            )}
-          </span>
-        </Button>
+        {tabBtn("checklist", <ListChecks className="h-4 w-4" />, checklist.length, "Checklist automático")}
+        {tabBtn("deliverables", <Package className="h-4 w-4" />, deliverables.length, "Entregáveis automáticos")}
+        {tabBtn("live", <Radio className="h-4 w-4" />, lives.length, "Transmissões ao vivo automáticas")}
 
         <Button size="icon" variant="ghost" className="h-8 w-8 rounded-full text-muted-foreground hover:text-destructive" onClick={onDelete} title="Excluir">
           <Trash2 className="h-3.5 w-3.5" />
@@ -716,52 +764,149 @@ function StageRow({ stage, canUp, canDown, onMove, onPatch, onDelete }:{
       </div>
 
       {expanded && (
-        <div className="px-3 pb-3 pl-14 space-y-1.5">
-          <div className="text-[11px] text-muted-foreground flex items-center gap-1">
-            <ListChecks className="h-3 w-3" />
-            Ao atingir esta etapa, estes itens são criados como subtarefas automaticamente.
-          </div>
-          {checklist.length > 0 && (
-            <ul className="space-y-1">
-              {checklist.map((item, idx) => (
-                <li key={idx} className="flex items-center gap-2">
-                  <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/50" />
+        <div className="px-3 pb-3 pl-14">
+          <div className="rounded-xl border border-border bg-card p-3 space-y-2 shadow-sm">
+            {panel === "checklist" && (
+              <>
+                <div className="text-[11px] text-muted-foreground flex items-center gap-1">
+                  <ListChecks className="h-3 w-3" />
+                  Ao atingir esta etapa, estes itens são criados como subtarefas automaticamente.
+                </div>
+                {checklist.length > 0 && (
+                  <ul className="space-y-1">
+                    {checklist.map((item, idx) => (
+                      <li key={idx} className="flex items-center gap-2">
+                        <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/50" />
+                        <Input
+                          value={item}
+                          onChange={e => {
+                            const next = [...checklist]; next[idx] = e.target.value;
+                            onPatch({ auto_checklist: next });
+                          }}
+                          onBlur={e => updateItem(idx, e.target.value)}
+                          className="h-7 text-xs rounded-lg"
+                        />
+                        <Button size="icon" variant="ghost" className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                          onClick={() => removeItem(idx)}>
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                <div className="flex items-center gap-2 pt-1">
                   <Input
-                    value={item}
-                    onChange={e => {
-                      const v = e.target.value;
-                      const next = [...checklist]; next[idx] = v;
-                      // local update only; commit on blur
-                      onPatch({ auto_checklist: next });
-                    }}
-                    onBlur={e => updateItem(idx, e.target.value)}
+                    value={newItem}
+                    onChange={e => setNewItem(e.target.value)}
+                    onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); addItem(); } }}
+                    placeholder="Novo item da checklist…"
                     className="h-7 text-xs rounded-lg"
                   />
-                  <Button size="icon" variant="ghost" className="h-7 w-7 text-muted-foreground hover:text-destructive"
-                    onClick={() => removeItem(idx)}>
-                    <Trash2 className="h-3 w-3" />
+                  <Button size="sm" variant="outline" className="h-7 rounded-full gap-1" onClick={addItem}>
+                    <Plus className="h-3 w-3" /> Adicionar
                   </Button>
-                </li>
-              ))}
-            </ul>
-          )}
-          <div className="flex items-center gap-2 pt-1">
-            <Input
-              value={newItem}
-              onChange={e => setNewItem(e.target.value)}
-              onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); addItem(); } }}
-              placeholder="Novo item da checklist…"
-              className="h-7 text-xs rounded-lg"
-            />
-            <Button size="sm" variant="outline" className="h-7 rounded-full gap-1" onClick={addItem}>
-              <Plus className="h-3 w-3" /> Adicionar
-            </Button>
+                </div>
+              </>
+            )}
+
+            {panel === "deliverables" && (
+              <>
+                <div className="text-[11px] text-muted-foreground flex items-center gap-1">
+                  <Package className="h-3 w-3" />
+                  Ao atingir esta etapa, estes entregáveis são criados na tarefa (com valor sugerido, se informado).
+                </div>
+                <ul className="space-y-1.5">
+                  {deliverables.map((d, idx) => (
+                    <li key={idx} className="flex items-center gap-2">
+                      <Input
+                        value={d.label}
+                        onChange={e => patchDeliverable(idx, { label: e.target.value })}
+                        placeholder="Nome do entregável"
+                        className="h-7 text-xs rounded-lg flex-1"
+                      />
+                      <select
+                        className="h-7 rounded-lg border border-input bg-background px-2 text-xs w-36"
+                        value={d.type}
+                        onChange={e => patchDeliverable(idx, { type: e.target.value })}
+                      >
+                        {AUTO_DELIVERABLE_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+                      </select>
+                      <Input
+                        value={d.platform}
+                        onChange={e => patchDeliverable(idx, { platform: e.target.value })}
+                        placeholder="Plataforma"
+                        className="h-7 text-xs rounded-lg w-32"
+                      />
+                      <Input
+                        type="number" min={0} step={0.01}
+                        value={d.value ?? ""}
+                        onChange={e => patchDeliverable(idx, { value: e.target.value ? Number(e.target.value) : null })}
+                        placeholder="R$"
+                        className="h-7 text-xs rounded-lg w-24"
+                      />
+                      <Button size="icon" variant="ghost" className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                        onClick={() => onPatch({ auto_deliverables: deliverables.filter((_, i) => i !== idx) })}>
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
+                    </li>
+                  ))}
+                </ul>
+                <Button size="sm" variant="outline" className="h-7 rounded-full gap-1"
+                  onClick={() => onPatch({ auto_deliverables: [...deliverables, { label: "", type: "video", platform: "", value: null }] })}>
+                  <Plus className="h-3 w-3" /> Adicionar entregável
+                </Button>
+              </>
+            )}
+
+            {panel === "live" && (
+              <>
+                <div className="text-[11px] text-muted-foreground flex items-center gap-1">
+                  <Radio className="h-3 w-3" />
+                  Ao atingir esta etapa, estas transmissões são criadas na aba <b>Ao Vivo / Estreia</b> da tarefa.
+                </div>
+                <ul className="space-y-1.5">
+                  {lives.map((l, idx) => (
+                    <li key={idx} className="flex items-center gap-2">
+                      <Input
+                        value={l.title}
+                        onChange={e => patchLive(idx, { title: e.target.value })}
+                        placeholder="Título da transmissão"
+                        className="h-7 text-xs rounded-lg flex-1"
+                      />
+                      <select
+                        className="h-7 rounded-lg border border-input bg-background px-2 text-xs w-36"
+                        value={l.kind}
+                        onChange={e => patchLive(idx, { kind: e.target.value as AutoLive["kind"] })}
+                      >
+                        <option value="live">Ao vivo</option>
+                        <option value="premiere">Estreia</option>
+                      </select>
+                      <Input
+                        value={l.platform}
+                        onChange={e => patchLive(idx, { platform: e.target.value })}
+                        placeholder="Plataforma"
+                        className="h-7 text-xs rounded-lg w-32"
+                      />
+                      <Button size="icon" variant="ghost" className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                        onClick={() => onPatch({ auto_live: lives.filter((_, i) => i !== idx) })}>
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
+                    </li>
+                  ))}
+                </ul>
+                <Button size="sm" variant="outline" className="h-7 rounded-full gap-1"
+                  onClick={() => onPatch({ auto_live: [...lives, { title: "", kind: "live", platform: "" }] })}>
+                  <Plus className="h-3 w-3" /> Adicionar transmissão
+                </Button>
+              </>
+            )}
           </div>
         </div>
       )}
     </li>
   );
 }
+
 
 function AgencySuggestion({ onApply }: { onApply: (price: number) => void }) {
   const { data: pricing } = useAgencyPricing();
