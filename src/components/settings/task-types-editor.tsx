@@ -61,6 +61,21 @@ export const AUTO_DELIVERABLE_TYPES = [
   { value: "other", label: "Outro" },
 ];
 
+/** Plataformas cadastradas (Configurações › Plataformas) para seleção nas automações. */
+function usePlatformOptions() {
+  return useQuery<{ id: string; name: string }[]>({
+    queryKey: ["platforms-options"],
+    staleTime: 5 * 60_000,
+    queryFn: async () => {
+      const { data } = await (supabase as any)
+        .from("platforms").select("id,name").eq("active", true).order("name");
+      return (data ?? []) as { id: string; name: string }[];
+    },
+  });
+}
+
+
+
 const STATUS_GROUP_META: Record<StatusGroup, { label: string; dot: string }> = {
   todo:        { label: "A fazer",      dot: "bg-slate-400" },
   in_progress: { label: "Em andamento", dot: "bg-blue-500" },
