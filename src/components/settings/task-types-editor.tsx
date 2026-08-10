@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
@@ -626,34 +626,42 @@ function StageRow({ stage, canUp, canDown, onMove, onPatch, onDelete }:{
   const [weight, setWeight] = useState(stage.weight.toString());
   const [panel, setPanel] = useState<null | "checklist" | "deliverables" | "live">(null);
   const [newItem, setNewItem] = useState("");
-  const checklist = stage.auto_checklist ?? [];
-  const deliverables = stage.auto_deliverables ?? [];
-  const lives = stage.auto_live ?? [];
+  // Rascunhos locais — digitação não dispara gravação no banco a cada tecla.
+  const [checklist, setChecklist] = useState<string[]>(stage.auto_checklist ?? []);
+  const [deliverables, setDeliverables] = useState<AutoDeliverable[]>(stage.auto_deliverables ?? []);
+  const [lives, setLives] = useState<AutoLive[]>(stage.auto_live ?? []);
   const expanded = panel !== null;
-  useMemo(() => { setName(stage.name); setWeight(stage.weight.toString()); }, [stage.id, stage.name, stage.weight]);
+  useEffect(() => { setName(stage.name); setWeight(stage.weight.toString()); }, [stage.id, stage.name, stage.weight]);
+  useEffect(() => { setChecklist(stage.auto_checklist ?? []); }, [stage.id, stage.auto_checklist]);
+  useEffect(() => { setDeliverables(stage.auto_deliverables ?? []); }, [stage.id, stage.auto_deliverables]);
+  useEffect(() => { setLives(stage.auto_live ?? []); }, [stage.id, stage.auto_live]);
+
+  function commitChecklist(next: string[]) { setChecklist(next); onPatch({ auto_checklist: next }); }
+  function commitDeliverables(next: AutoDeliverable[]) { setDeliverables(next); onPatch({ auto_deliverables: next }); }
+  function commitLives(next: AutoLive[]) { setLives(next); onPatch({ auto_live: next }); }
 
   function addItem() {
     const v = newItem.trim();
     if (!v) return;
-    onPatch({ auto_checklist: [...checklist, v] });
+    commitChecklist([...checklist, v]);
     setNewItem("");
   }
   function removeItem(idx: number) {
-    onPatch({ auto_checklist: checklist.filter((_, i) => i !== idx) });
+    commitChecklist(checklist.filter((_, i) => i !== idx));
   }
   function updateItem(idx: number, value: string) {
     const next = [...checklist];
     next[idx] = value;
-    onPatch({ auto_checklist: next });
+    if (next[idx] !== (stage.auto_checklist ?? [])[idx]) commitChecklist(next);
   }
-  function patchDeliverable(idx: number, patch: Partial<AutoDeliverable>) {
-    const next = deliverables.map((d, i) => (i === idx ? { ...d, ...patch } : d));
-    onPatch({ auto_deliverables: next });
+  // edição local (sem gravar)
+  function draftDeliverable(idx: number, patch: Partial<AutoDeliverable>) {
+    setDeliverables(cur => cur.map((d, i) => (i === idx ? { ...d, ...patch } : d)));
   }
-  function patchLive(idx: number, patch: Partial<AutoLive>) {
-    const next = lives.map((l, i) => (i === idx ? { ...l, ...patch } : l));
-    onPatch({ auto_live: next });
+  function draftLive(idx: number, patch: Partial<AutoLive>) {
+    setLives(cur => cur.map((l, i) => (i === idx ? { ...l, ...patch } : l)));
   }
+
 
   const toggle = (p: "checklist" | "deliverables" | "live") => setPanel(cur => (cur === p ? null : p));
 
@@ -780,12 +788,13 @@ function StageRow({ stage, canUp, canDown, onMove, onPatch, onDelete }:{
                         <Input
                           value={item}
                           onChange={e => {
-                            const next = [...checklist]; next[idx] = e.target.value;
-                            onPatch({ auto_checklist: next });
+                            const v = e.target.value;
+                            setChecklist(cur => cur.map((x, i) => (i === idx ? v : x)));
                           }}
                           onBlur={e => updateItem(idx, e.target.value)}
                           className="h-7 text-xs rounded-lg"
                         />
+
                         <Button size="icon" variant="ghost" className="h-7 w-7 text-muted-foreground hover:text-destructive"
                           onClick={() => removeItem(idx)}>
                           <Trash2 className="h-3 w-3" />
@@ -820,30 +829,34 @@ function StageRow({ stage, canUp, canDown, onMove, onPatch, onDelete }:{
                     <li key={idx} className="flex items-center gap-2">
                       <Input
                         value={d.label}
-                        onChange={e => patchDeliverable(idx, { label: e.target.value })}
+                        onChange={e => draftDeliverable(idx, { label: e.target.value })}
+                        onBlur={() => commitDeliverables(deliverables)}
                         placeholder="Nome do entregável"
                         className="h-7 text-xs rounded-lg flex-1"
                       />
                       <select
                         className="h-7 rounded-lg border border-input bg-background px-2 text-xs w-36"
                         value={d.type}
-                        onChange={e => patchDeliverable(idx, { type: e.target.value })}
+                        onChange={e => commitDeliverables(deliverables.map((x, i) => (i === idx ? { ...x, type: e.target.value } : x)))}
                       >
                         {AUTO_DELIVERABLE_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
                       </select>
                       <Input
                         value={d.platform}
-                        onChange={e => patchDeliverable(idx, { platform: e.target.value })}
+                        onChange={e => draftDeliverable(idx, { platform: e.target.value })}
+                        onBlur={() => commitDeliverables(deliverables)}
                         placeholder="Plataforma"
                         className="h-7 text-xs rounded-lg w-32"
                       />
                       <Input
                         type="number" min={0} step={0.01}
                         value={d.value ?? ""}
-                        onChange={e => patchDeliverable(idx, { value: e.target.value ? Number(e.target.value) : null })}
+                        onChange={e => draftDeliverable(idx, { value: e.target.value ? Number(e.target.value) : null })}
+                        onBlur={() => commitDeliverables(deliverables)}
                         placeholder="R$"
                         className="h-7 text-xs rounded-lg w-24"
                       />
+
                       <Button size="icon" variant="ghost" className="h-7 w-7 text-muted-foreground hover:text-destructive"
                         onClick={() => onPatch({ auto_deliverables: deliverables.filter((_, i) => i !== idx) })}>
                         <Trash2 className="h-3 w-3" />
@@ -869,24 +882,27 @@ function StageRow({ stage, canUp, canDown, onMove, onPatch, onDelete }:{
                     <li key={idx} className="flex items-center gap-2">
                       <Input
                         value={l.title}
-                        onChange={e => patchLive(idx, { title: e.target.value })}
+                        onChange={e => draftLive(idx, { title: e.target.value })}
+                        onBlur={() => commitLives(lives)}
                         placeholder="Título da transmissão"
                         className="h-7 text-xs rounded-lg flex-1"
                       />
                       <select
                         className="h-7 rounded-lg border border-input bg-background px-2 text-xs w-36"
                         value={l.kind}
-                        onChange={e => patchLive(idx, { kind: e.target.value as AutoLive["kind"] })}
+                        onChange={e => commitLives(lives.map((x, i) => (i === idx ? { ...x, kind: e.target.value as AutoLive["kind"] } : x)))}
                       >
                         <option value="live">Ao vivo</option>
                         <option value="premiere">Estreia</option>
                       </select>
                       <Input
                         value={l.platform}
-                        onChange={e => patchLive(idx, { platform: e.target.value })}
+                        onChange={e => draftLive(idx, { platform: e.target.value })}
+                        onBlur={() => commitLives(lives)}
                         placeholder="Plataforma"
                         className="h-7 text-xs rounded-lg w-32"
                       />
+
                       <Button size="icon" variant="ghost" className="h-7 w-7 text-muted-foreground hover:text-destructive"
                         onClick={() => onPatch({ auto_live: lives.filter((_, i) => i !== idx) })}>
                         <Trash2 className="h-3 w-3" />
