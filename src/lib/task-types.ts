@@ -26,7 +26,13 @@ export type TaskTypeStageRow = {
   auto_checklist: string[];
   auto_deliverables: { label: string; platform: string; type: string; value: number | null }[];
   auto_live: { title: string; kind: "live" | "premiere"; platform: string }[];
+  /** Subtarefas criadas ao atingir a etapa — cada uma com tipo e valor próprios. */
+  auto_subtasks: { title: string; task_type_id: string | null; value: number | null }[];
+  /** Dias antes da entrega em que a etapa deve começar / terminar. */
+  start_offset_days: number | null;
+  end_offset_days: number | null;
 };
+
 
 /** Lista simples de tipos para uso em seletores. */
 export function useTaskTypes() {
