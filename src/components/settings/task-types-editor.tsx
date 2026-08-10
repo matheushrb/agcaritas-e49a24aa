@@ -204,6 +204,9 @@ export function TaskTypesEditor() {
           auto_checklist: s.auto_checklist ?? [],
           auto_deliverables: s.auto_deliverables ?? [],
           auto_live: s.auto_live ?? [],
+          auto_subtasks: s.auto_subtasks ?? [],
+          start_offset_days: s.start_offset_days,
+          end_offset_days: s.end_offset_days,
         }));
         await (supabase as any).from("task_type_stages").insert(payload);
       }
