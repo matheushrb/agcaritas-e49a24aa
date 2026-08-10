@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
-import { Plus, Trash2, GripVertical, Layers, Palette, Copy, Pencil, ChevronRight, ChevronDown, ListChecks, Info, Radio, SlidersHorizontal, FileText, Package } from "lucide-react";
+import { Plus, Trash2, GripVertical, Layers, Palette, Copy, Pencil, ChevronRight, ChevronDown, ListChecks, Info, Radio, SlidersHorizontal, FileText, Package, GitBranch, CalendarClock } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -46,12 +46,17 @@ export type TaskTypeStage = {
   auto_checklist: string[];
   auto_deliverables: AutoDeliverable[];
   auto_live: AutoLive[];
+  auto_subtasks: AutoSubtask[];
+  start_offset_days: number | null;
+  end_offset_days: number | null;
 };
 
 /** Entregável criado automaticamente ao atingir a etapa. */
 export type AutoDeliverable = { label: string; platform: string; type: string; value: number | null };
 /** Transmissão ao vivo / estreia criada automaticamente ao atingir a etapa. */
 export type AutoLive = { title: string; kind: "live" | "premiere"; platform: string };
+/** Subtarefa criada automaticamente ao atingir a etapa — com tipo e valor próprios. */
+export type AutoSubtask = { title: string; task_type_id: string | null; value: number | null };
 
 export const AUTO_DELIVERABLE_TYPES = [
   { value: "video", label: "Vídeo" },
@@ -69,6 +74,19 @@ function usePlatformOptions() {
     queryFn: async () => {
       const { data } = await (supabase as any)
         .from("platforms").select("id,name").eq("active", true).order("name");
+      return (data ?? []) as { id: string; name: string }[];
+    },
+  });
+}
+
+/** Tipos de tarefa cadastrados — a subtarefa pode ter um tipo diferente do da tarefa pai. */
+function useTaskTypeOptions() {
+  return useQuery<{ id: string; name: string }[]>({
+    queryKey: ["task-type-options"],
+    staleTime: 5 * 60_000,
+    queryFn: async () => {
+      const { data } = await (supabase as any)
+        .from("task_types").select("id,name").eq("active", true).order("name");
       return (data ?? []) as { id: string; name: string }[];
     },
   });
@@ -118,7 +136,7 @@ export function TaskTypesEditor() {
     queryFn: async () => {
       const { data, error } = await (supabase as any)
         .from("task_type_stages")
-        .select("id,task_type_id,name,\"order\",color,status_group,weight,auto_checklist,auto_deliverables,auto_live")
+        .select("id,task_type_id,name,\"order\",color,status_group,weight,auto_checklist,auto_deliverables,auto_live,auto_subtasks,start_offset_days,end_offset_days")
         .order("order");
       if (error) throw error;
       const map: Record<string, TaskTypeStage[]> = {};
@@ -128,6 +146,7 @@ export function TaskTypesEditor() {
           auto_checklist: Array.isArray(s.auto_checklist) ? s.auto_checklist : [],
           auto_deliverables: Array.isArray(s.auto_deliverables) ? s.auto_deliverables : [],
           auto_live: Array.isArray(s.auto_live) ? s.auto_live : [],
+          auto_subtasks: Array.isArray(s.auto_subtasks) ? s.auto_subtasks : [],
         };
         (map[s.task_type_id] ||= []).push(norm);
       }
@@ -198,6 +217,9 @@ export function TaskTypesEditor() {
           auto_checklist: s.auto_checklist ?? [],
           auto_deliverables: s.auto_deliverables ?? [],
           auto_live: s.auto_live ?? [],
+          auto_subtasks: s.auto_subtasks ?? [],
+          start_offset_days: s.start_offset_days,
+          end_offset_days: s.end_offset_days,
         }));
         await (supabase as any).from("task_type_stages").insert(payload);
       }
@@ -665,22 +687,36 @@ function StageRow({ stage, canUp, canDown, onMove, onPatch, onDelete }:{
 }) {
   const [name, setName] = useState(stage.name);
   const [weight, setWeight] = useState(stage.weight.toString());
-  const [panel, setPanel] = useState<null | "checklist" | "deliverables" | "live">(null);
+  const [panel, setPanel] = useState<null | "checklist" | "deliverables" | "live" | "subtasks" | "schedule">(null);
   const [newItem, setNewItem] = useState("");
   // Rascunhos locais — digitação não dispara gravação no banco a cada tecla.
   const [checklist, setChecklist] = useState<string[]>(stage.auto_checklist ?? []);
   const [deliverables, setDeliverables] = useState<AutoDeliverable[]>(stage.auto_deliverables ?? []);
   const [lives, setLives] = useState<AutoLive[]>(stage.auto_live ?? []);
+  const [subtasks, setSubtasks] = useState<AutoSubtask[]>(stage.auto_subtasks ?? []);
+  const [startOff, setStartOff] = useState(stage.start_offset_days != null ? String(stage.start_offset_days) : "");
+  const [endOff, setEndOff] = useState(stage.end_offset_days != null ? String(stage.end_offset_days) : "");
   const { data: platformOptions = [] } = usePlatformOptions();
+  const { data: typeOptions = [] } = useTaskTypeOptions();
   const expanded = panel !== null;
   useEffect(() => { setName(stage.name); setWeight(stage.weight.toString()); }, [stage.id, stage.name, stage.weight]);
   useEffect(() => { setChecklist(stage.auto_checklist ?? []); }, [stage.id, stage.auto_checklist]);
   useEffect(() => { setDeliverables(stage.auto_deliverables ?? []); }, [stage.id, stage.auto_deliverables]);
   useEffect(() => { setLives(stage.auto_live ?? []); }, [stage.id, stage.auto_live]);
+  useEffect(() => { setSubtasks(stage.auto_subtasks ?? []); }, [stage.id, stage.auto_subtasks]);
+  useEffect(() => {
+    setStartOff(stage.start_offset_days != null ? String(stage.start_offset_days) : "");
+    setEndOff(stage.end_offset_days != null ? String(stage.end_offset_days) : "");
+  }, [stage.id, stage.start_offset_days, stage.end_offset_days]);
 
   function commitChecklist(next: string[]) { setChecklist(next); onPatch({ auto_checklist: next }); }
   function commitDeliverables(next: AutoDeliverable[]) { setDeliverables(next); onPatch({ auto_deliverables: next }); }
   function commitLives(next: AutoLive[]) { setLives(next); onPatch({ auto_live: next }); }
+  function commitSubtasks(next: AutoSubtask[]) { setSubtasks(next); onPatch({ auto_subtasks: next }); }
+  function draftSubtask(idx: number, patch: Partial<AutoSubtask>) {
+    setSubtasks(cur => cur.map((s, i) => (i === idx ? { ...s, ...patch } : s)));
+  }
+
 
   function addItem() {
     const v = newItem.trim();
@@ -705,9 +741,10 @@ function StageRow({ stage, canUp, canDown, onMove, onPatch, onDelete }:{
   }
 
 
-  const toggle = (p: "checklist" | "deliverables" | "live") => setPanel(cur => (cur === p ? null : p));
+  type PanelKey = "checklist" | "deliverables" | "live" | "subtasks" | "schedule";
+  const toggle = (p: PanelKey) => setPanel(cur => (cur === p ? null : p));
 
-  const tabBtn = (p: "checklist" | "deliverables" | "live", icon: React.ReactNode, count: number, title: string) => (
+  const tabBtn = (p: PanelKey, icon: React.ReactNode, count: number, title: string) => (
     <Button
       size="icon" variant="ghost"
       className={cn(
@@ -808,8 +845,12 @@ function StageRow({ stage, canUp, canDown, onMove, onPatch, onDelete }:{
         />
 
         {tabBtn("checklist", <ListChecks className="h-4 w-4" />, checklist.length, "Checklist automático")}
+        {tabBtn("subtasks", <GitBranch className="h-4 w-4" />, subtasks.length, "Subtarefas automáticas")}
         {tabBtn("deliverables", <Package className="h-4 w-4" />, deliverables.length, "Entregáveis automáticos")}
         {tabBtn("live", <Radio className="h-4 w-4" />, lives.length, "Transmissões ao vivo automáticas")}
+        {tabBtn("schedule", <CalendarClock className="h-4 w-4" />,
+          (stage.start_offset_days != null || stage.end_offset_days != null) ? 1 : 0,
+          "Prazo relativo à entrega")}
 
         <Button size="icon" variant="ghost" className="h-8 w-8 rounded-full text-muted-foreground hover:text-destructive" onClick={onDelete} title="Excluir">
           <Trash2 className="h-3.5 w-3.5" />
@@ -969,6 +1010,88 @@ function StageRow({ stage, canUp, canDown, onMove, onPatch, onDelete }:{
                   onClick={() => commitLives([...lives, { title: "", kind: "live", platform: "" }])}>
                   <Plus className="h-3 w-3" /> Adicionar transmissão
                 </Button>
+              </>
+            )}
+
+            {panel === "subtasks" && (
+              <>
+                <div className="text-[11px] text-muted-foreground flex items-center gap-1">
+                  <GitBranch className="h-3 w-3" />
+                  Ao atingir esta etapa, estas <b>subtarefas</b> são criadas ligadas à tarefa — cada uma com seu próprio tipo de tarefa e valor.
+                </div>
+                <ul className="space-y-1.5">
+                  {subtasks.map((s, idx) => (
+                    <li key={idx} className="flex items-center gap-2">
+                      <Input
+                        value={s.title}
+                        onChange={e => draftSubtask(idx, { title: e.target.value })}
+                        onBlur={() => commitSubtasks(subtasks)}
+                        placeholder="Título da subtarefa"
+                        className="h-7 text-xs rounded-lg flex-1"
+                      />
+                      <select
+                        className="h-7 rounded-lg border border-input bg-background px-2 text-xs w-44"
+                        value={s.task_type_id ?? ""}
+                        onChange={e => commitSubtasks(subtasks.map((x, i) => (i === idx ? { ...x, task_type_id: e.target.value || null } : x)))}
+                      >
+                        <option value="">Mesmo tipo da tarefa pai</option>
+                        {typeOptions.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+                      </select>
+                      <Input
+                        type="number" min={0} step={0.01}
+                        value={s.value ?? ""}
+                        onChange={e => draftSubtask(idx, { value: e.target.value ? Number(e.target.value) : null })}
+                        onBlur={() => commitSubtasks(subtasks)}
+                        placeholder="R$"
+                        className="h-7 text-xs rounded-lg w-24"
+                      />
+                      <Button size="icon" variant="ghost" className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                        onClick={() => commitSubtasks(subtasks.filter((_, i) => i !== idx))}>
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
+                    </li>
+                  ))}
+                </ul>
+                <Button size="sm" variant="outline" className="h-7 rounded-full gap-1"
+                  onClick={() => commitSubtasks([...subtasks, { title: "", task_type_id: null, value: null }])}>
+                  <Plus className="h-3 w-3" /> Adicionar subtarefa
+                </Button>
+              </>
+            )}
+
+            {panel === "schedule" && (
+              <>
+                <div className="text-[11px] text-muted-foreground flex items-center gap-1">
+                  <CalendarClock className="h-3 w-3" />
+                  Prazo da etapa contado <b>em dias antes da entrega</b> da tarefa. Ex.: começa 5 dias antes e termina 4 dias antes.
+                </div>
+                <div className="flex items-center gap-3 flex-wrap">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-muted-foreground">Começa</span>
+                    <Input
+                      type="number" min={0} step={1} value={startOff}
+                      onChange={e => setStartOff(e.target.value)}
+                      onBlur={() => onPatch({ start_offset_days: startOff === "" ? null : Number(startOff) })}
+                      className="h-7 w-20 text-xs rounded-lg" placeholder="—"
+                    />
+                    <span className="text-xs text-muted-foreground">dias antes da entrega</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-muted-foreground">Termina</span>
+                    <Input
+                      type="number" min={0} step={1} value={endOff}
+                      onChange={e => setEndOff(e.target.value)}
+                      onBlur={() => onPatch({ end_offset_days: endOff === "" ? null : Number(endOff) })}
+                      className="h-7 w-20 text-xs rounded-lg" placeholder="—"
+                    />
+                    <span className="text-xs text-muted-foreground">dias antes da entrega</span>
+                  </div>
+                </div>
+                {startOff !== "" && endOff !== "" && Number(endOff) > Number(startOff) && (
+                  <p className="text-[11px] text-destructive">
+                    O término não pode ser mais cedo que o início — use um número menor em “Termina”.
+                  </p>
+                )}
               </>
             )}
           </div>

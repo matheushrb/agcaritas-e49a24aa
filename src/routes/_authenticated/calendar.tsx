@@ -106,14 +106,36 @@ function CalendarPage() {
     return m;
   }, [blocks, currentUserId]);
 
+  /* Janelas de etapa das tarefas (prazo relativo à entrega) viram eventos virtuais. */
+  const { data: stageEvents = [] } = useQuery<Ev[]>({
+    queryKey: ["calendar-stage-windows", toISO(from), toISO(to)],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("tasks")
+        .select("id,title,stage_started_on,stage_due_on,current_stage_id")
+        .not("stage_due_on", "is", null)
+        .gte("stage_due_on", ymd(from))
+        .lte("stage_due_on", ymd(to));
+      if (error) throw error;
+      return ((data ?? []) as any[]).map(t => ({
+        id: `stage-${t.id}`,
+        title: `Etapa: ${t.title}`,
+        description: t.stage_started_on ? `Começa em ${t.stage_started_on}` : null,
+        starts_at: `${t.stage_due_on}T09:00:00`,
+        ends_at: null,
+        kind: "task",
+      })) as Ev[];
+    },
+  });
+
   const byDay = useMemo(() => {
     const acc: Record<string, Ev[]> = {};
-    for (const e of events) {
+    for (const e of [...events, ...stageEvents]) {
       const k = e.starts_at.slice(0, 10);
       (acc[k] ??= []).push(e);
     }
     return acc;
-  }, [events]);
+  }, [events, stageEvents]);
 
   const days: Date[] = [];
   for (let d = new Date(from); d <= to; d.setDate(d.getDate() + 1)) days.push(new Date(d));

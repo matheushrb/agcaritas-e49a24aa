@@ -711,3 +711,27 @@
 .cw-datebtn-ok { color: var(--cw-primary, #2F6BEF); }
 .cw-datebtn-clear:hover, .cw-datebtn-ok:hover { background: rgba(127,140,158,.12); }
 .dark .cw .cw-datebtn { color: var(--foreground); }
+
+/* ---- Prazos relativos das etapas + subtarefas ---- */
+.cw-stage-dates{
+  display:block; font-size:10px; color:var(--cw-muted);
+  margin-top:2px; letter-spacing:.2px;
+}
+.cw-stage-alert{
+  display:block; font-size:10px; font-weight:600; margin-top:2px; line-height:1.25;
+}
+.cw-stage-alert.is-late{ color:#dc2626; }
+.cw-stage-alert.is-warn{ color:#d97706; }
+.cw-stage-alert.is-ok{ color:#16a34a; }
+.cw-stage-banner{
+  margin:6px 0 0; padding:6px 10px; border-radius:10px;
+  font-size:11.5px; font-weight:600;
+}
+.cw-stage-banner.is-late{ background:rgba(220,38,38,.10); color:#dc2626; }
+.cw-stage-banner.is-warn{ background:rgba(217,119,6,.10); color:#b45309; }
+
+.cw-subtask-row{
+  display:flex; align-items:center; gap:8px; margin-bottom:6px;
+}
+.cw-subtask-row .cw-input:first-child{ flex:1; }
+.cw-subtask-row .cw-select{ width:170px; }

@@ -3067,12 +3067,15 @@ export type Database = {
           auto_checklist: Json
           auto_deliverables: Json
           auto_live: Json
+          auto_subtasks: Json
           color: string
           created_at: string
+          end_offset_days: number | null
           id: string
           name: string
           order: number
           organization_id: string
+          start_offset_days: number | null
           status_group: Database["public"]["Enums"]["stage_status_group"]
           task_type_id: string
           updated_at: string
@@ -3082,12 +3085,15 @@ export type Database = {
           auto_checklist?: Json
           auto_deliverables?: Json
           auto_live?: Json
+          auto_subtasks?: Json
           color?: string
           created_at?: string
+          end_offset_days?: number | null
           id?: string
           name: string
           order?: number
           organization_id: string
+          start_offset_days?: number | null
           status_group?: Database["public"]["Enums"]["stage_status_group"]
           task_type_id: string
           updated_at?: string
@@ -3097,12 +3103,15 @@ export type Database = {
           auto_checklist?: Json
           auto_deliverables?: Json
           auto_live?: Json
+          auto_subtasks?: Json
           color?: string
           created_at?: string
+          end_offset_days?: number | null
           id?: string
           name?: string
           order?: number
           organization_id?: string
+          start_offset_days?: number | null
           status_group?: Database["public"]["Enums"]["stage_status_group"]
           task_type_id?: string
           updated_at?: string
@@ -3208,6 +3217,7 @@ export type Database = {
           id: string
           live_items: Json
           organization_id: string
+          parent_task_id: string | null
           platform: string | null
           priority: Database["public"]["Enums"]["task_priority"]
           progress: number
@@ -3215,6 +3225,8 @@ export type Database = {
           recorded_at: string | null
           recorded_dates: Json
           stage: Database["public"]["Enums"]["task_stage"]
+          stage_due_on: string | null
+          stage_started_on: string | null
           start_date: string | null
           status: Database["public"]["Enums"]["task_status"]
           subtasks: Json
@@ -3250,6 +3262,7 @@ export type Database = {
           id?: string
           live_items?: Json
           organization_id: string
+          parent_task_id?: string | null
           platform?: string | null
           priority?: Database["public"]["Enums"]["task_priority"]
           progress?: number
@@ -3257,6 +3270,8 @@ export type Database = {
           recorded_at?: string | null
           recorded_dates?: Json
           stage?: Database["public"]["Enums"]["task_stage"]
+          stage_due_on?: string | null
+          stage_started_on?: string | null
           start_date?: string | null
           status?: Database["public"]["Enums"]["task_status"]
           subtasks?: Json
@@ -3292,6 +3307,7 @@ export type Database = {
           id?: string
           live_items?: Json
           organization_id?: string
+          parent_task_id?: string | null
           platform?: string | null
           priority?: Database["public"]["Enums"]["task_priority"]
           progress?: number
@@ -3299,6 +3315,8 @@ export type Database = {
           recorded_at?: string | null
           recorded_dates?: Json
           stage?: Database["public"]["Enums"]["task_stage"]
+          stage_due_on?: string | null
+          stage_started_on?: string | null
           start_date?: string | null
           status?: Database["public"]["Enums"]["task_status"]
           subtasks?: Json
@@ -3341,6 +3359,13 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_parent_task_id_fkey"
+            columns: ["parent_task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
             referencedColumns: ["id"]
           },
           {

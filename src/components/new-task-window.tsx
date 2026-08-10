@@ -15,6 +15,7 @@ import { useTaskTypeStages } from "@/lib/task-types";
 import { CwDate, CwDateRange } from "@/components/cw-date";
 import { UnsavedChangesDialog, ConfirmDeleteDialog } from "@/components/confirm-dialogs";
 import { syncChargesFromTask } from "@/lib/billing-sync";
+import { computeStageWindows, stageAlert, fmtBr, type StageWindow } from "@/lib/stage-schedule";
 
 import "@/windows.css";
 
@@ -58,6 +59,17 @@ type DeliverableDraft = {
   invoiced?: boolean;
 };
 type ChecklistDraft = { id: string; title: string; done: boolean };
+
+/** Subtarefa real (linha própria em tasks, com parent_task_id) — pode ter tipo e valor próprios. */
+type SubtaskDraft = {
+  id: string;
+  rowId: string | null;
+  title: string;
+  task_type_id: string | null;
+  value: number | null;
+  status: string;
+  due_date: string | null;
+};
 
 /** Ao Vivo / Estreia — transmissões ligadas à tarefa. */
 type LiveDraft = {
@@ -140,6 +152,8 @@ export function TaskWindow({
   const [baseValue, setBaseValue] = useState<string>("");
   const [deliverables, setDeliverables] = useState<DeliverableDraft[]>([]);
   const [checklist, setChecklist] = useState<ChecklistDraft[]>([]);
+  const [subtasks, setSubtasks] = useState<SubtaskDraft[]>([]);
+  const [removedSubtaskIds, setRemovedSubtaskIds] = useState<string[]>([]);
   const [platformsSel, setPlatformsSel] = useState<string[]>([]);
   const [notes, setNotes] = useState("");
   const [liveItems, setLiveItems] = useState<LiveDraft[]>([]);
@@ -262,6 +276,34 @@ export function TaskWindow({
     return byStatus >= 0 ? byStatus : 0;
   }, [flowSteps, typeStages.length, currentStageId, stage, status]);
 
+  /* ---------- Prazos relativos das etapas ---------- */
+  const stageWindows = useMemo(
+    () => computeStageWindows(dueDate || null, (typeStages as any[]).map(s => ({
+      id: s.id, name: s.name, color: s.color,
+      start_offset_days: s.start_offset_days ?? null,
+      end_offset_days: s.end_offset_days ?? null,
+    }))),
+    [typeStages, dueDate],
+  );
+  const stageWindowById = useMemo(() => {
+    const m: Record<string, StageWindow> = {};
+    for (const w of stageWindows) m[w.stageId] = w;
+    return m;
+  }, [stageWindows]);
+  const stageAlerts = useMemo(() => {
+    const out: Record<string, ReturnType<typeof stageAlert>> = {};
+    flowSteps.forEach((s, i) => {
+      if (!s.stageId) return;
+      const w = stageWindowById[s.stageId];
+      if (!w) return;
+      const pos: -1 | 0 | 1 = i < activeIdx ? -1 : i === activeIdx ? 0 : 1;
+      out[s.stageId] = stageAlert(w, pos);
+    });
+    return out;
+  }, [flowSteps, stageWindowById, activeIdx]);
+  const currentStageAlert = currentStageId ? stageAlerts[currentStageId] : null;
+
+
   /* Selecionar uma etapa move o status condicionado a ela. */
   const selectStep = (i: number) => {
     const s = flowSteps[i];
@@ -345,6 +387,26 @@ export function TaskWindow({
       });
     }
 
+    const autoSub: any[] = Array.isArray(row.auto_subtasks) ? row.auto_subtasks : [];
+    if (autoSub.length) {
+      setSubtasks(prev => {
+        const seen = new Set(prev.map(s => s.title.trim().toLowerCase()));
+        const add = autoSub
+          .filter(s => s && s.title && !seen.has(String(s.title).trim().toLowerCase()))
+          .map(s => ({
+            id: uid(),
+            rowId: null,
+            title: String(s.title),
+            task_type_id: s.task_type_id ?? null,
+            value: s.value ?? null,
+            status: "todo",
+            due_date: null,
+          }));
+        created += add.length;
+        return add.length ? [...prev, ...add] : prev;
+      });
+    }
+
     if (created) toast.success(`${created} item(ns) criados pela etapa “${row.name}”`);
   };
 
@@ -375,6 +437,36 @@ export function TaskWindow({
       return data as any;
     },
   });
+
+  /* Subtarefas reais (linhas em tasks com parent_task_id). */
+  const { data: childRows = [] } = useQuery({
+    queryKey: ["task-subtasks", taskId],
+    enabled: !!taskId && open,
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("tasks")
+        .select("id,title,task_type_id,billing_value,billing_base_value,status,due_date")
+        .eq("parent_task_id", taskId!)
+        .order("created_at");
+      if (error) throw error;
+      return (data ?? []) as any[];
+    },
+  });
+
+  useEffect(() => {
+    if (!open || !isEdit) return;
+    setSubtasks(childRows.map((r: any) => ({
+      id: r.id,
+      rowId: r.id,
+      title: r.title ?? "",
+      task_type_id: r.task_type_id ?? null,
+      value: r.billing_base_value ?? r.billing_value ?? null,
+      status: r.status ?? "todo",
+      due_date: r.due_date ?? null,
+    })));
+    setRemovedSubtaskIds([]);
+  }, [childRows, open, isEdit]);
+
 
   useEffect(() => {
     if (!open) return;
@@ -609,6 +701,8 @@ export function TaskWindow({
     due_date: dueDate || null,
     stage: stage as any,
     current_stage_id: currentStageId,
+    stage_started_on: (currentStageId && stageWindowById[currentStageId]?.start) || null,
+    stage_due_on: (currentStageId && stageWindowById[currentStageId]?.end) || null,
     progress,
 
     task_type_id: taskTypeId,
@@ -633,26 +727,58 @@ export function TaskWindow({
   });
 
 
+  /** Cria/atualiza/remove as subtarefas reais ligadas à tarefa. */
+  async function syncSubtasks(parentId: string, orgId: string) {
+    if (removedSubtaskIds.length) {
+      await (supabase as any).from("tasks").delete().in("id", removedSubtaskIds);
+    }
+    for (const s of subtasks) {
+      const title = s.title.trim();
+      if (!title) continue;
+      const row = {
+        title,
+        task_type_id: s.task_type_id || taskTypeId || null,
+        status: s.status as any,
+        billing_enabled: s.value != null,
+        billing_base_value: s.value,
+        billing_value: s.value,
+        due_date: s.due_date || dueDate || null,
+        project_id: projectId || null,
+        client_id: projectId ? (projects.find(p => p.id === projectId)?.client_id ?? null) : null,
+        parent_task_id: parentId,
+      };
+      if (s.rowId) {
+        await (supabase as any).from("tasks").update(row).eq("id", s.rowId);
+      } else {
+        await (supabase as any).from("tasks").insert({ ...row, organization_id: orgId });
+      }
+    }
+    setRemovedSubtaskIds([]);
+  }
+
   const save = useMutation({
     mutationFn: async () => {
+      const { data: profile } = await supabase.from("profiles").select("organization_id").maybeSingle();
+      if (!profile?.organization_id) throw new Error("Sem organização");
       if (isEdit) {
         const { error } = await (supabase as any).from("tasks").update(payload()).eq("id", taskId!);
         if (error) throw error;
+        await syncSubtasks(taskId!, profile.organization_id);
         // Espelha os novos valores nas cobranças/faturas em aberto que já usam
         // esta tarefa (faturas pagas ou canceladas não são alteradas).
         const updated = await syncChargesFromTask(taskId!).catch(() => [] as string[]);
         return { id: taskId!, updated };
       }
-      const { data: profile } = await supabase.from("profiles").select("organization_id").maybeSingle();
-      if (!profile?.organization_id) throw new Error("Sem organização");
       const { data, error } = await (supabase as any).from("tasks")
         .insert({ ...payload(), organization_id: profile.organization_id })
         .select("id").single();
       if (error) throw error;
+      await syncSubtasks(data.id as string, profile.organization_id);
       return { id: data.id as string, updated: [] as string[] };
     },
     onSuccess: ({ id, updated }) => {
       qc.invalidateQueries({ queryKey: ["tasks"] });
+      qc.invalidateQueries({ queryKey: ["task-subtasks", taskId] });
       qc.invalidateQueries({ queryKey: ["task-window", taskId] });
       qc.invalidateQueries({ queryKey: ["charges"] });
       qc.invalidateQueries({ queryKey: ["invoices"] });
@@ -868,11 +994,26 @@ export function TaskWindow({
                   <span className="cw-stage-sub">
                     {STATUSES.find(x => x.value === s.status)?.label ?? s.status}
                   </span>
+                  {s.stageId && stageWindowById[s.stageId] && (stageWindowById[s.stageId].start || stageWindowById[s.stageId].end) && (
+                    <span className="cw-stage-dates">
+                      {fmtBr(stageWindowById[s.stageId].start)} → {fmtBr(stageWindowById[s.stageId].end)}
+                    </span>
+                  )}
+                  {s.stageId && stageAlerts[s.stageId] && (
+                    <span className={`cw-stage-alert is-${stageAlerts[s.stageId]!.level}`}>
+                      {stageAlerts[s.stageId]!.message}
+                    </span>
+                  )}
                 </button>
               ))}
             </div>
+            {currentStageAlert && currentStageAlert.level !== "ok" && (
+              <p className={`cw-stage-banner is-${currentStageAlert.level}`}>
+                Etapa “{flowSteps[activeIdx]?.label}”: {currentStageAlert.message}
+              </p>
+            )}
             <p className="cw-stageband-hint">
-              Ao mudar a etapa, o status é sincronizado automaticamente. Você pode mudar livremente entre etapas.
+              Ao mudar a etapa, o status é sincronizado automaticamente. Os prazos das etapas são contados a partir da data de entrega.
             </p>
           </div>
 
@@ -1019,6 +1160,49 @@ export function TaskWindow({
                   </div>
                 ))}
               </div>
+
+              {/* SUBTAREFAS */}
+              <div className="cw-section">
+                <div className="cw-mini-head">
+                  <h5>Subtarefas {subtasks.length > 0 && <span style={{ color: "var(--cw-muted)", fontWeight: 400 }}>({subtasks.length})</span>}</h5>
+                  <button type="button" className="cw-link"
+                    onClick={() => setSubtasks(s => [...s, { id: uid(), rowId: null, title: "", task_type_id: null, value: null, status: "todo", due_date: null }])}>
+                    <Plus size={13} /> Adicionar subtarefa
+                  </button>
+                </div>
+                {subtasks.length === 0 && (
+                  <div style={{ fontSize: 11, color: "var(--cw-muted)" }}>
+                    Nenhuma subtarefa. Cada subtarefa vira uma tarefa própria, com seu tipo e valor.
+                  </div>
+                )}
+                {subtasks.map(s => (
+                  <div key={s.id} className="cw-subtask-row">
+                    <input type="text" className="cw-input" value={s.title} placeholder="Título da subtarefa"
+                      onChange={e => setSubtasks(list => list.map(x => x.id === s.id ? { ...x, title: e.target.value } : x))} />
+                    <select className="cw-select" value={s.task_type_id ?? ""}
+                      onChange={e => setSubtasks(list => list.map(x => x.id === s.id ? { ...x, task_type_id: e.target.value || null } : x))}>
+                      <option value="">Tipo da tarefa pai</option>
+                      {taskTypes.map((t: any) => <option key={t.id} value={t.id}>{t.name}</option>)}
+                    </select>
+                    <select className="cw-select" value={s.status}
+                      onChange={e => setSubtasks(list => list.map(x => x.id === s.id ? { ...x, status: e.target.value } : x))}>
+                      {STATUSES.map(st => <option key={st.value} value={st.value}>{st.label}</option>)}
+                    </select>
+                    <input type="number" min={0} step="0.01" className="cw-input" style={{ width: 110 }} placeholder="R$"
+                      value={s.value ?? ""}
+                      onChange={e => setSubtasks(list => list.map(x => x.id === s.id ? { ...x, value: e.target.value ? Number(e.target.value) : null } : x))} />
+                    <button type="button" className="cw-row-icon"
+                      onClick={() => {
+                        if (s.rowId) setRemovedSubtaskIds(r => [...r, s.rowId!]);
+                        setSubtasks(list => list.filter(x => x.id !== s.id));
+                      }}>
+                      <Trash2 size={13} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+
+
 
               {/* PLATAFORMAS / CANAIS */}
               <div className="cw-section">
