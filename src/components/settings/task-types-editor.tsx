@@ -828,30 +828,34 @@ function StageRow({ stage, canUp, canDown, onMove, onPatch, onDelete }:{
                     <li key={idx} className="flex items-center gap-2">
                       <Input
                         value={d.label}
-                        onChange={e => patchDeliverable(idx, { label: e.target.value })}
+                        onChange={e => draftDeliverable(idx, { label: e.target.value })}
+                        onBlur={() => commitDeliverables(deliverables)}
                         placeholder="Nome do entregável"
                         className="h-7 text-xs rounded-lg flex-1"
                       />
                       <select
                         className="h-7 rounded-lg border border-input bg-background px-2 text-xs w-36"
                         value={d.type}
-                        onChange={e => patchDeliverable(idx, { type: e.target.value })}
+                        onChange={e => commitDeliverables(deliverables.map((x, i) => (i === idx ? { ...x, type: e.target.value } : x)))}
                       >
                         {AUTO_DELIVERABLE_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
                       </select>
                       <Input
                         value={d.platform}
-                        onChange={e => patchDeliverable(idx, { platform: e.target.value })}
+                        onChange={e => draftDeliverable(idx, { platform: e.target.value })}
+                        onBlur={() => commitDeliverables(deliverables)}
                         placeholder="Plataforma"
                         className="h-7 text-xs rounded-lg w-32"
                       />
                       <Input
                         type="number" min={0} step={0.01}
                         value={d.value ?? ""}
-                        onChange={e => patchDeliverable(idx, { value: e.target.value ? Number(e.target.value) : null })}
+                        onChange={e => draftDeliverable(idx, { value: e.target.value ? Number(e.target.value) : null })}
+                        onBlur={() => commitDeliverables(deliverables)}
                         placeholder="R$"
                         className="h-7 text-xs rounded-lg w-24"
                       />
+
                       <Button size="icon" variant="ghost" className="h-7 w-7 text-muted-foreground hover:text-destructive"
                         onClick={() => onPatch({ auto_deliverables: deliverables.filter((_, i) => i !== idx) })}>
                         <Trash2 className="h-3 w-3" />
