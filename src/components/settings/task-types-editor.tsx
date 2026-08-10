@@ -61,6 +61,21 @@ export const AUTO_DELIVERABLE_TYPES = [
   { value: "other", label: "Outro" },
 ];
 
+/** Plataformas cadastradas (Configurações › Plataformas) para seleção nas automações. */
+function usePlatformOptions() {
+  return useQuery<{ id: string; name: string }[]>({
+    queryKey: ["platforms-options"],
+    staleTime: 5 * 60_000,
+    queryFn: async () => {
+      const { data } = await (supabase as any)
+        .from("platforms").select("id,name").eq("active", true).order("name");
+      return (data ?? []) as { id: string; name: string }[];
+    },
+  });
+}
+
+
+
 const STATUS_GROUP_META: Record<StatusGroup, { label: string; dot: string }> = {
   todo:        { label: "A fazer",      dot: "bg-slate-400" },
   in_progress: { label: "Em andamento", dot: "bg-blue-500" },
@@ -630,6 +645,7 @@ function StageRow({ stage, canUp, canDown, onMove, onPatch, onDelete }:{
   const [checklist, setChecklist] = useState<string[]>(stage.auto_checklist ?? []);
   const [deliverables, setDeliverables] = useState<AutoDeliverable[]>(stage.auto_deliverables ?? []);
   const [lives, setLives] = useState<AutoLive[]>(stage.auto_live ?? []);
+  const { data: platformOptions = [] } = usePlatformOptions();
   const expanded = panel !== null;
   useEffect(() => { setName(stage.name); setWeight(stage.weight.toString()); }, [stage.id, stage.name, stage.weight]);
   useEffect(() => { setChecklist(stage.auto_checklist ?? []); }, [stage.id, stage.auto_checklist]);
@@ -841,13 +857,18 @@ function StageRow({ stage, canUp, canDown, onMove, onPatch, onDelete }:{
                       >
                         {AUTO_DELIVERABLE_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
                       </select>
-                      <Input
+                      <select
+                        className="h-7 rounded-lg border border-input bg-background px-2 text-xs w-36"
                         value={d.platform}
-                        onChange={e => draftDeliverable(idx, { platform: e.target.value })}
-                        onBlur={() => commitDeliverables(deliverables)}
-                        placeholder="Plataforma"
-                        className="h-7 text-xs rounded-lg w-32"
-                      />
+                        onChange={e => commitDeliverables(deliverables.map((x, i) => (i === idx ? { ...x, platform: e.target.value } : x)))}
+                      >
+                        <option value="">Plataforma…</option>
+                        {platformOptions.map(p => <option key={p.id} value={p.name}>{p.name}</option>)}
+                        {d.platform && !platformOptions.some(p => p.name === d.platform) && (
+                          <option value={d.platform}>{d.platform}</option>
+                        )}
+                      </select>
+
                       <Input
                         type="number" min={0} step={0.01}
                         value={d.value ?? ""}
@@ -895,13 +916,18 @@ function StageRow({ stage, canUp, canDown, onMove, onPatch, onDelete }:{
                         <option value="live">Ao vivo</option>
                         <option value="premiere">Estreia</option>
                       </select>
-                      <Input
+                      <select
+                        className="h-7 rounded-lg border border-input bg-background px-2 text-xs w-36"
                         value={l.platform}
-                        onChange={e => draftLive(idx, { platform: e.target.value })}
-                        onBlur={() => commitLives(lives)}
-                        placeholder="Plataforma"
-                        className="h-7 text-xs rounded-lg w-32"
-                      />
+                        onChange={e => commitLives(lives.map((x, i) => (i === idx ? { ...x, platform: e.target.value } : x)))}
+                      >
+                        <option value="">Plataforma…</option>
+                        {platformOptions.map(p => <option key={p.id} value={p.name}>{p.name}</option>)}
+                        {l.platform && !platformOptions.some(p => p.name === l.platform) && (
+                          <option value={l.platform}>{l.platform}</option>
+                        )}
+                      </select>
+
 
                       <Button size="icon" variant="ghost" className="h-7 w-7 text-muted-foreground hover:text-destructive"
                         onClick={() => onPatch({ auto_live: lives.filter((_, i) => i !== idx) })}>
