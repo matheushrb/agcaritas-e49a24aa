@@ -358,6 +358,26 @@ export function TaskWindow({
       });
     }
 
+    const autoSub: any[] = Array.isArray(row.auto_subtasks) ? row.auto_subtasks : [];
+    if (autoSub.length) {
+      setSubtasks(prev => {
+        const seen = new Set(prev.map(s => s.title.trim().toLowerCase()));
+        const add = autoSub
+          .filter(s => s && s.title && !seen.has(String(s.title).trim().toLowerCase()))
+          .map(s => ({
+            id: uid(),
+            rowId: null,
+            title: String(s.title),
+            task_type_id: s.task_type_id ?? null,
+            value: s.value ?? null,
+            status: "todo",
+            due_date: null,
+          }));
+        created += add.length;
+        return add.length ? [...prev, ...add] : prev;
+      });
+    }
+
     if (created) toast.success(`${created} item(ns) criados pela etapa “${row.name}”`);
   };
 
