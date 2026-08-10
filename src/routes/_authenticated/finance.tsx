@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { AlertCircle, CheckCircle2, Clock, Receipt } from "lucide-react";
 import { toast } from "sonner";
@@ -93,6 +93,30 @@ function FinancePage() {
     },
   });
 
+  const { data: teamMembers = [] } = useQuery<{ id: string; name: string; payment_day: number | null }[]>({
+    queryKey: ["team-members-min"],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any).from("team_members").select("id,name,payment_day").order("name");
+      if (error) throw error;
+      return (data ?? []) as { id: string; name: string; payment_day: number | null }[];
+    },
+  });
+
+  const queryClient = useQueryClient();
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const { data, error } = await (supabase as any).rpc("ensure_recurring_charges");
+      if (!cancelled && !error && Number(data ?? 0) > 0) {
+        queryClient.invalidateQueries({ queryKey: ["charges"] });
+      }
+    })();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+
+
 
 
   return (
@@ -111,7 +135,7 @@ function FinancePage() {
         />
       </div>
 
-      <FinanceEntryWindow open={newOpen} onOpenChange={setNewOpen} clients={clients} projects={projects} />
+      <FinanceEntryWindow open={newOpen} onOpenChange={setNewOpen} clients={clients} projects={projects} teamMembers={teamMembers} />
     </>
   );
 }

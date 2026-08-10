@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import {
   X, Save, Minus, Maximize2, PanelRight, Trash2, Receipt,
-  ArrowDownCircle, ArrowUpCircle, ChevronDown, Info,
+  ArrowDownCircle, ArrowUpCircle, ChevronDown, Info, Repeat,
 } from "lucide-react";
 import "@/windows.css";
 
@@ -37,9 +37,6 @@ const PAYMENT_METHODS = [
   "PIX", "Boleto", "Boleto com PIX", "Transferência", "Cartão de crédito", "Dinheiro",
 ];
 
-const REVENUE_CATEGORIES = ["Mensalidade", "Projeto", "Tráfego pago", "Produção", "Consultoria", "Outros"];
-const EXPENSE_CATEGORIES = ["Pessoal", "Freelancer", "Fornecedores", "Ferramentas", "Marketing", "Impostos", "Outros"];
-
 const money = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
 type Props = {
@@ -48,12 +45,13 @@ type Props = {
   entry?: FinanceEntry | null;
   clients: { id: string; name: string }[];
   projects: { id: string; name: string }[];
+  teamMembers?: { id: string; name: string; payment_day?: number | null }[];
   defaultNature?: "revenue" | "expense";
   onSaved?: (id: string) => void;
 };
 
 export function FinanceEntryWindow({
-  open, onOpenChange, entry = null, clients, projects, defaultNature = "revenue", onSaved,
+  open, onOpenChange, entry = null, clients, projects, teamMembers = [], defaultNature = "revenue", onSaved,
 }: Props) {
   const qc = useQueryClient();
   const isEdit = !!entry?.id;
@@ -66,10 +64,28 @@ export function FinanceEntryWindow({
   const [status, setStatus] = useState("pending");
   const [clientId, setClientId] = useState("");
   const [projectId, setProjectId] = useState("");
+  const [collaboratorId, setCollaboratorId] = useState("");
   const [category, setCategory] = useState("");
   const [method, setMethod] = useState("");
   const [notes, setNotes] = useState("");
+  const [repeat, setRepeat] = useState(false);
+  const [dayOfMonth, setDayOfMonth] = useState("");
+  const [repeatUntil, setRepeatUntil] = useState("");
   const [mode, setMode] = useState<"modal" | "docked" | "minimized">("modal");
+
+  const { data: categories = [] } = useQuery<string[]>({
+    queryKey: ["finance_categories", nature],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("finance_categories")
+        .select("name")
+        .eq("nature", nature)
+        .eq("active", true)
+        .order("name");
+      if (error) throw error;
+      return ((data ?? []) as { name: string }[]).map(c => c.name);
+    },
+  });
 
   useEffect(() => {
     if (!open) return;
@@ -82,13 +98,26 @@ export function FinanceEntryWindow({
     setStatus(entry?.status ?? "pending");
     setClientId(entry?.client_id ?? "");
     setProjectId(entry?.project_id ?? "");
+    setCollaboratorId((entry as any)?.collaborator_id ?? "");
     setCategory(entry?.category ?? "");
     setMethod(entry?.payment_method ?? "");
     setNotes("");
+    setRepeat(false);
+    setDayOfMonth("");
+    setRepeatUntil("");
   }, [open, entry, defaultNature]);
 
   const value = Number(String(amount).replace(",", ".") || 0);
   const canSave = description.trim().length > 0 && value > 0;
+
+  const memberPaymentDay = teamMembers.find(m => m.id === collaboratorId)?.payment_day ?? null;
+  const effectiveDay = (() => {
+    const typed = Number(dayOfMonth);
+    if (dayOfMonth && typed >= 1 && typed <= 28) return typed;
+    if (memberPaymentDay && memberPaymentDay >= 1 && memberPaymentDay <= 28) return memberPaymentDay;
+    const d = dueDate ? Number(dueDate.slice(8, 10)) : new Date().getDate();
+    return Math.min(Math.max(d || 1, 1), 28);
+  })();
 
   const save = useMutation({
     mutationFn: async () => {
@@ -102,6 +131,7 @@ export function FinanceEntryWindow({
         competence_month: competence ? `${competence}-01` : null,
         client_id: clientId || null,
         project_id: projectId || null,
+        collaborator_id: collaboratorId || null,
         payment_method: method || null,
         paid_at: status === "paid" ? (entry?.paid_at ?? new Date().toISOString()) : null,
       };
@@ -112,6 +142,32 @@ export function FinanceEntryWindow({
       }
       const { data: profile } = await supabase.from("profiles").select("organization_id").maybeSingle();
       if (!profile?.organization_id) throw new Error("Sem organização");
+
+      if (repeat) {
+        const { data, error } = await (supabase as any)
+          .from("recurring_charges")
+          .insert({
+            organization_id: profile.organization_id,
+            description: description.trim(),
+            amount: value,
+            nature,
+            category: category || null,
+            day_of_month: effectiveDay,
+            client_id: clientId || null,
+            project_id: projectId || null,
+            collaborator_id: collaboratorId || null,
+            payment_method: method || null,
+            start_date: dueDate || new Date().toISOString().slice(0, 10),
+            end_date: repeatUntil || null,
+          })
+          .select("id")
+          .single();
+        if (error) throw error;
+        const { error: rpcError } = await (supabase as any).rpc("ensure_recurring_charges");
+        if (rpcError) throw rpcError;
+        return data.id as string;
+      }
+
       const { data, error } = await (supabase as any)
         .from("charges")
         .insert({ ...payload, organization_id: profile.organization_id })
@@ -122,13 +178,15 @@ export function FinanceEntryWindow({
     },
     onSuccess: (id) => {
       qc.invalidateQueries({ queryKey: ["charges"] });
+      qc.invalidateQueries({ queryKey: ["recurring_charges"] });
       qc.invalidateQueries({ queryKey: ["dashboard-v3"] });
-      toast.success(isEdit ? "Lançamento atualizado" : "Lançamento criado");
+      toast.success(isEdit ? "Lançamento atualizado" : repeat ? "Recorrência criada" : "Lançamento criado");
       onSaved?.(id);
       onOpenChange(false);
     },
     onError: (e: Error) => toast.error(e.message),
   });
+
 
   const remove = useMutation({
     mutationFn: async () => {
@@ -159,7 +217,7 @@ export function FinanceEntryWindow({
   const Title = ({ children }: { children: React.ReactElement }) =>
     mode === "modal" ? <DialogTitle asChild>{children}</DialogTitle> : children;
 
-  const categories = nature === "expense" ? EXPENSE_CATEGORIES : REVENUE_CATEGORIES;
+
 
   const windowEl = (
     <div className="cw-window">
@@ -209,6 +267,16 @@ export function FinanceEntryWindow({
             <select className="cw-bare" value={projectId} onChange={e => setProjectId(e.target.value)}>
               <option value="">Sem projeto</option>
               {projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+            </select>
+            <ChevronDown size={14} style={{ color: "var(--cw-muted)", flexShrink: 0 }} />
+          </div>
+        </div>
+        <div className="cw-prop">
+          <div className="cw-label">Colaborador</div>
+          <div className="cw-prop-value">
+            <select className="cw-bare" value={collaboratorId} onChange={e => setCollaboratorId(e.target.value)}>
+              <option value="">Sem colaborador</option>
+              {teamMembers.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
             </select>
             <ChevronDown size={14} style={{ color: "var(--cw-muted)", flexShrink: 0 }} />
           </div>
@@ -287,6 +355,36 @@ export function FinanceEntryWindow({
               </span>
             </div>
           </div>
+
+          {!isEdit && (
+            <div className="cw-field cw-span-full">
+              <label className="cw-label">Recorrência</label>
+              <div style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" }}>
+                <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, cursor: "pointer" }}>
+                  <input type="checkbox" role="switch" checked={repeat} onChange={e => setRepeat(e.target.checked)} />
+                  <Repeat size={14} /> Repetir mensalmente
+                </label>
+                {repeat && (
+                  <>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <span style={{ fontSize: 12, color: "var(--cw-muted)" }}>Dia do mês</span>
+                      <input
+                        className="cw-input" type="number" min={1} max={28} style={{ width: 90 }}
+                        value={dayOfMonth || String(effectiveDay)}
+                        onChange={e => setDayOfMonth(e.target.value)}
+                      />
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <span style={{ fontSize: 12, color: "var(--cw-muted)" }}>Repetir até</span>
+                      <input className="cw-input" type="date" style={{ width: 170 }}
+                        value={repeatUntil} onChange={e => setRepeatUntil(e.target.value)} />
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+          )}
+
 
           <div className="cw-field cw-span-full">
             <label className="cw-label">Observações internas</label>
