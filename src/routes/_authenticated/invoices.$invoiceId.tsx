@@ -122,6 +122,17 @@ function InvoiceDetailPage() {
     () => Array.from(new Set(items.map(i => i.task_id).filter(Boolean) as string[])),
     [items],
   );
+  const { data: taskParents = {} as Record<string, string | null> } = useQuery({
+    queryKey: ["invoice-task-parents", invoiceId, itemTaskIds.join(",")],
+    enabled: itemTaskIds.length > 0,
+    queryFn: async () => {
+      const { data } = await supabase.from("tasks").select("id,parent_task_id").in("id", itemTaskIds);
+      const map: Record<string, string | null> = {};
+      for (const r of (data ?? []) as Array<{ id: string; parent_task_id: string | null }>) map[r.id] = r.parent_task_id;
+      return map;
+    },
+  });
+
   const { data: serviceNames = {} as Record<string, string> } = useQuery({
     queryKey: ["invoice-service-names", invoiceId, itemTaskIds.join(",")],
     enabled: itemTaskIds.length > 0,
@@ -190,12 +201,27 @@ function InvoiceDetailPage() {
       const rows = (orphanBuckets.get(key) ?? []).map(c => ({ ...c, isChild: true }));
       if (rows.length) blocks.push({ project: rows[0].project_id ?? "__none__", rows });
     }
+    // Subtarefas (tasks com parent_task_id) viram linhas-filhas do bloco da tarefa-pai,
+    // preservando o preço próprio e os entregáveis logo abaixo.
+    const blockByTask = new Map<string, typeof blocks[number]>();
+    for (const b of blocks) { const tid = b.rows[0].task_id; if (tid) blockByTask.set(tid, b); }
+    const mergedBlocks = new Set<typeof blocks[number]>();
+    for (const b of blocks) {
+      const tid = b.rows[0].task_id;
+      if (!tid) continue;
+      const pid = taskParents[tid] ?? null;
+      const parentBlock = pid ? blockByTask.get(pid) : undefined;
+      if (!parentBlock || parentBlock === b) continue;
+      parentBlock.rows.push(...b.rows.map(r => ({ ...r, isChild: true })));
+      mergedBlocks.add(b);
+    }
+    const rootBlocks = blocks.filter(b => !mergedBlocks.has(b));
     // Junta todos os blocos do mesmo projeto (uma única ocorrência por projeto),
     // ordenando por data (mais antiga primeiro) e depois pelo nome (numérico natural).
     const collator = new Intl.Collator("pt-BR", { numeric: true, sensitivity: "base" });
     const order: string[] = [];
     const byProject = new Map<string, typeof blocks>();
-    for (const b of blocks) {
+    for (const b of rootBlocks) {
       if (!byProject.has(b.project)) { byProject.set(b.project, []); order.push(b.project); }
       byProject.get(b.project)!.push(b);
     }
@@ -211,7 +237,8 @@ function InvoiceDetailPage() {
         .flatMap(b => b.rows),
     );
 
-  }, [items]);
+  }, [items, taskParents]);
+
 
 
 
