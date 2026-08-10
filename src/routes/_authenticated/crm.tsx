@@ -1426,7 +1426,7 @@ function NewLeadModal({
     service_type_id: "", owner_id: "", next_contact_at: "",
     temperature: "warm" as Temperature, briefing_template_id: "",
     approach: "" as "" | "we" | "them",
-    expected_close_date: "", notes: "", probability: "",
+    expected_close_date: "", notes: "", probability: "", estimated_value: "",
   };
   const [form, setForm] = useState(empty);
   const [interests, setInterests] = useState<string[]>([]);
@@ -1465,7 +1465,9 @@ function NewLeadModal({
         interests,
         we_approached: form.approach === "we" ? true : form.approach === "them" ? false : null,
         scope_items: scopeItems.filter(i => i.title.trim()),
-        estimated_value: scopeItems.reduce((a, i) => a + Number(i.qty || 0) * Number(i.unit_price || 0), 0),
+        estimated_value: scopeItems.length
+          ? scopeItems.reduce((a, i) => a + Number(i.qty || 0) * Number(i.unit_price || 0), 0)
+          : (form.estimated_value ? Number(form.estimated_value) : 0),
         stage_id: form.stage_id || null,
         probability: form.probability ? Number(form.probability) : (stage?.default_probability ?? 0),
         temperature: form.temperature,
@@ -1487,31 +1489,32 @@ function NewLeadModal({
     onError: (e: any) => toast.error(e?.message ?? "Erro ao criar lead"),
   });
 
+  const scopeTotal = scopeItems.reduce((a, i) => a + Number(i.qty || 0) * Number(i.unit_price || 0), 0);
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-3xl max-h-[88vh] overflow-y-auto">
+      <DialogContent className="max-w-[980px] w-[95vw] sm:max-w-[980px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Novo lead</DialogTitle>
-          <DialogDescription>Cadastre o contato e, se quiser, já preencha o briefing inicial.</DialogDescription>
+          <DialogTitle className="flex items-center gap-2"><User size={18} /> Novo lead</DialogTitle>
+          <DialogDescription>Registre uma nova oportunidade comercial em seu pipeline.</DialogDescription>
         </DialogHeader>
 
         <div className="cw">
-          <div className="cw-grid cw-grid-2">
+          {/* CRM02-06 / CRM02-07 — Origem do contato + Temperatura */}
+          <div className="cw-grid" style={{ display: "grid", gridTemplateColumns: "380px 1fr", gap: 16 }}>
             <div className="cw-field">
               <label className="cw-label">Origem do contato</label>
               <div className="cw-grid cw-grid-2">
                 <button type="button" className={`cw-choice${form.approach === "we" ? " is-on" : ""}`} onClick={() => setForm({ ...form, approach: "we" })}>
                   <span className="cw-choice-title"><Send size={15} /> Nós abordamos</span>
-                  <span className="cw-choice-desc">Prospecção ativa da agência</span>
                 </button>
                 <button type="button" className={`cw-choice${form.approach === "them" ? " is-on" : ""}`} onClick={() => setForm({ ...form, approach: "them" })}>
                   <span className="cw-choice-title"><Inbox size={15} /> Fomos abordados</span>
-                  <span className="cw-choice-desc">O lead chegou até nós</span>
                 </button>
               </div>
             </div>
             <div className="cw-field">
-              <label className="cw-label">Temperatura</label>
+              <label className="cw-label">Temperatura do lead</label>
               <div className="cw-grid cw-grid-3">
                 {TEMPERATURES.map(t => {
                   const Ico = t.icon;
@@ -1530,11 +1533,11 @@ function NewLeadModal({
             </div>
           </div>
 
-          <div className="cw-section">
-            <div className="cw-section-head"><h4>Propriedades</h4></div>
-            <div className="cw-grid cw-grid-3">
+          {/* CRM02-08 — linha única de propriedades */}
+          <div className="cw-section" style={{ borderTop: "none", paddingTop: 16, marginTop: 12 }}>
+            <div className="cw-grid" style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr) 150px", gap: 12 }}>
               <div className="cw-field">
-                <label className="cw-label">Etapa do pipeline</label>
+                <label className="cw-label">Etapa do pipeline *</label>
                 <select
                   className="cw-select"
                   value={form.stage_id}
@@ -1552,7 +1555,7 @@ function NewLeadModal({
                 </select>
               </div>
               <div className="cw-field">
-                <label className="cw-label">Responsável</label>
+                <label className="cw-label">Responsável *</label>
                 <select
                   className="cw-select"
                   value={form.owner_id || "none"}
@@ -1563,34 +1566,34 @@ function NewLeadModal({
                 </select>
               </div>
               <div className="cw-field">
-                <label className="cw-label">Fonte / Origem</label>
+                <label className="cw-label">Fonte / Origem *</label>
                 <select className="cw-select" value={form.source} onChange={e => setForm({ ...form, source: e.target.value })}>
-                  <option value="">Selecionar origem</option>
+                  <option value="">Selecionar</option>
                   {LEAD_SOURCES.map(s => <option key={s} value={s}>{s}</option>)}
                 </select>
               </div>
               <div className="cw-field">
-                <label className="cw-label">Segmento</label>
+                <label className="cw-label">Segmento *</label>
                 <select className="cw-select" value={form.segment} onChange={e => setForm({ ...form, segment: e.target.value })}>
-                  <option value="">Selecionar segmento</option>
+                  <option value="">Selecionar</option>
                   {segments.map(s => <option key={s} value={s}>{s}</option>)}
                 </select>
               </div>
               <div className="cw-field">
                 <label className="cw-label">Tipo de serviço *</label>
                 <select className="cw-select" value={form.service_type_id} onChange={e => setForm({ ...form, service_type_id: e.target.value })}>
-                  <option value="">Selecionar tipo de serviço</option>
+                  <option value="">Selecionar</option>
                   {serviceTypes.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
                 </select>
               </div>
               <div className="cw-field">
-                <label className="cw-label">Cliente vinculado</label>
+                <label className="cw-label">Cliente já existente</label>
                 <select
                   className="cw-select"
                   value={form.client_id || "none"}
                   onChange={e => setForm({ ...form, client_id: e.target.value === "none" ? "" : e.target.value })}
                 >
-                  <option value="none">Nenhum</option>
+                  <option value="none">Não</option>
                   {clients.map(c => (
                     <option key={c.id} value={c.id}>{c.name}{c.company ? ` · ${c.company}` : ""}</option>
                   ))}
@@ -1599,15 +1602,16 @@ function NewLeadModal({
             </div>
           </div>
 
+          {/* CRM02-09 — Dados da empresa e contato */}
           <div className="cw-section">
             <div className="cw-section-head"><h4>Dados da empresa e contato</h4></div>
-            <div className="cw-grid cw-grid-2">
+            <div className="cw-grid cw-grid-4">
               <div className="cw-field">
                 <label className="cw-label">Nome da empresa</label>
                 <input className="cw-input" value={form.company} onChange={e => setForm({ ...form, company: e.target.value })} />
               </div>
               <div className="cw-field">
-                <label className="cw-label">Nome do contato*</label>
+                <label className="cw-label">Nome do contato *</label>
                 <input className="cw-input" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} />
               </div>
               <div className="cw-field">
@@ -1621,9 +1625,21 @@ function NewLeadModal({
             </div>
           </div>
 
+          {/* CRM02-10 — Informações comerciais */}
           <div className="cw-section">
             <div className="cw-section-head"><h4>Informações comerciais</h4></div>
-            <div className="cw-grid cw-grid-3">
+            <div className="cw-grid cw-grid-4">
+              <div className="cw-field">
+                <label className="cw-label">Valor estimado</label>
+                <input
+                  className="cw-input"
+                  type="number" min={0} step="0.01"
+                  placeholder="R$ 0,00"
+                  value={scopeTotal > 0 ? String(scopeTotal) : form.estimated_value}
+                  disabled={scopeTotal > 0}
+                  onChange={e => setForm({ ...form, estimated_value: e.target.value })}
+                />
+              </div>
               <div className="cw-field">
                 <label className="cw-label">Probabilidade de fechamento (%)</label>
                 <input
@@ -1643,7 +1659,7 @@ function NewLeadModal({
                 />
               </div>
               <div className="cw-field">
-                <label className="cw-label">Próximo contato previsto</label>
+                <label className="cw-label">Próximo contato</label>
                 <input
                   className="cw-input"
                   type="date"
@@ -1654,11 +1670,12 @@ function NewLeadModal({
             </div>
           </div>
 
+          {/* CRM02-11 / CRM02-12 — Interesses e Observações lado a lado */}
           <div className="cw-section">
-            <div className="cw-section-head"><h4>Interesses e observações</h4></div>
             <div className="cw-grid cw-grid-2">
-              <div className="cw-field">
-                <label className="cw-label">Interesses</label>
+              <div className="cw-field cw-box" style={{ border: "1px solid var(--cw-divider)", borderRadius: 12, padding: 14 }}>
+                <label className="cw-label">Interesses / Escopo <span style={{ fontWeight: 400, opacity: .6 }}>(opcional)</span></label>
+                <p style={{ fontSize: 11, opacity: .6, margin: "0 0 8px" }}>Adicione os principais temas de interesse deste lead.</p>
                 {interests.length > 0 && (
                   <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 6 }}>
                     {interests.map(item => (
@@ -1672,7 +1689,7 @@ function NewLeadModal({
                 <input
                   className="cw-input"
                   value={interestDraft}
-                  placeholder="Ex: Planejamento estratégico, Consultoria..."
+                  placeholder="Digite e pressione Enter para adicionar"
                   onChange={e => setInterestDraft(e.target.value)}
                   onKeyDown={e => {
                     if (e.key === "Enter") {
@@ -1684,8 +1701,9 @@ function NewLeadModal({
                   }}
                 />
               </div>
-              <div className="cw-field">
-                <label className="cw-label">Observações</label>
+              <div className="cw-field cw-box" style={{ border: "1px solid var(--cw-divider)", borderRadius: 12, padding: 14 }}>
+                <label className="cw-label">Observações <span style={{ fontWeight: 400, opacity: .6 }}>(opcional)</span></label>
+                <p style={{ fontSize: 11, opacity: .6, margin: "0 0 8px" }}>Descreva o contexto, necessidades e próximos passos…</p>
                 <textarea
                   className="cw-textarea"
                   rows={4}
@@ -1696,33 +1714,30 @@ function NewLeadModal({
             </div>
           </div>
 
-
-          <div className="cw-section">
-            <div className="cw-section-head"><h4>Escopo estimado</h4></div>
-            <ScopeBuilder items={scopeItems} onChange={setScopeItems} taskTypes={taskTypes} />
-          </div>
-
-          <div className="cw-section">
-            <div className="cw-section-head"><h4>Briefing inicial</h4></div>
-            <div className="cw-field">
-              <label className="cw-label">Modelo de briefing</label>
-              <select
-                className="cw-select"
-                value={form.briefing_template_id}
-                onChange={e => setForm({ ...form, briefing_template_id: e.target.value })}
-              >
-                <option value="">{briefingTemplates.length ? "Opcional — escolher modelo" : "Nenhum modelo cadastrado"}</option>
-                {briefingTemplates.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
-              </select>
-            </div>
-            {template && (
-              <div className="mt-4">
-                <BriefingForm template={template} data={briefing} onChange={setBriefing} />
+          {/* Complementos opcionais — fora da estrutura obrigatória do CRM-02 */}
+          <details className="cw-section">
+            <summary style={{ cursor: "pointer", fontSize: 13, fontWeight: 600 }}>Escopo detalhado e briefing inicial (opcional)</summary>
+            <div style={{ marginTop: 14 }}>
+              <ScopeBuilder items={scopeItems} onChange={setScopeItems} taskTypes={taskTypes} />
+              <div className="cw-field" style={{ marginTop: 16 }}>
+                <label className="cw-label">Modelo de briefing</label>
+                <select
+                  className="cw-select"
+                  value={form.briefing_template_id}
+                  onChange={e => setForm({ ...form, briefing_template_id: e.target.value })}
+                >
+                  <option value="">{briefingTemplates.length ? "Opcional — escolher modelo" : "Nenhum modelo cadastrado"}</option>
+                  {briefingTemplates.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+                </select>
               </div>
-            )}
-          </div>
+              {template && (
+                <div className="mt-4">
+                  <BriefingForm template={template} data={briefing} onChange={setBriefing} />
+                </div>
+              )}
+            </div>
+          </details>
         </div>
-
 
         <DialogFooter>
           <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancelar</Button>
@@ -1734,6 +1749,7 @@ function NewLeadModal({
     </Dialog>
   );
 }
+
 
 // ---------- Escopo (itens de precificação) ----------
 function ScopeBuilder({
