@@ -272,6 +272,16 @@ export function FinanceEntryWindow({
           </div>
         </div>
         <div className="cw-prop">
+          <div className="cw-label">Colaborador</div>
+          <div className="cw-prop-value">
+            <select className="cw-bare" value={collaboratorId} onChange={e => setCollaboratorId(e.target.value)}>
+              <option value="">Sem colaborador</option>
+              {teamMembers.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
+            </select>
+            <ChevronDown size={14} style={{ color: "var(--cw-muted)", flexShrink: 0 }} />
+          </div>
+        </div>
+        <div className="cw-prop">
           <div className="cw-label">Vencimento</div>
           <div className="cw-prop-value">
             <input type="date" className="cw-bare" value={dueDate ?? ""} onChange={e => setDueDate(e.target.value)} />
