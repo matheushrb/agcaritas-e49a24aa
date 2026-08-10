@@ -356,6 +356,36 @@ export function FinanceEntryWindow({
             </div>
           </div>
 
+          {!isEdit && (
+            <div className="cw-field cw-span-full">
+              <label className="cw-label">Recorrência</label>
+              <div style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" }}>
+                <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, cursor: "pointer" }}>
+                  <input type="checkbox" role="switch" checked={repeat} onChange={e => setRepeat(e.target.checked)} />
+                  <Repeat size={14} /> Repetir mensalmente
+                </label>
+                {repeat && (
+                  <>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <span style={{ fontSize: 12, color: "var(--cw-muted)" }}>Dia do mês</span>
+                      <input
+                        className="cw-input" type="number" min={1} max={28} style={{ width: 90 }}
+                        value={dayOfMonth || String(effectiveDay)}
+                        onChange={e => setDayOfMonth(e.target.value)}
+                      />
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <span style={{ fontSize: 12, color: "var(--cw-muted)" }}>Repetir até</span>
+                      <input className="cw-input" type="date" style={{ width: 170 }}
+                        value={repeatUntil} onChange={e => setRepeatUntil(e.target.value)} />
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+          )}
+
+
           <div className="cw-field cw-span-full">
             <label className="cw-label">Observações internas</label>
             <textarea className="cw-textarea" rows={3} placeholder="Notas (opcional)"
