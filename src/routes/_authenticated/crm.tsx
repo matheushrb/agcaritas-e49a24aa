@@ -1629,7 +1629,10 @@ function NewLeadModal({
               </div>
               <div className="cw-field">
                 <label className="cw-label">Telefone / WhatsApp</label>
-                <input className="cw-input" value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} />
+                <div className="crm02-adorn has-r">
+                  <input className="cw-input" value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} />
+                  <span className="crm02-adorn-r is-wa"><Phone size={14} /></span>
+                </div>
               </div>
             </div>
           </div>
@@ -1639,45 +1642,58 @@ function NewLeadModal({
             <div className="cw-section-head"><h4>Informações comerciais</h4></div>
             <div className="cw-grid cw-grid-4">
               <div className="cw-field">
-                <label className="cw-label">Valor estimado</label>
-                <input
-                  className="cw-input"
-                  type="number" min={0} step="0.01"
-                  placeholder="R$ 0,00"
-                  value={scopeTotal > 0 ? String(scopeTotal) : form.estimated_value}
-                  disabled={scopeTotal > 0}
-                  onChange={e => setForm({ ...form, estimated_value: e.target.value })}
-                />
+                <label className="cw-label">Valor estimado *</label>
+                <div className="crm02-adorn has-l">
+                  <span className="crm02-adorn-l">R$</span>
+                  <input
+                    className="cw-input"
+                    type="number" min={0} step="0.01"
+                    placeholder="0,00"
+                    value={scopeTotal > 0 ? String(scopeTotal) : form.estimated_value}
+                    disabled={scopeTotal > 0}
+                    onChange={e => setForm({ ...form, estimated_value: e.target.value })}
+                  />
+                </div>
               </div>
               <div className="cw-field">
-                <label className="cw-label">Probabilidade de fechamento (%)</label>
-                <input
-                  className="cw-input"
-                  type="number" min={0} max={100}
-                  value={form.probability}
-                  onChange={e => setForm({ ...form, probability: e.target.value })}
-                />
+                <label className="cw-label">Probabilidade de fechamento *</label>
+                <div className="crm02-adorn has-r">
+                  <input
+                    className="cw-input"
+                    type="number" min={0} max={100}
+                    value={form.probability}
+                    onChange={e => setForm({ ...form, probability: e.target.value })}
+                  />
+                  <span className="crm02-adorn-r">%</span>
+                </div>
               </div>
               <div className="cw-field">
                 <label className="cw-label">Data de fechamento esperada</label>
-                <input
-                  className="cw-input"
-                  type="date"
-                  value={form.expected_close_date}
-                  onChange={e => setForm({ ...form, expected_close_date: e.target.value })}
-                />
+                <div className="crm02-adorn has-r">
+                  <input
+                    className="cw-input"
+                    type="date"
+                    value={form.expected_close_date}
+                    onChange={e => setForm({ ...form, expected_close_date: e.target.value })}
+                  />
+                  <span className="crm02-adorn-r"><CalendarDays size={14} /></span>
+                </div>
               </div>
               <div className="cw-field">
                 <label className="cw-label">Próximo contato</label>
-                <input
-                  className="cw-input"
-                  type="date"
-                  value={form.next_contact_at}
-                  onChange={e => setForm({ ...form, next_contact_at: e.target.value })}
-                />
+                <div className="crm02-adorn has-r">
+                  <input
+                    className="cw-input"
+                    type="date"
+                    value={form.next_contact_at}
+                    onChange={e => setForm({ ...form, next_contact_at: e.target.value })}
+                  />
+                  <span className="crm02-adorn-r"><CalendarDays size={14} /></span>
+                </div>
               </div>
             </div>
           </div>
+
 
           {/* CRM02-11 / CRM02-12 — Interesses e Observações lado a lado */}
           <div className="cw-section">
