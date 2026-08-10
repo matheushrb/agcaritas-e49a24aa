@@ -788,12 +788,13 @@ function StageRow({ stage, canUp, canDown, onMove, onPatch, onDelete }:{
                         <Input
                           value={item}
                           onChange={e => {
-                            const next = [...checklist]; next[idx] = e.target.value;
-                            onPatch({ auto_checklist: next });
+                            const v = e.target.value;
+                            setChecklist(cur => cur.map((x, i) => (i === idx ? v : x)));
                           }}
                           onBlur={e => updateItem(idx, e.target.value)}
                           className="h-7 text-xs rounded-lg"
                         />
+
                         <Button size="icon" variant="ghost" className="h-7 w-7 text-muted-foreground hover:text-destructive"
                           onClick={() => removeItem(idx)}>
                           <Trash2 className="h-3 w-3" />
