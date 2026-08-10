@@ -59,14 +59,108 @@ export function Rh04Payroll({ members }: { members: HrMember[] }) {
 
   const recent = useMemo(() => events.slice(0, 8), [events]);
 
+  const [ym, setYm] = useState(monthKey());
+  const lines = useMemo(() => buildPayrollLines(members, events, ym), [members, events, ym]);
+  const provision = useMemo(() => thirteenthProvision(members), [members]);
+
+  const qc = useQueryClient();
+  const { data: posted = [] } = useQuery({
+    queryKey: ["payroll-charges", ym],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("charges")
+        .select("id,description,amount,collaborator_id,category,status")
+        .eq("competence_month", `${ym}-01`)
+        .in("category", [PAYROLL_CATEGORY, BONUS_CATEGORY]);
+      if (error) throw error;
+      return (data ?? []) as Array<{ id: string; description: string; amount: number; status: string }>;
+    },
+  });
+
+  const postedByDesc = useMemo(
+    () => new Map(posted.map(c => [c.description, c])),
+    [posted],
+  );
+  const missing = useMemo(() => lines.filter(l => !postedByDesc.has(l.description)), [lines, postedByDesc]);
+
+  const post = useMutation({
+    mutationFn: async () => {
+      if (missing.length === 0) return 0;
+      const { data: profile } = await supabase.from("profiles").select("organization_id").maybeSingle();
+      if (!profile?.organization_id) throw new Error("Sem organização");
+      const rows = missing.map(l => ({
+        organization_id: profile.organization_id,
+        description: l.description,
+        amount: l.amount,
+        nature: "expense",
+        category: l.category,
+        status: "pending",
+        due_date: l.dueDate,
+        competence_month: `${ym}-01`,
+        collaborator_id: l.memberId,
+      }));
+      const { error } = await (supabase as any).from("charges").insert(rows);
+      if (error) throw error;
+      return rows.length;
+    },
+    onSuccess: (n) => {
+      qc.invalidateQueries({ queryKey: ["payroll-charges", ym] });
+      qc.invalidateQueries({ queryKey: ["charges"] });
+      toast.success(n ? `${n} lançamento(s) enviados ao Financeiro` : "Nada a lançar");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const totalMonth = lines.reduce((s, l) => s + l.amount, 0);
+
   return (
     <div className="space-y-5">
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
         <Kpi icon={Wallet} label="Folha mensal" value={brl(totals.payroll)} hint="custo fixo de pessoas ativas" />
         <Kpi icon={CalendarClock} label="Pagamentos em 7 dias" value={String(totals.next7.length)} hint={brl(totals.next7.reduce((s, r) => s + r.cost, 0))} />
         <Kpi icon={Gift} label="Bônus a pagar" value={brl(totals.pendingBonus)} hint={`${pendingBonuses.length} registro(s)`} />
         <Kpi icon={TrendingUp} label="Aumentos no ano" value={String(totals.raisesYear)} hint="aumentos e promoções" />
+        <Kpi icon={PiggyBank} label="Provisão de 13º" value={brl(provision)} hint="1/12 da folha dos internos" />
       </div>
+
+      <Card className="p-4">
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
+          <div>
+            <h3 className="text-sm font-semibold flex items-center gap-1.5">
+              <ArrowRightLeft className="size-4" />Fechamento da folha no Financeiro
+            </h3>
+            <p className="text-[11px] text-muted-foreground">
+              {monthLabel(ym)} · {lines.length} linha(s) · total {brl(totalMonth)}
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <input type="month" value={ym} onChange={e => setYm(e.target.value || monthKey())} className="cw-input h-9 text-[13px]" />
+            <Button size="sm" disabled={missing.length === 0 || post.isPending} onClick={() => post.mutate()}>
+              {missing.length === 0 ? "Folha lançada" : `Lançar ${missing.length} no Financeiro`}
+            </Button>
+          </div>
+        </div>
+        <div className="space-y-1.5">
+          {lines.map(l => {
+            const done = postedByDesc.get(l.description);
+            return (
+              <div key={l.key} className="flex items-center gap-3 text-[13px]">
+                <span className={`size-2 rounded-full ${l.kind === "bonus" ? "bg-amber-500" : "bg-blue-500"}`} />
+                <span className="truncate flex-1">{l.description}</span>
+                <span className="text-[11px] text-muted-foreground shrink-0">{fmtFull(l.dueDate)}</span>
+                <span className="tabular-nums shrink-0 w-28 text-right">{brl2(l.amount)}</span>
+                <span className="shrink-0 w-24 text-right text-[11px]">
+                  {done
+                    ? <span className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400"><Check className="size-3" />lançado</span>
+                    : <span className="text-muted-foreground">pendente</span>}
+                </span>
+              </div>
+            );
+          })}
+          {lines.length === 0 && <p className="text-[13px] text-muted-foreground">Nenhum custo fixo ou bônus neste mês.</p>}
+        </div>
+      </Card>
+
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <Card className="p-4 lg:col-span-2">
