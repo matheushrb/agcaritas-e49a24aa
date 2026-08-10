@@ -701,6 +701,8 @@ export function TaskWindow({
     due_date: dueDate || null,
     stage: stage as any,
     current_stage_id: currentStageId,
+    stage_started_on: (currentStageId && stageWindowById[currentStageId]?.start) || null,
+    stage_due_on: (currentStageId && stageWindowById[currentStageId]?.end) || null,
     progress,
 
     task_type_id: taskTypeId,
