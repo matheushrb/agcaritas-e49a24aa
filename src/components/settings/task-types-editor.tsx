@@ -46,12 +46,17 @@ export type TaskTypeStage = {
   auto_checklist: string[];
   auto_deliverables: AutoDeliverable[];
   auto_live: AutoLive[];
+  auto_subtasks: AutoSubtask[];
+  start_offset_days: number | null;
+  end_offset_days: number | null;
 };
 
 /** Entregável criado automaticamente ao atingir a etapa. */
 export type AutoDeliverable = { label: string; platform: string; type: string; value: number | null };
 /** Transmissão ao vivo / estreia criada automaticamente ao atingir a etapa. */
 export type AutoLive = { title: string; kind: "live" | "premiere"; platform: string };
+/** Subtarefa criada automaticamente ao atingir a etapa — com tipo e valor próprios. */
+export type AutoSubtask = { title: string; task_type_id: string | null; value: number | null };
 
 export const AUTO_DELIVERABLE_TYPES = [
   { value: "video", label: "Vídeo" },
