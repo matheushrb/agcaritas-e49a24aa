@@ -122,6 +122,17 @@ function InvoiceDetailPage() {
     () => Array.from(new Set(items.map(i => i.task_id).filter(Boolean) as string[])),
     [items],
   );
+  const { data: taskParents = {} as Record<string, string | null> } = useQuery({
+    queryKey: ["invoice-task-parents", invoiceId, itemTaskIds.join(",")],
+    enabled: itemTaskIds.length > 0,
+    queryFn: async () => {
+      const { data } = await supabase.from("tasks").select("id,parent_task_id").in("id", itemTaskIds);
+      const map: Record<string, string | null> = {};
+      for (const r of (data ?? []) as Array<{ id: string; parent_task_id: string | null }>) map[r.id] = r.parent_task_id;
+      return map;
+    },
+  });
+
   const { data: serviceNames = {} as Record<string, string> } = useQuery({
     queryKey: ["invoice-service-names", invoiceId, itemTaskIds.join(",")],
     enabled: itemTaskIds.length > 0,
