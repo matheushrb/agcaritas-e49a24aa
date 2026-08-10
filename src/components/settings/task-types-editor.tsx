@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
@@ -360,14 +360,14 @@ function TypeEditorPanel({ type, stages, onDelete, onDuplicate }:{
   const [defaultPrice, setDefaultPrice] = useState(type.default_price?.toString() ?? "");
 
   // Sync when switching type
-  useMemo(() => {
+  useEffect(() => {
     setName(type.name);
     setDescription(type.description ?? "");
     setColor(type.color);
     setIcon(type.icon ?? null);
     setBillingModel(type.default_billing_model ?? "");
     setDefaultPrice(type.default_price?.toString() ?? "");
-  }, [type.id]);
+  }, [type.id, type.name, type.description, type.color, type.icon, type.default_billing_model, type.default_price]);
 
   const updateType = useMutation({
     mutationFn: async (patch: Partial<TaskType>) => {
@@ -711,7 +711,7 @@ function StageRow({ stage, canUp, canDown, onMove, onPatch, onDelete }:{
     <Button
       size="icon" variant="ghost"
       className={cn(
-        "h-8 w-8 rounded-full transition-colors",
+        "h-8 w-8 rounded-full transition-colors hover:bg-primary/10 hover:text-primary",
         count > 0 && "text-primary",
         panel === p && "bg-primary/10 text-primary ring-1 ring-primary/25",
       )}
