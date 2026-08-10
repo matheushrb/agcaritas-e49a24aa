@@ -845,8 +845,12 @@ function StageRow({ stage, canUp, canDown, onMove, onPatch, onDelete }:{
         />
 
         {tabBtn("checklist", <ListChecks className="h-4 w-4" />, checklist.length, "Checklist automático")}
+        {tabBtn("subtasks", <GitBranch className="h-4 w-4" />, subtasks.length, "Subtarefas automáticas")}
         {tabBtn("deliverables", <Package className="h-4 w-4" />, deliverables.length, "Entregáveis automáticos")}
         {tabBtn("live", <Radio className="h-4 w-4" />, lives.length, "Transmissões ao vivo automáticas")}
+        {tabBtn("schedule", <CalendarClock className="h-4 w-4" />,
+          (stage.start_offset_days != null || stage.end_offset_days != null) ? 1 : 0,
+          "Prazo relativo à entrega")}
 
         <Button size="icon" variant="ghost" className="h-8 w-8 rounded-full text-muted-foreground hover:text-destructive" onClick={onDelete} title="Excluir">
           <Trash2 className="h-3.5 w-3.5" />
