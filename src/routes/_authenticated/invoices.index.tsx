@@ -432,7 +432,7 @@ function NewInvoiceWizard({
     queryFn: async () => {
       const { data } = await supabase
         .from("tasks")
-        .select("id,title,billing_base_value,billing_value,billing_enabled,client_id,project_id,status,deliverables,due_date,aired_at,aired_dates,recorded_at,recorded_dates,task_type_id")
+        .select("id,title,billing_base_value,billing_value,billing_enabled,client_id,project_id,status,deliverables,due_date,aired_at,aired_dates,recorded_at,recorded_dates,task_type_id,parent_task_id")
         .eq("billing_enabled", true);
       const ts = (data ?? []) as BillableTask[];
       const { data: existingCharges } = await supabase
