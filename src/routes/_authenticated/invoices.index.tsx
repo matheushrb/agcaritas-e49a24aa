@@ -667,6 +667,24 @@ function NewInvoiceWizard({
       consumed.add(line.key);
       blocks.push({ group: line.group ?? "", rows: [{ ...line, is_child: !!line.deliverable_id }] });
     }
+    // Subtarefas (tasks com parent_task_id) entram como filhas do bloco da tarefa-pai,
+    // mantendo o próprio preço e os próprios entregáveis logo abaixo.
+    const parentOf = new Map<string, string | null>(tasks.map(t => [t.id, t.parent_task_id ?? null]));
+    const blockByTask = new Map<string, { group: string; rows: Line[] }>();
+    for (const b of blocks) { const tid = b.rows[0].task_id; if (tid) blockByTask.set(tid, b); }
+    const merged = new Set<{ group: string; rows: Line[] }>();
+    for (const b of blocks) {
+      const tid = b.rows[0].task_id;
+      if (!tid) continue;
+      const pid = parentOf.get(tid) ?? null;
+      if (!pid) continue;
+      const parentBlock = blockByTask.get(pid);
+      if (!parentBlock || parentBlock === b) continue;
+      parentBlock.rows.push(...b.rows.map(r => ({ ...r, is_child: true })));
+      merged.add(b);
+    }
+    const rootBlocks = blocks.filter(b => !merged.has(b));
+
     // Ordena os blocos dentro de cada projeto: data mais antiga primeiro, depois nome (numérico natural).
     const collator = new Intl.Collator("pt-BR", { numeric: true, sensitivity: "base" });
     const blockKey = (b: { rows: Line[] }) => ({
