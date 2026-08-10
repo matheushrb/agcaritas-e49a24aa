@@ -960,11 +960,26 @@ export function TaskWindow({
                   <span className="cw-stage-sub">
                     {STATUSES.find(x => x.value === s.status)?.label ?? s.status}
                   </span>
+                  {s.stageId && stageWindowById[s.stageId] && (stageWindowById[s.stageId].start || stageWindowById[s.stageId].end) && (
+                    <span className="cw-stage-dates">
+                      {fmtBr(stageWindowById[s.stageId].start)} → {fmtBr(stageWindowById[s.stageId].end)}
+                    </span>
+                  )}
+                  {s.stageId && stageAlerts[s.stageId] && (
+                    <span className={`cw-stage-alert is-${stageAlerts[s.stageId]!.level}`}>
+                      {stageAlerts[s.stageId]!.message}
+                    </span>
+                  )}
                 </button>
               ))}
             </div>
+            {currentStageAlert && currentStageAlert.level !== "ok" && (
+              <p className={`cw-stage-banner is-${currentStageAlert.level}`}>
+                Etapa “{flowSteps[activeIdx]?.label}”: {currentStageAlert.message}
+              </p>
+            )}
             <p className="cw-stageband-hint">
-              Ao mudar a etapa, o status é sincronizado automaticamente. Você pode mudar livremente entre etapas.
+              Ao mudar a etapa, o status é sincronizado automaticamente. Os prazos das etapas são contados a partir da data de entrega.
             </p>
           </div>
 
