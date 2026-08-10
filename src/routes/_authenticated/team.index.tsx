@@ -153,7 +153,9 @@ function HrPage() {
         </Card>
       )}
 
-      {tab === "overview" ? <Rh01Overview members={members} /> : <Rh02People members={members} onEdit={setEditing} />}
+      {tab === "overview" && <Rh01Overview members={members} />}
+      {tab === "people" && <Rh02People members={members} onEdit={setEditing} />}
+      {tab === "payroll" && <Rh04Payroll members={members} />}
 
       {(newOpen || editing) && (
         <HrMemberDialog
