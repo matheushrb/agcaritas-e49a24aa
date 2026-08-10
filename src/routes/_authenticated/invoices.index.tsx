@@ -1447,21 +1447,48 @@ function InvoiceDetail({ id, clients, organization, onClose }: { id: string; cli
     },
   });
 
-  // Agrupa entregáveis logo abaixo da tarefa-pai correspondente
+  const chargeTaskIds = useMemo(
+    () => Array.from(new Set(charges.map(c => c.task_id).filter(Boolean) as string[])),
+    [charges],
+  );
+  const { data: chargeTaskParents = {} as Record<string, string | null> } = useQuery({
+    queryKey: ["invoice-charge-parents", id, chargeTaskIds.join(",")],
+    enabled: chargeTaskIds.length > 0,
+    queryFn: async () => {
+      const { data } = await supabase.from("tasks").select("id,parent_task_id").in("id", chargeTaskIds);
+      const map: Record<string, string | null> = {};
+      for (const r of (data ?? []) as Array<{ id: string; parent_task_id: string | null }>) map[r.id] = r.parent_task_id;
+      return map;
+    },
+  });
+
+  // Agrupa entregáveis e subtarefas logo abaixo da tarefa-pai correspondente
   const orderedCharges = useMemo(() => {
+    type Row = PendingCharge & { isChild?: boolean };
     const parents = charges.filter(c => !c.deliverable_id);
     const children = charges.filter(c => !!c.deliverable_id);
-    const out: Array<PendingCharge & { isChild?: boolean }> = [];
     const used = new Set<string>();
+    const blocks: Array<{ taskId: string | null; rows: Row[] }> = [];
     for (const p of parents) {
-      out.push(p);
+      const rows: Row[] = [p];
       for (const c of children) {
-        if (c.task_id && c.task_id === p.task_id) { out.push({ ...c, isChild: true }); used.add(c.id); }
+        if (c.task_id && c.task_id === p.task_id) { rows.push({ ...c, isChild: true }); used.add(c.id); }
       }
+      blocks.push({ taskId: p.task_id ?? null, rows });
     }
-    for (const c of children) if (!used.has(c.id)) out.push(c);
-    return out;
-  }, [charges]);
+    for (const c of children) if (!used.has(c.id)) blocks.push({ taskId: null, rows: [{ ...c, isChild: true }] });
+    const byTask = new Map<string, { taskId: string | null; rows: Row[] }>();
+    for (const b of blocks) if (b.taskId) byTask.set(b.taskId, b);
+    const merged = new Set<{ taskId: string | null; rows: Row[] }>();
+    for (const b of blocks) {
+      const pid = b.taskId ? chargeTaskParents[b.taskId] ?? null : null;
+      const parentBlock = pid ? byTask.get(pid) : undefined;
+      if (!parentBlock || parentBlock === b) continue;
+      parentBlock.rows.push(...b.rows.map(r => ({ ...r, isChild: true })));
+      merged.add(b);
+    }
+    return blocks.filter(b => !merged.has(b)).flatMap(b => b.rows);
+  }, [charges, chargeTaskParents]);
 
 
   useEffect(() => {
