@@ -271,11 +271,83 @@ export function TaskWindow({
       setCurrentStageId(s.stageId);
       const eq = STAGES.find(x => x.status === s.status);
       if (eq) setStage(eq.id);
+      applyStageAutomations(s.stageId);
     } else if (s.stage) {
       setStage(s.stage);
       setCurrentStageId(null);
     }
   };
+
+  /** Cria checklist, entregáveis e transmissões configurados no modelo da etapa. */
+  const applyStageAutomations = (stageId: string) => {
+    const row: any = typeStages.find(x => x.id === stageId);
+    if (!row) return;
+    let created = 0;
+
+    const autoChk: string[] = Array.isArray(row.auto_checklist) ? row.auto_checklist : [];
+    if (autoChk.length) {
+      setChecklist(prev => {
+        const seen = new Set(prev.map(c => c.title.trim().toLowerCase()));
+        const add = autoChk
+          .map(t => String(t).trim())
+          .filter(t => t && !seen.has(t.toLowerCase()))
+          .map(title => ({ id: uid(), title, done: false }));
+        created += add.length;
+        return add.length ? [...prev, ...add] : prev;
+      });
+    }
+
+    const autoDel: any[] = Array.isArray(row.auto_deliverables) ? row.auto_deliverables : [];
+    if (autoDel.length) {
+      setDeliverables(prev => {
+        const seen = new Set(prev.map(d => `${(d.platform ?? "").trim().toLowerCase()}|${(d.type ?? "").trim().toLowerCase()}`));
+        const add = autoDel
+          .filter(d => d && (d.label || d.platform))
+          .filter(d => {
+            const key = `${String(d.label || d.platform).trim().toLowerCase()}|${String(d.type ?? "").trim().toLowerCase()}`;
+            if (seen.has(key)) return false;
+            seen.add(key);
+            return true;
+          })
+          .map(d => ({
+            id: uid(),
+            platform: String(d.label || d.platform || ""),
+            type: String(d.type || "other"),
+            billing_enabled: !!d.value,
+            billing_value: d.value ?? null,
+            delivered: false,
+          }));
+        created += add.length;
+        return add.length ? [...prev, ...add] : prev;
+      });
+    }
+
+    const autoLive: any[] = Array.isArray(row.auto_live) ? row.auto_live : [];
+    if (autoLive.length) {
+      setLiveItems(prev => {
+        const seen = new Set(prev.map(l => l.title.trim().toLowerCase()));
+        const add = autoLive
+          .filter(l => l && l.title && !seen.has(String(l.title).trim().toLowerCase()))
+          .map(l => ({
+            id: uid(),
+            title: String(l.title),
+            kind: (l.kind === "premiere" ? "premiere" : "live") as LiveDraft["kind"],
+            platform: String(l.platform || ""),
+            date: null,
+            time: "",
+            duration_min: null,
+            status: "scheduled" as LiveDraft["status"],
+            url: "",
+            notes: "",
+          }));
+        created += add.length;
+        return add.length ? [...prev, ...add] : prev;
+      });
+    }
+
+    if (created) toast.success(`${created} item(ns) criados pela etapa “${row.name}”`);
+  };
+
 
   /* Alterar o status leva a etapa para a primeira condicionada àquele status. */
   const changeStatus = (value: string) => {
