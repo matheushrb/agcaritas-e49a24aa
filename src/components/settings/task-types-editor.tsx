@@ -123,7 +123,7 @@ export function TaskTypesEditor() {
     queryFn: async () => {
       const { data, error } = await (supabase as any)
         .from("task_type_stages")
-        .select("id,task_type_id,name,\"order\",color,status_group,weight,auto_checklist,auto_deliverables,auto_live")
+        .select("id,task_type_id,name,\"order\",color,status_group,weight,auto_checklist,auto_deliverables,auto_live,auto_subtasks,start_offset_days,end_offset_days")
         .order("order");
       if (error) throw error;
       const map: Record<string, TaskTypeStage[]> = {};
@@ -133,6 +133,7 @@ export function TaskTypesEditor() {
           auto_checklist: Array.isArray(s.auto_checklist) ? s.auto_checklist : [],
           auto_deliverables: Array.isArray(s.auto_deliverables) ? s.auto_deliverables : [],
           auto_live: Array.isArray(s.auto_live) ? s.auto_live : [],
+          auto_subtasks: Array.isArray(s.auto_subtasks) ? s.auto_subtasks : [],
         };
         (map[s.task_type_id] ||= []).push(norm);
       }
