@@ -197,7 +197,7 @@ export function NewProjectWizard({
       duration: typeof b === "string" ? "1 dia" : (b?.duration ?? "1 dia"),
       color: STAGE_COLORS[i % STAGE_COLORS.length],
     }));
-    const typePlatformIds: string[] = Array.isArray(t?.platform_ids) ? (t!.platform_ids as string[]) : [];
+    const typePlatformIds: string[] = Array.isArray((t as any)?.platform_ids) ? ((t as any).platform_ids as string[]) : [];
     const typePlatformNames = typePlatformIds
       .map(id => (platforms as any[]).find(p => p.id === id)?.name)
       .filter(Boolean) as string[];
