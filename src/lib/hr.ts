@@ -31,10 +31,11 @@ export type HrMember = {
   company_legal_name: string | null;
   company_tax_id: string | null;
   company_contact: string | null;
+  payment_day: number | null;
 };
 
 export const MEMBER_COLUMNS =
-  "id,user_id,name,email,phone,role,specialty,level,status,hourly_rate,avatar_url,cost_mode,monthly_salary,monthly_hours,default_task_rate,task_rate_overrides,cost_notes,contract_type,area,admitted_on,birth_date,work_location,hr_notes,company_legal_name,company_tax_id,company_contact";
+  "id,user_id,name,email,phone,role,specialty,level,status,hourly_rate,avatar_url,cost_mode,monthly_salary,monthly_hours,default_task_rate,task_rate_overrides,cost_notes,contract_type,area,admitted_on,birth_date,work_location,hr_notes,company_legal_name,company_tax_id,company_contact,payment_day";
 
 export const CONTRACT_TYPES: Record<HrContractType, { label: string; short: string; tone: string; dot: string; note: string }> = {
   internal: {

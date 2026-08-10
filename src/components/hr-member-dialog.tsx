@@ -147,7 +147,15 @@ export function HrMemberDialog({ open, onOpenChange, initial, onSave }: {
                 <Input type="date" value={f.birth_date ?? ""} onChange={e => setF({ ...f, birth_date: e.target.value || null })} />
               </DialogField>
             )}
+            <DialogField label="Dia de pagamento">
+              <Input
+                type="number" min={1} max={28} placeholder="Ex.: 5"
+                value={f.payment_day ?? ""}
+                onChange={e => setF({ ...f, payment_day: e.target.value ? Number(e.target.value) : null })}
+              />
+            </DialogField>
           </div>
+
 
           <div className="pt-2">
             <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">Modelo de custo</div>
