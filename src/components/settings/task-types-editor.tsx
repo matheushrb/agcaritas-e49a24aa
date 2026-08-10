@@ -626,34 +626,42 @@ function StageRow({ stage, canUp, canDown, onMove, onPatch, onDelete }:{
   const [weight, setWeight] = useState(stage.weight.toString());
   const [panel, setPanel] = useState<null | "checklist" | "deliverables" | "live">(null);
   const [newItem, setNewItem] = useState("");
-  const checklist = stage.auto_checklist ?? [];
-  const deliverables = stage.auto_deliverables ?? [];
-  const lives = stage.auto_live ?? [];
+  // Rascunhos locais — digitação não dispara gravação no banco a cada tecla.
+  const [checklist, setChecklist] = useState<string[]>(stage.auto_checklist ?? []);
+  const [deliverables, setDeliverables] = useState<AutoDeliverable[]>(stage.auto_deliverables ?? []);
+  const [lives, setLives] = useState<AutoLive[]>(stage.auto_live ?? []);
   const expanded = panel !== null;
-  useMemo(() => { setName(stage.name); setWeight(stage.weight.toString()); }, [stage.id, stage.name, stage.weight]);
+  useEffect(() => { setName(stage.name); setWeight(stage.weight.toString()); }, [stage.id, stage.name, stage.weight]);
+  useEffect(() => { setChecklist(stage.auto_checklist ?? []); }, [stage.id, stage.auto_checklist]);
+  useEffect(() => { setDeliverables(stage.auto_deliverables ?? []); }, [stage.id, stage.auto_deliverables]);
+  useEffect(() => { setLives(stage.auto_live ?? []); }, [stage.id, stage.auto_live]);
+
+  function commitChecklist(next: string[]) { setChecklist(next); onPatch({ auto_checklist: next }); }
+  function commitDeliverables(next: AutoDeliverable[]) { setDeliverables(next); onPatch({ auto_deliverables: next }); }
+  function commitLives(next: AutoLive[]) { setLives(next); onPatch({ auto_live: next }); }
 
   function addItem() {
     const v = newItem.trim();
     if (!v) return;
-    onPatch({ auto_checklist: [...checklist, v] });
+    commitChecklist([...checklist, v]);
     setNewItem("");
   }
   function removeItem(idx: number) {
-    onPatch({ auto_checklist: checklist.filter((_, i) => i !== idx) });
+    commitChecklist(checklist.filter((_, i) => i !== idx));
   }
   function updateItem(idx: number, value: string) {
     const next = [...checklist];
     next[idx] = value;
-    onPatch({ auto_checklist: next });
+    if (next[idx] !== (stage.auto_checklist ?? [])[idx]) commitChecklist(next);
   }
-  function patchDeliverable(idx: number, patch: Partial<AutoDeliverable>) {
-    const next = deliverables.map((d, i) => (i === idx ? { ...d, ...patch } : d));
-    onPatch({ auto_deliverables: next });
+  // edição local (sem gravar)
+  function draftDeliverable(idx: number, patch: Partial<AutoDeliverable>) {
+    setDeliverables(cur => cur.map((d, i) => (i === idx ? { ...d, ...patch } : d)));
   }
-  function patchLive(idx: number, patch: Partial<AutoLive>) {
-    const next = lives.map((l, i) => (i === idx ? { ...l, ...patch } : l));
-    onPatch({ auto_live: next });
+  function draftLive(idx: number, patch: Partial<AutoLive>) {
+    setLives(cur => cur.map((l, i) => (i === idx ? { ...l, ...patch } : l)));
   }
+
 
   const toggle = (p: "checklist" | "deliverables" | "live") => setPanel(cur => (cur === p ? null : p));
 
