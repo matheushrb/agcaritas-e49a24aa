@@ -729,24 +729,58 @@ export function TaskWindow({
 
   const save = useMutation({
     mutationFn: async () => {
+  /** Cria/atualiza/remove as subtarefas reais ligadas à tarefa. */
+  async function syncSubtasks(parentId: string, orgId: string) {
+    if (removedSubtaskIds.length) {
+      await (supabase as any).from("tasks").delete().in("id", removedSubtaskIds);
+    }
+    for (const s of subtasks) {
+      const title = s.title.trim();
+      if (!title) continue;
+      const row = {
+        title,
+        task_type_id: s.task_type_id || taskTypeId || null,
+        status: s.status as any,
+        billing_enabled: s.value != null,
+        billing_base_value: s.value,
+        billing_value: s.value,
+        due_date: s.due_date || dueDate || null,
+        project_id: projectId || null,
+        client_id: clientId || null,
+        parent_task_id: parentId,
+      };
+      if (s.rowId) {
+        await (supabase as any).from("tasks").update(row).eq("id", s.rowId);
+      } else {
+        await (supabase as any).from("tasks").insert({ ...row, organization_id: orgId });
+      }
+    }
+    setRemovedSubtaskIds([]);
+  }
+
+  const save = useMutation({
+    mutationFn: async () => {
+      const { data: profile } = await supabase.from("profiles").select("organization_id").maybeSingle();
+      if (!profile?.organization_id) throw new Error("Sem organização");
       if (isEdit) {
         const { error } = await (supabase as any).from("tasks").update(payload()).eq("id", taskId!);
         if (error) throw error;
+        await syncSubtasks(taskId!, profile.organization_id);
         // Espelha os novos valores nas cobranças/faturas em aberto que já usam
         // esta tarefa (faturas pagas ou canceladas não são alteradas).
         const updated = await syncChargesFromTask(taskId!).catch(() => [] as string[]);
         return { id: taskId!, updated };
       }
-      const { data: profile } = await supabase.from("profiles").select("organization_id").maybeSingle();
-      if (!profile?.organization_id) throw new Error("Sem organização");
       const { data, error } = await (supabase as any).from("tasks")
         .insert({ ...payload(), organization_id: profile.organization_id })
         .select("id").single();
       if (error) throw error;
+      await syncSubtasks(data.id as string, profile.organization_id);
       return { id: data.id as string, updated: [] as string[] };
     },
     onSuccess: ({ id, updated }) => {
       qc.invalidateQueries({ queryKey: ["tasks"] });
+      qc.invalidateQueries({ queryKey: ["task-subtasks", taskId] });
       qc.invalidateQueries({ queryKey: ["task-window", taskId] });
       qc.invalidateQueries({ queryKey: ["charges"] });
       qc.invalidateQueries({ queryKey: ["invoices"] });
