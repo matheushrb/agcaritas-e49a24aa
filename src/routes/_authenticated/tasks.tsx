@@ -1175,6 +1175,33 @@ export function TaskModal({
                         toast.success(`${toAdd.length} subtarefa(s) criadas por “${s.name}”`);
                       }
                     }
+                    // Injeta entregáveis automáticos da etapa (evita duplicar por nome/tipo)
+                    const autoDel = (s as any).auto_deliverables as
+                      | { label: string; platform: string; type: string; value: number | null }[]
+                      | undefined;
+                    if (Array.isArray(autoDel) && autoDel.length) {
+                      const seen = new Set(deliverables.map(d => `${(d.platform ?? "").trim().toLowerCase()}|${(d.type ?? "").trim().toLowerCase()}`));
+                      const toAdd = autoDel
+                        .filter(d => {
+                          const key = `${(d.label || d.platform || "").trim().toLowerCase()}|${(d.type ?? "").trim().toLowerCase()}`;
+                          if (!d.label && !d.platform) return false;
+                          if (seen.has(key)) return false;
+                          seen.add(key);
+                          return true;
+                        })
+                        .map(d => ({
+                          id: `d-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+                          platform: d.label || d.platform || "",
+                          type: d.type || "",
+                          billing_enabled: !!d.value,
+                          billing_model: null,
+                          billing_value: d.value ?? null,
+                        })) as Deliverable[];
+                      if (toAdd.length) {
+                        setDeliverables([...deliverables, ...toAdd]);
+                        toast.success(`${toAdd.length} entregável(is) criado(s) por “${s.name}”`);
+                      }
+                    }
                     markDirty();
                   }}
                   onStageChange={v => { setStage(v); markDirty(); }}
