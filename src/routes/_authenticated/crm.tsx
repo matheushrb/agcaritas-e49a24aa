@@ -1698,9 +1698,9 @@ function NewLeadModal({
           {/* CRM02-11 / CRM02-12 — Interesses e Observações lado a lado */}
           <div className="cw-section">
             <div className="cw-grid cw-grid-2">
-              <div className="cw-field cw-box" style={{ border: "1px solid var(--cw-divider)", borderRadius: 12, padding: 14 }}>
-                <label className="cw-label">Interesses / Escopo <span style={{ fontWeight: 400, opacity: .6 }}>(opcional)</span></label>
-                <p style={{ fontSize: 11, opacity: .6, margin: "0 0 8px" }}>Adicione os principais temas de interesse deste lead.</p>
+              <div className="cw-field crm02-panel">
+                <div className="crm02-panel-t">Interesses / Escopo <span>(opcional)</span></div>
+                <div className="crm02-panel-d">Adicione os principais temas de interesse deste lead.</div>
                 {interests.length > 0 && (
                   <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 6 }}>
                     {interests.map(item => (
@@ -1726,9 +1726,10 @@ function NewLeadModal({
                   }}
                 />
               </div>
-              <div className="cw-field cw-box" style={{ border: "1px solid var(--cw-divider)", borderRadius: 12, padding: 14 }}>
-                <label className="cw-label">Observações <span style={{ fontWeight: 400, opacity: .6 }}>(opcional)</span></label>
-                <p style={{ fontSize: 11, opacity: .6, margin: "0 0 8px" }}>Descreva o contexto, necessidades e próximos passos…</p>
+              <div className="cw-field crm02-panel">
+                <div className="crm02-panel-t">Observações <span>(opcional)</span></div>
+                <div className="crm02-panel-d">Descreva o contexto, necessidades e próximos passos…</div>
+
                 <textarea
                   className="cw-textarea"
                   rows={4}
