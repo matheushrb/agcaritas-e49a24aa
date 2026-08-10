@@ -741,9 +741,10 @@ function StageRow({ stage, canUp, canDown, onMove, onPatch, onDelete }:{
   }
 
 
-  const toggle = (p: "checklist" | "deliverables" | "live") => setPanel(cur => (cur === p ? null : p));
+  type PanelKey = "checklist" | "deliverables" | "live" | "subtasks" | "schedule";
+  const toggle = (p: PanelKey) => setPanel(cur => (cur === p ? null : p));
 
-  const tabBtn = (p: "checklist" | "deliverables" | "live", icon: React.ReactNode, count: number, title: string) => (
+  const tabBtn = (p: PanelKey, icon: React.ReactNode, count: number, title: string) => (
     <Button
       size="icon" variant="ghost"
       className={cn(
