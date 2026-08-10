@@ -881,24 +881,27 @@ function StageRow({ stage, canUp, canDown, onMove, onPatch, onDelete }:{
                     <li key={idx} className="flex items-center gap-2">
                       <Input
                         value={l.title}
-                        onChange={e => patchLive(idx, { title: e.target.value })}
+                        onChange={e => draftLive(idx, { title: e.target.value })}
+                        onBlur={() => commitLives(lives)}
                         placeholder="Título da transmissão"
                         className="h-7 text-xs rounded-lg flex-1"
                       />
                       <select
                         className="h-7 rounded-lg border border-input bg-background px-2 text-xs w-36"
                         value={l.kind}
-                        onChange={e => patchLive(idx, { kind: e.target.value as AutoLive["kind"] })}
+                        onChange={e => commitLives(lives.map((x, i) => (i === idx ? { ...x, kind: e.target.value as AutoLive["kind"] } : x)))}
                       >
                         <option value="live">Ao vivo</option>
                         <option value="premiere">Estreia</option>
                       </select>
                       <Input
                         value={l.platform}
-                        onChange={e => patchLive(idx, { platform: e.target.value })}
+                        onChange={e => draftLive(idx, { platform: e.target.value })}
+                        onBlur={() => commitLives(lives)}
                         placeholder="Plataforma"
                         className="h-7 text-xs rounded-lg w-32"
                       />
+
                       <Button size="icon" variant="ghost" className="h-7 w-7 text-muted-foreground hover:text-destructive"
                         onClick={() => onPatch({ auto_live: lives.filter((_, i) => i !== idx) })}>
                         <Trash2 className="h-3 w-3" />
