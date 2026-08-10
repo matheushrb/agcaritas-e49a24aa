@@ -922,6 +922,77 @@ export type Database = {
           },
         ]
       }
+      hr_compensation_events: {
+        Row: {
+          amount: number | null
+          created_at: string
+          created_by: string | null
+          effective_date: string
+          id: string
+          kind: Database["public"]["Enums"]["hr_comp_kind"]
+          member_id: string
+          new_level: string | null
+          new_role: string | null
+          new_salary: number | null
+          notes: string | null
+          organization_id: string
+          previous_level: string | null
+          previous_role: string | null
+          previous_salary: number | null
+          reason: string | null
+          status: Database["public"]["Enums"]["hr_comp_status"]
+          updated_at: string
+        }
+        Insert: {
+          amount?: number | null
+          created_at?: string
+          created_by?: string | null
+          effective_date?: string
+          id?: string
+          kind?: Database["public"]["Enums"]["hr_comp_kind"]
+          member_id: string
+          new_level?: string | null
+          new_role?: string | null
+          new_salary?: number | null
+          notes?: string | null
+          organization_id: string
+          previous_level?: string | null
+          previous_role?: string | null
+          previous_salary?: number | null
+          reason?: string | null
+          status?: Database["public"]["Enums"]["hr_comp_status"]
+          updated_at?: string
+        }
+        Update: {
+          amount?: number | null
+          created_at?: string
+          created_by?: string | null
+          effective_date?: string
+          id?: string
+          kind?: Database["public"]["Enums"]["hr_comp_kind"]
+          member_id?: string
+          new_level?: string | null
+          new_role?: string | null
+          new_salary?: number | null
+          notes?: string | null
+          organization_id?: string
+          previous_level?: string | null
+          previous_role?: string | null
+          previous_salary?: number | null
+          reason?: string | null
+          status?: Database["public"]["Enums"]["hr_comp_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hr_compensation_events_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "team_members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       idea_bank: {
         Row: {
           created_at: string
@@ -3389,6 +3460,7 @@ export type Database = {
           admitted_on: string | null
           area: string | null
           avatar_url: string | null
+          bank_info: string | null
           birth_date: string | null
           company_contact: string | null
           company_legal_name: string | null
@@ -3402,6 +3474,7 @@ export type Database = {
           hourly_rate: number | null
           hr_notes: string | null
           id: string
+          last_review_on: string | null
           level: Database["public"]["Enums"]["team_level"] | null
           monthly_hours: number | null
           monthly_salary: number | null
@@ -3409,7 +3482,9 @@ export type Database = {
           organization_id: string
           payment_day: number | null
           phone: string | null
+          pix_key: string | null
           role: string | null
+          salary_review_months: number | null
           specialty: string | null
           status: Database["public"]["Enums"]["team_status"]
           task_rate_overrides: Json
@@ -3421,6 +3496,7 @@ export type Database = {
           admitted_on?: string | null
           area?: string | null
           avatar_url?: string | null
+          bank_info?: string | null
           birth_date?: string | null
           company_contact?: string | null
           company_legal_name?: string | null
@@ -3434,6 +3510,7 @@ export type Database = {
           hourly_rate?: number | null
           hr_notes?: string | null
           id?: string
+          last_review_on?: string | null
           level?: Database["public"]["Enums"]["team_level"] | null
           monthly_hours?: number | null
           monthly_salary?: number | null
@@ -3441,7 +3518,9 @@ export type Database = {
           organization_id: string
           payment_day?: number | null
           phone?: string | null
+          pix_key?: string | null
           role?: string | null
+          salary_review_months?: number | null
           specialty?: string | null
           status?: Database["public"]["Enums"]["team_status"]
           task_rate_overrides?: Json
@@ -3453,6 +3532,7 @@ export type Database = {
           admitted_on?: string | null
           area?: string | null
           avatar_url?: string | null
+          bank_info?: string | null
           birth_date?: string | null
           company_contact?: string | null
           company_legal_name?: string | null
@@ -3466,6 +3546,7 @@ export type Database = {
           hourly_rate?: number | null
           hr_notes?: string | null
           id?: string
+          last_review_on?: string | null
           level?: Database["public"]["Enums"]["team_level"] | null
           monthly_hours?: number | null
           monthly_salary?: number | null
@@ -3473,7 +3554,9 @@ export type Database = {
           organization_id?: string
           payment_day?: number | null
           phone?: string | null
+          pix_key?: string | null
           role?: string | null
+          salary_review_months?: number | null
           specialty?: string | null
           status?: Database["public"]["Enums"]["team_status"]
           task_rate_overrides?: Json
@@ -3628,6 +3711,8 @@ export type Database = {
         | "pending_invoice"
         | "draft"
       contract_status: "active" | "closed" | "suspended" | "renewing"
+      hr_comp_kind: "raise" | "promotion" | "bonus" | "adjustment"
+      hr_comp_status: "planned" | "approved" | "paid" | "cancelled"
       hr_contract_type:
         | "internal"
         | "freelancer_task"
@@ -3794,6 +3879,8 @@ export const Constants = {
         "draft",
       ],
       contract_status: ["active", "closed", "suspended", "renewing"],
+      hr_comp_kind: ["raise", "promotion", "bonus", "adjustment"],
+      hr_comp_status: ["planned", "approved", "paid", "cancelled"],
       hr_contract_type: [
         "internal",
         "freelancer_task",
