@@ -217,7 +217,7 @@ export function FinanceEntryWindow({
   const Title = ({ children }: { children: React.ReactElement }) =>
     mode === "modal" ? <DialogTitle asChild>{children}</DialogTitle> : children;
 
-  const categories = nature === "expense" ? EXPENSE_CATEGORIES : REVENUE_CATEGORIES;
+
 
   const windowEl = (
     <div className="cw-window">
