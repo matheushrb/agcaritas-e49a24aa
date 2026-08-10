@@ -735,3 +735,56 @@
 }
 .cw-subtask-row .cw-input:first-child{ flex:1; }
 .cw-subtask-row .cw-select{ width:170px; }
+
+/* ================= CRM-02 — Janela "Novo lead" (mapa V1) ================= */
+/* Container 905 × 720 · blocos 355/450 · linha de propriedades 830 */
+.crm02 { --crm02-w: 905px; }
+.crm02-head {
+  display: flex; align-items: flex-start; gap: 12px;
+  padding-bottom: 16px; border-bottom: 1px solid var(--cw-divider);
+}
+.crm02-head-ico {
+  width: 38px; height: 38px; flex: 0 0 38px; border-radius: 10px;
+  display: grid; place-items: center;
+  background: var(--cw-cobalt-soft); color: var(--cw-cobalt);
+}
+.crm02-head h3 { font-size: 19px; font-weight: 700; margin: 0; letter-spacing: -.01em; }
+.crm02-head p  { font-size: 12px; color: var(--cw-muted); margin: 2px 0 0; }
+
+.crm02-toggles { display: grid; grid-template-columns: 355fr 450fr; gap: 25px; margin-top: 18px; }
+.crm02 .cw-label-ico { display: flex; align-items: center; gap: 6px; font-size: 11.5px; font-weight: 600; color: var(--cw-ink); }
+.crm02 .cw-label-ico svg { width: 14px; height: 14px; color: var(--cw-muted); }
+.crm02 .cw-choice { min-height: 44px; padding: 0 12px; justify-content: center; }
+.crm02 .cw-choice .cw-choice-title { font-size: 12.5px; }
+
+/* Linha de propriedades — 6 colunas (830px) */
+.crm02-props { display: grid; grid-template-columns: repeat(5, 1fr) 132px; gap: 14px; margin-top: 20px; }
+.crm02 .cw-input, .crm02 .cw-select, .crm02 .cw-textarea { height: 38px; font-size: 12px; }
+.crm02 .cw-textarea { height: auto; }
+
+/* Títulos de grupo em cobalt, como na referência */
+.crm02 .cw-section { margin-top: 18px; border-top: none; padding-top: 6px; }
+.crm02 .cw-section-head h4 { font-size: 12.5px; font-weight: 700; color: var(--cw-cobalt); }
+
+/* Campos com adorno (R$, calendário, WhatsApp) */
+.crm02-adorn { position: relative; }
+.crm02-adorn > .crm02-adorn-l,
+.crm02-adorn > .crm02-adorn-r {
+  position: absolute; top: 50%; transform: translateY(-50%);
+  display: grid; place-items: center; pointer-events: none;
+  color: var(--cw-muted); font-size: 11.5px; font-weight: 600;
+}
+.crm02-adorn > .crm02-adorn-l { left: 1px; width: 36px; height: 36px; border-right: 1px solid var(--cw-input-border); }
+.crm02-adorn > .crm02-adorn-r { right: 10px; width: 16px; height: 16px; }
+.crm02-adorn > .crm02-adorn-r.is-wa { color: #25d366; }
+.crm02-adorn.has-l .cw-input { padding-left: 46px; }
+.crm02-adorn.has-r .cw-input { padding-right: 32px; }
+.crm02-adorn .cw-input[type="date"]::-webkit-calendar-picker-indicator { opacity: 0; }
+
+/* Painéis de interesses / observações (405 × 95) */
+.crm02-panel { border: 1px solid var(--cw-divider); border-radius: 12px; padding: 14px; background: var(--card); }
+.crm02-panel .crm02-panel-t { font-size: 12.5px; font-weight: 700; }
+.crm02-panel .crm02-panel-t span { font-weight: 400; opacity: .55; }
+.crm02-panel .crm02-panel-d { font-size: 10.5px; color: var(--cw-muted); margin: 3px 0 10px; }
+
+.crm02-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--cw-divider); }
