@@ -857,13 +857,18 @@ function StageRow({ stage, canUp, canDown, onMove, onPatch, onDelete }:{
                       >
                         {AUTO_DELIVERABLE_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
                       </select>
-                      <Input
+                      <select
+                        className="h-7 rounded-lg border border-input bg-background px-2 text-xs w-36"
                         value={d.platform}
-                        onChange={e => draftDeliverable(idx, { platform: e.target.value })}
-                        onBlur={() => commitDeliverables(deliverables)}
-                        placeholder="Plataforma"
-                        className="h-7 text-xs rounded-lg w-32"
-                      />
+                        onChange={e => commitDeliverables(deliverables.map((x, i) => (i === idx ? { ...x, platform: e.target.value } : x)))}
+                      >
+                        <option value="">Plataforma…</option>
+                        {platformOptions.map(p => <option key={p.id} value={p.name}>{p.name}</option>)}
+                        {d.platform && !platformOptions.some(p => p.name === d.platform) && (
+                          <option value={d.platform}>{d.platform}</option>
+                        )}
+                      </select>
+
                       <Input
                         type="number" min={0} step={0.01}
                         value={d.value ?? ""}
