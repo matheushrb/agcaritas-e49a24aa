@@ -687,22 +687,36 @@ function StageRow({ stage, canUp, canDown, onMove, onPatch, onDelete }:{
 }) {
   const [name, setName] = useState(stage.name);
   const [weight, setWeight] = useState(stage.weight.toString());
-  const [panel, setPanel] = useState<null | "checklist" | "deliverables" | "live">(null);
+  const [panel, setPanel] = useState<null | "checklist" | "deliverables" | "live" | "subtasks" | "schedule">(null);
   const [newItem, setNewItem] = useState("");
   // Rascunhos locais — digitação não dispara gravação no banco a cada tecla.
   const [checklist, setChecklist] = useState<string[]>(stage.auto_checklist ?? []);
   const [deliverables, setDeliverables] = useState<AutoDeliverable[]>(stage.auto_deliverables ?? []);
   const [lives, setLives] = useState<AutoLive[]>(stage.auto_live ?? []);
+  const [subtasks, setSubtasks] = useState<AutoSubtask[]>(stage.auto_subtasks ?? []);
+  const [startOff, setStartOff] = useState(stage.start_offset_days != null ? String(stage.start_offset_days) : "");
+  const [endOff, setEndOff] = useState(stage.end_offset_days != null ? String(stage.end_offset_days) : "");
   const { data: platformOptions = [] } = usePlatformOptions();
+  const { data: typeOptions = [] } = useTaskTypeOptions();
   const expanded = panel !== null;
   useEffect(() => { setName(stage.name); setWeight(stage.weight.toString()); }, [stage.id, stage.name, stage.weight]);
   useEffect(() => { setChecklist(stage.auto_checklist ?? []); }, [stage.id, stage.auto_checklist]);
   useEffect(() => { setDeliverables(stage.auto_deliverables ?? []); }, [stage.id, stage.auto_deliverables]);
   useEffect(() => { setLives(stage.auto_live ?? []); }, [stage.id, stage.auto_live]);
+  useEffect(() => { setSubtasks(stage.auto_subtasks ?? []); }, [stage.id, stage.auto_subtasks]);
+  useEffect(() => {
+    setStartOff(stage.start_offset_days != null ? String(stage.start_offset_days) : "");
+    setEndOff(stage.end_offset_days != null ? String(stage.end_offset_days) : "");
+  }, [stage.id, stage.start_offset_days, stage.end_offset_days]);
 
   function commitChecklist(next: string[]) { setChecklist(next); onPatch({ auto_checklist: next }); }
   function commitDeliverables(next: AutoDeliverable[]) { setDeliverables(next); onPatch({ auto_deliverables: next }); }
   function commitLives(next: AutoLive[]) { setLives(next); onPatch({ auto_live: next }); }
+  function commitSubtasks(next: AutoSubtask[]) { setSubtasks(next); onPatch({ auto_subtasks: next }); }
+  function draftSubtask(idx: number, patch: Partial<AutoSubtask>) {
+    setSubtasks(cur => cur.map((s, i) => (i === idx ? { ...s, ...patch } : s)));
+  }
+
 
   function addItem() {
     const v = newItem.trim();
