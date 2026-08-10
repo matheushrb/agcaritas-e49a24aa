@@ -32,10 +32,90 @@ export type HrMember = {
   company_tax_id: string | null;
   company_contact: string | null;
   payment_day: number | null;
+  pix_key: string | null;
+  bank_info: string | null;
+  salary_review_months: number | null;
+  last_review_on: string | null;
 };
 
+export type HrCompKind = "raise" | "promotion" | "bonus" | "adjustment";
+export type HrCompStatus = "planned" | "approved" | "paid" | "cancelled";
+
+export type CompEvent = {
+  id: string;
+  member_id: string;
+  kind: HrCompKind;
+  status: HrCompStatus;
+  effective_date: string;
+  previous_salary: number | null;
+  new_salary: number | null;
+  amount: number | null;
+  previous_role: string | null;
+  new_role: string | null;
+  previous_level: string | null;
+  new_level: string | null;
+  reason: string | null;
+  notes: string | null;
+  created_at: string;
+};
+
+export const COMP_COLUMNS =
+  "id,member_id,kind,status,effective_date,previous_salary,new_salary,amount,previous_role,new_role,previous_level,new_level,reason,notes,created_at";
+
+export const COMP_KIND_META: Record<HrCompKind, { label: string; tone: string; dot: string }> = {
+  raise: { label: "Aumento", tone: "bg-emerald-500/12 text-emerald-700 dark:text-emerald-300 border-emerald-500/30", dot: "bg-emerald-500" },
+  promotion: { label: "Promoção", tone: "bg-blue-500/12 text-blue-700 dark:text-blue-300 border-blue-500/30", dot: "bg-blue-500" },
+  bonus: { label: "Bônus", tone: "bg-amber-500/12 text-amber-700 dark:text-amber-300 border-amber-500/30", dot: "bg-amber-500" },
+  adjustment: { label: "Ajuste", tone: "bg-slate-500/12 text-slate-700 dark:text-slate-300 border-slate-500/30", dot: "bg-slate-500" },
+};
+
+export const COMP_STATUS_META: Record<HrCompStatus, { label: string; tone: string }> = {
+  planned: { label: "Planejado", tone: "bg-muted text-muted-foreground" },
+  approved: { label: "Aprovado", tone: "bg-blue-500/15 text-blue-700 dark:text-blue-300" },
+  paid: { label: "Pago", tone: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300" },
+  cancelled: { label: "Cancelado", tone: "bg-red-500/12 text-red-600 dark:text-red-300 line-through" },
+};
+
+/** Próxima data de pagamento a partir do dia configurado. */
+export function nextPaymentDate(day: number | null | undefined, from = new Date()): Date | null {
+  if (!day || day < 1 || day > 31) return null;
+  const base = new Date(from.getFullYear(), from.getMonth(), 1);
+  const clamp = (y: number, m: number) => Math.min(day, new Date(y, m + 1, 0).getDate());
+  let d = new Date(base.getFullYear(), base.getMonth(), clamp(base.getFullYear(), base.getMonth()));
+  const today = new Date(from.getFullYear(), from.getMonth(), from.getDate());
+  if (d < today) {
+    const m = base.getMonth() + 1;
+    d = new Date(base.getFullYear(), m, clamp(base.getFullYear(), m));
+  }
+  return d;
+}
+
+export function daysUntil(d: Date | null): number | null {
+  if (!d) return null;
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  return Math.round((d.getTime() - today.getTime()) / 86400000);
+}
+
+/** Meses desde a última revisão salarial (usa admissão como fallback). */
+export function monthsSinceReview(m: HrMember): number | null {
+  const ref = m.last_review_on || m.admitted_on;
+  if (!ref) return null;
+  const d = new Date(ref + "T12:00:00");
+  if (Number.isNaN(d.getTime())) return null;
+  const now = new Date();
+  return (now.getFullYear() - d.getFullYear()) * 12 + (now.getMonth() - d.getMonth());
+}
+
+/** Revisão salarial vencida conforme a periodicidade configurada. */
+export function reviewOverdue(m: HrMember): boolean {
+  const every = Number(m.salary_review_months ?? 0);
+  if (!every) return false;
+  const months = monthsSinceReview(m);
+  return months !== null && months >= every;
+}
+
 export const MEMBER_COLUMNS =
-  "id,user_id,name,email,phone,role,specialty,level,status,hourly_rate,avatar_url,cost_mode,monthly_salary,monthly_hours,default_task_rate,task_rate_overrides,cost_notes,contract_type,area,admitted_on,birth_date,work_location,hr_notes,company_legal_name,company_tax_id,company_contact,payment_day";
+  "id,user_id,name,email,phone,role,specialty,level,status,hourly_rate,avatar_url,cost_mode,monthly_salary,monthly_hours,default_task_rate,task_rate_overrides,cost_notes,contract_type,area,admitted_on,birth_date,work_location,hr_notes,company_legal_name,company_tax_id,company_contact,payment_day,pix_key,bank_info,salary_review_months,last_review_on";
 
 export const CONTRACT_TYPES: Record<HrContractType, { label: string; short: string; tone: string; dot: string; note: string }> = {
   internal: {

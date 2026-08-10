@@ -156,6 +156,21 @@ export function HrMemberDialog({ open, onOpenChange, initial, onSave }: {
             </DialogField>
           </div>
 
+          <div className="grid grid-cols-3 gap-3">
+            <DialogField label="Chave PIX">
+              <Input placeholder="CPF, e-mail ou chave aleatória" value={f.pix_key ?? ""} onChange={e => setF({ ...f, pix_key: e.target.value })} />
+            </DialogField>
+            <DialogField label="Dados bancários">
+              <Input placeholder="Banco · agência · conta" value={f.bank_info ?? ""} onChange={e => setF({ ...f, bank_info: e.target.value })} />
+            </DialogField>
+            <DialogField label="Revisão salarial a cada (meses)">
+              <Input
+                type="number" min={1} max={60} placeholder="Ex.: 12"
+                value={f.salary_review_months ?? ""}
+                onChange={e => setF({ ...f, salary_review_months: e.target.value ? Number(e.target.value) : null })}
+              />
+            </DialogField>
+          </div>
 
           <div className="pt-2">
             <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">Modelo de custo</div>
