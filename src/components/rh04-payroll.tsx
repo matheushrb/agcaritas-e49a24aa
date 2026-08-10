@@ -1,12 +1,20 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
-import { CalendarClock, Gift, Wallet, TrendingUp, AlertTriangle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { CalendarClock, Gift, Wallet, TrendingUp, AlertTriangle, PiggyBank, Check, ArrowRightLeft } from "lucide-react";
 import { useCompensationEvents } from "@/components/hr-compensation";
+import {
+  BONUS_CATEGORY, PAYROLL_CATEGORY, buildPayrollLines, monthKey, monthLabel, thirteenthProvision,
+} from "@/lib/payroll";
 import {
   COMP_KIND_META, COMP_STATUS_META, brl, brl2, fmtFull, initialsOf, monthlyCost,
   nextPaymentDate, daysUntil, monthsSinceReview, reviewOverdue, type HrMember,
 } from "@/lib/hr";
+
 
 export function Rh04Payroll({ members }: { members: HrMember[] }) {
   const { data: events = [] } = useCompensationEvents();
