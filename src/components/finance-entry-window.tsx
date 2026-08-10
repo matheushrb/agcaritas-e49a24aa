@@ -64,10 +64,28 @@ export function FinanceEntryWindow({
   const [status, setStatus] = useState("pending");
   const [clientId, setClientId] = useState("");
   const [projectId, setProjectId] = useState("");
+  const [collaboratorId, setCollaboratorId] = useState("");
   const [category, setCategory] = useState("");
   const [method, setMethod] = useState("");
   const [notes, setNotes] = useState("");
+  const [repeat, setRepeat] = useState(false);
+  const [dayOfMonth, setDayOfMonth] = useState("");
+  const [repeatUntil, setRepeatUntil] = useState("");
   const [mode, setMode] = useState<"modal" | "docked" | "minimized">("modal");
+
+  const { data: categories = [] } = useQuery<string[]>({
+    queryKey: ["finance_categories", nature],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("finance_categories")
+        .select("name")
+        .eq("nature", nature)
+        .eq("active", true)
+        .order("name");
+      if (error) throw error;
+      return ((data ?? []) as { name: string }[]).map(c => c.name);
+    },
+  });
 
   useEffect(() => {
     if (!open) return;
@@ -80,13 +98,26 @@ export function FinanceEntryWindow({
     setStatus(entry?.status ?? "pending");
     setClientId(entry?.client_id ?? "");
     setProjectId(entry?.project_id ?? "");
+    setCollaboratorId((entry as any)?.collaborator_id ?? "");
     setCategory(entry?.category ?? "");
     setMethod(entry?.payment_method ?? "");
     setNotes("");
+    setRepeat(false);
+    setDayOfMonth("");
+    setRepeatUntil("");
   }, [open, entry, defaultNature]);
 
   const value = Number(String(amount).replace(",", ".") || 0);
   const canSave = description.trim().length > 0 && value > 0;
+
+  const memberPaymentDay = teamMembers.find(m => m.id === collaboratorId)?.payment_day ?? null;
+  const effectiveDay = (() => {
+    const typed = Number(dayOfMonth);
+    if (dayOfMonth && typed >= 1 && typed <= 28) return typed;
+    if (memberPaymentDay && memberPaymentDay >= 1 && memberPaymentDay <= 28) return memberPaymentDay;
+    const d = dueDate ? Number(dueDate.slice(8, 10)) : new Date().getDate();
+    return Math.min(Math.max(d || 1, 1), 28);
+  })();
 
   const save = useMutation({
     mutationFn: async () => {
@@ -100,6 +131,7 @@ export function FinanceEntryWindow({
         competence_month: competence ? `${competence}-01` : null,
         client_id: clientId || null,
         project_id: projectId || null,
+        collaborator_id: collaboratorId || null,
         payment_method: method || null,
         paid_at: status === "paid" ? (entry?.paid_at ?? new Date().toISOString()) : null,
       };
@@ -110,6 +142,32 @@ export function FinanceEntryWindow({
       }
       const { data: profile } = await supabase.from("profiles").select("organization_id").maybeSingle();
       if (!profile?.organization_id) throw new Error("Sem organização");
+
+      if (repeat) {
+        const { data, error } = await (supabase as any)
+          .from("recurring_charges")
+          .insert({
+            organization_id: profile.organization_id,
+            description: description.trim(),
+            amount: value,
+            nature,
+            category: category || null,
+            day_of_month: effectiveDay,
+            client_id: clientId || null,
+            project_id: projectId || null,
+            collaborator_id: collaboratorId || null,
+            payment_method: method || null,
+            start_date: dueDate || new Date().toISOString().slice(0, 10),
+            end_date: repeatUntil || null,
+          })
+          .select("id")
+          .single();
+        if (error) throw error;
+        const { error: rpcError } = await (supabase as any).rpc("ensure_recurring_charges");
+        if (rpcError) throw rpcError;
+        return data.id as string;
+      }
+
       const { data, error } = await (supabase as any)
         .from("charges")
         .insert({ ...payload, organization_id: profile.organization_id })
@@ -120,13 +178,15 @@ export function FinanceEntryWindow({
     },
     onSuccess: (id) => {
       qc.invalidateQueries({ queryKey: ["charges"] });
+      qc.invalidateQueries({ queryKey: ["recurring_charges"] });
       qc.invalidateQueries({ queryKey: ["dashboard-v3"] });
-      toast.success(isEdit ? "Lançamento atualizado" : "Lançamento criado");
+      toast.success(isEdit ? "Lançamento atualizado" : repeat ? "Recorrência criada" : "Lançamento criado");
       onSaved?.(id);
       onOpenChange(false);
     },
     onError: (e: Error) => toast.error(e.message),
   });
+
 
   const remove = useMutation({
     mutationFn: async () => {
