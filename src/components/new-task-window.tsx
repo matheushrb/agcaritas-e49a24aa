@@ -275,6 +275,34 @@ export function TaskWindow({
     return byStatus >= 0 ? byStatus : 0;
   }, [flowSteps, typeStages.length, currentStageId, stage, status]);
 
+  /* ---------- Prazos relativos das etapas ---------- */
+  const stageWindows = useMemo(
+    () => computeStageWindows(dueDate || null, (typeStages as any[]).map(s => ({
+      id: s.id, name: s.name, color: s.color,
+      start_offset_days: s.start_offset_days ?? null,
+      end_offset_days: s.end_offset_days ?? null,
+    }))),
+    [typeStages, dueDate],
+  );
+  const stageWindowById = useMemo(() => {
+    const m: Record<string, StageWindow> = {};
+    for (const w of stageWindows) m[w.stageId] = w;
+    return m;
+  }, [stageWindows]);
+  const stageAlerts = useMemo(() => {
+    const out: Record<string, ReturnType<typeof stageAlert>> = {};
+    flowSteps.forEach((s, i) => {
+      if (!s.stageId) return;
+      const w = stageWindowById[s.stageId];
+      if (!w) return;
+      const pos: -1 | 0 | 1 = i < activeIdx ? -1 : i === activeIdx ? 0 : 1;
+      out[s.stageId] = stageAlert(w, pos);
+    });
+    return out;
+  }, [flowSteps, stageWindowById, activeIdx]);
+  const currentStageAlert = currentStageId ? stageAlerts[currentStageId] : null;
+
+
   /* Selecionar uma etapa move o status condicionado a ela. */
   const selectStep = (i: number) => {
     const s = flowSteps[i];
