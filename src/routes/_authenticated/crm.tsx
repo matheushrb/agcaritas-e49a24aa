@@ -1502,7 +1502,7 @@ function NewLeadModal({
         <div className="cw crm02">
           {/* CRM02-05 — Cabeçalho da janela */}
           <div className="crm02-head">
-            <span className="crm02-head-ico"><Users size={19} /></span>
+            <span className="crm02-head-ico"><User size={19} /></span>
             <div>
               <h3>Novo lead</h3>
               <p>Registre uma nova oportunidade comercial em seu pipeline.</p>
