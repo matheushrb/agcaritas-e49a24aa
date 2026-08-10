@@ -44,7 +44,22 @@ export type TaskTypeStage = {
   status_group: StatusGroup;
   weight: number;
   auto_checklist: string[];
+  auto_deliverables: AutoDeliverable[];
+  auto_live: AutoLive[];
 };
+
+/** Entregável criado automaticamente ao atingir a etapa. */
+export type AutoDeliverable = { label: string; platform: string; type: string; value: number | null };
+/** Transmissão ao vivo / estreia criada automaticamente ao atingir a etapa. */
+export type AutoLive = { title: string; kind: "live" | "premiere"; platform: string };
+
+export const AUTO_DELIVERABLE_TYPES = [
+  { value: "video", label: "Vídeo" },
+  { value: "graphic", label: "Gráfico / Arte" },
+  { value: "audio", label: "Áudio" },
+  { value: "broadcast", label: "Transmissão online" },
+  { value: "other", label: "Outro" },
+];
 
 const STATUS_GROUP_META: Record<StatusGroup, { label: string; dot: string }> = {
   todo:        { label: "A fazer",      dot: "bg-slate-400" },
