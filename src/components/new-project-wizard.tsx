@@ -197,9 +197,21 @@ export function NewProjectWizard({
       duration: typeof b === "string" ? "1 dia" : (b?.duration ?? "1 dia"),
       color: STAGE_COLORS[i % STAGE_COLORS.length],
     }));
-    setV(p => ({ ...p, project_type: typeValue, stages: stages.length ? stages : p.stages }));
+    const typePlatformIds: string[] = Array.isArray(t?.platform_ids) ? (t!.platform_ids as string[]) : [];
+    const typePlatformNames = typePlatformIds
+      .map(id => (platforms as any[]).find(p => p.id === id)?.name)
+      .filter(Boolean) as string[];
+    setV(p => ({
+      ...p,
+      project_type: typeValue,
+      stages: stages.length ? stages : p.stages,
+      social_platforms: typePlatformNames.length
+        ? Array.from(new Set([...p.social_platforms, ...typePlatformNames]))
+        : p.social_platforms,
+    }));
     setTouched(true);
   };
+
 
   const errors = {
     name: !v.name.trim(),
