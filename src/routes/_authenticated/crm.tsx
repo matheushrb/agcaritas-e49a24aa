@@ -1136,9 +1136,7 @@ function LeadDrawer({
                 className="w-full rounded-full"
                 onClick={() => onPatch({
                   scope_items: scopeItems.filter(i => i.title.trim()),
-                  estimated_value: scopeItems.length
-          ? scopeItems.reduce((a, i) => a + Number(i.qty || 0) * Number(i.unit_price || 0), 0)
-          : (form.estimated_value ? Number(form.estimated_value) : 0),
+                  estimated_value: scopeItems.reduce((a, i) => a + Number(i.qty || 0) * Number(i.unit_price || 0), 0),
                 })}
               >
                 Salvar escopo
