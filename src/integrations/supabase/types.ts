@@ -217,6 +217,7 @@ export type Database = {
           parent_charge_id: string | null
           payment_method: string | null
           project_id: string | null
+          recurring_charge_id: string | null
           service_label: string | null
           status: Database["public"]["Enums"]["charge_status"]
           task_id: string | null
@@ -242,6 +243,7 @@ export type Database = {
           parent_charge_id?: string | null
           payment_method?: string | null
           project_id?: string | null
+          recurring_charge_id?: string | null
           service_label?: string | null
           status?: Database["public"]["Enums"]["charge_status"]
           task_id?: string | null
@@ -267,6 +269,7 @@ export type Database = {
           parent_charge_id?: string | null
           payment_method?: string | null
           project_id?: string | null
+          recurring_charge_id?: string | null
           service_label?: string | null
           status?: Database["public"]["Enums"]["charge_status"]
           task_id?: string | null
@@ -279,6 +282,13 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "charges_collaborator_id_fkey"
+            columns: ["collaborator_id"]
+            isOneToOne: false
+            referencedRelation: "team_members"
             referencedColumns: ["id"]
           },
           {
@@ -314,6 +324,13 @@ export type Database = {
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "charges_recurring_charge_id_fkey"
+            columns: ["recurring_charge_id"]
+            isOneToOne: false
+            referencedRelation: "recurring_charges"
             referencedColumns: ["id"]
           },
           {
@@ -813,6 +830,41 @@ export type Database = {
           widgets?: Json
         }
         Relationships: []
+      }
+      finance_categories: {
+        Row: {
+          active: boolean
+          created_at: string
+          id: string
+          name: string
+          nature: string
+          organization_id: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          name: string
+          nature: string
+          organization_id: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          name?: string
+          nature?: string
+          organization_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "finance_categories_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       goals: {
         Row: {
@@ -2535,6 +2587,95 @@ export type Database = {
           },
         ]
       }
+      recurring_charges: {
+        Row: {
+          active: boolean
+          amount: number
+          category: string | null
+          client_id: string | null
+          collaborator_id: string | null
+          created_at: string
+          day_of_month: number
+          description: string
+          end_date: string | null
+          id: string
+          last_generated_month: string | null
+          nature: string
+          organization_id: string
+          payment_method: string | null
+          project_id: string | null
+          start_date: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          amount: number
+          category?: string | null
+          client_id?: string | null
+          collaborator_id?: string | null
+          created_at?: string
+          day_of_month: number
+          description: string
+          end_date?: string | null
+          id?: string
+          last_generated_month?: string | null
+          nature: string
+          organization_id: string
+          payment_method?: string | null
+          project_id?: string | null
+          start_date?: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          amount?: number
+          category?: string | null
+          client_id?: string | null
+          collaborator_id?: string | null
+          created_at?: string
+          day_of_month?: number
+          description?: string
+          end_date?: string | null
+          id?: string
+          last_generated_month?: string | null
+          nature?: string
+          organization_id?: string
+          payment_method?: string | null
+          project_id?: string | null
+          start_date?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recurring_charges_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recurring_charges_collaborator_id_fkey"
+            columns: ["collaborator_id"]
+            isOneToOne: false
+            referencedRelation: "team_members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recurring_charges_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recurring_charges_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       strategic_actions: {
         Row: {
           created_at: string
@@ -3241,6 +3382,7 @@ export type Database = {
           monthly_salary: number | null
           name: string
           organization_id: string
+          payment_day: number | null
           phone: string | null
           role: string | null
           specialty: string | null
@@ -3272,6 +3414,7 @@ export type Database = {
           monthly_salary?: number | null
           name: string
           organization_id: string
+          payment_day?: number | null
           phone?: string | null
           role?: string | null
           specialty?: string | null
@@ -3303,6 +3446,7 @@ export type Database = {
           monthly_salary?: number | null
           name?: string
           organization_id?: string
+          payment_day?: number | null
           phone?: string | null
           role?: string | null
           specialty?: string | null
@@ -3408,6 +3552,7 @@ export type Database = {
     }
     Functions: {
       current_organization_id: { Args: never; Returns: string }
+      ensure_recurring_charges: { Args: never; Returns: number }
       get_public_proposal: {
         Args: { p_token: string }
         Returns: {
