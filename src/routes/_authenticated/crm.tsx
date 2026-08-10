@@ -1608,8 +1608,8 @@ function NewLeadModal({
                   ))}
                 </select>
               </div>
-            </div>
           </div>
+
 
           {/* CRM02-09 — Dados da empresa e contato */}
           <div className="cw-section">
