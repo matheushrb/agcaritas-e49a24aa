@@ -151,6 +151,8 @@ export function TaskWindow({
   const [baseValue, setBaseValue] = useState<string>("");
   const [deliverables, setDeliverables] = useState<DeliverableDraft[]>([]);
   const [checklist, setChecklist] = useState<ChecklistDraft[]>([]);
+  const [subtasks, setSubtasks] = useState<SubtaskDraft[]>([]);
+  const [removedSubtaskIds, setRemovedSubtaskIds] = useState<string[]>([]);
   const [platformsSel, setPlatformsSel] = useState<string[]>([]);
   const [notes, setNotes] = useState("");
   const [liveItems, setLiveItems] = useState<LiveDraft[]>([]);
