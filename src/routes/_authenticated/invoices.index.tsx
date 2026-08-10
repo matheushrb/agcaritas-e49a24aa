@@ -693,7 +693,7 @@ function NewInvoiceWizard({
     });
     const order: string[] = [];
     const buckets = new Map<string, Array<{ group: string; rows: Line[] }>>();
-    for (const b of blocks) {
+    for (const b of rootBlocks) {
       if (!buckets.has(b.group)) { buckets.set(b.group, []); order.push(b.group); }
       buckets.get(b.group)!.push(b);
     }
