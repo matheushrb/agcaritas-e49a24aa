@@ -1127,6 +1127,49 @@ export function TaskWindow({
                 ))}
               </div>
 
+              {/* SUBTAREFAS */}
+              <div className="cw-section">
+                <div className="cw-mini-head">
+                  <h5>Subtarefas {subtasks.length > 0 && <span style={{ color: "var(--cw-muted)", fontWeight: 400 }}>({subtasks.length})</span>}</h5>
+                  <button type="button" className="cw-link"
+                    onClick={() => setSubtasks(s => [...s, { id: uid(), rowId: null, title: "", task_type_id: null, value: null, status: "todo", due_date: null }])}>
+                    <Plus size={13} /> Adicionar subtarefa
+                  </button>
+                </div>
+                {subtasks.length === 0 && (
+                  <div style={{ fontSize: 11, color: "var(--cw-muted)" }}>
+                    Nenhuma subtarefa. Cada subtarefa vira uma tarefa própria, com seu tipo e valor.
+                  </div>
+                )}
+                {subtasks.map(s => (
+                  <div key={s.id} className="cw-subtask-row">
+                    <input type="text" className="cw-input" value={s.title} placeholder="Título da subtarefa"
+                      onChange={e => setSubtasks(list => list.map(x => x.id === s.id ? { ...x, title: e.target.value } : x))} />
+                    <select className="cw-select" value={s.task_type_id ?? ""}
+                      onChange={e => setSubtasks(list => list.map(x => x.id === s.id ? { ...x, task_type_id: e.target.value || null } : x))}>
+                      <option value="">Tipo da tarefa pai</option>
+                      {taskTypes.map((t: any) => <option key={t.id} value={t.id}>{t.name}</option>)}
+                    </select>
+                    <select className="cw-select" value={s.status}
+                      onChange={e => setSubtasks(list => list.map(x => x.id === s.id ? { ...x, status: e.target.value } : x))}>
+                      {STATUSES.map(st => <option key={st.value} value={st.value}>{st.label}</option>)}
+                    </select>
+                    <input type="number" min={0} step="0.01" className="cw-input" style={{ width: 110 }} placeholder="R$"
+                      value={s.value ?? ""}
+                      onChange={e => setSubtasks(list => list.map(x => x.id === s.id ? { ...x, value: e.target.value ? Number(e.target.value) : null } : x))} />
+                    <button type="button" className="cw-row-icon"
+                      onClick={() => {
+                        if (s.rowId) setRemovedSubtaskIds(r => [...r, s.rowId!]);
+                        setSubtasks(list => list.filter(x => x.id !== s.id));
+                      }}>
+                      <Trash2 size={13} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+
+
+
               {/* PLATAFORMAS / CANAIS */}
               <div className="cw-section">
                 <div className="cw-section-head">
