@@ -531,6 +531,10 @@ export function PersonasWindow({ open, onClose, projectId, projectName }: {
                             <small style={{ color: "var(--muted-foreground)" }}>{p.role}</small>
                           </div>
                           <small style={{ display: "block", color: "var(--muted-foreground)", marginTop: 4 }}>{p.why}</small>
+                          <p style={{ fontSize: 12.5, fontStyle: "italic", margin: "6px 0 0" }}>“{p.quote}”</p>
+                          <small style={{ display: "block", color: "var(--muted-foreground)", marginTop: 4 }}>
+                            {[p.personaType, `${p.ageRange} anos`, p.gender, p.location, p.income, p.decisionPower].filter(Boolean).join("  •  ")}
+                          </small>
                           <div style={{ display: "flex", flexWrap: "wrap", gap: 6, margin: "8px 0" }}>
                             {p.tags.map((t, ti) => (
                               <span key={ti} style={{ fontSize: 11, padding: "2px 8px", borderRadius: 999, background: "color-mix(in oklab, var(--primary) 12%, transparent)", color: "var(--primary)" }}>{t}</span>
@@ -546,6 +550,19 @@ export function PersonasWindow({ open, onClose, projectId, projectName }: {
                               <ul style={{ margin: "4px 0 0 16px" }}>{p.pains.map((d, di) => <li key={di}>{d}</li>)}</ul>
                             </div>
                           </div>
+                          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, fontSize: 12, marginTop: 8 }}>
+                            <div>
+                              <small style={{ color: "var(--muted-foreground)" }}>Objeções</small>
+                              <ul style={{ margin: "4px 0 0 16px" }}>{p.objections.map((d, di) => <li key={di}>{d}</li>)}</ul>
+                            </div>
+                            <div>
+                              <small style={{ color: "var(--muted-foreground)" }}>Gatilhos</small>
+                              <ul style={{ margin: "4px 0 0 16px" }}>{p.triggers.map((d, di) => <li key={di}>{d}</li>)}</ul>
+                            </div>
+                          </div>
+                          <small style={{ display: "block", color: "var(--muted-foreground)", marginTop: 6 }}>
+                            Busca informação em: {p.infoSources.join(", ")} • Jornada: {p.journeyStage}
+                          </small>
                           {p.help && <p style={{ fontSize: 12, marginTop: 8 }}><b>Como ajudamos: </b>{p.help}</p>}
                         </div>
                         <button type="button" className="swin-btn" onClick={() => editGenerated(p, i)} title="Editar antes de salvar">
