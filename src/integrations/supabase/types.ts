@@ -2327,47 +2327,98 @@ export type Database = {
       project_personas: {
         Row: {
           age: number | null
+          age_range: string | null
+          avatar_url: string | null
           channels: Json | null
+          company_context: string | null
+          content_habits: string | null
           created_at: string
+          decision_power: string | null
           desires: Json | null
+          education: string | null
+          family: string | null
+          gender: string | null
           help: string | null
           id: string
+          income: string | null
+          info_sources: Json | null
+          journey_stage: string | null
+          location: string | null
           name: string
+          objections: Json | null
           organization_id: string
           pains: Json | null
+          persona_type: string | null
           project_id: string
+          quote: string | null
           role: string | null
           tags: Json | null
+          tools: string | null
+          triggers: Json | null
           updated_at: string
         }
         Insert: {
           age?: number | null
+          age_range?: string | null
+          avatar_url?: string | null
           channels?: Json | null
+          company_context?: string | null
+          content_habits?: string | null
           created_at?: string
+          decision_power?: string | null
           desires?: Json | null
+          education?: string | null
+          family?: string | null
+          gender?: string | null
           help?: string | null
           id?: string
+          income?: string | null
+          info_sources?: Json | null
+          journey_stage?: string | null
+          location?: string | null
           name: string
+          objections?: Json | null
           organization_id: string
           pains?: Json | null
+          persona_type?: string | null
           project_id: string
+          quote?: string | null
           role?: string | null
           tags?: Json | null
+          tools?: string | null
+          triggers?: Json | null
           updated_at?: string
         }
         Update: {
           age?: number | null
+          age_range?: string | null
+          avatar_url?: string | null
           channels?: Json | null
+          company_context?: string | null
+          content_habits?: string | null
           created_at?: string
+          decision_power?: string | null
           desires?: Json | null
+          education?: string | null
+          family?: string | null
+          gender?: string | null
           help?: string | null
           id?: string
+          income?: string | null
+          info_sources?: Json | null
+          journey_stage?: string | null
+          location?: string | null
           name?: string
+          objections?: Json | null
           organization_id?: string
           pains?: Json | null
+          persona_type?: string | null
           project_id?: string
+          quote?: string | null
           role?: string | null
           tags?: Json | null
+          tools?: string | null
+          triggers?: Json | null
           updated_at?: string
         }
         Relationships: [
