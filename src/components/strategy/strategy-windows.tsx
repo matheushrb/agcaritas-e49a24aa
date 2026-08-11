@@ -1,13 +1,16 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import {
   LayoutGrid, Users, Filter, Target, ListChecks, Plus, Trash2, Check, Save,
-  ThumbsUp, ThumbsDown, ArrowUpCircle, AlertOctagon,
+  ThumbsUp, ThumbsDown, ArrowUpCircle, AlertOctagon, Sparkles, Loader2, Pencil,
 } from "lucide-react";
 import { ToolWindow, WinField } from "./tool-window";
+import { generatePersonas, type GeneratedPersona } from "@/lib/personas.functions";
 import "@/strategy-win.css";
+
 
 const sb = supabase as any;
 
