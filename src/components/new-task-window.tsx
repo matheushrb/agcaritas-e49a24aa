@@ -742,7 +742,9 @@ export function TaskWindow({
     setAssigneeId(null); setDueDate(""); setPriority("medium"); setStatus("todo"); setStage("briefing"); setCurrentStageId(null);
     setEstimated(""); setBillingEnabled(true); setBaseValue(""); setDeliverables([]); setChecklist([]);
     setPlatformsSel([]); setNotes(""); setLiveItems([]); setTech(EMPTY_TECH); setTab("details");
+    setAttachments([]); setCoverPath(null); setPreviews({});
     setBriefingTemplateId(null); setBriefingData({});
+
   };
   const close = (o: boolean) => { setBaseline(""); onOpenChange(o); if (!o) reset(); };
 
