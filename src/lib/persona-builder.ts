@@ -14,6 +14,7 @@ export type PersonaAnswers = {
   goal: "reconhecimento" | "leads" | "vendas" | "retencao";
   channels: string[];
   barrier: "preco" | "confianca" | "prazo" | "complexidade" | "concorrencia";
+  gender: "mulher" | "homem" | "equilibrado" | "indefinido";
 };
 
 export const emptyAnswers: PersonaAnswers = {
@@ -26,6 +27,7 @@ export const emptyAnswers: PersonaAnswers = {
   goal: "leads",
   channels: ["instagram"],
   barrier: "confianca",
+  gender: "equilibrado",
 };
 
 export const DECIDER_OPTIONS = [
@@ -82,15 +84,16 @@ const GOAL_DESIRE: Record<PersonaAnswers["goal"], string> = {
   retencao: "Manter clientes comprando por mais tempo",
 };
 
-const NAMES: Record<string, string[]> = {
-  decisor: ["Ricardo", "Marcelo", "Cláudia", "Eduardo"],
-  gestor: ["Marina", "Bruna", "Rafael", "Letícia"],
-  tecnico: ["Diego", "Felipe", "Camila", "Thiago"],
-  financeiro: ["Sandra", "Patrícia", "Alexandre", "Juliana"],
-  usuario: ["Ana", "Lucas", "Bia", "Paulo"],
-  descoberta: ["Júlia", "Matheus", "Carol", "Vinícius"],
-  comparando: ["Fernanda", "Rodrigo", "Aline", "Gustavo"],
-  recorrente: ["Renata", "Sérgio", "Priscila", "André"],
+// Nomes por chave de persona, separados por gênero.
+const NAMES: Record<string, { mulher: string[]; homem: string[] }> = {
+  decisor:    { mulher: ["Cláudia", "Patrícia", "Renata", "Sandra"], homem: ["Ricardo", "Marcelo", "Eduardo", "Roberto"] },
+  gestor:     { mulher: ["Marina", "Bruna", "Letícia", "Camila"], homem: ["Rafael", "Gustavo", "André", "Paulo"] },
+  tecnico:    { mulher: ["Camila", "Bia", "Aline", "Fernanda"], homem: ["Diego", "Felipe", "Thiago", "Vinícius"] },
+  financeiro: { mulher: ["Sandra", "Patrícia", "Juliana", "Renata"], homem: ["Alexandre", "Sérgio", "Eduardo", "Marcelo"] },
+  usuario:    { mulher: ["Ana", "Bia", "Carol", "Júlia"], homem: ["Lucas", "Paulo", "Matheus", "Rodrigo"] },
+  descoberta: { mulher: ["Júlia", "Carol", "Aline", "Fernanda"], homem: ["Matheus", "Vinícius", "Gustavo", "Rodrigo"] },
+  comparando: { mulher: ["Fernanda", "Aline", "Priscila", "Renata"], homem: ["Rodrigo", "Gustavo", "André", "Sérgio"] },
+  recorrente: { mulher: ["Renata", "Priscila", "Cláudia", "Juliana"], homem: ["Sérgio", "André", "Eduardo", "Roberto"] },
 };
 
 const SIZE_LABEL: Record<PersonaAnswers["audienceSize"], string> = {
@@ -177,14 +180,31 @@ export function buildPersonas(a: PersonaAnswers): BuiltPersona[] {
   const uniq = Array.from(new Set(keys)).slice(0, 5);
   const channels = a.channels.map(c => CHANNEL_LABEL[c] ?? c);
   const barrier = BARRIER_TEXT[a.barrier];
+  const g = a.gender;
 
   return uniq.map(k => {
     const b = BASE[k] ?? BASE["decisor"]!;
-    const nameOptions = NAMES[k] ?? NAMES["decisor"]!;
+    const bucket = NAMES[k] ?? NAMES["decisor"]!;
+    // Filtra as opções de nome conforme a inclinação de gênero marcada.
+    const nameOptions: string[] =
+      g === "mulher" ? bucket.mulher
+      : g === "homem" ? bucket.homem
+      // equilibrado / indefinido → intercala para manter a mistura
+      : bucket.mulher.flatMap((n, i) => [n, bucket.homem[i]].filter(Boolean) as string[]);
+
     const tags = [...b.tags];
+    if (g === "mulher") tags.unshift("Predominantemente mulher");
+    else if (g === "homem") tags.unshift("Predominantemente homem");
     if (a.ticket === "alto") tags.push("Compra de alto valor");
     if (a.cycle === "curto") tags.push("Decide rápido");
     if (a.audienceSize !== "consumidor") tags.push(SIZE_LABEL[a.audienceSize]);
+
+    const whyBase = b.why;
+    const whyGender = g === "mulher"
+      ? " Você indicou que o público é predominantemente mulher."
+      : g === "homem"
+      ? " Você indicou que o público é predominantemente homem."
+      : "";
 
     return {
       key: k,
@@ -195,7 +215,7 @@ export function buildPersonas(a: PersonaAnswers): BuiltPersona[] {
       desires: [...b.desires, GOAL_DESIRE[a.goal]],
       pains: [...b.pains, barrier.pain],
       help: `${barrier.help}. Presença principal em ${channels.join(", ") || "canais digitais"}.`,
-      why: b.why,
+      why: whyBase + whyGender,
     };
   });
 }
