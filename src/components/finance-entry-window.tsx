@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import {
   X, Save, Minus, Maximize2, PanelRight, Trash2, Receipt,
-  ArrowDownCircle, ArrowUpCircle, ChevronDown, Info, Repeat,
+  ArrowDownCircle, ArrowUpCircle, ChevronDown, Info, Repeat, ListChecks,
 } from "lucide-react";
 import "@/windows.css";
 
@@ -83,6 +83,7 @@ export function FinanceEntryWindow({
   const [dayOfMonth, setDayOfMonth] = useState("");
   const [repeatUntil, setRepeatUntil] = useState("");
   const [mode, setMode] = useState<"modal" | "docked" | "minimized">("modal");
+  const [taskIds, setTaskIds] = useState<string[]>([]);
 
   const { data: categories = [] } = useQuery<string[]>({
     queryKey: ["finance_categories", nature],
@@ -97,6 +98,26 @@ export function FinanceEntryWindow({
       return ((data ?? []) as { name: string }[]).map(c => c.name);
     },
   });
+
+  const { data: projectTasks = [] } = useQuery<ProjectTask[]>({
+    queryKey: ["entry-project-tasks", projectId],
+    enabled: open && !!projectId,
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("tasks")
+        .select("id, title, status, billing_value, billing_base_value, billed")
+        .eq("project_id", projectId)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return (data ?? []) as ProjectTask[];
+    },
+  });
+
+  const taskValue = (t: ProjectTask) => Number(t.billing_value ?? t.billing_base_value ?? 0);
+  const selectedTasks = projectTasks.filter(t => taskIds.includes(t.id));
+  const selectedTotal = selectedTasks.reduce((acc, t) => acc + taskValue(t), 0);
+  const toggleTask = (id: string) =>
+    setTaskIds(prev => (prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]));
 
   useEffect(() => {
     if (!open) return;
@@ -116,6 +137,7 @@ export function FinanceEntryWindow({
     setRepeat(false);
     setDayOfMonth("");
     setRepeatUntil("");
+    setTaskIds(Array.isArray((entry as any)?.task_ids) ? ((entry as any).task_ids as string[]) : []);
   }, [open, entry, defaultNature]);
 
   const value = Number(String(amount).replace(",", ".") || 0);
@@ -144,6 +166,7 @@ export function FinanceEntryWindow({
         project_id: projectId || null,
         collaborator_id: collaboratorId || null,
         payment_method: method || null,
+        task_ids: projectId ? taskIds : [],
         paid_at: status === "paid" ? (entry?.paid_at ?? new Date().toISOString()) : null,
       };
       if (isEdit) {
