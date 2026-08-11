@@ -2,6 +2,7 @@ import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useMemo, useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { ClientLogo, resolveClientLogoUrl } from "@/components/client-logo";
 import { lovable } from "@/integrations/lovable";
 import {
   Share2, Send, PenLine, Wallet, Check, Calendar, CreditCard, FileText,
@@ -250,7 +251,7 @@ function InvoiceDetailPage() {
     enabled: !!invoice?.client_id,
     queryFn: async () => {
       const { data } = await supabase.from("clients")
-        .select("id,name,company,trade_name,legal_name,tax_id,state_registration,email,phone,contact_name,contact_role,contact_email,contact_phone,billing_email,address_street,address_number,address_complement,address_neighborhood,address_city,address_state,address_zip")
+        .select("id,name,logo_url,company,trade_name,legal_name,tax_id,state_registration,email,phone,contact_name,contact_role,contact_email,contact_phone,billing_email,address_street,address_number,address_complement,address_neighborhood,address_city,address_state,address_zip")
         .eq("id", invoice!.client_id!).maybeSingle();
       return data as Record<string, string | null> | null;
     },
@@ -307,6 +308,7 @@ function InvoiceDetailPage() {
     try {
       const { generateInvoicePDF, DEFAULT_PAYMENT_TERMS } = await import("@/lib/pdf/invoice-pdf");
       const c = client;
+      const clientLogoHttpUrl = await resolveClientLogoUrl(c?.logo_url);
       const addr = c ? [
         [c.address_street, c.address_number].filter(Boolean).join(", "),
         [c.address_complement, c.address_neighborhood].filter(Boolean).join(" · "),
@@ -327,6 +329,7 @@ function InvoiceDetailPage() {
           document: c.tax_id || null, state_registration: c.state_registration || null,
           email: c.billing_email || c.email || null, phone: c.phone || null, address: addr,
           contact_name: c.contact_name || null, contact_role: c.contact_role || null,
+          logo_url: clientLogoHttpUrl,
         } : { name: "—" },
         agency: organization ? {
           name: organization.name ?? null, legal_name: organization.legal_name ?? null,
@@ -915,7 +918,10 @@ function InvoiceDetailPage() {
         <div className="f3-meta">
           <div className="f3-cell f3-span2">
             <div className="f3-slabel">Cliente</div>
-            <div className="f3-svalue">{client?.name ?? "—"}</div>
+            <div className="f3-svalue flex items-center gap-2">
+              <ClientLogo value={client?.logo_url} name={client?.name} size={22} rounded="rounded" />
+              {client?.name ?? "—"}
+            </div>
             {client?.id && <Link to="/clients/$clientId" params={{ clientId: client.id }} className="f3-slink">Ver cliente <ArrowRight size={11} /></Link>}
           </div>
           <div className="f3-cell f3-span2">

@@ -452,6 +452,7 @@ export type Database = {
           legal_name: string | null
           legal_nature: string | null
           linkedin: string | null
+          logo_url: string | null
           municipal_registration: string | null
           name: string
           notes: string | null
@@ -494,6 +495,7 @@ export type Database = {
           legal_name?: string | null
           legal_nature?: string | null
           linkedin?: string | null
+          logo_url?: string | null
           municipal_registration?: string | null
           name: string
           notes?: string | null
@@ -536,6 +538,7 @@ export type Database = {
           legal_name?: string | null
           legal_nature?: string | null
           linkedin?: string | null
+          logo_url?: string | null
           municipal_registration?: string | null
           name?: string
           notes?: string | null

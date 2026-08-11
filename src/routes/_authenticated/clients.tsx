@@ -9,6 +9,7 @@ import { Card } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { EntityDialog, DialogField, DialogCancelButton } from "@/components/entity-dialog";
+import { ClientLogo, ClientLogoPicker } from "@/components/client-logo";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
   Search, Plus, Users as UsersIcon, Building2, Mail, Phone, Loader2, Sparkles,
@@ -49,6 +50,7 @@ type Client = {
   email: string | null;
   phone: string | null;
   tax_id: string | null;
+  logo_url: string | null;
   created_at: string;
 };
 
@@ -89,7 +91,7 @@ function ClientsPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("clients")
-        .select("id,name,status,segment,email,phone,tax_id,created_at")
+        .select("id,name,status,segment,email,phone,tax_id,logo_url,created_at")
         .order("name");
       if (error) throw error;
       return (data ?? []) as Client[];
@@ -258,7 +260,8 @@ function ClientsPage() {
                         "text-left transition-all duration-300 ease-out min-w-0 flex-1",
                       )}
                     >
-                      <div className="px-5 py-4 h-full flex items-center gap-6">
+                      <div className="px-5 py-4 h-full flex items-center gap-4">
+                        <ClientLogo value={c.logo_url} name={c.name} size={44} />
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-3">
                             <div className="text-base font-semibold truncate">{c.name}</div>
@@ -339,6 +342,7 @@ function ClientsPage() {
           name: editingClient.name ?? "",
           legal_name: editingClient.legal_name ?? "",
           trade_name: editingClient.trade_name ?? "",
+          logo_url: editingClient.logo_url ?? "",
           state_registration: editingClient.state_registration ?? "",
           municipal_registration: editingClient.municipal_registration ?? "",
           cnae: editingClient.cnae ?? "",
@@ -383,6 +387,7 @@ type FormState = {
   name: string;
   legal_name: string;
   trade_name: string;
+  logo_url: string;
   state_registration: string;
   municipal_registration: string;
   cnae: string;
@@ -415,7 +420,7 @@ type FormState = {
 
 const initialForm: FormState = {
   person_type: "PJ",
-  tax_id: "", name: "", legal_name: "", trade_name: "",
+  tax_id: "", name: "", legal_name: "", trade_name: "", logo_url: "",
   state_registration: "", municipal_registration: "", cnae: "", legal_nature: "",
   opening_date: "", size: "", segment: "",
   website: "", instagram: "", linkedin: "",
@@ -520,6 +525,7 @@ export function NewClientDialog({
       name: form.name.trim(),
       legal_name: form.legal_name || null,
       trade_name: form.trade_name || null,
+      logo_url: form.logo_url || null,
       tax_id: form.tax_id || null,
       state_registration: form.state_registration || null,
       municipal_registration: form.municipal_registration || null,
@@ -572,6 +578,9 @@ export function NewClientDialog({
           </TabsList>
 
           <TabsContent value="identificacao" className="mt-4 space-y-3">
+            <DialogField label="Logo da empresa" hint="Aparece nas listas, projetos e documentos">
+              <ClientLogoPicker value={form.logo_url || null} name={form.name} onChange={v => set("logo_url", v ?? "")} />
+            </DialogField>
             <div className="grid grid-cols-3 gap-3">
               <DialogField label="Tipo">
                 <Select value={form.person_type} onValueChange={(v: "PJ"|"PF") => set("person_type", v)}>
