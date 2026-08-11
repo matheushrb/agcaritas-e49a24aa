@@ -7,8 +7,8 @@
 
 /* --- Alturas curtas (a maioria dos notebooks: 720–900px de altura) --- */
 @media (max-height: 900px) {
-  .caritas-ui { --cv-sb: 62px; }
-  .caritas-ui[data-nav="expanded"] { --cv-sb: 214px; }
+  .caritas-ui { --cv-sb: 68px; }
+  .caritas-ui[data-nav="expanded"] { --cv-sb: 222px; }
   .caritas-ui .cv-sidebar { padding: 7px 8px 9px; }
   .caritas-ui .cv-sidebar-logo { height: 40px; font-size: 22px; }
   .caritas-ui .cv-sidebar-logo img { width: 22px !important; }
