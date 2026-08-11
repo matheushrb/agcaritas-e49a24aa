@@ -55,9 +55,18 @@ const STAGE_PALETTE = ["#7F8C9E", "#8B5CF6", "#EF4444", "#0EA5E9", "#F97316", "#
 type DeliverableDraft = {
   id: string; platform: string; type: string;
   billing_enabled: boolean; billing_value: number | null; delivered: boolean;
+  /** Data combinada para a entrega (prazo). */
   due_date?: string | null;
+  /** Data em que a entrega foi efetivamente confirmada. */
+  delivered_at?: string | null;
   invoiced?: boolean;
 };
+
+/** Anexo da tarefa (arquivo no armazenamento). */
+type AttachmentDraft = {
+  id: string; path: string; name: string; type: string; size: number; is_image: boolean;
+};
+
 type ChecklistDraft = { id: string; title: string; done: boolean };
 
 /** Subtarefa real (linha própria em tasks, com parent_task_id) — pode ter tipo e valor próprios. */
@@ -151,6 +160,11 @@ export function TaskWindow({
   const [billingEnabled, setBillingEnabled] = useState(true);
   const [baseValue, setBaseValue] = useState<string>("");
   const [deliverables, setDeliverables] = useState<DeliverableDraft[]>([]);
+  const [attachments, setAttachments] = useState<AttachmentDraft[]>([]);
+  const [coverPath, setCoverPath] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [previews, setPreviews] = useState<Record<string, string>>({});
+
   const [checklist, setChecklist] = useState<ChecklistDraft[]>([]);
   const [subtasks, setSubtasks] = useState<SubtaskDraft[]>([]);
   const [removedSubtaskIds, setRemovedSubtaskIds] = useState<string[]>([]);
@@ -537,9 +551,18 @@ export function TaskWindow({
         billing_value: d.billing_value ?? null,
         delivered: !!d.delivered,
         due_date: d.due_date ?? null,
+        delivered_at: d.delivered_at ?? null,
         invoiced: !!d.invoiced,
       })),
     );
+    setAttachments(
+      (Array.isArray((existing as any).attachments) ? (existing as any).attachments : []).map((a: any) => ({
+        id: a.id ?? uid(), path: a.path ?? "", name: a.name ?? "arquivo",
+        type: a.type ?? "", size: a.size ?? 0, is_image: !!a.is_image,
+      })),
+    );
+    setCoverPath((existing as any).cover_url ?? null);
+
     setChecklist(
       (Array.isArray(existing.subtasks) ? existing.subtasks : []).map((s: any) => ({
         id: s.id ?? uid(), title: s.title ?? "", done: !!s.done,
@@ -714,12 +737,68 @@ export function TaskWindow({
 
 
 
+  /* ---------- Anexos ---------- */
+  useEffect(() => {
+    const missing = attachments.filter(a => a.is_image && a.path && !previews[a.path]);
+    if (missing.length === 0) return;
+    let alive = true;
+    (async () => {
+      const next: Record<string, string> = {};
+      for (const a of missing) {
+        const { data } = await supabase.storage.from("task-files").createSignedUrl(a.path, 60 * 60);
+        if (data?.signedUrl) next[a.path] = data.signedUrl;
+      }
+      if (alive && Object.keys(next).length) setPreviews(p => ({ ...p, ...next }));
+    })();
+    return () => { alive = false; };
+  }, [attachments, previews]);
+
+  async function uploadFiles(files: FileList | null) {
+    if (!files || files.length === 0) return;
+    setUploading(true);
+    try {
+      const added: AttachmentDraft[] = [];
+      for (const file of Array.from(files)) {
+        if (file.size > 15 * 1024 * 1024) { toast.error(`${file.name}: máximo de 15 MB.`); continue; }
+        const ext = file.name.split(".").pop() ?? "bin";
+        const path = `${taskId ?? "novas"}/${uid()}-${Date.now()}.${ext}`;
+        const { error } = await supabase.storage.from("task-files").upload(path, file, { contentType: file.type || undefined });
+        if (error) { toast.error(`${file.name}: ${error.message}`); continue; }
+        added.push({
+          id: uid(), path, name: file.name, type: file.type || "",
+          size: file.size, is_image: (file.type || "").startsWith("image/"),
+        });
+      }
+      if (added.length) {
+        setAttachments(list => [...list, ...added]);
+        const firstImg = added.find(a => a.is_image);
+        if (firstImg && !coverPath) setCoverPath(firstImg.path);
+      }
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  async function removeAttachment(a: AttachmentDraft) {
+    await supabase.storage.from("task-files").remove([a.path]);
+    setAttachments(list => list.filter(x => x.id !== a.id));
+    if (coverPath === a.path) setCoverPath(null);
+  }
+
+  async function openAttachment(a: AttachmentDraft) {
+    const { data } = await supabase.storage.from("task-files").createSignedUrl(a.path, 60 * 10);
+    if (data?.signedUrl) window.open(data.signedUrl, "_blank");
+  }
+
   const reset = () => {
+
     setTitle(defaultTitle); setDescription(""); setProjectId(defaultProjectId); setTaskTypeId(defaultTaskTypeId);
     setAssigneeId(null); setDueDate(""); setPriority("medium"); setStatus("todo"); setStage("briefing"); setCurrentStageId(null);
     setEstimated(""); setBillingEnabled(true); setBaseValue(""); setDeliverables([]); setChecklist([]);
     setPlatformsSel([]); setNotes(""); setLiveItems([]); setTech(EMPTY_TECH); setTab("details");
+    setAttachments([]); setCoverPath(null); setPreviews({});
     setBriefingTemplateId(null); setBriefingData({});
+
   };
   const close = (o: boolean) => { setBaseline(""); onOpenChange(o); if (!o) reset(); };
 
@@ -759,7 +838,11 @@ export function TaskWindow({
       billing_enabled: d.billing_enabled, billing_model: "per_task",
       billing_value: d.billing_value, delivered: d.delivered, invoiced: !!d.invoiced,
       due_date: d.due_date || null,
+      delivered_at: d.delivered ? (d.delivered_at || new Date().toISOString().slice(0, 10)) : null,
     })) as any,
+    attachments: attachments as any,
+    cover_url: coverPath,
+
     briefing_template_id: briefingTemplateId,
     briefing: briefingData as any,
     live_items: liveItems as any,
@@ -1101,9 +1184,62 @@ export function TaskWindow({
 
               <div className="cw-field" style={{ marginTop: 14 }}>
                 <span className="cw-label">Descrição / briefing</span>
-                <textarea className="cw-textarea" rows={4} value={description}
+                <textarea className="cw-textarea" rows={9} style={{ minHeight: 190, resize: "vertical" }} value={description}
                   onChange={e => setDescription(e.target.value)} placeholder="Contexto, referências e o que precisa ser entregue..." />
               </div>
+
+              {/* ANEXOS E CAPA */}
+              <div className="cw-section">
+                <div className="cw-section-head">
+                  <div>
+                    <h4>Anexos</h4>
+                    <p>Envie imagens e arquivos. Escolha uma imagem como capa da tarefa.</p>
+                  </div>
+                  <label className="cw-btn cw-btn-secondary sm" style={{ cursor: "pointer" }}>
+                    <Paperclip size={13} /> {uploading ? "Enviando..." : "Adicionar arquivo"}
+                    <input type="file" multiple hidden disabled={uploading}
+                      onChange={e => { uploadFiles(e.target.files); e.currentTarget.value = ""; }} />
+                  </label>
+                </div>
+
+                {attachments.length === 0 ? (
+                  <div className="cw-mut" style={{ fontSize: 12 }}>Nenhum anexo ainda.</div>
+                ) : (
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(148px, 1fr))", gap: 10 }}>
+                    {attachments.map(a => {
+                      const isCover = coverPath === a.path;
+                      return (
+                        <div key={a.id}
+                          style={{
+                            border: `1px solid ${isCover ? "var(--cw-primary, #2F6BEF)" : "var(--cw-border, #E3E8EF)"}`,
+                            boxShadow: isCover ? "0 0 0 2px rgba(47,107,239,.16)" : "none",
+                            borderRadius: 12, overflow: "hidden", background: "var(--cw-surface, #fff)",
+                          }}>
+                          <div style={{ height: 92, background: "var(--cw-soft, #F4F6FA)", display: "grid", placeItems: "center", cursor: "pointer" }}
+                            onClick={() => openAttachment(a)}>
+                            {a.is_image && previews[a.path]
+                              ? <img src={previews[a.path]} alt={a.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                              : <FileText size={22} style={{ opacity: .5 }} />}
+                          </div>
+                          <div style={{ padding: "7px 8px", display: "flex", alignItems: "center", gap: 6 }}>
+                            <span style={{ flex: 1, fontSize: 11, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={a.name}>{a.name}</span>
+                            <button type="button" className="cw-row-icon" title="Remover" onClick={() => removeAttachment(a)}><Trash2 size={12} /></button>
+                          </div>
+                          {a.is_image && (
+                            <button type="button"
+                              className={`cw-deliver-btn${isCover ? " is-done" : ""}`}
+                              style={{ width: "calc(100% - 16px)", margin: "0 8px 8px", justifyContent: "center" }}
+                              onClick={() => setCoverPath(isCover ? null : a.path)}>
+                              {isCover ? <><Check size={12} /> Capa</> : "Definir como capa"}
+                            </button>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
 
               {/* ENTREGÁVEIS */}
               <div className="cw-section">
@@ -1120,18 +1256,20 @@ export function TaskWindow({
                 <table className="cw-table">
                   <thead>
                     <tr>
-                      <th style={{ width: 140 }}>Plataforma</th>
+                      <th style={{ width: 128 }}>Plataforma</th>
                       <th>Formato / entrega</th>
-                      <th style={{ width: 140 }}>Prazo</th>
-                      <th style={{ width: 90 }}>Faturável</th>
-                      <th style={{ width: 110 }}>Valor</th>
-                      <th style={{ width: 120 }}>Entrega</th>
+                      <th style={{ width: 130 }}>Prazo combinado</th>
+                      <th style={{ width: 80 }}>Faturável</th>
+                      <th style={{ width: 100 }}>Valor</th>
+                      <th style={{ width: 124 }}>Confirmação</th>
+                      <th style={{ width: 130 }}>Entregue em</th>
                       <th style={{ width: 56 }} />
+
                     </tr>
                   </thead>
                   <tbody>
                     {deliverables.length === 0 && (
-                      <tr><td colSpan={7} className="cw-mut" style={{ textAlign: "center" }}>Nenhum entregável adicionado.</td></tr>
+                      <tr><td colSpan={8} className="cw-mut" style={{ textAlign: "center" }}>Nenhum entregável adicionado.</td></tr>
                     )}
                     {deliverables.map(d => {
                       const late = !d.delivered && !!d.due_date && d.due_date < new Date().toISOString().slice(0, 10);
@@ -1164,10 +1302,23 @@ export function TaskWindow({
                         <td>
                           <button type="button"
                             className={`cw-deliver-btn${d.delivered ? " is-done" : late ? " is-late" : ""}`}
-                            onClick={() => setDeliverables(list => list.map(x => x.id === d.id ? { ...x, delivered: !x.delivered } : x))}>
+                            onClick={() => setDeliverables(list => list.map(x => x.id === d.id ? {
+                              ...x,
+                              delivered: !x.delivered,
+                              delivered_at: !x.delivered ? (x.delivered_at || new Date().toISOString().slice(0, 10)) : null,
+                            } : x))}>
                             {d.delivered ? <><Check size={12} /> Entregue</> : late ? "Atrasado" : "Marcar entregue"}
                           </button>
                         </td>
+                        <td>
+                          {d.delivered ? (
+                            <CwDate compact value={d.delivered_at ?? ""} placeholder="Data da entrega"
+                              onChange={v => setDeliverables(list => list.map(x => x.id === d.id ? { ...x, delivered_at: v || null } : x))} />
+                          ) : (
+                            <span className="cw-mut" style={{ fontSize: 11 }}>—</span>
+                          )}
+                        </td>
+
                         <td>
                           <button type="button" className="cw-row-icon" onClick={() => setDeliverables(list => list.filter(x => x.id !== d.id))}>
                             <Trash2 size={13} />

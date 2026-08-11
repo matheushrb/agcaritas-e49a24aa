@@ -3266,6 +3266,7 @@ export type Database = {
           aired_dates: Json
           archived_at: string | null
           assignee_id: string | null
+          attachments: Json
           attachments_count: number
           billed: boolean
           billed_invoice_id: string | null
@@ -3278,6 +3279,7 @@ export type Database = {
           broadcast_kind: string | null
           client_id: string | null
           comments_count: number
+          cover_url: string | null
           created_at: string
           current_stage_id: string | null
           deliverables: Json
@@ -3311,6 +3313,7 @@ export type Database = {
           aired_dates?: Json
           archived_at?: string | null
           assignee_id?: string | null
+          attachments?: Json
           attachments_count?: number
           billed?: boolean
           billed_invoice_id?: string | null
@@ -3323,6 +3326,7 @@ export type Database = {
           broadcast_kind?: string | null
           client_id?: string | null
           comments_count?: number
+          cover_url?: string | null
           created_at?: string
           current_stage_id?: string | null
           deliverables?: Json
@@ -3356,6 +3360,7 @@ export type Database = {
           aired_dates?: Json
           archived_at?: string | null
           assignee_id?: string | null
+          attachments?: Json
           attachments_count?: number
           billed?: boolean
           billed_invoice_id?: string | null
@@ -3368,6 +3373,7 @@ export type Database = {
           broadcast_kind?: string | null
           client_id?: string | null
           comments_count?: number
+          cover_url?: string | null
           created_at?: string
           current_stage_id?: string | null
           deliverables?: Json

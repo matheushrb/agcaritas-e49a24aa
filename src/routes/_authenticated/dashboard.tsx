@@ -412,7 +412,29 @@ function DashboardPage() {
             })}
             <Link to="/calendar" className="cv-rail-cta">Ver todas as reuniões</Link>
           </section>
+
+          <section className="cv-card cv-rail">
+            <div className="cv-rail-head">
+              <h2 style={{ fontSize: 13 }}>Resumo rápido</h2>
+              <Link to="/projects" className="cv-link">Projetos <ChevronRight className="h-3 w-3" /></Link>
+            </div>
+            <div className="cv-rail-stats">
+              <div><span>Tarefas abertas</span><b>{data.tasks.filter((t: any) => t.status !== "done").length}</b></div>
+              <div><span>Vencidas</span><b style={{ color: overdue ? "var(--danger)" : undefined }}>{overdue}</b></div>
+              <div><span>Aguardando aprovação</span><b>{approvals}</b></div>
+              <div><span>Projetos ativos</span><b>{activeProjects}</b></div>
+              <div><span>Clientes</span><b>{data.clients.length}</b></div>
+              <div><span>Oportunidades</span><b>{data.leads.length}</b></div>
+            </div>
+            <div className="cv-rail-links">
+              <Link to="/tasks">Minhas tarefas <ChevronRight className="h-3 w-3" /></Link>
+              <Link to="/invoices">Faturamento <ChevronRight className="h-3 w-3" /></Link>
+              <Link to="/crm">Funil comercial <ChevronRight className="h-3 w-3" /></Link>
+              <Link to="/finance">Financeiro <ChevronRight className="h-3 w-3" /></Link>
+            </div>
+          </section>
         </aside>
+
       </div>
 
       <footer className="cv-footer">
