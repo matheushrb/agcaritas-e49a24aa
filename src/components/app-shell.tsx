@@ -4,8 +4,9 @@ import {
   Settings, Moon, Sun, LogOut, Bell, CheckSquare, Target, Truck, Lightbulb,
   Megaphone, Building2, Receipt, HelpCircle,
   Inbox, MessageSquare, FileSignature, Check, Trash2, Asterisk, ChevronDown,
+  PanelLeftClose, PanelLeftOpen,
 } from "lucide-react";
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useTheme } from "@/components/theme-provider";
@@ -46,7 +47,19 @@ export function AppShell({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
   const { theme, setTheme } = useTheme();
   const pathname = useRouterState({ select: s => s.location.pathname });
-  const [expanded] = useState(false);
+  const [expanded, setExpanded] = useState(false);
+
+  useEffect(() => {
+    const saved = localStorage.getItem("caritas.nav.expanded");
+    if (saved === "1") setExpanded(true);
+  }, []);
+
+  const toggleNav = () => {
+    setExpanded(v => {
+      localStorage.setItem("caritas.nav.expanded", v ? "0" : "1");
+      return !v;
+    });
+  };
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
@@ -64,23 +77,38 @@ export function AppShell({ children }: { children: ReactNode }) {
         className={`cv-nav-item${active ? " is-active" : ""}`}
       >
         <Icon className="h-[18px] w-[18px] shrink-0" />
+        {expanded && <span>{item.label}</span>}
       </Link>
     );
   };
 
   return (
-    <div className="caritas-ui" data-theme={theme}>
+    <div className="caritas-ui" data-theme={theme} data-nav={expanded ? "expanded" : "collapsed"}>
       <aside className="cv-sidebar">
         <div className="cv-sidebar-logo">
-          <img src={caritasSymbol.url} alt="Caritas" style={{ width: 26, height: "auto" }} />
+          <span className="cv-sb-brand">
+            <img src={caritasSymbol.url} alt="Caritas" style={{ width: 26, height: "auto" }} />
+            {expanded && <span>Caritas</span>}
+          </span>
+          <button
+            type="button"
+            className="cv-sb-toggle"
+            onClick={toggleNav}
+            title={expanded ? "Colapsar menu" : "Expandir menu"}
+            aria-label={expanded ? "Colapsar menu" : "Expandir menu"}
+          >
+            {expanded ? <PanelLeftClose /> : <PanelLeftOpen />}
+          </button>
         </div>
 
         <nav className="cv-sidebar-nav">
+          {expanded && <div className="cv-sb-group">Módulos</div>}
           {primaryNav.map(railItem)}
+          {expanded && <div className="cv-sb-group">Mais</div>}
           {expanded && secondaryNav.map(railItem)}
           <Popover>
             <PopoverTrigger asChild>
-              <button className="cv-nav-item" title="Mais módulos">
+              <button className="cv-nav-item" title="Mais módulos" style={expanded ? { display: "none" } : undefined}>
                 <LayoutGrid className="h-[18px] w-[18px]" />
               </button>
             </PopoverTrigger>
@@ -106,7 +134,8 @@ export function AppShell({ children }: { children: ReactNode }) {
         <div className="cv-sidebar-bottom">
           {railItem({ to: "/settings", icon: Settings, label: "Configurações" })}
           <button onClick={handleSignOut} title="Sair" className="cv-nav-item">
-            <LogOut className="h-[18px] w-[18px]" />
+            <LogOut className="h-[18px] w-[18px] shrink-0" />
+            {expanded && <span>Sair</span>}
           </button>
         </div>
       </aside>
