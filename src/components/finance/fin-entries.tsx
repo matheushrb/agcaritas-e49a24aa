@@ -39,7 +39,7 @@ export function EntriesPanel({
     queryFn: async () => {
       const { data, error } = await (supabase as any)
         .from("charges")
-        .select("id,description,amount,status,due_date,paid_at,payment_method,client_id,project_id,nature,category,competence_month,task_ids,created_at")
+        .select("id,description,amount,status,due_date,paid_at,payment_method,client_id,project_id,nature,category,competence_month,task_ids,accounting_nature,created_at")
         .order("due_date", { ascending: false, nullsFirst: false });
       if (error) throw error;
       return (data ?? []) as Row[];

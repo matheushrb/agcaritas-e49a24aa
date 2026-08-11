@@ -47,9 +47,44 @@ export type FinCharge = {
   due_date: string | null;
   paid_at: string | null;
   competence_month?: string | null;
+  accounting_nature?: string | null;
   client_id: string | null;
   project_id: string | null;
 };
+
+/* --------- naturezas contábeis --------- */
+export type AccountingNature =
+  | "recebimento_cliente" | "servico_avulso"
+  | "imposto" | "custo_fixo" | "custo_variavel" | "midia_paga" | "reembolso_pago"
+  | "pro_labore" | "saque" | "investimento";
+
+export const ACCOUNTING_NATURES: { value: AccountingNature; label: string; side: "revenue" | "expense"; hint: string }[] = [
+  { value: "recebimento_cliente", label: "Recebimento de cliente", side: "revenue", hint: "Receita operacional de fatura/contrato" },
+  { value: "servico_avulso", label: "Serviço avulso", side: "revenue", hint: "Receita pontual fora de projeto" },
+  { value: "imposto", label: "Imposto", side: "expense", hint: "Tributo sobre faturamento — deduz da receita bruta" },
+  { value: "custo_fixo", label: "Custo fixo", side: "expense", hint: "Estrutura: aluguel, software, salários" },
+  { value: "custo_variavel", label: "Custo variável", side: "expense", hint: "Ligado à entrega" },
+  { value: "midia_paga", label: "Mídia paga", side: "expense", hint: "Verba de mídia repassada" },
+  { value: "reembolso_pago", label: "Reembolso pago", side: "expense", hint: "Reembolso a colaborador/fornecedor" },
+  { value: "pro_labore", label: "Pró-labore", side: "expense", hint: "Remuneração de sócios — abaixo do resultado operacional" },
+  { value: "saque", label: "Saque de capital", side: "expense", hint: "Retirada — NÃO é despesa, fica fora do DRE" },
+  { value: "investimento", label: "Investimento", side: "expense", hint: "Aquisição de ativo — NÃO é despesa, fica fora do DRE" },
+];
+
+export const natureLabel = (v?: string | null) =>
+  ACCOUNTING_NATURES.find(n => n.value === v)?.label ?? "—";
+
+/** Natureza contábil efetiva, com fallback pelo lado receita/despesa. */
+export const accNature = (c: FinCharge): AccountingNature => {
+  const v = c.accounting_nature as AccountingNature | null | undefined;
+  if (v && ACCOUNTING_NATURES.some(n => n.value === v)) return v;
+  const isExpense = (c.nature ?? c.type ?? "income") === "expense" || num(c.amount) < 0;
+  return isExpense ? "custo_variavel" : "recebimento_cliente";
+};
+
+export const isReceitaOperacional = (c: FinCharge) => ["recebimento_cliente", "servico_avulso"].includes(accNature(c));
+export const isDespesaOperacional = (c: FinCharge) => ["custo_fixo", "custo_variavel", "midia_paga", "reembolso_pago"].includes(accNature(c));
+export const isForaDoDre = (c: FinCharge) => ["saque", "investimento"].includes(accNature(c));
 
 export type ReserveSettings = {
   emergency_pct: number;      // % da receita destinada ao caixa de emergência
@@ -57,6 +92,7 @@ export type ReserveSettings = {
   profit_pct: number;         // % de lucro (distribuição/reinvestimento)
   tax_pct: number;            // % impostos
   prolabore_pct: number;      // % pró-labore
+  investment_pct: number;     // % capital de investimento
 };
 
 export const DEFAULT_RESERVES: ReserveSettings = {
@@ -65,6 +101,7 @@ export const DEFAULT_RESERVES: ReserveSettings = {
   profit_pct: 15,
   tax_pct: 6,
   prolabore_pct: 20,
+  investment_pct: 10,
 };
 
 export const num = (v: unknown) => Number(v ?? 0) || 0;
@@ -248,17 +285,21 @@ export function analyzeByType(
   return out.sort((a, b) => b.cost - a.cost);
 }
 
-/* --------- DRE mensal --------- */
+/* --------- DRE mensal (por natureza contábil) --------- */
 export type DreMonth = {
   key: string;
   label: string;
   grossRevenue: number;
   taxes: number;
   netRevenue: number;
-  directCosts: number;   // equipe/freelas/fornecedores ligados a projeto
-  grossProfit: number;
-  fixedCosts: number;    // estrutura (config de precificação)
+  fixedCosts: number;      // custo_fixo lançado + estrutura da precificação
+  variableCosts: number;   // custo_variavel + mídia paga + custos de projeto
+  reimbursements: number;
   operatingResult: number;
+  prolabore: number;
+  periodResult: number;
+  withdrawals: number;     // saque — fora do DRE, só informativo
+  investments: number;     // investimento — fora do DRE, só informativo
   marginPct: number;
 };
 
@@ -270,41 +311,67 @@ export function buildDre(input: {
   taxPct: number;
 }): DreMonth[] {
   const { charges, costs, months, fixedMonthly, taxPct } = input;
-  const inc = new Map<string, number>();
-  const exp = new Map<string, number>();
+  const acc = new Map<string, Record<string, number>>();
+  const bucket = (k: string) => {
+    let b = acc.get(k);
+    if (!b) { b = {}; acc.set(k, b); }
+    return b;
+  };
+  const add = (k: string, field: string, v: number) => {
+    const b = bucket(k);
+    b[field] = (b[field] ?? 0) + v;
+  };
 
   for (const c of charges) {
     if (c.status === "cancelled" || c.status === "draft") continue;
     const ref = c.competence_month ?? c.paid_at ?? c.due_date;
     if (!ref) continue;
     const k = monthKey(ref);
-    const amount = Math.abs(num(c.amount));
-    const isExpense = (c.nature ?? c.type ?? "income") === "expense" || num(c.amount) < 0;
-    const map = isExpense ? exp : inc;
-    map.set(k, (map.get(k) ?? 0) + amount);
+    add(k, accNature(c), Math.abs(num(c.amount)));
   }
   for (const c of costs) {
     if (c.status === "cancelled") continue;
-    const k = monthKey(c.occurred_on);
-    exp.set(k, (exp.get(k) ?? 0) + num(c.amount));
+    add(monthKey(c.occurred_on), "custo_variavel", num(c.amount));
   }
 
   return months.map(k => {
-    const grossRevenue = inc.get(k) ?? 0;
-    const taxes = grossRevenue * (taxPct / 100);
+    const b = acc.get(k) ?? {};
+    const grossRevenue = (b["recebimento_cliente"] ?? 0) + (b["servico_avulso"] ?? 0);
+    // imposto lançado tem precedência; sem lançamento, estima pelo percentual do planejador
+    const taxes = (b["imposto"] ?? 0) > 0 ? b["imposto"] : grossRevenue * (taxPct / 100);
     const netRevenue = grossRevenue - taxes;
-    const directCosts = exp.get(k) ?? 0;
-    const grossProfit = netRevenue - directCosts;
-    const operatingResult = grossProfit - fixedMonthly;
+    const fixedCosts = (b["custo_fixo"] ?? 0) + fixedMonthly;
+    const variableCosts = (b["custo_variavel"] ?? 0) + (b["midia_paga"] ?? 0);
+    const reimbursements = b["reembolso_pago"] ?? 0;
+    const operatingResult = netRevenue - fixedCosts - variableCosts - reimbursements;
+    const prolabore = b["pro_labore"] ?? 0;
+    const periodResult = operatingResult - prolabore;
     return {
       key: k,
       label: monthLabel(k),
-      grossRevenue, taxes, netRevenue, directCosts, grossProfit,
-      fixedCosts: fixedMonthly,
-      operatingResult,
-      marginPct: grossRevenue > 0 ? (operatingResult / grossRevenue) * 100 : 0,
+      grossRevenue, taxes, netRevenue, fixedCosts, variableCosts, reimbursements,
+      operatingResult, prolabore, periodResult,
+      withdrawals: b["saque"] ?? 0,
+      investments: b["investimento"] ?? 0,
+      marginPct: grossRevenue > 0 ? (periodResult / grossRevenue) * 100 : 0,
     };
   });
+}
+
+/* --------- break-even e meta de faturamento --------- */
+export type BreakEven = { operatingCost: number; breakEven: number; targetRevenue: number };
+
+export function computeBreakEven(input: {
+  operatingCost: number;   // folha + custos fixos + variáveis previstos do mês
+  taxPct: number;
+  profitPct: number;
+  emergencyPct: number;
+  investmentPct: number;
+}): BreakEven {
+  const tax = Math.min(0.95, Math.max(0, input.taxPct / 100));
+  const breakEven = input.operatingCost / (1 - tax);
+  const targetRevenue = breakEven * (1 + input.profitPct / 100 + input.emergencyPct / 100 + input.investmentPct / 100);
+  return { operatingCost: input.operatingCost, breakEven, targetRevenue };
 }
 
 /* --------- fluxo de caixa (realizado + previsto) --------- */
@@ -332,7 +399,7 @@ export function buildCashflow(input: {
     if (!ref) continue;
     const k = monthKey(ref);
     const amount = Math.abs(num(c.amount));
-    const isExpense = (c.nature ?? c.type ?? "income") === "expense" || num(c.amount) < 0;
+    const isExpense = !isReceitaOperacional(c);
     (isExpense ? exp : inc).set(k, ((isExpense ? exp : inc).get(k) ?? 0) + amount);
   }
   for (const c of costs) {

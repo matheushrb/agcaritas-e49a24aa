@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import {
   analyzeByType, brl, brl0, buildCashflow, buildDre, computeTaskCosts, lastMonths, monthKey,
-  nextMonths, num, pct, planReserves, DEFAULT_RESERVES,
+  nextMonths, num, pct, planReserves, computeBreakEven, DEFAULT_RESERVES,
   type FinCharge, type FinMember, type FinProjectCost, type FinTask, type FinTaskType,
   type FinTimeEntry, type ReserveSettings, type TypeAnalysis,
 } from "@/lib/finance-analytics";
@@ -142,34 +142,45 @@ export function DrePanel({ data }: { data: FinDataset }) {
     grossRevenue: a.grossRevenue + r.grossRevenue,
     taxes: a.taxes + r.taxes,
     netRevenue: a.netRevenue + r.netRevenue,
-    directCosts: a.directCosts + r.directCosts,
-    grossProfit: a.grossProfit + r.grossProfit,
     fixedCosts: a.fixedCosts + r.fixedCosts,
+    variableCosts: a.variableCosts + r.variableCosts,
+    reimbursements: a.reimbursements + r.reimbursements,
     operatingResult: a.operatingResult + r.operatingResult,
-  }), { grossRevenue: 0, taxes: 0, netRevenue: 0, directCosts: 0, grossProfit: 0, fixedCosts: 0, operatingResult: 0 });
+    prolabore: a.prolabore + r.prolabore,
+    periodResult: a.periodResult + r.periodResult,
+    withdrawals: a.withdrawals + r.withdrawals,
+    investments: a.investments + r.investments,
+  }), {
+    grossRevenue: 0, taxes: 0, netRevenue: 0, fixedCosts: 0, variableCosts: 0,
+    reimbursements: 0, operatingResult: 0, prolabore: 0, periodResult: 0, withdrawals: 0, investments: 0,
+  });
 
-  const lines: { label: string; get: (r: typeof rows[number]) => number; total: number; strong?: boolean; negative?: boolean }[] = [
-    { label: "Receita bruta", get: r => r.grossRevenue, total: tot.grossRevenue, strong: true },
-    { label: "(−) Impostos", get: r => -r.taxes, total: -tot.taxes, negative: true },
+  const lines: { label: string; get: (r: typeof rows[number]) => number; total: number; strong?: boolean; muted?: boolean }[] = [
+    { label: "Receita bruta de serviços", get: r => r.grossRevenue, total: tot.grossRevenue, strong: true },
+    { label: "(−) Impostos", get: r => -r.taxes, total: -tot.taxes },
     { label: "= Receita líquida", get: r => r.netRevenue, total: tot.netRevenue, strong: true },
-    { label: "(−) Custos diretos", get: r => -r.directCosts, total: -tot.directCosts, negative: true },
-    { label: "= Lucro bruto", get: r => r.grossProfit, total: tot.grossProfit, strong: true },
-    { label: "(−) Custos fixos", get: r => -r.fixedCosts, total: -tot.fixedCosts, negative: true },
+    { label: "(−) Custos fixos", get: r => -r.fixedCosts, total: -tot.fixedCosts },
+    { label: "(−) Custos variáveis e mídia", get: r => -r.variableCosts, total: -tot.variableCosts },
+    { label: "(−) Reembolsos pagos", get: r => -r.reimbursements, total: -tot.reimbursements },
     { label: "= Resultado operacional", get: r => r.operatingResult, total: tot.operatingResult, strong: true },
+    { label: "(−) Pró-labore", get: r => -r.prolabore, total: -tot.prolabore },
+    { label: "= Resultado do período", get: r => r.periodResult, total: tot.periodResult, strong: true },
+    { label: "Saques (fora do DRE)", get: r => r.withdrawals, total: tot.withdrawals, muted: true },
+    { label: "Investimentos (fora do DRE)", get: r => r.investments, total: tot.investments, muted: true },
   ];
 
   return (
     <div className="space-y-4">
       <div className="grid gap-3 md:grid-cols-4">
         <Kpi label="Receita do período" value={brl0(tot.grossRevenue)} />
-        <Kpi label="Custos totais" value={brl0(tot.directCosts + tot.fixedCosts + tot.taxes)} />
-        <Kpi label="Resultado" value={brl0(tot.operatingResult)} tone={tot.operatingResult >= 0 ? "good" : "bad"} />
-        <Kpi label="Margem operacional" value={pct(tot.grossRevenue > 0 ? (tot.operatingResult / tot.grossRevenue) * 100 : 0)} tone={tot.operatingResult >= 0 ? "good" : "bad"} />
+        <Kpi label="Custos totais" value={brl0(tot.fixedCosts + tot.variableCosts + tot.reimbursements + tot.taxes)} />
+        <Kpi label="Resultado do período" value={brl0(tot.periodResult)} tone={tot.periodResult >= 0 ? "good" : "bad"} sub="Depois do pró-labore" />
+        <Kpi label="Margem do período" value={pct(tot.grossRevenue > 0 ? (tot.periodResult / tot.grossRevenue) * 100 : 0)} tone={tot.periodResult >= 0 ? "good" : "bad"} />
       </div>
 
       <Section
         title="DRE gerencial por competência"
-        hint="Receitas e despesas alocadas no mês de competência. Custos fixos vêm da precificação da agência; impostos usam o percentual do planejador."
+        hint="Estruturado pela natureza contábil de cada lançamento. Saque e investimento são movimentação de capital: aparecem só como informação e nunca reduzem o resultado."
         right={
           <div className="flex gap-1">
             {[3, 6, 12].map(h => (
@@ -192,7 +203,7 @@ export function DrePanel({ data }: { data: FinDataset }) {
             </thead>
             <tbody>
               {lines.map(l => (
-                <tr key={l.label} className={`border-t ${l.strong ? "font-medium" : ""}`}>
+                <tr key={l.label} className={`border-t ${l.strong ? "font-medium" : ""} ${l.muted ? "text-muted-foreground text-xs" : ""}`}>
                   <td className="py-2 text-left">{l.label}</td>
                   {rows.map(r => {
                     const v = l.get(r);
@@ -202,11 +213,11 @@ export function DrePanel({ data }: { data: FinDataset }) {
                 </tr>
               ))}
               <tr className="border-t">
-                <td className="py-2 text-left text-muted-foreground text-xs">Margem %</td>
+                <td className="py-2 text-left text-muted-foreground text-xs">Margem do período %</td>
                 {rows.map(r => (
                   <td key={r.key} className={`py-2 text-right text-xs ${r.marginPct < 0 ? "text-red-600 dark:text-red-400" : "text-emerald-600 dark:text-emerald-400"}`}>{pct(r.marginPct)}</td>
                 ))}
-                <td className="py-2 text-right text-xs">{pct(tot.grossRevenue > 0 ? (tot.operatingResult / tot.grossRevenue) * 100 : 0)}</td>
+                <td className="py-2 text-right text-xs">{pct(tot.grossRevenue > 0 ? (tot.periodResult / tot.grossRevenue) * 100 : 0)}</td>
               </tr>
             </tbody>
           </table>
@@ -248,6 +259,14 @@ export function PlannerPanel({ data }: { data: FinDataset }) {
     accumulatedEmergency: Math.max(0, accumulated) * (state.emergency_pct / 100),
   });
 
+  const be = computeBreakEven({
+    operatingCost: rate.totalMonthly + monthlyDirect,
+    taxPct: state.tax_pct,
+    profitPct: state.profit_pct,
+    emergencyPct: state.emergency_pct,
+    investmentPct: state.investment_pct,
+  });
+
   const save = useMutation({
     mutationFn: async () => {
       const { data: p } = await supabase.from("profiles").select("organization_id").maybeSingle();
@@ -268,6 +287,7 @@ export function PlannerPanel({ data }: { data: FinDataset }) {
     { key: "prolabore_pct", label: "Pró-labore", hint: "Retirada dos sócios", suffix: "%" },
     { key: "profit_pct", label: "Lucro", hint: "Reserva de lucro / reinvestimento", suffix: "%" },
     { key: "emergency_pct", label: "Reserva de emergência", hint: "Percentual guardado todo mês", suffix: "%" },
+    { key: "investment_pct", label: "Capital de investimento", hint: "Percentual reservado para crescer a agência", suffix: "%" },
     { key: "emergency_target_months", label: "Meta da reserva", hint: "Meses de operação cobertos", suffix: "meses" },
   ];
 
@@ -318,6 +338,25 @@ export function PlannerPanel({ data }: { data: FinDataset }) {
                 <div className="text-sm font-semibold mt-0.5">{brl0(a.value)}</div>
               </div>
             ))}
+          </div>
+        </Section>
+
+        <Section
+          title="Break-even e meta de faturamento"
+          hint="Quanto a agência precisa faturar para empatar (o imposto incide sobre a receita, por isso o custo é dividido por 1 − imposto) e quanto precisa faturar para pagar tudo e ainda cumprir lucro, reserva e investimento."
+        >
+          <div className="grid gap-3 sm:grid-cols-3">
+            <Kpi label="Custo operacional do mês" value={brl0(be.operatingCost)} sub="Folha + custos fixos + variáveis" />
+            <Kpi label="Break-even" value={brl0(be.breakEven)} tone={monthlyRevenue >= be.breakEven ? "good" : "bad"}
+              sub={monthlyRevenue >= be.breakEven ? "Já coberto neste mês" : `Faltam ${brl0(be.breakEven - monthlyRevenue)}`} />
+            <Kpi label="Meta de faturamento" value={brl0(be.targetRevenue)} tone={monthlyRevenue >= be.targetRevenue ? "good" : "warn"}
+              sub={`Lucro ${state.profit_pct}% + reserva ${state.emergency_pct}% + investimento ${state.investment_pct}%`} />
+          </div>
+          <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
+            <div className="h-full bg-primary" style={{ width: `${Math.min(100, be.targetRevenue > 0 ? (monthlyRevenue / be.targetRevenue) * 100 : 0)}%` }} />
+          </div>
+          <div className="text-[11px] text-muted-foreground">
+            Faturado no mês: {brl0(monthlyRevenue)} · {pct(be.targetRevenue > 0 ? (monthlyRevenue / be.targetRevenue) * 100 : 0)} da meta
           </div>
         </Section>
       </div>
