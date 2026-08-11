@@ -414,7 +414,7 @@ function TypeEditorPanel({ type, stages, onDelete, onDuplicate }:{
   const addStage = useMutation({
     mutationFn: async () => {
       const organization_id = await getOrgId();
-      const nextOrder = (stages[stages.length - 1]?.order ?? -1) + 1;
+      const nextOrder = stages.reduce((m, s) => Math.max(m, s.order ?? 0), -1) + 1;
       const { error } = await supabase.from("task_type_stages").insert({
         task_type_id: type.id,
         organization_id,
