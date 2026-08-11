@@ -510,52 +510,149 @@ export function PersonasWindow({ open, onClose, projectId, projectName }: {
 
 /* ========================================================= Concorrentes */
 
-type BenchRow = { id: string; name: string; positioning: string | null; strengths: string | null; weaknesses: string | null; threat_level: string };
-const emptyBench = { name: "", positioning: "", strengths: "", weaknesses: "", threat_level: "Média" };
+type BenchRow = {
+  id: string; name: string; positioning: string | null; strengths: string | null;
+  weaknesses: string | null; threat_level: string; url: string | null; notes: string | null;
+  price_level: string | null; audience: string | null; differentials: string | null;
+  channels: string[] | null; is_us: boolean; metrics: Record<string, number> | null;
+};
+
+const emptyBench = {
+  name: "", positioning: "", strengths: "", weaknesses: "", threat_level: "Média",
+  url: "", notes: "", price_level: "Médio", audience: "", differentials: "",
+  channels: "", is_us: false,
+};
+
+/** Indicadores fixos comparáveis entre nós e concorrentes. */
+const BENCH_METRICS: { key: string; label: string; unit: string; better: "high" | "low" }[] = [
+  { key: "followers", label: "Seguidores (principal rede)", unit: "", better: "high" },
+  { key: "engagement", label: "Engajamento médio", unit: "%", better: "high" },
+  { key: "posts_month", label: "Publicações por mês", unit: "/mês", better: "high" },
+  { key: "google_rating", label: "Nota no Google", unit: "★", better: "high" },
+  { key: "reviews", label: "Avaliações recebidas", unit: "", better: "high" },
+  { key: "avg_ticket", label: "Ticket médio", unit: "R$", better: "high" },
+  { key: "response_hours", label: "Tempo de resposta", unit: "h", better: "low" },
+  { key: "site_authority", label: "Autoridade do site", unit: "pts", better: "high" },
+];
 
 export function CompetitorsWindow({ open, onClose, projectId, projectName }: {
   open: boolean; onClose: () => void; projectId: string; projectName: string;
 }) {
   const { data: rows = [] } = useRows<BenchRow>("project_benchmarks", projectId, "created_at", open);
+  const { data: kpis = [] } = useRows<{ id: string; name: string; unit: string | null; current_value: number }>(
+    "project_kpis", projectId, "order_index", open,
+  );
   const { add, upd, del } = useCrud("project_benchmarks", projectId);
   const [selected, setSelected] = useState<string | null>(null);
   const [form, setForm] = useState({ ...emptyBench });
+  const [metrics, setMetrics] = useState<Record<string, string>>({});
+  const [compareOpen, setCompareOpen] = useState(false);
+
+  const usRow = useMemo(() => rows.find(r => r.is_us) ?? null, [rows]);
+  const competitors = useMemo(() => rows.filter(r => !r.is_us), [rows]);
+
+  /** Catálogo completo: indicadores fixos + KPIs do projeto. */
+  const catalog = useMemo(() => ([
+    ...BENCH_METRICS,
+    ...kpis.map(k => ({ key: `kpi:${k.id}`, label: `${k.name} (KPI)`, unit: k.unit ?? "", better: "high" as const })),
+  ]), [kpis]);
+
+  /** Nossos valores: linha "nós" + fallback nos KPIs do projeto. */
+  const ourValues = useMemo(() => {
+    const m: Record<string, number> = { ...(usRow?.metrics ?? {}) };
+    kpis.forEach(k => {
+      const key = `kpi:${k.id}`;
+      if (m[key] === undefined && Number(k.current_value) > 0) m[key] = Number(k.current_value);
+    });
+    return m;
+  }, [usRow, kpis]);
 
   const pick = (c: BenchRow) => {
     setSelected(c.id);
+    setCompareOpen(false);
     setForm({
       name: c.name, positioning: c.positioning ?? "", strengths: c.strengths ?? "",
       weaknesses: c.weaknesses ?? "", threat_level: c.threat_level ?? "Média",
+      url: c.url ?? "", notes: c.notes ?? "", price_level: c.price_level ?? "Médio",
+      audience: c.audience ?? "", differentials: c.differentials ?? "",
+      channels: (c.channels ?? []).join(", "), is_us: !!c.is_us,
     });
+    setMetrics(Object.fromEntries(Object.entries(c.metrics ?? {}).map(([k, v]) => [k, String(v)])));
   };
 
+  const reset = () => { setSelected(null); setForm({ ...emptyBench }); setMetrics({}); setCompareOpen(false); };
+
   const save = () => {
-    if (!form.name.trim()) { toast.error("Informe o nome do concorrente"); return; }
+    if (!form.name.trim()) { toast.error("Informe o nome"); return; }
+    const numeric: Record<string, number> = {};
+    Object.entries(metrics).forEach(([k, v]) => {
+      const n = Number(String(v).replace(",", "."));
+      if (v !== "" && Number.isFinite(n)) numeric[k] = n;
+    });
     const row = {
       name: form.name.trim(),
       positioning: form.positioning.trim() || null,
       strengths: form.strengths.trim() || null,
       weaknesses: form.weaknesses.trim() || null,
       threat_level: form.threat_level,
+      url: form.url.trim() || null,
+      notes: form.notes.trim() || null,
+      price_level: form.price_level || null,
+      audience: form.audience.trim() || null,
+      differentials: form.differentials.trim() || null,
+      channels: fromCsv(form.channels),
+      is_us: form.is_us,
+      metrics: numeric,
     };
-    if (selected) upd.mutate({ id: selected, ...row }, { onSuccess: () => toast.success("Concorrente atualizado") });
-    else add.mutate(row, { onSuccess: () => { setForm({ ...emptyBench }); toast.success("Concorrente adicionado"); } });
+    if (selected) upd.mutate({ id: selected, ...row }, { onSuccess: () => toast.success("Registro atualizado") });
+    else add.mutate(row, { onSuccess: () => { reset(); toast.success("Registro adicionado"); } });
   };
+
+  /** Comparação: só indicadores preenchidos por nós E pelo concorrente. */
+  const comparison = useMemo(() => {
+    return competitors.map(c => {
+      const cm = c.metrics ?? {};
+      const lines = catalog
+        .filter(m => ourValues[m.key] !== undefined && cm[m.key] !== undefined)
+        .map(m => {
+          const us = Number(ourValues[m.key]);
+          const them = Number(cm[m.key]);
+          const win = us === them ? "empate" : (m.better === "high" ? (us > them ? "nós" : "eles") : (us < them ? "nós" : "eles"));
+          const diff = them === 0 ? null : Math.round(((us - them) / Math.abs(them)) * 100);
+          return { ...m, us, them, win, diff };
+        });
+      const wins = lines.filter(l => l.win === "nós").length;
+      const losses = lines.filter(l => l.win === "eles").length;
+      return { competitor: c, lines, wins, losses };
+    });
+  }, [competitors, catalog, ourValues]);
+
+  const comparableCount = comparison.reduce((a, c) => a + c.lines.length, 0);
+
+  const fmt = (v: number, unit: string) =>
+    unit === "R$" ? `R$ ${v.toLocaleString("pt-BR")}` : `${v.toLocaleString("pt-BR")}${unit ? ` ${unit}` : ""}`;
 
   return (
     <ToolWindow
       open={open} onClose={onClose} icon={Filter} title="Concorrentes e benchmarks" subtitle={projectName} size="full"
       headerRight={
-        <button type="button" className="swin-btn" onClick={() => { setSelected(null); setForm({ ...emptyBench }); }}>
-          <Plus /> Novo concorrente
-        </button>
+        <>
+          <button type="button" className="swin-btn" onClick={() => setCompareOpen(o => !o)}>
+            <ArrowUpCircle /> {compareOpen ? "Voltar ao cadastro" : "Comparar com a gente"}
+          </button>
+          <button type="button" className="swin-btn" onClick={reset}>
+            <Plus /> Novo concorrente
+          </button>
+        </>
       }
       footer={
         <>
-          <small>{rows.length} concorrentes mapeados</small>
+          <small>{competitors.length} concorrentes mapeados{usRow ? " • nossos dados cadastrados" : " • falta cadastrar 'nós'"}</small>
           <div style={{ display: "flex", gap: 8 }}>
             <button type="button" className="swin-btn" onClick={onClose}>Fechar</button>
-            <button type="button" className="swin-btn primary" onClick={save}><Save /> {selected ? "Salvar alterações" : "Adicionar"}</button>
+            {!compareOpen && (
+              <button type="button" className="swin-btn primary" onClick={save}><Save /> {selected ? "Salvar alterações" : "Adicionar"}</button>
+            )}
           </div>
         </>
       }
@@ -567,39 +664,135 @@ export function CompetitorsWindow({ open, onClose, projectId, projectName }: {
             {rows.map(c => (
               <div key={c.id} className={`swin-item${selected === c.id ? " sel" : ""}`} onClick={() => pick(c)} style={{ cursor: "pointer" }}>
                 <span className="grow">
-                  <b style={{ display: "block", fontSize: 12.5 }}>{c.name}</b>
+                  <b style={{ display: "block", fontSize: 12.5 }}>
+                    {c.name}{c.is_us && <span style={{ marginLeft: 6, fontSize: 10, padding: "1px 6px", borderRadius: 999, background: "color-mix(in oklab, var(--primary) 14%, transparent)", color: "var(--primary)" }}>Nós</span>}
+                  </b>
                   <small style={{ color: "var(--muted-foreground)" }}>{c.positioning || "—"}</small>
                 </span>
-                <span style={{ fontSize: 10.5, fontWeight: 600, color: c.threat_level === "Alta" ? "#D64545" : c.threat_level === "Média" ? "#B7791F" : "#10794F" }}>
-                  {c.threat_level}
-                </span>
-                <button type="button" onClick={e => { e.stopPropagation(); del.mutate(c.id); if (selected === c.id) { setSelected(null); setForm({ ...emptyBench }); } }}><Trash2 /></button>
+                {!c.is_us && (
+                  <span style={{ fontSize: 10.5, fontWeight: 600, color: c.threat_level === "Alta" ? "#D64545" : c.threat_level === "Média" ? "#B7791F" : "#10794F" }}>
+                    {c.threat_level}
+                  </span>
+                )}
+                <button type="button" onClick={e => { e.stopPropagation(); del.mutate(c.id); if (selected === c.id) reset(); }}><Trash2 /></button>
               </div>
             ))}
-            {rows.length === 0 && <p className="swin-empty">Nenhum concorrente ainda.</p>}
+            {rows.length === 0 && <p className="swin-empty">Nenhum registro ainda.</p>}
           </div>
         </div>
 
         <div style={{ padding: "18px 20px 28px" }}>
-          <div className="swin-sec-t">{selected ? "Editar concorrente" : "Novo concorrente"}</div>
-          <div className="swin-grid">
-            <WinField label="Nome"><input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} /></WinField>
-            <WinField label="Nível de ameaça" hint="Quanto ele pressiona nosso posicionamento.">
-              <select value={form.threat_level} onChange={e => setForm({ ...form, threat_level: e.target.value })}>
-                <option>Alta</option><option>Média</option><option>Baixa</option>
-              </select>
-            </WinField>
-            <WinField label="Posicionamento" hint="Como o concorrente se apresenta ao mercado." span>
-              <input value={form.positioning} onChange={e => setForm({ ...form, positioning: e.target.value })} />
-            </WinField>
-            <WinField label="Pontos fortes" hint="Onde ele é bom."><textarea value={form.strengths} onChange={e => setForm({ ...form, strengths: e.target.value })} /></WinField>
-            <WinField label="Gap vs. nós" hint="Onde ele perde para a gente."><textarea value={form.weaknesses} onChange={e => setForm({ ...form, weaknesses: e.target.value })} /></WinField>
-          </div>
+          {compareOpen ? (
+            <>
+              <div className="swin-sec-t">Comparação de indicadores</div>
+              <p style={{ fontSize: 12.5, color: "var(--muted-foreground)", margin: "2px 0 14px" }}>
+                O sistema compara apenas os indicadores preenchidos dos dois lados. Nossos valores vêm do registro marcado como “Nós” e dos KPIs do projeto.
+              </p>
+
+              {comparableCount === 0 && (
+                <p className="swin-empty">
+                  Ainda não há indicadores correspondentes. Preencha os mesmos indicadores no registro “Nós” e nos concorrentes.
+                </p>
+              )}
+
+              <div style={{ display: "grid", gap: 14 }}>
+                {comparison.filter(c => c.lines.length > 0).map(({ competitor, lines, wins, losses }) => (
+                  <div key={competitor.id} style={{ border: "1px solid var(--border)", borderRadius: 12, padding: 14, background: "var(--surface)" }}>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, marginBottom: 10 }}>
+                      <div>
+                        <b style={{ fontSize: 13 }}>Nós × {competitor.name}</b>
+                        <small style={{ display: "block", color: "var(--muted-foreground)" }}>{competitor.positioning || "—"}</small>
+                      </div>
+                      <div style={{ display: "flex", gap: 6 }}>
+                        <span style={{ fontSize: 11, fontWeight: 700, padding: "3px 9px", borderRadius: 999, background: "color-mix(in oklab, #10794F 14%, transparent)", color: "#10794F" }}>{wins} a favor</span>
+                        <span style={{ fontSize: 11, fontWeight: 700, padding: "3px 9px", borderRadius: 999, background: "color-mix(in oklab, #D64545 14%, transparent)", color: "#D64545" }}>{losses} contra</span>
+                      </div>
+                    </div>
+                    <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5 }}>
+                      <thead>
+                        <tr style={{ color: "var(--muted-foreground)", textAlign: "left" }}>
+                          <th style={{ padding: "6px 4px", fontWeight: 600 }}>Indicador</th>
+                          <th style={{ padding: "6px 4px", fontWeight: 600 }}>Nós</th>
+                          <th style={{ padding: "6px 4px", fontWeight: 600 }}>{competitor.name}</th>
+                          <th style={{ padding: "6px 4px", fontWeight: 600 }}>Diferença</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {lines.map(l => (
+                          <tr key={l.key} style={{ borderTop: "1px solid var(--border)" }}>
+                            <td style={{ padding: "7px 4px" }}>{l.label}</td>
+                            <td style={{ padding: "7px 4px", fontWeight: l.win === "nós" ? 700 : 500, color: l.win === "nós" ? "#10794F" : "inherit" }}>{fmt(l.us, l.unit)}</td>
+                            <td style={{ padding: "7px 4px", fontWeight: l.win === "eles" ? 700 : 500, color: l.win === "eles" ? "#D64545" : "inherit" }}>{fmt(l.them, l.unit)}</td>
+                            <td style={{ padding: "7px 4px", color: "var(--muted-foreground)" }}>
+                              {l.diff === null ? "—" : `${l.diff > 0 ? "+" : ""}${l.diff}%`}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ))}
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="swin-sec-t">{selected ? "Editar registro" : "Novo registro"}</div>
+              <div className="swin-grid">
+                <WinField label="Nome"><input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} /></WinField>
+                <WinField label="Site / perfil"><input value={form.url} onChange={e => setForm({ ...form, url: e.target.value })} placeholder="https://" /></WinField>
+                <WinField label="Nível de ameaça" hint="Quanto ele pressiona nosso posicionamento.">
+                  <select value={form.threat_level} onChange={e => setForm({ ...form, threat_level: e.target.value })}>
+                    <option>Alta</option><option>Média</option><option>Baixa</option>
+                  </select>
+                </WinField>
+                <WinField label="Faixa de preço">
+                  <select value={form.price_level} onChange={e => setForm({ ...form, price_level: e.target.value })}>
+                    <option>Baixo</option><option>Médio</option><option>Alto</option><option>Premium</option>
+                  </select>
+                </WinField>
+                <WinField label="Posicionamento" hint="Como se apresenta ao mercado." span>
+                  <input value={form.positioning} onChange={e => setForm({ ...form, positioning: e.target.value })} />
+                </WinField>
+                <WinField label="Público atendido" hint="Quem ele atende."><input value={form.audience} onChange={e => setForm({ ...form, audience: e.target.value })} /></WinField>
+                <WinField label="Canais" hint="Separe por vírgula. Ex.: Instagram, Google Ads"><input value={form.channels} onChange={e => setForm({ ...form, channels: e.target.value })} /></WinField>
+                <WinField label="Pontos fortes" hint="Onde ele é bom."><textarea value={form.strengths} onChange={e => setForm({ ...form, strengths: e.target.value })} /></WinField>
+                <WinField label="Gap vs. nós" hint="Onde ele perde para a gente."><textarea value={form.weaknesses} onChange={e => setForm({ ...form, weaknesses: e.target.value })} /></WinField>
+                <WinField label="Diferenciais percebidos" hint="O que o mercado enxerga nele." span>
+                  <textarea value={form.differentials} onChange={e => setForm({ ...form, differentials: e.target.value })} />
+                </WinField>
+                <WinField label="Observações" span><textarea value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} /></WinField>
+                <WinField label="Este registro somos nós?" hint="Marque para usar estes números como base da comparação." span>
+                  <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12.5 }}>
+                    <input type="checkbox" checked={form.is_us} onChange={e => setForm({ ...form, is_us: e.target.checked })} />
+                    Usar como “Nós” na comparação
+                  </label>
+                </WinField>
+              </div>
+
+              <div className="swin-sec-t" style={{ marginTop: 18 }}>Indicadores para comparação</div>
+              <p style={{ fontSize: 12.5, color: "var(--muted-foreground)", margin: "2px 0 10px" }}>
+                Preencha só o que você conseguir levantar. A comparação usa apenas os campos preenchidos dos dois lados.
+              </p>
+              <div className="swin-grid">
+                {catalog.map(m => (
+                  <WinField key={m.key} label={m.label} hint={m.unit ? `Em ${m.unit}` : undefined}>
+                    <input
+                      inputMode="decimal"
+                      value={metrics[m.key] ?? ""}
+                      onChange={e => setMetrics({ ...metrics, [m.key]: e.target.value })}
+                      placeholder={ourValues[m.key] !== undefined ? `Nosso: ${ourValues[m.key]}` : ""}
+                    />
+                  </WinField>
+                ))}
+              </div>
+            </>
+          )}
         </div>
       </div>
     </ToolWindow>
   );
 }
+
 
 /* ================================================================ KPIs */
 
