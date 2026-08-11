@@ -2130,6 +2130,74 @@ export type Database = {
           },
         ]
       }
+      project_files: {
+        Row: {
+          created_at: string
+          description: string | null
+          external_url: string | null
+          folder: string | null
+          id: string
+          item_type: string
+          mime_type: string | null
+          name: string
+          organization_id: string
+          project_id: string
+          size_bytes: number | null
+          storage_path: string | null
+          tags: string[]
+          updated_at: string
+          uploaded_by: string | null
+          uploaded_by_name: string | null
+          version: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          external_url?: string | null
+          folder?: string | null
+          id?: string
+          item_type?: string
+          mime_type?: string | null
+          name: string
+          organization_id?: string
+          project_id: string
+          size_bytes?: number | null
+          storage_path?: string | null
+          tags?: string[]
+          updated_at?: string
+          uploaded_by?: string | null
+          uploaded_by_name?: string | null
+          version?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          external_url?: string | null
+          folder?: string | null
+          id?: string
+          item_type?: string
+          mime_type?: string | null
+          name?: string
+          organization_id?: string
+          project_id?: string
+          size_bytes?: number | null
+          storage_path?: string | null
+          tags?: string[]
+          updated_at?: string
+          uploaded_by?: string | null
+          uploaded_by_name?: string | null
+          version?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_files_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       project_kpis: {
         Row: {
           created_at: string
