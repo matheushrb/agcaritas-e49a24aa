@@ -2006,12 +2006,18 @@ export type Database = {
       }
       project_benchmarks: {
         Row: {
+          audience: string | null
+          channels: string[]
           created_at: string
+          differentials: string | null
           id: string
+          is_us: boolean
+          metrics: Json
           name: string
           notes: string | null
           organization_id: string
           positioning: string | null
+          price_level: string | null
           project_id: string
           strengths: string | null
           threat_level: string
@@ -2020,12 +2026,18 @@ export type Database = {
           weaknesses: string | null
         }
         Insert: {
+          audience?: string | null
+          channels?: string[]
           created_at?: string
+          differentials?: string | null
           id?: string
+          is_us?: boolean
+          metrics?: Json
           name: string
           notes?: string | null
           organization_id: string
           positioning?: string | null
+          price_level?: string | null
           project_id: string
           strengths?: string | null
           threat_level?: string
@@ -2034,12 +2046,18 @@ export type Database = {
           weaknesses?: string | null
         }
         Update: {
+          audience?: string | null
+          channels?: string[]
           created_at?: string
+          differentials?: string | null
           id?: string
+          is_us?: boolean
+          metrics?: Json
           name?: string
           notes?: string | null
           organization_id?: string
           positioning?: string | null
+          price_level?: string | null
           project_id?: string
           strengths?: string | null
           threat_level?: string
