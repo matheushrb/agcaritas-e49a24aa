@@ -321,7 +321,7 @@ export function PlannerPanel({ data }: { data: FinDataset }) {
                 <div className="flex items-center gap-2">
                   <Input
                     type="number" min={0} className="h-9"
-                    value={state[f.key]}
+                    value={Number(state[f.key] ?? 0)}
                     onChange={e => setState(s => ({ ...s, [f.key]: Number(e.target.value) || 0 }))}
                   />
                   <span className="text-xs text-muted-foreground w-12">{f.suffix}</span>
