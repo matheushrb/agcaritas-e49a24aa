@@ -465,6 +465,22 @@ export function TaskWindow({
     if (created) toast.success(`${created} item(ns) criados pela etapa “${row.name}”`);
   };
 
+  /* Nova tarefa com modelo: já entra na 1ª etapa do tipo e aplica as automações. */
+  const [seededStageType, setSeededStageType] = useState<string | null>(null);
+  useEffect(() => {
+    if (!open || isEdit) return;
+    if (!taskTypeId || typeStages.length === 0) return;
+    if (seededStageType === taskTypeId) return;
+    const first: any = typeStages[0];
+    setSeededStageType(taskTypeId);
+    setCurrentStageId(first.id);
+    setStatus(first.status_group ?? "todo");
+    clearOtherStageAutomations(first.id);
+    applyStageAutomations(first.id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, isEdit, taskTypeId, typeStages]);
+
+
 
   /* Alterar o status leva a etapa para a primeira condicionada àquele status. */
   const changeStatus = (value: string) => {
@@ -797,7 +813,7 @@ export function TaskWindow({
     setEstimated(""); setBillingEnabled(true); setBaseValue(""); setDeliverables([]); setChecklist([]);
     setPlatformsSel([]); setNotes(""); setLiveItems([]); setTech(EMPTY_TECH); setTab("details");
     setAttachments([]); setCoverPath(null); setPreviews({});
-    setBriefingTemplateId(null); setBriefingData({});
+    setBriefingTemplateId(null); setBriefingData({}); setSeededStageType(null);
 
   };
   const close = (o: boolean) => { setBaseline(""); onOpenChange(o); if (!o) reset(); };
@@ -901,7 +917,7 @@ export function TaskWindow({
       return { id: data.id as string, updated: [] as string[] };
     },
     onSuccess: ({ id, updated }) => {
-      qc.invalidateQueries({ queryKey: ["tasks"] });
+      qc.invalidateQueries({ queryKey: ["tasks"] }); qc.invalidateQueries({ queryKey: ["project-tasks"] });
       qc.invalidateQueries({ queryKey: ["task-subtasks", taskId] });
       qc.invalidateQueries({ queryKey: ["task-window", taskId] });
       qc.invalidateQueries({ queryKey: ["charges"] });
@@ -924,7 +940,7 @@ export function TaskWindow({
       if (error) throw error;
     },
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["tasks"] });
+      qc.invalidateQueries({ queryKey: ["tasks"] }); qc.invalidateQueries({ queryKey: ["project-tasks"] });
       toast.success("Tarefa excluída");
       close(false);
     },

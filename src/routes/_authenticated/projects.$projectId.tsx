@@ -204,6 +204,19 @@ function ProjectDetail() {
     },
   });
 
+  const { data: filesCount = 0 } = useQuery<number>({
+    queryKey: ["project-files-count", projectId],
+    queryFn: async () => {
+      const { count, error } = await (supabase as any)
+        .from("project_files")
+        .select("id", { count: "exact", head: true })
+        .eq("project_id", projectId);
+      if (error) return 0;
+      return count ?? 0;
+    },
+  });
+
+
   // Base tasks from the project's project_type
   const { data: projectTypeRow } = useQuery({
     queryKey: ["project-type-row", project?.project_type],
@@ -390,7 +403,7 @@ function ProjectDetail() {
     ...(showTimeline ? [{ id: "timeline", label: "Timeline" }] : []),
     ...(showTraffic ? [{ id: "traffic", label: "Tráfego" }] : []),
     ...(showCampaigns ? [{ id: "campaigns", label: "Campanhas" }] : []),
-    { id: "docs", label: "Arquivos", count: 24 },
+    { id: "docs", label: "Arquivos", count: filesCount },
   ];
 
   return (
@@ -415,7 +428,7 @@ function ProjectDetail() {
             <Share2 /> Compartilhar
           </button>
           <button className="p2-btn" type="button" onClick={() => setEditOpen(true)}><Pencil /> Editar projeto</button>
-          <button className="p2-btn primary" type="button" onClick={() => setNewTaskOpen(true)}><Plus /> Nova tarefa</button>
+          <button className="p2-btn primary" type="button" onClick={() => openNewTask()}><Plus /> Nova tarefa</button>
           {isClosed ? (
             <button className="p2-btn icon" type="button" title="Reabrir" onClick={() => setStatus.mutate("active")}><RotateCcw /></button>
           ) : (
