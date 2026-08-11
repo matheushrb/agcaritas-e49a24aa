@@ -264,6 +264,7 @@ export function Prj05Strategy({
         <section className="p5-card">
           <div className="p5-card-h">
             <div className="p5-ht"><LayoutGrid /><span className="p5-card-t">2. Análise SWOT</span></div>
+            <button type="button" className="p5-link" onClick={() => setSwotOpen(true)}>Abrir ferramenta</button>
           </div>
           <div className="p5-swot">
             {QUADRANTS.map(q => {
