@@ -93,8 +93,8 @@ body.dark > [role="dialog"] {
 .caritas-ui h4 { font-family: inherit; letter-spacing: 0; }
 
 /* SIDEBAR — bloco fixo à esquerda (expansível / colapsável) */
-.caritas-ui { --cv-sb: 72px; }
-.caritas-ui[data-nav="expanded"] { --cv-sb: 232px; }
+.caritas-ui { --cv-sb: 78px; }
+.caritas-ui[data-nav="expanded"] { --cv-sb: 240px; }
 
 .cv-sidebar {
   position: fixed;
@@ -111,9 +111,9 @@ body.dark > [role="dialog"] {
   flex-direction: column;
   align-items: stretch;
   color: #fff;
-  padding: 10px 10px 12px;
   overflow-x: hidden;
   transition: width .18s ease;
+  padding: 16px 12px 18px;
 }
 .cv-sidebar-logo {
   font-size: 28px; height: 55px; display: flex; align-items: center;
@@ -134,7 +134,7 @@ body.dark > [role="dialog"] {
 .cv-sb-toggle:hover { background: rgba(255, 255, 255, 0.28); }
 .cv-sb-toggle svg { width: 14px; height: 14px; }
 
-.cv-sidebar-nav { display: flex; flex-direction: column; gap: 3px; width: 100%; overflow-y: auto; }
+.cv-sidebar-nav { display: flex; flex-direction: column; gap: 5px; width: 100%; overflow-y: auto; }
 .cv-sidebar-nav::-webkit-scrollbar { width: 0; }
 .cv-sb-group {
   font-size: 9.5px; letter-spacing: .16em; text-transform: uppercase; font-weight: 700;
@@ -176,6 +176,7 @@ body.dark > [role="dialog"] {
 .cv-shell {
   margin-left: var(--cv-sb);
   width: calc(100vw - var(--cv-sb));
+  padding-left: 14px;
   min-width: 0;
   transition: margin-left .18s ease, width .18s ease;
 }
