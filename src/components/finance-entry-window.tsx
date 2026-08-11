@@ -7,6 +7,7 @@ import {
   X, Save, Minus, Maximize2, PanelRight, Trash2, Receipt,
   ArrowDownCircle, ArrowUpCircle, ChevronDown, Info, Repeat, ListChecks,
 } from "lucide-react";
+import { ACCOUNTING_NATURES } from "@/lib/finance-analytics";
 import "@/windows.css";
 
 export type FinanceEntry = {
@@ -22,6 +23,7 @@ export type FinanceEntry = {
   nature: string | null;
   category: string | null;
   competence_month: string | null;
+  accounting_nature?: string | null;
   task_ids?: string[] | null;
 };
 
@@ -84,6 +86,7 @@ export function FinanceEntryWindow({
   const [repeatUntil, setRepeatUntil] = useState("");
   const [mode, setMode] = useState<"modal" | "docked" | "minimized">("modal");
   const [taskIds, setTaskIds] = useState<string[]>([]);
+  const [accNature, setAccNature] = useState("recebimento_cliente");
 
   const { data: categories = [] } = useQuery<string[]>({
     queryKey: ["finance_categories", nature],
@@ -137,6 +140,7 @@ export function FinanceEntryWindow({
     setRepeat(false);
     setDayOfMonth("");
     setRepeatUntil("");
+    setAccNature((entry as any)?.accounting_nature ?? (((entry?.nature ?? defaultNature) === "expense") ? "custo_variavel" : "recebimento_cliente"));
     setTaskIds(Array.isArray((entry as any)?.task_ids) ? ((entry as any).task_ids as string[]) : []);
   }, [open, entry, defaultNature]);
 
@@ -166,6 +170,7 @@ export function FinanceEntryWindow({
         project_id: projectId || null,
         collaborator_id: collaboratorId || null,
         payment_method: method || null,
+        accounting_nature: accNature,
         task_ids: projectId ? taskIds : [],
         paid_at: status === "paid" ? (entry?.paid_at ?? new Date().toISOString()) : null,
       };
@@ -334,11 +339,11 @@ export function FinanceEntryWindow({
           <div className="cw-field cw-span-full">
             <label className="cw-label">Tipo de lançamento<span className="req">*</span></label>
             <div style={{ display: "flex", gap: 10 }}>
-              <button type="button" onClick={() => setNature("revenue")}
+              <button type="button" onClick={() => { setNature("revenue"); setAccNature("recebimento_cliente"); }}
                 className={`cw-btn ${nature === "revenue" ? "cw-btn-primary" : "cw-btn-secondary"}`}>
                 <ArrowDownCircle /> Receita
               </button>
-              <button type="button" onClick={() => setNature("expense")}
+              <button type="button" onClick={() => { setNature("expense"); setAccNature("custo_variavel"); }}
                 className={`cw-btn ${nature === "expense" ? "cw-btn-primary" : "cw-btn-secondary"}`}>
                 <ArrowUpCircle /> Despesa
               </button>
@@ -355,6 +360,21 @@ export function FinanceEntryWindow({
             <label className="cw-label">Valor (R$)<span className="req">*</span></label>
             <input className="cw-input" inputMode="decimal" placeholder="0,00"
               value={amount} onChange={e => setAmount(e.target.value)} />
+          </div>
+
+          <div className="cw-field">
+            <label className="cw-label">Natureza contábil</label>
+            <div className="cw-select-wrap">
+              <select className="cw-select" value={accNature} onChange={e => setAccNature(e.target.value)}>
+                {ACCOUNTING_NATURES.filter(n => n.side === nature).map(n => (
+                  <option key={n.value} value={n.value}>{n.label}</option>
+                ))}
+              </select>
+              <ChevronDown size={14} />
+            </div>
+            <span style={{ fontSize: 11, color: "var(--cw-muted)", marginTop: 4 }}>
+              {ACCOUNTING_NATURES.find(n => n.value === accNature)?.hint}
+            </span>
           </div>
 
           <div className="cw-field">
