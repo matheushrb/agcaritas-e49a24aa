@@ -1184,9 +1184,62 @@ export function TaskWindow({
 
               <div className="cw-field" style={{ marginTop: 14 }}>
                 <span className="cw-label">Descrição / briefing</span>
-                <textarea className="cw-textarea" rows={4} value={description}
+                <textarea className="cw-textarea" rows={9} style={{ minHeight: 190, resize: "vertical" }} value={description}
                   onChange={e => setDescription(e.target.value)} placeholder="Contexto, referências e o que precisa ser entregue..." />
               </div>
+
+              {/* ANEXOS E CAPA */}
+              <div className="cw-section">
+                <div className="cw-section-head">
+                  <div>
+                    <h4>Anexos</h4>
+                    <p>Envie imagens e arquivos. Escolha uma imagem como capa da tarefa.</p>
+                  </div>
+                  <label className="cw-btn cw-btn-secondary sm" style={{ cursor: "pointer" }}>
+                    <Paperclip size={13} /> {uploading ? "Enviando..." : "Adicionar arquivo"}
+                    <input type="file" multiple hidden disabled={uploading}
+                      onChange={e => { uploadFiles(e.target.files); e.currentTarget.value = ""; }} />
+                  </label>
+                </div>
+
+                {attachments.length === 0 ? (
+                  <div className="cw-mut" style={{ fontSize: 12 }}>Nenhum anexo ainda.</div>
+                ) : (
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(148px, 1fr))", gap: 10 }}>
+                    {attachments.map(a => {
+                      const isCover = coverPath === a.path;
+                      return (
+                        <div key={a.id}
+                          style={{
+                            border: `1px solid ${isCover ? "var(--cw-primary, #2F6BEF)" : "var(--cw-border, #E3E8EF)"}`,
+                            boxShadow: isCover ? "0 0 0 2px rgba(47,107,239,.16)" : "none",
+                            borderRadius: 12, overflow: "hidden", background: "var(--cw-surface, #fff)",
+                          }}>
+                          <div style={{ height: 92, background: "var(--cw-soft, #F4F6FA)", display: "grid", placeItems: "center", cursor: "pointer" }}
+                            onClick={() => openAttachment(a)}>
+                            {a.is_image && previews[a.path]
+                              ? <img src={previews[a.path]} alt={a.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                              : <FileText size={22} style={{ opacity: .5 }} />}
+                          </div>
+                          <div style={{ padding: "7px 8px", display: "flex", alignItems: "center", gap: 6 }}>
+                            <span style={{ flex: 1, fontSize: 11, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={a.name}>{a.name}</span>
+                            <button type="button" className="cw-row-icon" title="Remover" onClick={() => removeAttachment(a)}><Trash2 size={12} /></button>
+                          </div>
+                          {a.is_image && (
+                            <button type="button"
+                              className={`cw-deliver-btn${isCover ? " is-done" : ""}`}
+                              style={{ width: "calc(100% - 16px)", margin: "0 8px 8px", justifyContent: "center" }}
+                              onClick={() => setCoverPath(isCover ? null : a.path)}>
+                              {isCover ? <><Check size={12} /> Capa</> : "Definir como capa"}
+                            </button>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
 
               {/* ENTREGÁVEIS */}
               <div className="cw-section">
