@@ -313,7 +313,85 @@ export function PersonasWindow({ open, onClose, projectId, projectName }: {
         </div>
 
         <div style={{ padding: "18px 20px 28px" }}>
+          {aiOpen && (
+            <div className="swin-card" style={{ border: "1px solid var(--border)", borderRadius: 12, padding: 16, marginBottom: 18, background: "var(--surface-2, transparent)" }}>
+              <div className="swin-sec-t" style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <Sparkles style={{ width: 15, height: 15, color: "var(--primary)" }} /> Assistente de personas
+              </div>
+              <p style={{ fontSize: 12.5, color: "var(--muted-foreground)", margin: "2px 0 12px" }}>
+                A IA lê o briefing, o cliente e o tipo do projeto para propor personas. Revise, escolha e adicione.
+              </p>
+              <div className="swin-grid">
+                <WinField label="Quantas personas?" hint="De 1 a 5 por geração.">
+                  <select value={aiCount} onChange={e => setAiCount(Number(e.target.value))}>
+                    {[1, 2, 3, 4, 5].map(n => <option key={n} value={n}>{n}</option>)}
+                  </select>
+                </WinField>
+                <WinField label="Direcionamento (opcional)" hint="Ex.: foco em decisores B2B do interior de SP" span>
+                  <textarea value={aiNotes} onChange={e => setAiNotes(e.target.value)} rows={2} />
+                </WinField>
+              </div>
+              <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 10 }}>
+                <button type="button" className="swin-btn primary" disabled={aiRun.isPending} onClick={() => aiRun.mutate()}>
+                  {aiRun.isPending ? <Loader2 className="animate-spin" /> : <Sparkles />}
+                  {aiRun.isPending ? "Gerando..." : aiResults.length ? "Gerar novamente" : "Gerar personas"}
+                </button>
+              </div>
+
+              {aiResults.length > 0 && (
+                <div style={{ marginTop: 16, display: "grid", gap: 10 }}>
+                  {aiResults.map((p, i) => (
+                    <div
+                      key={`${p.name}-${i}`}
+                      style={{
+                        border: "1px solid var(--border)", borderRadius: 10, padding: 12,
+                        opacity: aiPicked[i] ? 1 : 0.55, background: "var(--surface)",
+                      }}
+                    >
+                      <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
+                        <input
+                          type="checkbox" checked={!!aiPicked[i]} style={{ marginTop: 3 }}
+                          onChange={e => setAiPicked({ ...aiPicked, [i]: e.target.checked })}
+                        />
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <b style={{ fontSize: 13 }}>{p.name}</b>
+                          <small style={{ display: "block", color: "var(--muted-foreground)" }}>{p.role}</small>
+                          <div style={{ display: "flex", flexWrap: "wrap", gap: 6, margin: "8px 0" }}>
+                            {p.tags.map((t, ti) => (
+                              <span key={ti} style={{ fontSize: 11, padding: "2px 8px", borderRadius: 999, background: "color-mix(in oklab, var(--primary) 12%, transparent)", color: "var(--primary)" }}>{t}</span>
+                            ))}
+                          </div>
+                          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, fontSize: 12 }}>
+                            <div>
+                              <small style={{ color: "var(--muted-foreground)" }}>Objetivos</small>
+                              <ul style={{ margin: "4px 0 0 16px" }}>{p.desires.map((d, di) => <li key={di}>{d}</li>)}</ul>
+                            </div>
+                            <div>
+                              <small style={{ color: "var(--muted-foreground)" }}>Desafios</small>
+                              <ul style={{ margin: "4px 0 0 16px" }}>{p.pains.map((d, di) => <li key={di}>{d}</li>)}</ul>
+                            </div>
+                          </div>
+                          {p.help && <p style={{ fontSize: 12, marginTop: 8 }}><b>Como ajudamos: </b>{p.help}</p>}
+                        </div>
+                        <button type="button" className="swin-btn" onClick={() => editGenerated(p)} title="Editar antes de salvar">
+                          <Pencil />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                  <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
+                    <button type="button" className="swin-btn" onClick={() => { setAiResults([]); setAiPicked({}); }}>Descartar</button>
+                    <button type="button" className="swin-btn primary" disabled={addMany.isPending} onClick={applyPicked}>
+                      <Check /> Adicionar selecionadas
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
           <div className="swin-sec-t">{selected ? "Editar persona" : "Nova persona"}</div>
+
           <div className="swin-grid">
             <WinField label="Nome" hint="Ex.: Marina, gestora de marketing"><input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} /></WinField>
             <WinField label="Cargo / contexto" hint="Ex.: CMO | Tech B2B"><input value={form.role} onChange={e => setForm({ ...form, role: e.target.value })} /></WinField>
