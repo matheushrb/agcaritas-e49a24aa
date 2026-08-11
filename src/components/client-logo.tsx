@@ -48,17 +48,22 @@ export function ClientLogo({
   return (
     <div
       className={cn(
-        "shrink-0 overflow-hidden border border-border bg-muted flex items-center justify-center",
+        "shrink-0 overflow-hidden border flex items-center justify-center",
         rounded,
         className,
       )}
-      style={{ width: size, height: size }}
+      style={{
+        width: size,
+        height: size,
+        background: "var(--surface-2, #f1f3f7)",
+        borderColor: "var(--border, #e5e7eb)",
+      }}
       title={name ?? undefined}
     >
       {url ? (
         <img src={url} alt={name ? `Logo ${name}` : "Logo da empresa"} className="h-full w-full object-contain" />
       ) : (
-        <span className="font-semibold text-muted-foreground" style={{ fontSize: Math.max(10, size * 0.34) }}>
+        <span className="font-semibold" style={{ fontSize: Math.max(10, size * 0.34), color: "var(--muted, #6b7280)" }}>
           {initials(name)}
         </span>
       )}
