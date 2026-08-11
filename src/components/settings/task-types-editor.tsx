@@ -466,11 +466,18 @@ function TypeEditorPanel({ type, stages, onDelete, onDuplicate }:{
       const idx = stages.findIndex(s => s.id === id);
       const target = idx + dir;
       if (idx < 0 || target < 0 || target >= stages.length) return;
-      const a = stages[idx], b = stages[target];
-      await supabase.from("task_type_stages").update({ order: b.order }).eq("id", a.id);
-      await supabase.from("task_type_stages").update({ order: a.order }).eq("id", b.id);
+      /* Reordena a lista inteira e regrava índices sequenciais — evita empates de "order". */
+      const next = [...stages];
+      const [moved] = next.splice(idx, 1);
+      next.splice(target, 0, moved);
+      for (let i = 0; i < next.length; i++) {
+        if (next[i].order === i) continue;
+        const { error } = await supabase.from("task_type_stages").update({ order: i }).eq("id", next[i].id);
+        if (error) throw error;
+      }
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["task-type-stages"] }),
+    onError: (e: Error) => toast.error(e.message),
   });
 
   return (
