@@ -428,7 +428,7 @@ function ProjectDetail() {
             <Share2 /> Compartilhar
           </button>
           <button className="p2-btn" type="button" onClick={() => setEditOpen(true)}><Pencil /> Editar projeto</button>
-          <button className="p2-btn primary" type="button" onClick={() => setNewTaskOpen(true)}><Plus /> Nova tarefa</button>
+          <button className="p2-btn primary" type="button" onClick={() => openNewTask()}><Plus /> Nova tarefa</button>
           {isClosed ? (
             <button className="p2-btn icon" type="button" title="Reabrir" onClick={() => setStatus.mutate("active")}><RotateCcw /></button>
           ) : (
