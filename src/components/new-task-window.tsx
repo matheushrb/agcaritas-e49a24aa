@@ -55,9 +55,18 @@ const STAGE_PALETTE = ["#7F8C9E", "#8B5CF6", "#EF4444", "#0EA5E9", "#F97316", "#
 type DeliverableDraft = {
   id: string; platform: string; type: string;
   billing_enabled: boolean; billing_value: number | null; delivered: boolean;
+  /** Data combinada para a entrega (prazo). */
   due_date?: string | null;
+  /** Data em que a entrega foi efetivamente confirmada. */
+  delivered_at?: string | null;
   invoiced?: boolean;
 };
+
+/** Anexo da tarefa (arquivo no armazenamento). */
+type AttachmentDraft = {
+  id: string; path: string; name: string; type: string; size: number; is_image: boolean;
+};
+
 type ChecklistDraft = { id: string; title: string; done: boolean };
 
 /** Subtarefa real (linha própria em tasks, com parent_task_id) — pode ter tipo e valor próprios. */
