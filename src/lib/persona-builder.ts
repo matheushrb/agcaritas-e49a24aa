@@ -15,6 +15,10 @@ export type PersonaAnswers = {
   channels: string[];
   barrier: "preco" | "confianca" | "prazo" | "complexidade" | "concorrencia";
   gender: "mulher" | "homem" | "equilibrado" | "indefinido";
+  ageRange: string;      // faixa etária predominante
+  region: string;        // localização predominante
+  income: string;        // faixa de renda / porte financeiro
+  education: string;     // escolaridade predominante
 };
 
 export const emptyAnswers: PersonaAnswers = {
@@ -28,6 +32,10 @@ export const emptyAnswers: PersonaAnswers = {
   channels: ["instagram"],
   barrier: "confianca",
   gender: "equilibrado",
+  ageRange: "30-45",
+  region: "Capitais e regiões metropolitanas",
+  income: "Classe média / média alta",
+  education: "Superior completo",
 };
 
 export const DECIDER_OPTIONS = [
@@ -42,6 +50,29 @@ export const STAGE_OPTIONS = [
   { id: "descoberta", label: "Descobrindo o problema" },
   { id: "comparando", label: "Comparando opções" },
   { id: "recorrente", label: "Já é cliente / recompra" },
+];
+
+export const AGE_OPTIONS = ["18-24", "25-34", "30-45", "35-50", "45-60", "60+"];
+export const REGION_OPTIONS = [
+  "Capitais e regiões metropolitanas",
+  "Cidades do interior",
+  "Todo o Brasil (online)",
+  "Região local / bairro",
+];
+export const INCOME_OPTIONS = [
+  "Popular / entrada",
+  "Classe média",
+  "Classe média / média alta",
+  "Alta renda",
+  "Faturamento até R$ 30 mil/mês",
+  "Faturamento R$ 30 a 100 mil/mês",
+  "Faturamento acima de R$ 100 mil/mês",
+];
+export const EDUCATION_OPTIONS = [
+  "Ensino médio",
+  "Superior cursando",
+  "Superior completo",
+  "Pós-graduação / MBA",
 ];
 
 export const CHANNEL_OPTIONS = [
@@ -63,6 +94,23 @@ export type BuiltPersona = {
   pains: string[];
   help: string;
   why: string;
+  /* --- blocos vindos do formulário clássico de persona --- */
+  quote: string;
+  personaType: "B2B" | "B2C";
+  ageRange: string;
+  gender: string;
+  location: string;
+  family: string;
+  education: string;
+  income: string;
+  companyContext: string;
+  decisionPower: string;
+  infoSources: string[];
+  tools: string;
+  contentHabits: string;
+  objections: string[];
+  triggers: string[];
+  journeyStage: string;
 };
 
 const CHANNEL_LABEL: Record<string, string> = Object.fromEntries(
@@ -163,6 +211,99 @@ const BASE: Record<string, { role: string; tags: string[]; desires: string[]; pa
   },
 };
 
+const EXTRA: Record<string, {
+  quote: string; decisionPower: string; family: string; tools: string;
+  contentHabits: string; objections: string[]; triggers: string[]; journey: string;
+}> = {
+  decisor: {
+    quote: "Se não mostrar resultado em número, não me convence.",
+    decisionPower: "Decisor final — assina o contrato",
+    family: "Casado(a), rotina puxada",
+    tools: "WhatsApp, planilhas, relatórios do time",
+    contentHabits: "Conteúdo curto e direto, cases e bastidores de negócio",
+    objections: ["Já gastou antes e não viu retorno", "Não quer contrato longo sem prova"],
+    triggers: ["Case parecido com o negócio dele", "Escopo e prazo claros por escrito"],
+    journey: "Chega no fim da decisão, já com indicação ou proposta na mão",
+  },
+  gestor: {
+    quote: "Preciso bater a meta e explicar o número para a diretoria.",
+    decisionPower: "Influenciador forte — monta a recomendação",
+    family: "Rotina corporativa, agenda de reuniões",
+    tools: "Meta Ads, Google Analytics, CRM, planilhas",
+    contentHabits: "Newsletters, LinkedIn, benchmarks e relatórios de mercado",
+    objections: ["Medo de trocar de agência e perder histórico", "Dúvida se a equipe dá conta do volume"],
+    triggers: ["Plano de trabalho detalhado", "Reunião de resultado com periodicidade fixa"],
+    journey: "Pesquisa e compara antes de levar para o decisor",
+  },
+  tecnico: {
+    quote: "Se chegar mal briefado, vai voltar para mim depois.",
+    decisionPower: "Usuário técnico — veta o que atrapalha a operação",
+    family: "Perfil analítico, foco em rotina",
+    tools: "Ferramentas de gestão, ERP, sistemas internos",
+    contentHabits: "Documentação, tutoriais, fóruns e vídeos técnicos",
+    objections: ["Teme retrabalho e mudança de processo", "Desconfia de promessa sem detalhe técnico"],
+    triggers: ["Processo de trabalho explicado passo a passo", "Ponto focal definido para dúvidas"],
+    journey: "Entra na validação, depois da proposta inicial",
+  },
+  financeiro: {
+    quote: "Me mostra linha a linha o que estou pagando.",
+    decisionPower: "Aprovador de orçamento",
+    family: "Perfil conservador, foco em previsibilidade",
+    tools: "ERP financeiro, planilhas de custo",
+    contentHabits: "Pouco conteúdo de marketing; foca em proposta e contrato",
+    objections: ["Escopo aberto e custo variável", "Falta de nota fiscal / formalização"],
+    triggers: ["Contrato claro e parcelas previsíveis", "Comparativo de custo x retorno"],
+    journey: "Entra na aprovação final do investimento",
+  },
+  usuario: {
+    quote: "Só quero que funcione sem eu ter que correr atrás.",
+    decisionPower: "Usuário final — influencia renovação",
+    family: "Rotina prática, resolve pelo celular",
+    tools: "WhatsApp, Instagram, apps do dia a dia",
+    contentHabits: "Vídeos curtos, stories, avaliações de outros clientes",
+    objections: ["Processo burocrático", "Demora para ser atendido"],
+    triggers: ["Atendimento rápido e humano", "Passo a passo simples"],
+    journey: "Convive com o serviço no dia a dia",
+  },
+  descoberta: {
+    quote: "Ainda estou entendendo se isso é o que eu preciso.",
+    decisionPower: "Decide sozinho(a), mas ainda pesquisando",
+    family: "Varia conforme o público",
+    tools: "Google, Instagram, indicações de amigos",
+    contentHabits: "Conteúdo educativo, listas, vídeos explicativos",
+    objections: ["Não sabe se o problema justifica o gasto", "Excesso de opções parecidas"],
+    triggers: ["Explicação simples do que está comprando", "Prova social e avaliações"],
+    journey: "Topo — descobrindo o problema",
+  },
+  comparando: {
+    quote: "Já pedi três orçamentos, quero ver qual compensa mais.",
+    decisionPower: "Decide sozinho(a) comparando propostas",
+    family: "Varia conforme o público",
+    tools: "Google, comparadores, redes sociais, WhatsApp",
+    contentHabits: "Reviews, comparativos, depoimentos em vídeo",
+    objections: ["Preço acima da concorrência", "Medo de pós-venda ruim"],
+    triggers: ["Diferencial claro em relação aos concorrentes", "Garantia e suporte definidos"],
+    journey: "Meio/fundo — comparando opções",
+  },
+  recorrente: {
+    quote: "Sou cliente há tempos, esperava um cuidado a mais.",
+    decisionPower: "Renova e indica",
+    family: "Relacionamento de longo prazo",
+    tools: "Canal direto com a equipe, WhatsApp, e-mail",
+    contentHabits: "Novidades, bastidores e vantagens exclusivas",
+    objections: ["Sente que só é lembrado na renovação", "Percebe queda de atenção com o tempo"],
+    triggers: ["Benefício exclusivo de cliente antigo", "Contato proativo fora da cobrança"],
+    journey: "Pós-venda — retenção e recompra",
+  },
+};
+
+const GENDER_LABEL: Record<PersonaAnswers["gender"], string> = {
+  mulher: "Predominantemente mulheres",
+  homem: "Predominantemente homens",
+  equilibrado: "Equilibrado (mulheres e homens)",
+  indefinido: "Não definido",
+};
+
 export function buildPersonas(a: PersonaAnswers): BuiltPersona[] {
   const keys: string[] = [];
   if (a.market === "b2b" || a.market === "both") {
@@ -184,6 +325,8 @@ export function buildPersonas(a: PersonaAnswers): BuiltPersona[] {
 
   return uniq.map(k => {
     const b = BASE[k] ?? BASE["decisor"]!;
+    const x = EXTRA[k] ?? EXTRA["decisor"]!;
+    const isB2B = ["decisor", "gestor", "tecnico", "financeiro"].includes(k);
     const bucket = NAMES[k] ?? NAMES["decisor"]!;
     // Filtra as opções de nome conforme a inclinação de gênero marcada.
     const nameOptions: string[] =
@@ -216,6 +359,22 @@ export function buildPersonas(a: PersonaAnswers): BuiltPersona[] {
       pains: [...b.pains, barrier.pain],
       help: `${barrier.help}. Presença principal em ${channels.join(", ") || "canais digitais"}.`,
       why: whyBase + whyGender,
+      quote: x.quote,
+      personaType: isB2B ? "B2B" : "B2C",
+      ageRange: a.ageRange,
+      gender: GENDER_LABEL[g],
+      location: a.region,
+      family: x.family,
+      education: a.education,
+      income: a.income,
+      companyContext: isB2B ? `${SIZE_LABEL[a.audienceSize]} — ciclo de decisão ${a.cycle === "curto" ? "curto (dias)" : a.cycle === "longo" ? "longo (meses)" : "médio (semanas)"}` : "",
+      decisionPower: x.decisionPower,
+      infoSources: channels.length ? channels : ["Canais digitais"],
+      tools: x.tools,
+      contentHabits: x.contentHabits,
+      objections: [...x.objections, barrier.pain],
+      triggers: x.triggers,
+      journeyStage: x.journey,
     };
   });
 }

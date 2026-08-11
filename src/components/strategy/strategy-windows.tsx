@@ -9,6 +9,7 @@ import {
 import { ToolWindow, WinField } from "./tool-window";
 import {
   buildPersonas, emptyAnswers, DECIDER_OPTIONS, STAGE_OPTIONS, CHANNEL_OPTIONS,
+  AGE_OPTIONS, REGION_OPTIONS, INCOME_OPTIONS, EDUCATION_OPTIONS,
   type PersonaAnswers, type BuiltPersona,
 } from "@/lib/persona-builder";
 
@@ -190,8 +191,20 @@ export function SwotWindow({ open, onClose, projectId, projectName }: {
 type PersonaRow = {
   id: string; name: string; role: string | null; tags: string[] | null;
   desires: string[] | null; pains: string[] | null; help: string | null;
+  quote: string | null; persona_type: string | null;
+  age_range: string | null; gender: string | null; location: string | null;
+  family: string | null; education: string | null; income: string | null;
+  company_context: string | null; decision_power: string | null;
+  info_sources: string[] | null; tools: string | null; content_habits: string | null;
+  objections: string[] | null; triggers: string[] | null; journey_stage: string | null;
 };
-const emptyPersona = { name: "", role: "", tags: "", desires: "", pains: "", help: "" };
+const emptyPersona = {
+  name: "", role: "", tags: "", desires: "", pains: "", help: "",
+  quote: "", persona_type: "B2B", age_range: "", gender: "", location: "",
+  family: "", education: "", income: "", company_context: "", decision_power: "",
+  info_sources: "", tools: "", content_habits: "", objections: "", triggers: "",
+  journey_stage: "",
+};
 
 export function PersonasWindow({ open, onClose, projectId, projectName }: {
   open: boolean; onClose: () => void; projectId: string; projectName: string;
@@ -226,6 +239,12 @@ export function PersonasWindow({ open, onClose, projectId, projectName }: {
       .map(({ p, i }) => ({
         name: names[i] || p.name, role: p.role, tags: p.tags,
         desires: p.desires, pains: p.pains, help: p.help,
+        quote: p.quote, persona_type: p.personaType, age_range: p.ageRange,
+        gender: p.gender, location: p.location, family: p.family,
+        education: p.education, income: p.income, company_context: p.companyContext || null,
+        decision_power: p.decisionPower, info_sources: p.infoSources, tools: p.tools,
+        content_habits: p.contentHabits, objections: p.objections, triggers: p.triggers,
+        journey_stage: p.journeyStage,
       }));
     if (!rowsToAdd.length) { toast.error("Selecione ao menos uma persona"); return; }
     addMany.mutate(rowsToAdd, {
@@ -241,6 +260,14 @@ export function PersonasWindow({ open, onClose, projectId, projectName }: {
     setForm({
       name: p.name, role: p.role ?? "", tags: toList(p.tags).join(", "),
       desires: toList(p.desires).join("\n"), pains: toList(p.pains).join("\n"), help: p.help ?? "",
+      quote: p.quote ?? "", persona_type: p.persona_type ?? "B2B",
+      age_range: p.age_range ?? "", gender: p.gender ?? "", location: p.location ?? "",
+      family: p.family ?? "", education: p.education ?? "", income: p.income ?? "",
+      company_context: p.company_context ?? "", decision_power: p.decision_power ?? "",
+      info_sources: toList(p.info_sources).join(", "), tools: p.tools ?? "",
+      content_habits: p.content_habits ?? "",
+      objections: toList(p.objections).join("\n"), triggers: toList(p.triggers).join("\n"),
+      journey_stage: p.journey_stage ?? "",
     });
   };
 
@@ -249,6 +276,12 @@ export function PersonasWindow({ open, onClose, projectId, projectName }: {
     setForm({
       name: names[i] || p.name, role: p.role, tags: p.tags.join(", "),
       desires: p.desires.join("\n"), pains: p.pains.join("\n"), help: p.help,
+      quote: p.quote, persona_type: p.personaType, age_range: p.ageRange,
+      gender: p.gender, location: p.location, family: p.family, education: p.education,
+      income: p.income, company_context: p.companyContext, decision_power: p.decisionPower,
+      info_sources: p.infoSources.join(", "), tools: p.tools, content_habits: p.contentHabits,
+      objections: p.objections.join("\n"), triggers: p.triggers.join("\n"),
+      journey_stage: p.journeyStage,
     });
     setWizOpen(false);
   };
@@ -263,6 +296,22 @@ export function PersonasWindow({ open, onClose, projectId, projectName }: {
       desires: lines(form.desires),
       pains: lines(form.pains),
       help: form.help.trim() || null,
+      quote: form.quote.trim() || null,
+      persona_type: form.persona_type || null,
+      age_range: form.age_range.trim() || null,
+      gender: form.gender.trim() || null,
+      location: form.location.trim() || null,
+      family: form.family.trim() || null,
+      education: form.education.trim() || null,
+      income: form.income.trim() || null,
+      company_context: form.company_context.trim() || null,
+      decision_power: form.decision_power.trim() || null,
+      info_sources: fromCsv(form.info_sources),
+      tools: form.tools.trim() || null,
+      content_habits: form.content_habits.trim() || null,
+      objections: lines(form.objections),
+      triggers: lines(form.triggers),
+      journey_stage: form.journey_stage.trim() || null,
     };
     if (selected) upd.mutate({ id: selected, ...row }, { onSuccess: () => toast.success("Persona atualizada") });
     else add.mutate(row, { onSuccess: () => { setForm({ ...emptyPersona }); toast.success("Persona criada"); } });
@@ -383,6 +432,26 @@ export function PersonasWindow({ open, onClose, projectId, projectName }: {
                     <option value="indefinido">Não sei / indefinido</option>
                   </select>
                 </WinField>
+                <WinField label="Faixa etária predominante">
+                  <select value={ans.ageRange} onChange={e => setAns({ ...ans, ageRange: e.target.value })}>
+                    {AGE_OPTIONS.map(o => <option key={o} value={o}>{o} anos</option>)}
+                  </select>
+                </WinField>
+                <WinField label="Localização">
+                  <select value={ans.region} onChange={e => setAns({ ...ans, region: e.target.value })}>
+                    {REGION_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
+                  </select>
+                </WinField>
+                <WinField label="Faixa de renda / porte">
+                  <select value={ans.income} onChange={e => setAns({ ...ans, income: e.target.value })}>
+                    {INCOME_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
+                  </select>
+                </WinField>
+                <WinField label="Escolaridade">
+                  <select value={ans.education} onChange={e => setAns({ ...ans, education: e.target.value })}>
+                    {EDUCATION_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
+                  </select>
+                </WinField>
 
 
                 {(ans.market === "b2b" || ans.market === "both") && (
@@ -462,6 +531,10 @@ export function PersonasWindow({ open, onClose, projectId, projectName }: {
                             <small style={{ color: "var(--muted-foreground)" }}>{p.role}</small>
                           </div>
                           <small style={{ display: "block", color: "var(--muted-foreground)", marginTop: 4 }}>{p.why}</small>
+                          <p style={{ fontSize: 12.5, fontStyle: "italic", margin: "6px 0 0" }}>“{p.quote}”</p>
+                          <small style={{ display: "block", color: "var(--muted-foreground)", marginTop: 4 }}>
+                            {[p.personaType, `${p.ageRange} anos`, p.gender, p.location, p.income, p.decisionPower].filter(Boolean).join("  •  ")}
+                          </small>
                           <div style={{ display: "flex", flexWrap: "wrap", gap: 6, margin: "8px 0" }}>
                             {p.tags.map((t, ti) => (
                               <span key={ti} style={{ fontSize: 11, padding: "2px 8px", borderRadius: 999, background: "color-mix(in oklab, var(--primary) 12%, transparent)", color: "var(--primary)" }}>{t}</span>
@@ -477,6 +550,19 @@ export function PersonasWindow({ open, onClose, projectId, projectName }: {
                               <ul style={{ margin: "4px 0 0 16px" }}>{p.pains.map((d, di) => <li key={di}>{d}</li>)}</ul>
                             </div>
                           </div>
+                          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, fontSize: 12, marginTop: 8 }}>
+                            <div>
+                              <small style={{ color: "var(--muted-foreground)" }}>Objeções</small>
+                              <ul style={{ margin: "4px 0 0 16px" }}>{p.objections.map((d, di) => <li key={di}>{d}</li>)}</ul>
+                            </div>
+                            <div>
+                              <small style={{ color: "var(--muted-foreground)" }}>Gatilhos</small>
+                              <ul style={{ margin: "4px 0 0 16px" }}>{p.triggers.map((d, di) => <li key={di}>{d}</li>)}</ul>
+                            </div>
+                          </div>
+                          <small style={{ display: "block", color: "var(--muted-foreground)", marginTop: 6 }}>
+                            Busca informação em: {p.infoSources.join(", ")} • Jornada: {p.journeyStage}
+                          </small>
                           {p.help && <p style={{ fontSize: 12, marginTop: 8 }}><b>Como ajudamos: </b>{p.help}</p>}
                         </div>
                         <button type="button" className="swin-btn" onClick={() => editGenerated(p, i)} title="Editar antes de salvar">
@@ -499,15 +585,79 @@ export function PersonasWindow({ open, onClose, projectId, projectName }: {
 
           <div className="swin-sec-t">{selected ? "Editar persona" : "Nova persona"}</div>
 
+          {/* cartão-resumo da persona */}
+          {form.name.trim() && (
+            <div style={{ display: "flex", gap: 12, alignItems: "flex-start", border: "1px solid var(--border)", borderRadius: 12, padding: 14, margin: "0 0 16px", background: "var(--surface-2, transparent)" }}>
+              <span style={{ width: 46, height: 46, borderRadius: 999, display: "grid", placeItems: "center", background: "color-mix(in oklab, var(--primary) 14%, transparent)", color: "var(--primary)", fontWeight: 800, fontSize: 15, flex: "none" }}>{initials(form.name)}</span>
+              <div style={{ minWidth: 0 }}>
+                <b style={{ fontSize: 14 }}>{form.name}</b>
+                {form.persona_type && <span style={{ marginLeft: 8, fontSize: 10.5, padding: "2px 8px", borderRadius: 999, background: "color-mix(in oklab, var(--primary) 12%, transparent)", color: "var(--primary)" }}>{form.persona_type}</span>}
+                <div style={{ fontSize: 12, color: "var(--muted-foreground)" }}>{form.role || "—"}</div>
+                {form.quote && <p style={{ fontSize: 12.5, fontStyle: "italic", margin: "6px 0 0" }}>“{form.quote}”</p>}
+                <div style={{ fontSize: 11.5, color: "var(--muted-foreground)", marginTop: 6 }}>
+                  {[form.age_range && `${form.age_range} anos`, form.gender, form.location, form.income].filter(Boolean).join("  •  ")}
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className="swin-sec-t">1. Identificação</div>
           <div className="swin-grid">
             <WinField label="Nome" hint="Ex.: Marina, gestora de marketing"><input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} /></WinField>
             <WinField label="Cargo / contexto" hint="Ex.: CMO | Tech B2B"><input value={form.role} onChange={e => setForm({ ...form, role: e.target.value })} /></WinField>
-            <WinField label="Características" hint="Separe por vírgula. Ex.: Estratégica, Exigente, Orientada a ROI" span>
+            <WinField label="Frase-resumo" hint="Uma citação que capture a essência dela." span>
+              <input value={form.quote} onChange={e => setForm({ ...form, quote: e.target.value })} />
+            </WinField>
+            <WinField label="Tipo de persona">
+              <select value={form.persona_type} onChange={e => setForm({ ...form, persona_type: e.target.value })}>
+                <option value="B2B">B2B — compra para a empresa</option>
+                <option value="B2C">B2C — consumidor final</option>
+              </select>
+            </WinField>
+            <WinField label="Características" hint="Separe por vírgula.">
               <input value={form.tags} onChange={e => setForm({ ...form, tags: e.target.value })} />
             </WinField>
-            <WinField label="Objetivos" hint="Um por linha."><textarea value={form.desires} onChange={e => setForm({ ...form, desires: e.target.value })} /></WinField>
-            <WinField label="Desafios" hint="Um por linha."><textarea value={form.pains} onChange={e => setForm({ ...form, pains: e.target.value })} /></WinField>
-            <WinField label="Como ajudamos" hint="Nossa resposta para essa persona." span>
+          </div>
+
+          <div className="swin-sec-t" style={{ marginTop: 18 }}>2. Dados demográficos</div>
+          <div className="swin-grid">
+            <WinField label="Faixa etária"><input value={form.age_range} onChange={e => setForm({ ...form, age_range: e.target.value })} /></WinField>
+            <WinField label="Gênero"><input value={form.gender} onChange={e => setForm({ ...form, gender: e.target.value })} /></WinField>
+            <WinField label="Localização"><input value={form.location} onChange={e => setForm({ ...form, location: e.target.value })} /></WinField>
+            <WinField label="Estado civil / filhos"><input value={form.family} onChange={e => setForm({ ...form, family: e.target.value })} /></WinField>
+            <WinField label="Escolaridade"><input value={form.education} onChange={e => setForm({ ...form, education: e.target.value })} /></WinField>
+            <WinField label="Faixa de renda"><input value={form.income} onChange={e => setForm({ ...form, income: e.target.value })} /></WinField>
+          </div>
+
+          {form.persona_type === "B2B" && (
+            <>
+              <div className="swin-sec-t" style={{ marginTop: 18 }}>3. Contexto profissional</div>
+              <div className="swin-grid">
+                <WinField label="Empresa / setor / porte"><input value={form.company_context} onChange={e => setForm({ ...form, company_context: e.target.value })} /></WinField>
+                <WinField label="Poder de decisão" hint="Decisor, influenciador ou usuário final."><input value={form.decision_power} onChange={e => setForm({ ...form, decision_power: e.target.value })} /></WinField>
+              </div>
+            </>
+          )}
+
+          <div className="swin-sec-t" style={{ marginTop: 18 }}>4. Objetivos e desafios</div>
+          <div className="swin-grid">
+            <WinField label="Objetivos e motivações" hint="Um por linha."><textarea value={form.desires} onChange={e => setForm({ ...form, desires: e.target.value })} /></WinField>
+            <WinField label="Dores e desafios" hint="Um por linha."><textarea value={form.pains} onChange={e => setForm({ ...form, pains: e.target.value })} /></WinField>
+          </div>
+
+          <div className="swin-sec-t" style={{ marginTop: 18 }}>5. Comportamento e hábitos</div>
+          <div className="swin-grid">
+            <WinField label="Onde busca informação" hint="Separe por vírgula."><input value={form.info_sources} onChange={e => setForm({ ...form, info_sources: e.target.value })} /></WinField>
+            <WinField label="Ferramentas / produtos que já usa"><input value={form.tools} onChange={e => setForm({ ...form, tools: e.target.value })} /></WinField>
+            <WinField label="Conteúdo que consome" span><input value={form.content_habits} onChange={e => setForm({ ...form, content_habits: e.target.value })} /></WinField>
+          </div>
+
+          <div className="swin-sec-t" style={{ marginTop: 18 }}>6. Objeções, gatilhos e jornada</div>
+          <div className="swin-grid">
+            <WinField label="Objeções" hint="O que impede de fechar. Um por linha."><textarea value={form.objections} onChange={e => setForm({ ...form, objections: e.target.value })} /></WinField>
+            <WinField label="Gatilhos de decisão" hint="O que convence. Um por linha."><textarea value={form.triggers} onChange={e => setForm({ ...form, triggers: e.target.value })} /></WinField>
+            <WinField label="Etapa da jornada quando nos encontra"><input value={form.journey_stage} onChange={e => setForm({ ...form, journey_stage: e.target.value })} /></WinField>
+            <WinField label="Como ajudamos" hint="Nossa resposta para essa persona.">
               <textarea value={form.help} onChange={e => setForm({ ...form, help: e.target.value })} />
             </WinField>
           </div>

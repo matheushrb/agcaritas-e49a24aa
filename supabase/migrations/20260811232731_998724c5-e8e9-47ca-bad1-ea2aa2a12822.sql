@@ -1,0 +1,18 @@
+ALTER TABLE public.project_personas
+  ADD COLUMN IF NOT EXISTS quote text,
+  ADD COLUMN IF NOT EXISTS avatar_url text,
+  ADD COLUMN IF NOT EXISTS age_range text,
+  ADD COLUMN IF NOT EXISTS gender text,
+  ADD COLUMN IF NOT EXISTS location text,
+  ADD COLUMN IF NOT EXISTS family text,
+  ADD COLUMN IF NOT EXISTS education text,
+  ADD COLUMN IF NOT EXISTS income text,
+  ADD COLUMN IF NOT EXISTS company_context text,
+  ADD COLUMN IF NOT EXISTS decision_power text,
+  ADD COLUMN IF NOT EXISTS info_sources jsonb DEFAULT '[]'::jsonb,
+  ADD COLUMN IF NOT EXISTS tools text,
+  ADD COLUMN IF NOT EXISTS content_habits text,
+  ADD COLUMN IF NOT EXISTS objections jsonb DEFAULT '[]'::jsonb,
+  ADD COLUMN IF NOT EXISTS triggers jsonb DEFAULT '[]'::jsonb,
+  ADD COLUMN IF NOT EXISTS journey_stage text,
+  ADD COLUMN IF NOT EXISTS persona_type text;
