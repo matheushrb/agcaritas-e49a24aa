@@ -203,7 +203,7 @@
 .cv-profile span { font-size: 9px; color: var(--muted); }
 
 /* MAIN */
-.cv-main { padding: 9px 24px 18px 0; }
+.cv-main { padding: 9px 24px 18px 22px; }
 
 /* PAGE HEADER */
 .cv-page-head { display: flex; align-items: flex-start; justify-content: space-between; height: 51px; margin: 0 0 9px; }
@@ -527,7 +527,7 @@
 }
 
 @media (max-width: 900px) {
-  .cv-shell { margin-left: 88px; }
+
   .cv-topbar { grid-template-columns: 150px 1fr; }
   .cv-top-actions { display: none; }
   .cv-lower-grid { grid-template-columns: 1fr; }

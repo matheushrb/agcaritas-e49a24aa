@@ -7,24 +7,16 @@
 
 /* --- Alturas curtas (a maioria dos notebooks: 720–900px de altura) --- */
 @media (max-height: 900px) {
-  .caritas-ui .cv-sidebar {
-    left: 9px;
-    top: 9px;
-    bottom: 9px;
-    width: 58px;
-    border-radius: 16px;
-    padding: 7px;
-  }
+  .caritas-ui { --cv-sb: 62px; }
+  .caritas-ui[data-nav="expanded"] { --cv-sb: 214px; }
+  .caritas-ui .cv-sidebar { padding: 7px 8px 9px; }
   .caritas-ui .cv-sidebar-logo { height: 40px; font-size: 22px; }
   .caritas-ui .cv-sidebar-logo img { width: 22px !important; }
   .caritas-ui .cv-nav-item { height: 36px; border-radius: 8px; }
   .caritas-ui .cv-nav-item svg { width: 16px; height: 16px; }
   .caritas-ui .cv-sidebar-bottom { padding-top: 8px; gap: 2px; }
 
-  .caritas-ui .cv-shell {
-    margin-left: 80px;
-    width: calc(100vw - 80px);
-  }
+
 
   .caritas-ui .cv-topbar {
     height: 48px;
@@ -41,7 +33,7 @@
   .caritas-ui .cv-profile { gap: 7px; }
   .caritas-ui .cv-profile > div:nth-child(2) { min-width: 82px; }
 
-  .caritas-ui .cv-main { padding: 6px 16px 12px 0; }
+  .caritas-ui .cv-main { padding: 6px 16px 12px 16px; }
 
   .caritas-ui .cv-page-head { height: auto; min-height: 42px; margin-bottom: 7px; }
   .caritas-ui .cv-page-head h1 { font-size: 19px; margin-bottom: 3px; }
