@@ -1256,13 +1256,15 @@ export function TaskWindow({
                 <table className="cw-table">
                   <thead>
                     <tr>
-                      <th style={{ width: 140 }}>Plataforma</th>
+                      <th style={{ width: 128 }}>Plataforma</th>
                       <th>Formato / entrega</th>
-                      <th style={{ width: 140 }}>Prazo</th>
-                      <th style={{ width: 90 }}>Faturável</th>
-                      <th style={{ width: 110 }}>Valor</th>
-                      <th style={{ width: 120 }}>Entrega</th>
+                      <th style={{ width: 130 }}>Prazo combinado</th>
+                      <th style={{ width: 80 }}>Faturável</th>
+                      <th style={{ width: 100 }}>Valor</th>
+                      <th style={{ width: 124 }}>Confirmação</th>
+                      <th style={{ width: 130 }}>Entregue em</th>
                       <th style={{ width: 56 }} />
+
                     </tr>
                   </thead>
                   <tbody>
