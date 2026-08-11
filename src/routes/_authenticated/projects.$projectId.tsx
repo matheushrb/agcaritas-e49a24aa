@@ -527,8 +527,11 @@ function ProjectDetail() {
       {activeTab === "strategy" && (
         <Prj05Strategy
           projectId={projectId}
+          projectName={project.name ?? "Projeto"}
           description={project.description ?? ""}
           strategy={(project as any).strategy ?? {}}
+          briefing={((project as any).briefing ?? {}) as never}
+          briefingTemplateId={(project as any).briefing_template_id ?? null}
           onSaveBriefing={(patch) => saveField.mutate(patch as never)}
         />
       )}
