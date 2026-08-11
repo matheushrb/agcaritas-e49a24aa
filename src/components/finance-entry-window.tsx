@@ -390,6 +390,50 @@ export function FinanceEntryWindow({
             </div>
           </div>
 
+          {!!projectId && (
+            <div className="cw-field cw-span-full">
+              <label className="cw-label" style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <ListChecks size={14} /> Tarefas incluídas neste lançamento
+              </label>
+              {projectTasks.length === 0 ? (
+                <div className="cw-callout"><Info size={14} /><span>Este projeto ainda não possui tarefas.</span></div>
+              ) : (
+                <>
+                  <div style={{ maxHeight: 220, overflow: "auto", border: "1px solid var(--cw-border)", borderRadius: 10 }}>
+                    {projectTasks.map(t => {
+                      const checked = taskIds.includes(t.id);
+                      return (
+                        <label key={t.id} style={{
+                          display: "flex", alignItems: "center", gap: 10, padding: "8px 12px",
+                          borderBottom: "1px solid var(--cw-border)", fontSize: 13, cursor: "pointer",
+                          background: checked ? "var(--cw-soft, rgba(47,107,239,.06))" : "transparent",
+                        }}>
+                          <input type="checkbox" checked={checked} onChange={() => toggleTask(t.id)} />
+                          <span style={{ flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                            {t.title}
+                          </span>
+                          {t.billed && <span style={{ fontSize: 11, color: "var(--cw-muted)" }}>já faturada</span>}
+                          <strong style={{ fontSize: 12 }}>{money(taskValue(t))}</strong>
+                        </label>
+                      );
+                    })}
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 8, flexWrap: "wrap" }}>
+                    <span style={{ fontSize: 12, color: "var(--cw-muted)" }}>
+                      {taskIds.length} tarefa(s) — soma {money(selectedTotal)}
+                    </span>
+                    <button type="button" className="cw-btn cw-btn-secondary cw-btn-sm"
+                      onClick={() => setTaskIds(projectTasks.map(t => t.id))}>Selecionar todas</button>
+                    <button type="button" className="cw-btn cw-btn-secondary cw-btn-sm"
+                      onClick={() => setTaskIds([])}>Limpar</button>
+                    <button type="button" className="cw-btn cw-btn-primary cw-btn-sm" disabled={selectedTotal <= 0}
+                      onClick={() => setAmount(String(selectedTotal))}>Usar soma como valor</button>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+
           {!isEdit && (
             <div className="cw-field cw-span-full">
               <label className="cw-label">Recorrência</label>
