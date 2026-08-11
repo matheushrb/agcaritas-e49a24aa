@@ -782,7 +782,11 @@ export function TaskWindow({
       billing_enabled: d.billing_enabled, billing_model: "per_task",
       billing_value: d.billing_value, delivered: d.delivered, invoiced: !!d.invoiced,
       due_date: d.due_date || null,
+      delivered_at: d.delivered ? (d.delivered_at || new Date().toISOString().slice(0, 10)) : null,
     })) as any,
+    attachments: attachments as any,
+    cover_url: coverPath,
+
     briefing_template_id: briefingTemplateId,
     briefing: briefingData as any,
     live_items: liveItems as any,
