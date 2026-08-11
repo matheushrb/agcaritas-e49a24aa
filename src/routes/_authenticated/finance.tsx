@@ -6,7 +6,7 @@ import { AlertCircle, CheckCircle2, Clock, Receipt } from "lucide-react";
 import { toast } from "sonner";
 import { Fin01Overview, type F1Charge, type F1Cost } from "@/components/fin01-overview";
 import { FinanceEntryWindow } from "@/components/finance-entry-window";
-import { CashflowPanel, DrePanel, PlannerPanel, IntelligencePanel, type FinDataset } from "@/components/finance/fin-panels";
+import { CashflowPanel, DrePanel, PlannerPanel, IntelligencePanel, MonthGoalBanner, type FinDataset } from "@/components/finance/fin-panels";
 import { useAgencyPricing } from "@/components/settings/agency-pricing";
 import { DEFAULT_RESERVES, type ReserveSettings } from "@/lib/finance-analytics";
 import { LayoutDashboard, Waves, FileSpreadsheet, Target, Brain, ListOrdered } from "lucide-react";
@@ -228,7 +228,7 @@ function FinancePage() {
           {tab === "movements" ? (
             <EntriesPanel clients={clients} projects={projects} teamMembers={teamMembers} />
           ) : tab === "overview" ? (
-            <Fin01Overview
+            <><MonthGoalBanner data={dataset} onOpenPlanner={() => setTab("planner")} /><Fin01Overview
               charges={charges as unknown as F1Charge[]}
               costs={costs}
               clients={clients}
@@ -238,7 +238,7 @@ function FinancePage() {
               onExport={() => exportCsv(charges, clients, projects)}
               onOpenInvoices={() => navigate({ to: "/invoices" })}
               onOpenEntries={() => setTab("movements")}
-            />
+            /></>
           ) : tab === "cashflow" ? (
             <CashflowPanel data={dataset} />
           ) : tab === "dre" ? (
