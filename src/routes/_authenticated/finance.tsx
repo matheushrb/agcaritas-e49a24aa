@@ -9,7 +9,8 @@ import { FinanceEntryWindow } from "@/components/finance-entry-window";
 import { CashflowPanel, DrePanel, PlannerPanel, IntelligencePanel, type FinDataset } from "@/components/finance/fin-panels";
 import { useAgencyPricing } from "@/components/settings/agency-pricing";
 import { DEFAULT_RESERVES, type ReserveSettings } from "@/lib/finance-analytics";
-import { LayoutDashboard, Waves, FileSpreadsheet, Target, Brain } from "lucide-react";
+import { LayoutDashboard, Waves, FileSpreadsheet, Target, Brain, ListOrdered } from "lucide-react";
+import { EntriesPanel } from "@/components/finance/fin-entries";
 
 
 export const Route = createFileRoute("/_authenticated/finance")({
@@ -193,6 +194,7 @@ function FinancePage() {
 
   const TABS = [
     { id: "overview", label: "Visão geral", icon: LayoutDashboard, hint: "Resumo do caixa" },
+    { id: "movements", label: "Lançamentos", icon: ListOrdered, hint: "Receitas e despesas" },
     { id: "cashflow", label: "Fluxo de caixa", icon: Waves, hint: "Realizado e previsto" },
     { id: "dre", label: "DRE", icon: FileSpreadsheet, hint: "Resultado gerencial" },
     { id: "planner", label: "Planejador", icon: Target, hint: "Reservas e metas" },
@@ -223,7 +225,9 @@ function FinancePage() {
         </nav>
 
         <div className="flex-1 min-w-0">
-          {tab === "overview" || tab === "movements" ? (
+          {tab === "movements" ? (
+            <EntriesPanel clients={clients} projects={projects} teamMembers={teamMembers} />
+          ) : tab === "overview" ? (
             <Fin01Overview
               charges={charges as unknown as F1Charge[]}
               costs={costs}
