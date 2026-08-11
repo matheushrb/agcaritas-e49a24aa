@@ -8,7 +8,11 @@ import {
   ThumbsUp, ThumbsDown, ArrowUpCircle, AlertOctagon, Sparkles, Loader2, Pencil,
 } from "lucide-react";
 import { ToolWindow, WinField } from "./tool-window";
-import { generatePersonas, type GeneratedPersona } from "@/lib/personas.functions";
+import {
+  buildPersonas, emptyAnswers, DECIDER_OPTIONS, STAGE_OPTIONS, CHANNEL_OPTIONS,
+  type PersonaAnswers, type BuiltPersona,
+} from "@/lib/persona-builder";
+
 import "@/strategy-win.css";
 
 
