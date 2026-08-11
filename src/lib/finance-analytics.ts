@@ -9,6 +9,7 @@
 
 export type FinMember = {
   id: string;
+  user_id?: string | null;
   name: string;
   cost_mode: string | null;
   monthly_salary: number | string | null;
@@ -134,7 +135,7 @@ export function computeTaskCosts(input: {
   agencyHourCost: number; // custo/hora estrutural da agência (rateio)
 }): TaskCostRow[] {
   const { tasks, members, entries, costs, agencyHourCost } = input;
-  const byUser = new Map(members.map(m => [m.user_id_key ?? m.id, m] as const));
+  const byUser = new Map(members.map(m => [m.user_id ?? m.id, m] as const));
   const byId = new Map(members.map(m => [m.id, m] as const));
 
   const hoursByTask = new Map<string, { hours: number; cost: number }>();
