@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import {
   X, Save, Minus, Maximize2, PanelRight, Trash2, Receipt,
-  ArrowDownCircle, ArrowUpCircle, ChevronDown, Info, Repeat,
+  ArrowDownCircle, ArrowUpCircle, ChevronDown, Info, Repeat, ListChecks,
 } from "lucide-react";
 import "@/windows.css";
 
@@ -22,7 +22,18 @@ export type FinanceEntry = {
   nature: string | null;
   category: string | null;
   competence_month: string | null;
+  task_ids?: string[] | null;
 };
+
+type ProjectTask = {
+  id: string;
+  title: string;
+  status: string;
+  billing_value: number | null;
+  billing_base_value: number | null;
+  billed: boolean;
+};
+
 
 const STATUSES = [
   { value: "pending", label: "Pendente" },
@@ -72,6 +83,7 @@ export function FinanceEntryWindow({
   const [dayOfMonth, setDayOfMonth] = useState("");
   const [repeatUntil, setRepeatUntil] = useState("");
   const [mode, setMode] = useState<"modal" | "docked" | "minimized">("modal");
+  const [taskIds, setTaskIds] = useState<string[]>([]);
 
   const { data: categories = [] } = useQuery<string[]>({
     queryKey: ["finance_categories", nature],
@@ -86,6 +98,26 @@ export function FinanceEntryWindow({
       return ((data ?? []) as { name: string }[]).map(c => c.name);
     },
   });
+
+  const { data: projectTasks = [] } = useQuery<ProjectTask[]>({
+    queryKey: ["entry-project-tasks", projectId],
+    enabled: open && !!projectId,
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("tasks")
+        .select("id, title, status, billing_value, billing_base_value, billed")
+        .eq("project_id", projectId)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return (data ?? []) as ProjectTask[];
+    },
+  });
+
+  const taskValue = (t: ProjectTask) => Number(t.billing_value ?? t.billing_base_value ?? 0);
+  const selectedTasks = projectTasks.filter(t => taskIds.includes(t.id));
+  const selectedTotal = selectedTasks.reduce((acc, t) => acc + taskValue(t), 0);
+  const toggleTask = (id: string) =>
+    setTaskIds(prev => (prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]));
 
   useEffect(() => {
     if (!open) return;
@@ -105,6 +137,7 @@ export function FinanceEntryWindow({
     setRepeat(false);
     setDayOfMonth("");
     setRepeatUntil("");
+    setTaskIds(Array.isArray((entry as any)?.task_ids) ? ((entry as any).task_ids as string[]) : []);
   }, [open, entry, defaultNature]);
 
   const value = Number(String(amount).replace(",", ".") || 0);
@@ -133,6 +166,7 @@ export function FinanceEntryWindow({
         project_id: projectId || null,
         collaborator_id: collaboratorId || null,
         payment_method: method || null,
+        task_ids: projectId ? taskIds : [],
         paid_at: status === "paid" ? (entry?.paid_at ?? new Date().toISOString()) : null,
       };
       if (isEdit) {
@@ -355,6 +389,50 @@ export function FinanceEntryWindow({
               </span>
             </div>
           </div>
+
+          {!!projectId && (
+            <div className="cw-field cw-span-full">
+              <label className="cw-label" style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <ListChecks size={14} /> Tarefas incluídas neste lançamento
+              </label>
+              {projectTasks.length === 0 ? (
+                <div className="cw-callout"><Info size={14} /><span>Este projeto ainda não possui tarefas.</span></div>
+              ) : (
+                <>
+                  <div style={{ maxHeight: 220, overflow: "auto", border: "1px solid var(--cw-border)", borderRadius: 10 }}>
+                    {projectTasks.map(t => {
+                      const checked = taskIds.includes(t.id);
+                      return (
+                        <label key={t.id} style={{
+                          display: "flex", alignItems: "center", gap: 10, padding: "8px 12px",
+                          borderBottom: "1px solid var(--cw-border)", fontSize: 13, cursor: "pointer",
+                          background: checked ? "var(--cw-soft, rgba(47,107,239,.06))" : "transparent",
+                        }}>
+                          <input type="checkbox" checked={checked} onChange={() => toggleTask(t.id)} />
+                          <span style={{ flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                            {t.title}
+                          </span>
+                          {t.billed && <span style={{ fontSize: 11, color: "var(--cw-muted)" }}>já faturada</span>}
+                          <strong style={{ fontSize: 12 }}>{money(taskValue(t))}</strong>
+                        </label>
+                      );
+                    })}
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 8, flexWrap: "wrap" }}>
+                    <span style={{ fontSize: 12, color: "var(--cw-muted)" }}>
+                      {taskIds.length} tarefa(s) — soma {money(selectedTotal)}
+                    </span>
+                    <button type="button" className="cw-btn cw-btn-secondary cw-btn-sm"
+                      onClick={() => setTaskIds(projectTasks.map(t => t.id))}>Selecionar todas</button>
+                    <button type="button" className="cw-btn cw-btn-secondary cw-btn-sm"
+                      onClick={() => setTaskIds([])}>Limpar</button>
+                    <button type="button" className="cw-btn cw-btn-primary cw-btn-sm" disabled={selectedTotal <= 0}
+                      onClick={() => setAmount(String(selectedTotal))}>Usar soma como valor</button>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
 
           {!isEdit && (
             <div className="cw-field cw-span-full">

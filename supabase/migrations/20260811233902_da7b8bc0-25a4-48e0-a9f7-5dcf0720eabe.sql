@@ -1,0 +1,1 @@
+ALTER TABLE public.charges ADD COLUMN IF NOT EXISTS task_ids jsonb NOT NULL DEFAULT '[]'::jsonb;

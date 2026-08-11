@@ -221,6 +221,7 @@ export type Database = {
           service_label: string | null
           status: Database["public"]["Enums"]["charge_status"]
           task_id: string | null
+          task_ids: Json
           type: string | null
           updated_at: string
         }
@@ -247,6 +248,7 @@ export type Database = {
           service_label?: string | null
           status?: Database["public"]["Enums"]["charge_status"]
           task_id?: string | null
+          task_ids?: Json
           type?: string | null
           updated_at?: string
         }
@@ -273,6 +275,7 @@ export type Database = {
           service_label?: string | null
           status?: Database["public"]["Enums"]["charge_status"]
           task_id?: string | null
+          task_ids?: Json
           type?: string | null
           updated_at?: string
         }
