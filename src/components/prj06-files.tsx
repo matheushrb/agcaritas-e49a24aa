@@ -97,7 +97,11 @@ export function Prj06Files({ projectId }: { projectId: string }) {
     },
   });
 
-  const invalidate = () => qc.invalidateQueries({ queryKey: key });
+  const invalidate = () => {
+    qc.invalidateQueries({ queryKey: key });
+    qc.invalidateQueries({ queryKey: ["project-files-count"] });
+  };
+
 
   const uploaderName = async () => {
     const { data: u } = await sb.auth.getUser();
