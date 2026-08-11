@@ -375,6 +375,15 @@ export function PersonasWindow({ open, onClose, projectId, projectName }: {
                     <option value="concorrencia">Concorrência forte</option>
                   </select>
                 </WinField>
+                <WinField label="Inclinação de gênero" hint="Predomínio do público-alvo.">
+                  <select value={ans.gender} onChange={e => setAns({ ...ans, gender: e.target.value as PersonaAnswers["gender"] })}>
+                    <option value="equilibrado">Equilibrado (mulheres e homens)</option>
+                    <option value="mulher">Predominantemente mulheres</option>
+                    <option value="homem">Predominantemente homens</option>
+                    <option value="indefinido">Não sei / indefinido</option>
+                  </select>
+                </WinField>
+
 
                 {(ans.market === "b2b" || ans.market === "both") && (
                   <WinField label="Quem participa da decisão?" hint="Pode marcar mais de um." span>
