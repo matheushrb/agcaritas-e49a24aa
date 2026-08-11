@@ -535,166 +535,23 @@ export function Prj05Strategy({
         </section>
       </div>
 
-      {/* ---------------- dialogs ---------------- */}
+      {/* ---------------- janelas de ferramentas ---------------- */}
 
-      <Modal
-        open={briefOpen} onClose={() => setBriefOpen(false)} wide
-        title="Briefing e posicionamento"
-        onSubmit={() => {
-          onSaveBriefing?.({
-            description: brief.description,
-            strategy: {
-              audience: brief.audience.trim() || undefined,
-              essence: fromCsv(brief.essence),
-              tone: brief.tone.trim() || undefined,
-              value_prop: brief.value_prop.trim() || undefined,
-              positioning: brief.positioning.trim() || undefined,
-            },
-          });
-          setBriefOpen(false);
-        }}
-      >
-        <Field label="Propósito" hint="Por que este projeto/marca existe.">
-          <textarea className="cw-input" rows={3} value={brief.description} onChange={e => setBrief({ ...brief, description: e.target.value })} />
-        </Field>
-        <Field label="Público-alvo principal" hint="Quem queremos alcançar (cargo, porte, segmento).">
-          <textarea className="cw-input" rows={2} value={brief.audience} onChange={e => setBrief({ ...brief, audience: e.target.value })} />
-        </Field>
-        <Field label="Essência da marca" hint="Separe os atributos por vírgula. Ex.: Criativa, Estratégica, Confiável">
-          <input className="cw-input" value={brief.essence} onChange={e => setBrief({ ...brief, essence: e.target.value })} />
-        </Field>
-        <Field label="Tom de voz" hint="Como a marca fala. Ex.: Inspirador, claro e próximo.">
-          <input className="cw-input" value={brief.tone} onChange={e => setBrief({ ...brief, tone: e.target.value })} />
-        </Field>
-        <Field label="Proposta de valor" hint="O que entregamos de único para esse público.">
-          <textarea className="cw-input" rows={2} value={brief.value_prop} onChange={e => setBrief({ ...brief, value_prop: e.target.value })} />
-        </Field>
-        <Field label="Posicionamento" hint="Frase curta de posicionamento. Ex.: Criatividade com método.">
-          <input className="cw-input" value={brief.positioning} onChange={e => setBrief({ ...brief, positioning: e.target.value })} />
-        </Field>
-      </Modal>
-
-      <Modal
-        open={personaOpen} onClose={() => setPersonaOpen(false)} wide
-        title={personaEdit ? "Editar persona" : "Nova persona"}
-        onSubmit={() => {
-          if (!personaForm.name.trim()) { toast.error("Informe o nome da persona"); return; }
-          const row = {
-            name: personaForm.name.trim(),
-            role: personaForm.role.trim() || null,
-            tags: fromCsv(personaForm.tags),
-            desires: personaForm.desires.split("\n").map(v => v.trim()).filter(Boolean),
-            pains: personaForm.pains.split("\n").map(v => v.trim()).filter(Boolean),
-            help: personaForm.help.trim() || null,
-          };
-          if (personaEdit) updPersona.mutate({ id: personaEdit, ...row });
-          else addPersona.mutate(row);
-          setPersonaOpen(false);
-        }}
-      >
-        <Field label="Nome"><input className="cw-input" value={personaForm.name} onChange={e => setPersonaForm({ ...personaForm, name: e.target.value })} /></Field>
-        <Field label="Cargo / contexto" hint="Ex.: CMO | Tech B2B">
-          <input className="cw-input" value={personaForm.role} onChange={e => setPersonaForm({ ...personaForm, role: e.target.value })} />
-        </Field>
-        <Field label="Características" hint="Separe por vírgula. Ex.: Estratégica, Exigente, Orientada a ROI">
-          <input className="cw-input" value={personaForm.tags} onChange={e => setPersonaForm({ ...personaForm, tags: e.target.value })} />
-        </Field>
-        <Field label="Objetivos" hint="Um por linha.">
-          <textarea className="cw-input" rows={3} value={personaForm.desires} onChange={e => setPersonaForm({ ...personaForm, desires: e.target.value })} />
-        </Field>
-        <Field label="Desafios" hint="Um por linha.">
-          <textarea className="cw-input" rows={3} value={personaForm.pains} onChange={e => setPersonaForm({ ...personaForm, pains: e.target.value })} />
-        </Field>
-        <Field label="Como ajudamos">
-          <textarea className="cw-input" rows={2} value={personaForm.help} onChange={e => setPersonaForm({ ...personaForm, help: e.target.value })} />
-        </Field>
-      </Modal>
-
-      <Modal
-        open={benchOpen} onClose={() => setBenchOpen(false)} wide
-        title={benchEdit ? "Editar concorrente" : "Novo concorrente"}
-        onSubmit={() => {
-          if (!benchForm.name.trim()) { toast.error("Informe o nome do concorrente"); return; }
-          const row = {
-            name: benchForm.name.trim(),
-            positioning: benchForm.positioning.trim() || null,
-            strengths: benchForm.strengths.trim() || null,
-            weaknesses: benchForm.weaknesses.trim() || null,
-            threat_level: benchForm.threat_level,
-          };
-          if (benchEdit) updBench.mutate({ id: benchEdit, ...row });
-          else addBench.mutate(row);
-          setBenchOpen(false);
-        }}
-      >
-        <Field label="Nome"><input className="cw-input" value={benchForm.name} onChange={e => setBenchForm({ ...benchForm, name: e.target.value })} /></Field>
-        <Field label="Posicionamento" hint="Como o concorrente se apresenta ao mercado.">
-          <input className="cw-input" value={benchForm.positioning} onChange={e => setBenchForm({ ...benchForm, positioning: e.target.value })} />
-        </Field>
-        <Field label="Pontos fortes">
-          <textarea className="cw-input" rows={2} value={benchForm.strengths} onChange={e => setBenchForm({ ...benchForm, strengths: e.target.value })} />
-        </Field>
-        <Field label="Gap vs. nós" hint="Onde ele perde para a gente.">
-          <textarea className="cw-input" rows={2} value={benchForm.weaknesses} onChange={e => setBenchForm({ ...benchForm, weaknesses: e.target.value })} />
-        </Field>
-        <Field label="Nível de ameaça">
-          <select className="cw-select" value={benchForm.threat_level} onChange={e => setBenchForm({ ...benchForm, threat_level: e.target.value })}>
-            <option>Alta</option><option>Média</option><option>Baixa</option>
-          </select>
-        </Field>
-      </Modal>
-
-      <Modal
-        open={kpiOpen} onClose={() => setKpiOpen(false)}
-        title={kpiEdit ? "Editar KPI" : "Novo KPI"}
-        onSubmit={() => {
-          if (!kpiForm.name.trim()) { toast.error("Informe o nome do indicador"); return; }
-          const row = {
-            name: kpiForm.name.trim(),
-            target_value: kpiForm.target_value ? Number(kpiForm.target_value) : null,
-            current_value: kpiForm.current_value ? Number(kpiForm.current_value) : 0,
-            unit: kpiForm.unit.trim() || null,
-            period: kpiForm.period.trim() || null,
-            notes: kpiForm.notes.trim() || null,
-          };
-          if (kpiEdit) updKpi.mutate({ id: kpiEdit, ...row });
-          else addKpi.mutate({ ...row, order_index: kpis.length });
-          setKpiOpen(false);
-        }}
-      >
-        <Field label="Indicador" hint="Ex.: Reconhecimento de marca, NPS, Leads qualificados/mês">
-          <input className="cw-input" value={kpiForm.name} onChange={e => setKpiForm({ ...kpiForm, name: e.target.value })} />
-        </Field>
-        <div className="grid grid-cols-3 gap-3">
-          <Field label="Meta"><input type="number" className="cw-input" value={kpiForm.target_value} onChange={e => setKpiForm({ ...kpiForm, target_value: e.target.value })} /></Field>
-          <Field label="Valor atual"><input type="number" className="cw-input" value={kpiForm.current_value} onChange={e => setKpiForm({ ...kpiForm, current_value: e.target.value })} /></Field>
-          <Field label="Unidade"><input className="cw-input" placeholder="%, R$, pts" value={kpiForm.unit} onChange={e => setKpiForm({ ...kpiForm, unit: e.target.value })} /></Field>
-        </div>
-        <Field label="Período" hint="Ex.: Mensal, 2026-Q1">
-          <input className="cw-input" value={kpiForm.period} onChange={e => setKpiForm({ ...kpiForm, period: e.target.value })} />
-        </Field>
-        <Field label="Observação">
-          <textarea className="cw-input" rows={2} value={kpiForm.notes} onChange={e => setKpiForm({ ...kpiForm, notes: e.target.value })} />
-        </Field>
-      </Modal>
-
-      <Modal
-        open={stepOpen} onClose={() => setStepOpen(false)}
-        title="Novo passo estratégico"
-        onSubmit={() => {
-          if (!stepForm.title.trim()) { toast.error("Informe a iniciativa"); return; }
-          addStep.mutate({
-            title: stepForm.title.trim(),
-            due_date: stepForm.due_date || null,
-            status: "todo",
-            order_index: steps.length,
-          });
-          setStepOpen(false);
-        }}
-      >
-        <Field label="Iniciativa"><input className="cw-input" value={stepForm.title} onChange={e => setStepForm({ ...stepForm, title: e.target.value })} /></Field>
-        <Field label="Prazo"><input type="date" className="cw-input" value={stepForm.due_date} onChange={e => setStepForm({ ...stepForm, due_date: e.target.value })} /></Field>
-      </Modal>
+      <BriefingWindow
+        open={briefOpen}
+        onClose={() => setBriefOpen(false)}
+        projectName={projectName}
+        description={description}
+        strategy={s}
+        briefing={briefing ?? {}}
+        templateId={briefingTemplateId ?? null}
+        onSave={(patch) => { onSaveBriefing?.(patch); setBriefOpen(false); }}
+      />
+      <SwotWindow open={swotOpen} onClose={() => setSwotOpen(false)} projectId={projectId} projectName={projectName} />
+      <PersonasWindow open={personaOpen} onClose={() => setPersonaOpen(false)} projectId={projectId} projectName={projectName} />
+      <CompetitorsWindow open={benchOpen} onClose={() => setBenchOpen(false)} projectId={projectId} projectName={projectName} />
+      <KpisWindow open={kpiOpen} onClose={() => setKpiOpen(false)} projectId={projectId} projectName={projectName} />
+      <StepsWindow open={stepOpen} onClose={() => setStepOpen(false)} projectId={projectId} projectName={projectName} />
     </div>
   );
 }
