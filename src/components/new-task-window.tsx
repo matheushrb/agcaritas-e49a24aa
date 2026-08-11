@@ -334,9 +334,6 @@ export function TaskWindow({
     if (!others.length) return;
     const keep: any = keepStageId ? (typeStages as any[]).find(s => s.id === keepStageId) : null;
 
-    const setOf = (rows: any[], pick: (x: any) => string) =>
-      new Set(rows.flatMap((s: any) => (Array.isArray(pick(s) as any) ? [] : [])) as string[]);
-    void setOf;
 
     const gather = (key: string, pick: (item: any) => string) => {
       const drop = new Set<string>();
