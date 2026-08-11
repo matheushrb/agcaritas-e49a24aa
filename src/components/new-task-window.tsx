@@ -458,8 +458,8 @@ export function TaskWindow({
     const i = flowSteps.findIndex(s => s.status === value);
     if (i >= 0) {
       const s = flowSteps[i];
-      if (s.stageId) setCurrentStageId(s.stageId);
-      else if (s.stage) { setStage(s.stage); setCurrentStageId(null); }
+      if (s.stageId) { setCurrentStageId(s.stageId); clearOtherStageAutomations(s.stageId); }
+      else if (s.stage) { setStage(s.stage); setCurrentStageId(null); clearOtherStageAutomations(null); }
     }
   };
 
