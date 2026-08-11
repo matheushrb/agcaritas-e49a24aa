@@ -92,7 +92,7 @@ export function CashflowPanel({ data }: { data: FinDataset }) {
         }
       >
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full text-sm [&_th]:px-2 [&_td]:px-2 whitespace-nowrap">
             <thead>
               <tr className="text-[11px] uppercase tracking-wide text-muted-foreground text-left">
                 <th className="py-2">Mês</th>
@@ -182,7 +182,7 @@ export function DrePanel({ data }: { data: FinDataset }) {
         }
       >
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full text-sm [&_th]:px-2 [&_td]:px-2 whitespace-nowrap">
             <thead>
               <tr className="text-[11px] uppercase tracking-wide text-muted-foreground">
                 <th className="py-2 text-left">Linha</th>
@@ -420,7 +420,7 @@ export function IntelligencePanel({ data }: { data: FinDataset }) {
         hint={`Preço sugerido = custo médio ÷ (1 − ${data.reserves.profit_pct}% de lucro) ÷ (1 − ${data.reserves.tax_pct}% de impostos). Ajuste os percentuais no Planejador.`}
       >
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full text-sm [&_th]:px-2 [&_td]:px-2 whitespace-nowrap">
             <thead>
               <tr className="text-[11px] uppercase tracking-wide text-muted-foreground text-left">
                 <th className="py-2">Serviço</th>
