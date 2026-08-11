@@ -6,6 +6,10 @@ import { AlertCircle, CheckCircle2, Clock, Receipt } from "lucide-react";
 import { toast } from "sonner";
 import { Fin01Overview, type F1Charge, type F1Cost } from "@/components/fin01-overview";
 import { FinanceEntryWindow } from "@/components/finance-entry-window";
+import { CashflowPanel, DrePanel, PlannerPanel, IntelligencePanel, type FinDataset } from "@/components/finance/fin-panels";
+import { useAgencyPricing } from "@/components/settings/agency-pricing";
+import { DEFAULT_RESERVES, type ReserveSettings } from "@/lib/finance-analytics";
+import { LayoutDashboard, Waves, FileSpreadsheet, Target, Brain } from "lucide-react";
 
 
 export const Route = createFileRoute("/_authenticated/finance")({
@@ -119,20 +123,128 @@ function FinancePage() {
 
 
 
+  const { data: pricing } = useAgencyPricing();
+  const { data: tasks = [] } = useQuery({
+    queryKey: ["fin-tasks"],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("tasks")
+        .select("id,title,status,task_type_id,assignee_id,project_id,estimated_hours,billing_value,billing_base_value,billing_enabled,created_at")
+        .order("created_at", { ascending: false })
+        .limit(500);
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+  const { data: taskTypes = [] } = useQuery({
+    queryKey: ["fin-task-types"],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any).from("task_types").select("id,name,color,default_price");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+  const { data: members = [] } = useQuery({
+    queryKey: ["fin-members"],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("team_members")
+        .select("id,user_id,name,cost_mode,monthly_salary,monthly_hours,hourly_rate,default_task_rate,task_rate_overrides");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+  const { data: entries = [] } = useQuery({
+    queryKey: ["fin-time-entries"],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any).from("time_entries").select("id,task_id,user_id,duration_seconds");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+  const { data: allCosts = [] } = useQuery({
+    queryKey: ["fin-project-costs"],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("project_costs")
+        .select("id,task_id,project_id,amount,kind,status,occurred_on");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  const reserves: ReserveSettings = {
+    ...DEFAULT_RESERVES,
+    ...(((pricing as any)?.reserves ?? {}) as Partial<ReserveSettings>),
+    ...(pricing ? { profit_pct: (pricing as any)?.reserves?.profit_pct ?? pricing.profit_margin_pct ?? DEFAULT_RESERVES.profit_pct,
+                    tax_pct: (pricing as any)?.reserves?.tax_pct ?? pricing.tax_pct ?? DEFAULT_RESERVES.tax_pct } : {}),
+  };
+
+  const dataset: FinDataset = {
+    charges: charges as any,
+    costs: allCosts as any,
+    tasks: tasks as any,
+    taskTypes: taskTypes as any,
+    members: members as any,
+    entries: entries as any,
+    pricing: (pricing ?? { fixed_costs: [], variable_costs: [], billable_hours_month: 120, profit_margin_pct: 30, tax_pct: 6 }) as any,
+    reserves,
+  };
+
+  const TABS = [
+    { id: "overview", label: "Visão geral", icon: LayoutDashboard, hint: "Resumo do caixa" },
+    { id: "cashflow", label: "Fluxo de caixa", icon: Waves, hint: "Realizado e previsto" },
+    { id: "dre", label: "DRE", icon: FileSpreadsheet, hint: "Resultado gerencial" },
+    { id: "planner", label: "Planejador", icon: Target, hint: "Reservas e metas" },
+    { id: "intelligence", label: "Análise inteligente", icon: Brain, hint: "Custo x preço por serviço" },
+  ];
+
   return (
     <>
-      <div className="p-6">
-        <Fin01Overview
-          charges={charges as unknown as F1Charge[]}
-          costs={costs}
-          clients={clients}
-          projects={projects}
-          onNewEntry={() => setNewOpen(true)}
-          onNewInvoice={() => navigate({ to: "/invoices", search: { new: "1" } })}
-          onExport={() => exportCsv(charges, clients, projects)}
-          onOpenInvoices={() => navigate({ to: "/invoices" })}
-          onOpenEntries={() => setTab("movements")}
-        />
+      <div className="p-6 flex gap-5 items-start">
+        <nav className="w-56 shrink-0 space-y-1 sticky top-6">
+          <div className="px-2 pb-2 text-[11px] uppercase tracking-wide text-muted-foreground">Financeiro</div>
+          {TABS.map(t => {
+            const Icon = t.icon;
+            const active = tab === t.id;
+            return (
+              <button
+                key={t.id}
+                onClick={() => setTab(t.id)}
+                className={`w-full text-left rounded-xl px-3 py-2.5 border transition ${active ? "bg-primary/10 border-primary/40" : "bg-card border-transparent hover:border-border hover:bg-muted/50"}`}
+              >
+                <span className={`flex items-center gap-2 text-sm font-medium ${active ? "text-primary" : ""}`}>
+                  <Icon className="h-4 w-4" />{t.label}
+                </span>
+                <span className="block pl-6 text-[11px] text-muted-foreground">{t.hint}</span>
+              </button>
+            );
+          })}
+        </nav>
+
+        <div className="flex-1 min-w-0">
+          {tab === "overview" || tab === "movements" ? (
+            <Fin01Overview
+              charges={charges as unknown as F1Charge[]}
+              costs={costs}
+              clients={clients}
+              projects={projects}
+              onNewEntry={() => setNewOpen(true)}
+              onNewInvoice={() => navigate({ to: "/invoices", search: { new: "1" } })}
+              onExport={() => exportCsv(charges, clients, projects)}
+              onOpenInvoices={() => navigate({ to: "/invoices" })}
+              onOpenEntries={() => setTab("movements")}
+            />
+          ) : tab === "cashflow" ? (
+            <CashflowPanel data={dataset} />
+          ) : tab === "dre" ? (
+            <DrePanel data={dataset} />
+          ) : tab === "planner" ? (
+            <PlannerPanel data={dataset} />
+          ) : (
+            <IntelligencePanel data={dataset} />
+          )}
+        </div>
       </div>
 
       <FinanceEntryWindow open={newOpen} onOpenChange={setNewOpen} clients={clients} projects={projects} teamMembers={teamMembers} />
