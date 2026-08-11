@@ -58,9 +58,10 @@ export function useTaskTypeStages(taskTypeId: string | null | undefined) {
     queryFn: async () => {
       const { data, error } = await (supabase as any)
         .from("task_type_stages")
-        .select("id,task_type_id,name,\"order\",color,status_group,weight,auto_checklist,auto_deliverables,auto_live,auto_subtasks,start_offset_days,end_offset_days")
+        .select("id,task_type_id,name,\"order\",color,status_group,weight,auto_checklist,auto_deliverables,auto_live,auto_subtasks,start_offset_days,end_offset_days,created_at")
         .eq("task_type_id", taskTypeId!)
-        .order("order");
+        .order("order")
+        .order("created_at");
       if (error) throw error;
       return ((data ?? []) as any[]).map(s => ({
         ...s,

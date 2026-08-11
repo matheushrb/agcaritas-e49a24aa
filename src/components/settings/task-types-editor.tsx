@@ -136,8 +136,9 @@ export function TaskTypesEditor() {
     queryFn: async () => {
       const { data, error } = await (supabase as any)
         .from("task_type_stages")
-        .select("id,task_type_id,name,\"order\",color,status_group,weight,auto_checklist,auto_deliverables,auto_live,auto_subtasks,start_offset_days,end_offset_days")
-        .order("order");
+        .select("id,task_type_id,name,\"order\",color,status_group,weight,auto_checklist,auto_deliverables,auto_live,auto_subtasks,start_offset_days,end_offset_days,created_at")
+        .order("order")
+        .order("created_at");
       if (error) throw error;
       const map: Record<string, TaskTypeStage[]> = {};
       for (const s of (data ?? []) as any[]) {
@@ -413,7 +414,7 @@ function TypeEditorPanel({ type, stages, onDelete, onDuplicate }:{
   const addStage = useMutation({
     mutationFn: async () => {
       const organization_id = await getOrgId();
-      const nextOrder = (stages[stages.length - 1]?.order ?? -1) + 1;
+      const nextOrder = stages.reduce((m, s) => Math.max(m, s.order ?? 0), -1) + 1;
       const { error } = await supabase.from("task_type_stages").insert({
         task_type_id: type.id,
         organization_id,
@@ -465,11 +466,18 @@ function TypeEditorPanel({ type, stages, onDelete, onDuplicate }:{
       const idx = stages.findIndex(s => s.id === id);
       const target = idx + dir;
       if (idx < 0 || target < 0 || target >= stages.length) return;
-      const a = stages[idx], b = stages[target];
-      await supabase.from("task_type_stages").update({ order: b.order }).eq("id", a.id);
-      await supabase.from("task_type_stages").update({ order: a.order }).eq("id", b.id);
+      /* Reordena a lista inteira e regrava índices sequenciais — evita empates de "order". */
+      const next = [...stages];
+      const [moved] = next.splice(idx, 1);
+      next.splice(target, 0, moved);
+      for (let i = 0; i < next.length; i++) {
+        if (next[i].order === i) continue;
+        const { error } = await supabase.from("task_type_stages").update({ order: i }).eq("id", next[i].id);
+        if (error) throw error;
+      }
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["task-type-stages"] }),
+    onError: (e: Error) => toast.error(e.message),
   });
 
   return (
