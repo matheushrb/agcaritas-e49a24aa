@@ -313,11 +313,55 @@ export function TaskWindow({
       setCurrentStageId(s.stageId);
       const eq = STAGES.find(x => x.status === s.status);
       if (eq) setStage(eq.id);
+      clearOtherStageAutomations(s.stageId);
       applyStageAutomations(s.stageId);
     } else if (s.stage) {
       setStage(s.stage);
       setCurrentStageId(null);
+      clearOtherStageAutomations(null);
     }
+  };
+
+  const norm = (v: any) => String(v ?? "").trim().toLowerCase();
+
+  /**
+   * Remove os itens que foram gerados automaticamente por OUTRAS etapas.
+   * Só some o que corresponde à configuração de automação de outra etapa —
+   * itens criados à mão pelo usuário permanecem.
+   */
+  const clearOtherStageAutomations = (keepStageId: string | null) => {
+    const others = (typeStages as any[]).filter(s => s.id !== keepStageId);
+    if (!others.length) return;
+    const keep: any = keepStageId ? (typeStages as any[]).find(s => s.id === keepStageId) : null;
+
+    const setOf = (rows: any[], pick: (x: any) => string) =>
+      new Set(rows.flatMap((s: any) => (Array.isArray(pick(s) as any) ? [] : [])) as string[]);
+    void setOf;
+
+    const gather = (key: string, pick: (item: any) => string) => {
+      const drop = new Set<string>();
+      for (const s of others) for (const it of (Array.isArray(s[key]) ? s[key] : [])) drop.add(pick(it));
+      const kept = new Set<string>();
+      if (keep) for (const it of (Array.isArray(keep[key]) ? keep[key] : [])) kept.add(pick(it));
+      return (v: string) => drop.has(v) && !kept.has(v);
+    };
+
+    const dropChk = gather("auto_checklist", (t: any) => norm(t));
+    const dropDel = gather("auto_deliverables", (d: any) => norm(d?.label || d?.platform));
+    const dropLive = gather("auto_live", (l: any) => norm(l?.title));
+    const dropSub = gather("auto_subtasks", (s: any) => norm(s?.title));
+
+    setChecklist(prev => prev.filter(c => !dropChk(norm(c.title))));
+    setDeliverables(prev => prev.filter(d => d.invoiced || !dropDel(norm(d.platform))));
+    setLiveItems(prev => prev.filter(l => !dropLive(norm(l.title))));
+    setSubtasks(prev => {
+      const removed = prev.filter(s => dropSub(norm(s.title)));
+      if (removed.length) {
+        const ids = removed.map(s => s.rowId).filter(Boolean) as string[];
+        if (ids.length) setRemovedSubtaskIds(cur => [...cur, ...ids]);
+      }
+      return prev.filter(s => !dropSub(norm(s.title)));
+    });
   };
 
   /** Cria checklist, entregáveis e transmissões configurados no modelo da etapa. */
