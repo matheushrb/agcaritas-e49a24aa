@@ -1302,10 +1302,23 @@ export function TaskWindow({
                         <td>
                           <button type="button"
                             className={`cw-deliver-btn${d.delivered ? " is-done" : late ? " is-late" : ""}`}
-                            onClick={() => setDeliverables(list => list.map(x => x.id === d.id ? { ...x, delivered: !x.delivered } : x))}>
+                            onClick={() => setDeliverables(list => list.map(x => x.id === d.id ? {
+                              ...x,
+                              delivered: !x.delivered,
+                              delivered_at: !x.delivered ? (x.delivered_at || new Date().toISOString().slice(0, 10)) : null,
+                            } : x))}>
                             {d.delivered ? <><Check size={12} /> Entregue</> : late ? "Atrasado" : "Marcar entregue"}
                           </button>
                         </td>
+                        <td>
+                          {d.delivered ? (
+                            <CwDate compact value={d.delivered_at ?? ""} placeholder="Data da entrega"
+                              onChange={v => setDeliverables(list => list.map(x => x.id === d.id ? { ...x, delivered_at: v || null } : x))} />
+                          ) : (
+                            <span className="cw-mut" style={{ fontSize: 11 }}>—</span>
+                          )}
+                        </td>
+
                         <td>
                           <button type="button" className="cw-row-icon" onClick={() => setDeliverables(list => list.filter(x => x.id !== d.id))}>
                             <Trash2 size={13} />
