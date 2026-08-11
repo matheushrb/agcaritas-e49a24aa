@@ -204,6 +204,19 @@ function ProjectDetail() {
     },
   });
 
+  const { data: filesCount = 0 } = useQuery<number>({
+    queryKey: ["project-files-count", projectId],
+    queryFn: async () => {
+      const { count, error } = await (supabase as any)
+        .from("project_files")
+        .select("id", { count: "exact", head: true })
+        .eq("project_id", projectId);
+      if (error) return 0;
+      return count ?? 0;
+    },
+  });
+
+
   // Base tasks from the project's project_type
   const { data: projectTypeRow } = useQuery({
     queryKey: ["project-type-row", project?.project_type],
