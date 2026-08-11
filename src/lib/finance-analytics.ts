@@ -93,6 +93,8 @@ export type ReserveSettings = {
   tax_pct: number;            // % impostos
   prolabore_pct: number;      // % pró-labore
   investment_pct: number;     // % capital de investimento
+  prolabore_monthly: number;  // valor fixo de pró-labore por mês (R$); 0 = usar média dos lançamentos
+  include_payroll: boolean;   // somar a folha da equipe interna ao custo fixo
 };
 
 export const DEFAULT_RESERVES: ReserveSettings = {
@@ -102,6 +104,8 @@ export const DEFAULT_RESERVES: ReserveSettings = {
   tax_pct: 6,
   prolabore_pct: 20,
   investment_pct: 10,
+  prolabore_monthly: 0,
+  include_payroll: true,
 };
 
 export const num = (v: unknown) => Number(v ?? 0) || 0;
@@ -416,6 +420,56 @@ export function buildCashflow(input: {
     balance += net;
     return { key: k, label: monthLabel(k), inflow, outflow, net, balance, projected: k > nowKey };
   });
+}
+
+/* --------- base de custo mensal da agência --------- */
+export type CostBase = {
+  pricingFixed: number;    // custos fixos cadastrados na precificação
+  payroll: number;         // folha da equipe interna
+  prolabore: number;       // pró-labore mensal
+  variableAvg: number;     // média mensal de custos variáveis/mídia/projetos
+  taxPct: number;
+  total: number;
+};
+
+/** Custo mensal para operar a agência, independente de já existirem lançamentos no mês. */
+export function computeCostBase(input: {
+  pricingFixed: number;
+  pricingVariable: number;
+  members: FinMember[];
+  charges: FinCharge[];
+  costs: FinProjectCost[];
+  reserves: ReserveSettings;
+  monthsForAverage?: number;
+}): CostBase {
+  const { pricingFixed, pricingVariable, members, charges, costs, reserves } = input;
+  const n = Math.max(1, input.monthsForAverage ?? 3);
+  const keys = lastMonths(n);
+  const inWindow = (d?: string | null) => !!d && keys.includes(monthKey(d));
+
+  const payroll = reserves.include_payroll
+    ? members.filter(m => (m.cost_mode ?? "internal_fixed") === "internal_fixed")
+        .reduce((a, m) => a + num(m.monthly_salary), 0)
+    : 0;
+
+  const proFromCharges = charges
+    .filter(c => c.status !== "cancelled" && accNature(c) === "pro_labore" && inWindow(c.competence_month ?? c.paid_at ?? c.due_date))
+    .reduce((a, c) => a + Math.abs(num(c.amount)), 0) / n;
+  const prolabore = reserves.prolabore_monthly > 0 ? reserves.prolabore_monthly : proFromCharges;
+
+  const varFromCharges = charges
+    .filter(c => c.status !== "cancelled" && ["custo_variavel", "midia_paga", "reembolso_pago"].includes(accNature(c)) && inWindow(c.competence_month ?? c.paid_at ?? c.due_date))
+    .reduce((a, c) => a + Math.abs(num(c.amount)), 0) / n;
+  const varFromCosts = costs
+    .filter(c => c.status !== "cancelled" && inWindow(c.occurred_on))
+    .reduce((a, c) => a + num(c.amount), 0) / n;
+  const variableAvg = Math.max(pricingVariable, varFromCharges + varFromCosts);
+
+  return {
+    pricingFixed, payroll, prolabore, variableAvg,
+    taxPct: reserves.tax_pct,
+    total: pricingFixed + payroll + prolabore + variableAvg,
+  };
 }
 
 /* --------- planejador de reservas --------- */
