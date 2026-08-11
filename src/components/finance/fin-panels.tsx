@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import {
   analyzeByType, brl, brl0, buildCashflow, buildDre, computeTaskCosts, lastMonths, monthKey,
-  nextMonths, num, pct, planReserves, computeBreakEven, DEFAULT_RESERVES,
+  nextMonths, num, pct, planReserves, computeBreakEven, computeCostBase, isReceitaOperacional, DEFAULT_RESERVES,
   type FinCharge, type FinMember, type FinProjectCost, type FinTask, type FinTaskType,
   type FinTimeEntry, type ReserveSettings, type TypeAnalysis,
 } from "@/lib/finance-analytics";
@@ -259,8 +259,17 @@ export function PlannerPanel({ data }: { data: FinDataset }) {
     accumulatedEmergency: Math.max(0, accumulated) * (state.emergency_pct / 100),
   });
 
+  const costBase = useMemo(() => computeCostBase({
+    pricingFixed: rate.fixed,
+    pricingVariable: rate.variable,
+    members: data.members,
+    charges: data.charges,
+    costs: data.costs,
+    reserves: state,
+  }), [rate.fixed, rate.variable, data.members, data.charges, data.costs, state]);
+
   const be = computeBreakEven({
-    operatingCost: rate.totalMonthly + monthlyDirect,
+    operatingCost: costBase.total,
     taxPct: state.tax_pct,
     profitPct: state.profit_pct,
     emergencyPct: state.emergency_pct,
@@ -320,6 +329,23 @@ export function PlannerPanel({ data }: { data: FinDataset }) {
               </div>
             ))}
           </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="rounded-xl border p-3">
+              <div className="text-xs font-medium">Pró-labore mensal (R$)</div>
+              <div className="text-[11px] text-muted-foreground mb-2">Valor fixo dos sócios. Entra como custo fixo no ponto de equilíbrio. Deixe 0 para usar a média dos lançamentos.</div>
+              <Input type="number" min={0} className="h-9" value={state.prolabore_monthly}
+                onChange={e => setState(s => ({ ...s, prolabore_monthly: Number(e.target.value) || 0 }))} />
+            </div>
+            <div className="rounded-xl border p-3">
+              <div className="text-xs font-medium">Folha da equipe interna</div>
+              <div className="text-[11px] text-muted-foreground mb-2">Somar os salários cadastrados no RH ao custo fixo. Desligue se já lançou os salários na precificação.</div>
+              <label className="flex items-center gap-2 text-sm">
+                <input type="checkbox" checked={state.include_payroll}
+                  onChange={e => setState(s => ({ ...s, include_payroll: e.target.checked }))} />
+                Incluir folha ({brl0(costBase.payroll)})
+              </label>
+            </div>
+          </div>
           <div className="flex justify-end">
             <Button onClick={() => save.mutate()} disabled={save.isPending}>Salvar parâmetros</Button>
           </div>
@@ -358,6 +384,22 @@ export function PlannerPanel({ data }: { data: FinDataset }) {
           <div className="text-[11px] text-muted-foreground">
             Faturado no mês: {brl0(monthlyRevenue)} · {pct(be.targetRevenue > 0 ? (monthlyRevenue / be.targetRevenue) * 100 : 0)} da meta
           </div>
+          <div className="grid gap-2 sm:grid-cols-4 pt-1">
+            {[
+              { l: "Custos fixos (precificação)", v: costBase.pricingFixed },
+              { l: "Folha da equipe interna", v: costBase.payroll },
+              { l: "Pró-labore", v: costBase.prolabore },
+              { l: "Variáveis (média 3 meses)", v: costBase.variableAvg },
+            ].map(x => (
+              <div key={x.l} className="rounded-lg border px-3 py-2">
+                <div className="text-[11px] text-muted-foreground">{x.l}</div>
+                <div className="text-sm font-semibold mt-0.5">{brl0(x.v)}</div>
+              </div>
+            ))}
+          </div>
+          <p className="text-[11px] text-muted-foreground">
+            O custo é montado pela estrutura cadastrada, não só pelos lançamentos do mês — por isso a meta existe mesmo em um mês ainda sem movimento.
+          </p>
         </Section>
       </div>
 
@@ -541,3 +583,76 @@ function TypeRow({ t, rows, open, onToggle }: { t: TypeAnalysis; rows: ReturnTyp
 }
 
 export const DEFAULT_RESERVE_SETTINGS = DEFAULT_RESERVES;
+
+
+/* ================= Meta do mês (banner da visão geral) ================= */
+export function MonthGoalBanner({ data, onOpenPlanner }: { data: FinDataset; onOpenPlanner?: () => void }) {
+  const rate = computeAgencyRate(data.pricing);
+  const thisMonth = monthKey(new Date());
+
+  const costBase = useMemo(() => computeCostBase({
+    pricingFixed: rate.fixed,
+    pricingVariable: rate.variable,
+    members: data.members,
+    charges: data.charges,
+    costs: data.costs,
+    reserves: data.reserves,
+  }), [rate.fixed, rate.variable, data.members, data.charges, data.costs, data.reserves]);
+
+  const be = computeBreakEven({
+    operatingCost: costBase.total,
+    taxPct: data.reserves.tax_pct,
+    profitPct: data.reserves.profit_pct,
+    emergencyPct: data.reserves.emergency_pct,
+    investmentPct: data.reserves.investment_pct,
+  });
+
+  const billed = useMemo(
+    () => data.charges
+      .filter(c => c.status !== "cancelled" && c.status !== "draft" && isReceitaOperacional(c))
+      .filter(c => monthKey(c.competence_month ?? c.paid_at ?? c.due_date ?? new Date().toISOString()) === thisMonth)
+      .reduce((a, c) => a + Math.abs(num(c.amount)), 0),
+    [data.charges, thisMonth],
+  );
+
+  const bePct = be.breakEven > 0 ? (billed / be.breakEven) * 100 : 0;
+  const goalPct = be.targetRevenue > 0 ? (billed / be.targetRevenue) * 100 : 0;
+  const missing = Math.max(0, be.breakEven - billed);
+  const missingGoal = Math.max(0, be.targetRevenue - billed);
+
+  return (
+    <Card className="rounded-2xl p-5 mb-4 space-y-3">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <div className="flex items-center gap-2 text-sm font-semibold"><Target className="h-4 w-4 text-primary" />Quanto preciso faturar neste mês</div>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Custo para manter a agência de pé: {brl0(costBase.total)} por mês (fixos {brl0(costBase.pricingFixed)} · folha {brl0(costBase.payroll)} · pró-labore {brl0(costBase.prolabore)} · variáveis {brl0(costBase.variableAvg)}).
+          </p>
+        </div>
+        {onOpenPlanner && (
+          <button onClick={onOpenPlanner} className="h-8 shrink-0 rounded-lg border px-3 text-xs hover:bg-muted">Ajustar parâmetros</button>
+        )}
+      </div>
+
+      <div className="grid gap-3 sm:grid-cols-3">
+        <Kpi label="Faturado no mês" value={brl0(billed)} sub="Receita operacional na competência" />
+        <Kpi label="Ponto de equilíbrio" value={brl0(be.breakEven)} tone={billed >= be.breakEven ? "good" : "bad"}
+          sub={billed >= be.breakEven ? "Contas do mês cobertas" : `Faltam ${brl0(missing)}`} />
+        <Kpi label="Meta saudável" value={brl0(be.targetRevenue)} tone={billed >= be.targetRevenue ? "good" : "warn"}
+          sub={billed >= be.targetRevenue ? "Lucro e reservas garantidos" : `Faltam ${brl0(missingGoal)}`} />
+      </div>
+
+      <div className="space-y-1">
+        <div className="relative h-2.5 w-full overflow-hidden rounded-full bg-muted">
+          <div className="absolute inset-y-0 left-0 bg-primary" style={{ width: `${Math.min(100, Math.max(0, goalPct))}%` }} />
+          <div className="absolute inset-y-0 w-0.5 bg-foreground/50"
+            style={{ left: `${be.targetRevenue > 0 ? Math.min(100, (be.breakEven / be.targetRevenue) * 100) : 0}%` }} />
+        </div>
+        <div className="flex justify-between text-[11px] text-muted-foreground">
+          <span>{pct(bePct)} do ponto de equilíbrio</span>
+          <span>{pct(goalPct)} da meta saudável</span>
+        </div>
+      </div>
+    </Card>
+  );
+}
