@@ -158,7 +158,7 @@ function ProjectDetail() {
     enabled: !!project?.client_id,
     queryFn: async () => {
       if (!project?.client_id) return null;
-      const { data } = await supabase.from("clients").select("id,name,trade_name").eq("id", project.client_id).maybeSingle();
+      const { data } = await supabase.from("clients").select("id,name,trade_name,logo_url").eq("id", project.client_id).maybeSingle();
       return (data as Client) ?? null;
     },
   });
@@ -506,6 +506,7 @@ function ProjectDetail() {
           startDate={project.start_date}
           tags={[projectTypeRow?.name ?? null, project.billing_model, project.urgency ? `Urgência ${project.urgency}` : null].filter(Boolean) as string[]}
           clientName={client ? (client.trade_name || client.name) : "Interno"}
+          clientLogo={(client as any)?.logo_url ?? null}
           clientSince={project.created_at ? fmt(project.created_at) : null}
           tasks={tasks as never}
           people={people}

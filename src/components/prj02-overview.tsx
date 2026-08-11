@@ -1,3 +1,4 @@
+import { ClientLogo } from "@/components/client-logo";
 import { Link } from "@tanstack/react-router";
 import { ProjectBriefingCard } from "@/components/project-briefing-card";
 
@@ -54,7 +55,7 @@ function Donut({ segments, center, caption }: {
 
 export function Prj02Overview({
   projectId, description, projectType, category, budget, startDate, tags,
-  clientName, clientSince, tasks, people, ownerName, ownerRole,
+  clientName, clientLogo, clientSince, tasks, people, ownerName, ownerRole,
   stageLabel, stageSince, revenue, invoiced,
 }: {
   projectId: string;
@@ -65,6 +66,7 @@ export function Prj02Overview({
   startDate: string | null;
   tags: string[];
   clientName: string;
+  clientLogo?: string | null;
   clientSince: string | null;
   tasks: P2Task[];
   people: P2Person[];
@@ -127,7 +129,7 @@ export function Prj02Overview({
       <section className="p2-card">
         <div className="p2-card-h"><span className="p2-card-t">2. Cliente e contatos principais</span></div>
         <div className="p2-person">
-          <div className="av" style={{ background: "#0E9F6E", color: "#fff", borderRadius: 8 }}>{p2Initials(clientName)}</div>
+          {clientLogo ? <ClientLogo value={clientLogo} name={clientName} size={36} rounded="rounded-lg" /> : <div className="av" style={{ background: "#0E9F6E", color: "#fff", borderRadius: 8 }}>{p2Initials(clientName)}</div>}
           <div>
             <div className="nm">{clientName}</div>
             <div className="rl">{clientSince ? `Cliente desde ${clientSince}` : "Cliente"}</div>

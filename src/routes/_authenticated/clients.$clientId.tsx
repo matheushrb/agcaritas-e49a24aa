@@ -17,6 +17,7 @@ import {
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { NewClientDialog } from "./clients";
+import { ClientLogo } from "@/components/client-logo";
 
 
 export const Route = createFileRoute("/_authenticated/clients/$clientId")({
@@ -150,8 +151,6 @@ function ClientDetailPage() {
     </Card>
   );
 
-  const initials = client.name.split(" ").map(w => w[0]).slice(0, 2).join("").toUpperCase();
-
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -160,9 +159,7 @@ function ClientDetailPage() {
           <Link to="/clients" className="grid h-9 w-9 place-items-center rounded-full border border-border hover:bg-muted">
             <ChevronLeft className="h-4 w-4" />
           </Link>
-          <div className="grid h-14 w-14 place-items-center rounded-2xl bg-primary/10 text-primary font-display text-lg font-bold shrink-0">
-            {initials}
-          </div>
+          <ClientLogo value={(client as any).logo_url} name={client.name} size={56} rounded="rounded-2xl" />
           <div className="min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
               <h1 className="font-display text-2xl font-bold tracking-tight truncate">{client.name}</h1>

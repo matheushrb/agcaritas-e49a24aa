@@ -32,6 +32,7 @@ import {
   type ProjectPreviewStatus,
 } from "@/components/project-preview-sheet";
 import { supabase } from "@/integrations/supabase/client";
+import { ClientLogo } from "@/components/client-logo";
 import { cn } from "@/lib/utils";
 import { Prj08Table, Prj08Preview } from "@/components/prj08-list";
 import "@/prj01.css";
@@ -133,7 +134,7 @@ function ProjectsPage() {
   const { data: clients = [] } = useQuery<Client[]>({
     queryKey: ["clients-min"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("clients").select("id,name").order("name");
+      const { data, error } = await supabase.from("clients").select("id,name,logo_url").order("name");
       if (error) throw error;
       return (data ?? []) as Client[];
     },
@@ -236,6 +237,7 @@ function ProjectsPage() {
   }, [rawMembersByProject, projects, ownerProfiles]);
 
   const clientById = useMemo(() => Object.fromEntries(clients.map((c) => [c.id, c.name])), [clients]);
+  const clientLogoById = useMemo(() => Object.fromEntries(clients.map((c) => [c.id, (c as any).logo_url ?? null])), [clients]);
 
   const allMembers = useMemo(() => {
     const map = new Map<string, Member>();
@@ -253,6 +255,7 @@ function ProjectsPage() {
           description: project.description,
           status: project.status,
           clientName: project.client_id ? clientById[project.client_id] ?? "Cliente" : null,
+          clientLogo: project.client_id ? clientLogoById[project.client_id] ?? null : null,
           startDate: project.start_date,
           endDate: project.end_date,
           projectType: projectTypeName(project.project_type),
@@ -268,7 +271,7 @@ function ProjectsPage() {
           archivedAt: project.archived_at ?? null,
         } as ProjectPreviewData & { doneTasks: number; archivedAt: string | null };
       }),
-    [projects, tasksAgg, clientById, projectTypes],
+    [projects, tasksAgg, clientById, clientLogoById, projectTypes],
   );
 
   const filtered = useMemo(() => {
@@ -670,7 +673,11 @@ function ProjectCard({
       </div>
       <div className="card-row1">
         <div className="client-tags">
-          <User className="person-ic" />
+          {project.clientLogo ? (
+            <ClientLogo value={project.clientLogo} name={project.clientName} size={20} rounded="rounded-md" />
+          ) : (
+            <User className="person-ic" />
+          )}
           <span className="client-name">{project.clientName || "Interno"}</span>
           {typeTag && <span className="tag">{typeTag}</span>}
         </div>
@@ -761,7 +768,10 @@ function ProjectKanban({
                   className="w-full rounded-lg border border-border bg-background p-3 text-left transition hover:border-[#1769F6]/40"
                 >
                   <p className="truncate text-[13px] font-medium">{project.name}</p>
-                  <p className="mt-1 truncate text-[11.5px] text-muted-foreground">{project.clientName || "Interno"}</p>
+                  <div className="mt-1 flex items-center gap-1.5">
+                    <ClientLogo value={project.clientLogo} name={project.clientName} size={16} rounded="rounded" />
+                    <p className="truncate text-[11.5px] text-muted-foreground">{project.clientName || "Interno"}</p>
+                  </div>
                   <p className="mt-2 text-[11.5px] font-semibold">{formatMoney(project.revenue)}</p>
                 </button>
               ))}
