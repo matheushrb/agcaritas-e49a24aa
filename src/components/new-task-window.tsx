@@ -1269,7 +1269,7 @@ export function TaskWindow({
                   </thead>
                   <tbody>
                     {deliverables.length === 0 && (
-                      <tr><td colSpan={7} className="cw-mut" style={{ textAlign: "center" }}>Nenhum entregável adicionado.</td></tr>
+                      <tr><td colSpan={8} className="cw-mut" style={{ textAlign: "center" }}>Nenhum entregável adicionado.</td></tr>
                     )}
                     {deliverables.map(d => {
                       const late = !d.delivered && !!d.due_date && d.due_date < new Date().toISOString().slice(0, 10);
