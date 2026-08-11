@@ -551,9 +551,18 @@ export function TaskWindow({
         billing_value: d.billing_value ?? null,
         delivered: !!d.delivered,
         due_date: d.due_date ?? null,
+        delivered_at: d.delivered_at ?? null,
         invoiced: !!d.invoiced,
       })),
     );
+    setAttachments(
+      (Array.isArray((existing as any).attachments) ? (existing as any).attachments : []).map((a: any) => ({
+        id: a.id ?? uid(), path: a.path ?? "", name: a.name ?? "arquivo",
+        type: a.type ?? "", size: a.size ?? 0, is_image: !!a.is_image,
+      })),
+    );
+    setCoverPath((existing as any).cover_url ?? null);
+
     setChecklist(
       (Array.isArray(existing.subtasks) ? existing.subtasks : []).map((s: any) => ({
         id: s.id ?? uid(), title: s.title ?? "", done: !!s.done,
