@@ -462,23 +462,62 @@ function TypeEditorPanel({ type, stages, onDelete, onDuplicate }:{
   });
 
   const moveStage = useMutation({
-    mutationFn: async ({ id, dir }: { id: string; dir: -1 | 1 }) => {
-      const idx = stages.findIndex(s => s.id === id);
-      const target = idx + dir;
-      if (idx < 0 || target < 0 || target >= stages.length) return;
-      /* Reordena a lista inteira e regrava índices sequenciais — evita empates de "order". */
-      const next = [...stages];
-      const [moved] = next.splice(idx, 1);
-      next.splice(target, 0, moved);
-      for (let i = 0; i < next.length; i++) {
-        if (next[i].order === i) continue;
-        const { error } = await supabase.from("task_type_stages").update({ order: i }).eq("id", next[i].id);
+    mutationFn: async ({ orderedIds }: { orderedIds: string[] }) => {
+      /*
+       * Salva a sequência inteira em duas fases. Os valores temporários evitam
+       * empates durante a troca e impedem que uma atualização parcial reapareça
+       * quando a consulta for recarregada.
+       */
+      for (let i = 0; i < orderedIds.length; i++) {
+        const { error } = await supabase
+          .from("task_type_stages")
+          .update({ order: -(i + 1) })
+          .eq("id", orderedIds[i]);
+        if (error) throw error;
+      }
+      for (let i = 0; i < orderedIds.length; i++) {
+        const { error } = await supabase
+          .from("task_type_stages")
+          .update({ order: i })
+          .eq("id", orderedIds[i]);
         if (error) throw error;
       }
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["task-type-stages"] }),
-    onError: (e: Error) => toast.error(e.message),
+    onMutate: async ({ orderedIds }) => {
+      await qc.cancelQueries({ queryKey: ["task-type-stages"] });
+      const previous = qc.getQueryData<Record<string, TaskTypeStage[]>>(["task-type-stages"]);
+      qc.setQueryData<Record<string, TaskTypeStage[]>>(["task-type-stages"], current => {
+        if (!current) return current;
+        const byId = new Map((current[type.id] ?? []).map(stage => [stage.id, stage]));
+        const reordered = orderedIds.flatMap((id, order) => {
+          const stage = byId.get(id);
+          return stage ? [{ ...stage, order }] : [];
+        });
+        return { ...current, [type.id]: reordered };
+      });
+      return { previous };
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["task-type-stages"] });
+      toast.success("Ordem das etapas salva");
+    },
+    onError: (e: Error, _variables, context) => {
+      if (context?.previous) qc.setQueryData(["task-type-stages"], context.previous);
+      toast.error(e.message);
+    },
   });
+
+  const requestStageMove = (id: string, dir: -1 | 1) => {
+    if (moveStage.isPending) return;
+    const idx = stages.findIndex(stage => stage.id === id);
+    const target = idx + dir;
+    if (idx < 0 || target < 0 || target >= stages.length) return;
+    const next = [...stages];
+    const moved = next.splice(idx, 1)[0];
+    if (!moved) return;
+    next.splice(target, 0, moved);
+    moveStage.mutate({ orderedIds: next.map(stage => stage.id) });
+  };
 
   return (
     <Card className="rounded-2xl p-5 space-y-5">
@@ -674,7 +713,8 @@ function TypeEditorPanel({ type, stages, onDelete, onDuplicate }:{
                 stage={s}
                 canUp={i > 0}
                 canDown={i < stages.length - 1}
-                onMove={dir => moveStage.mutate({ id: s.id, dir })}
+                onMove={dir => requestStageMove(s.id, dir)}
+                movePending={moveStage.isPending}
                 onPatch={patch => updateStage.mutate({ id: s.id, patch })}
                 onDelete={() => deleteStage.mutate(s.id)}
               />
@@ -686,9 +726,9 @@ function TypeEditorPanel({ type, stages, onDelete, onDuplicate }:{
   );
 }
 
-function StageRow({ stage, canUp, canDown, onMove, onPatch, onDelete }:{
+function StageRow({ stage, canUp, canDown, movePending, onMove, onPatch, onDelete }:{
   stage: TaskTypeStage;
-  canUp: boolean; canDown: boolean;
+  canUp: boolean; canDown: boolean; movePending: boolean;
   onMove: (dir: -1 | 1) => void;
   onPatch: (patch: Partial<TaskTypeStage>) => void;
   onDelete: () => void;
@@ -785,10 +825,10 @@ function StageRow({ stage, canUp, canDown, onMove, onPatch, onDelete }:{
       />
       <div className="flex items-center gap-2 px-3 py-2">
         <div className="flex flex-col">
-          <button className="text-muted-foreground hover:text-foreground disabled:opacity-30" disabled={!canUp} onClick={() => onMove(-1)} title="Mover para cima">
+          <button className="text-muted-foreground hover:text-foreground disabled:opacity-30" disabled={!canUp || movePending} onClick={() => onMove(-1)} title="Mover para cima">
             <GripVertical className="h-3 w-3 rotate-90" />
           </button>
-          <button className="text-muted-foreground hover:text-foreground disabled:opacity-30" disabled={!canDown} onClick={() => onMove(1)} title="Mover para baixo">
+          <button className="text-muted-foreground hover:text-foreground disabled:opacity-30" disabled={!canDown || movePending} onClick={() => onMove(1)} title="Mover para baixo">
             <GripVertical className="h-3 w-3 -rotate-90" />
           </button>
         </div>
