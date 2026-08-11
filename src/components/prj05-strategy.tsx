@@ -8,6 +8,9 @@ import {
   ChevronLeft, ChevronRight, Plus, Trash2,
 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { BriefingWindow } from "./strategy/briefing-window";
+import { SwotWindow, PersonasWindow, CompetitorsWindow, KpisWindow, StepsWindow } from "./strategy/strategy-windows";
+import type { BriefingData } from "@/lib/briefing";
 import "@/prj05.css";
 
 const sb = supabase as any;
