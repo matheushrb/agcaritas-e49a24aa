@@ -14,6 +14,7 @@ export type PersonaAnswers = {
   goal: "reconhecimento" | "leads" | "vendas" | "retencao";
   channels: string[];
   barrier: "preco" | "confianca" | "prazo" | "complexidade" | "concorrencia";
+  gender: "mulher" | "homem" | "equilibrado" | "indefinido";
 };
 
 export const emptyAnswers: PersonaAnswers = {
