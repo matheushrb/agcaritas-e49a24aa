@@ -27,6 +27,7 @@ export const emptyAnswers: PersonaAnswers = {
   goal: "leads",
   channels: ["instagram"],
   barrier: "confianca",
+  gender: "equilibrado",
 };
 
 export const DECIDER_OPTIONS = [
