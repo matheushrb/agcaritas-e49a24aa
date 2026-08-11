@@ -274,10 +274,11 @@ export function PersonasWindow({ open, onClose, projectId, projectName }: {
       open={open} onClose={onClose} icon={Users} title="Personas" subtitle={projectName} size="full"
       headerRight={
         <>
-          <button type="button" className="swin-btn" onClick={() => { setAiOpen(o => !o); }}>
-            <Sparkles /> {aiOpen ? "Fechar assistente" : "Gerar com IA"}
+          <button type="button" className="swin-btn" onClick={() => setWizOpen(o => !o)}>
+            <Sparkles /> {wizOpen ? "Fechar assistente" : "Assistente de personas"}
           </button>
-          <button type="button" className="swin-btn" onClick={() => { setSelected(null); setForm({ ...emptyPersona }); setAiOpen(false); }}>
+          <button type="button" className="swin-btn" onClick={() => { setSelected(null); setForm({ ...emptyPersona }); setWizOpen(false); }}>
+
             <Plus /> Nova persona
           </button>
         </>
