@@ -901,7 +901,7 @@ export function TaskWindow({
       return { id: data.id as string, updated: [] as string[] };
     },
     onSuccess: ({ id, updated }) => {
-      qc.invalidateQueries({ queryKey: ["tasks"] });
+      qc.invalidateQueries({ queryKey: ["tasks"] }); qc.invalidateQueries({ queryKey: ["project-tasks"] });
       qc.invalidateQueries({ queryKey: ["task-subtasks", taskId] });
       qc.invalidateQueries({ queryKey: ["task-window", taskId] });
       qc.invalidateQueries({ queryKey: ["charges"] });
@@ -924,7 +924,7 @@ export function TaskWindow({
       if (error) throw error;
     },
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["tasks"] });
+      qc.invalidateQueries({ queryKey: ["tasks"] }); qc.invalidateQueries({ queryKey: ["project-tasks"] });
       toast.success("Tarefa excluída");
       close(false);
     },
