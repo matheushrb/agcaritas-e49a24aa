@@ -40,6 +40,51 @@
   --shadow: 0 10px 30px rgba(0, 0, 0, 0.22);
 }
 
+/* Portais (popover / dropdown / select / dialog) são renderizados fora de
+   .caritas-ui, então os tokens de texto voltavam ao padrão shadcn (--muted
+   é uma cor de FUNDO clara) e o conteúdo ficava branco no branco.
+   Reaplicamos a paleta Caritas nos portais, mantendo --color-* do Tailwind. */
+[data-radix-popper-content-wrapper],
+[data-radix-portal],
+body > [role="dialog"],
+body > [data-state][role="alertdialog"] {
+  --bg: #f5f6f7;
+  --surface: #ffffff;
+  --surface-2: #fafbfc;
+  --text: #1c2026;
+  --muted: #66707a;
+  --border: #dde1e6;
+  --primary: #1769f6;
+  --primary-2: #3659e3;
+  --primary-soft: #eef4ff;
+  --success: #2fad62;
+  --warning: #e79015;
+  --danger: #e4473a;
+  --purple: #7e57d8;
+  --teal: #14a9a0;
+  --shadow: 0 1px 5px rgba(19, 31, 55, 0.022);
+  /* preserva as utilitárias do Tailwind (bg-muted, etc.) */
+  --color-muted: #eef0f2;
+  --color-muted-foreground: #6b7280;
+}
+
+.dark [data-radix-popper-content-wrapper],
+.dark [data-radix-portal],
+.dark body > [role="dialog"],
+body.dark > [role="dialog"] {
+  --bg: #05080c;
+  --surface: #091019;
+  --surface-2: #0c141e;
+  --text: #f6f8fa;
+  --muted: #98a2ae;
+  --border: #202a36;
+  --primary-2: #7e95f5;
+  --primary-soft: #101b3b;
+  --shadow: 0 10px 30px rgba(0, 0, 0, 0.22);
+  --color-muted: #17202e;
+  --color-muted-foreground: #98a4b3;
+}
+
 .caritas-ui * { box-sizing: border-box; }
 .caritas-ui button { font: inherit; }
 .caritas-ui h1,
@@ -48,8 +93,8 @@
 .caritas-ui h4 { font-family: inherit; letter-spacing: 0; }
 
 /* SIDEBAR — bloco fixo à esquerda (expansível / colapsável) */
-.caritas-ui { --cv-sb: 72px; }
-.caritas-ui[data-nav="expanded"] { --cv-sb: 232px; }
+.caritas-ui { --cv-sb: 78px; }
+.caritas-ui[data-nav="expanded"] { --cv-sb: 240px; }
 
 .cv-sidebar {
   position: fixed;
@@ -66,9 +111,9 @@
   flex-direction: column;
   align-items: stretch;
   color: #fff;
-  padding: 10px 10px 12px;
   overflow-x: hidden;
   transition: width .18s ease;
+  padding: 16px 12px 18px;
 }
 .cv-sidebar-logo {
   font-size: 28px; height: 55px; display: flex; align-items: center;
@@ -89,7 +134,7 @@
 .cv-sb-toggle:hover { background: rgba(255, 255, 255, 0.28); }
 .cv-sb-toggle svg { width: 14px; height: 14px; }
 
-.cv-sidebar-nav { display: flex; flex-direction: column; gap: 3px; width: 100%; overflow-y: auto; }
+.cv-sidebar-nav { display: flex; flex-direction: column; gap: 5px; width: 100%; overflow-y: auto; }
 .cv-sidebar-nav::-webkit-scrollbar { width: 0; }
 .cv-sb-group {
   font-size: 9.5px; letter-spacing: .16em; text-transform: uppercase; font-weight: 700;
@@ -131,6 +176,7 @@
 .cv-shell {
   margin-left: var(--cv-sb);
   width: calc(100vw - var(--cv-sb));
+  padding-left: 14px;
   min-width: 0;
   transition: margin-left .18s ease, width .18s ease;
 }
