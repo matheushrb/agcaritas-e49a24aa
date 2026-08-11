@@ -160,6 +160,11 @@ export function TaskWindow({
   const [billingEnabled, setBillingEnabled] = useState(true);
   const [baseValue, setBaseValue] = useState<string>("");
   const [deliverables, setDeliverables] = useState<DeliverableDraft[]>([]);
+  const [attachments, setAttachments] = useState<AttachmentDraft[]>([]);
+  const [coverPath, setCoverPath] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [previews, setPreviews] = useState<Record<string, string>>({});
+
   const [checklist, setChecklist] = useState<ChecklistDraft[]>([]);
   const [subtasks, setSubtasks] = useState<SubtaskDraft[]>([]);
   const [removedSubtaskIds, setRemovedSubtaskIds] = useState<string[]>([]);
