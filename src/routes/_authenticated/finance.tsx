@@ -228,7 +228,7 @@ function FinancePage() {
           {tab === "movements" ? (
             <EntriesPanel clients={clients} projects={projects} teamMembers={teamMembers} />
           ) : tab === "overview" ? (
-            <Fin01Overview
+            <><MonthGoalBanner data={dataset} onOpenPlanner={() => setTab("planner")} /><Fin01Overview
               charges={charges as unknown as F1Charge[]}
               costs={costs}
               clients={clients}
@@ -238,7 +238,7 @@ function FinancePage() {
               onExport={() => exportCsv(charges, clients, projects)}
               onOpenInvoices={() => navigate({ to: "/invoices" })}
               onOpenEntries={() => setTab("movements")}
-            />
+            /></>
           ) : tab === "cashflow" ? (
             <CashflowPanel data={dataset} />
           ) : tab === "dre" ? (

@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import {
   TrendingUp, TrendingDown, ShieldCheck, PiggyBank, Sparkles, Lightbulb,
-  ArrowRight, AlertTriangle, CheckCircle2, Percent, Wallet,
+  ArrowRight, AlertTriangle, CheckCircle2, Percent, Wallet, Target,
 } from "lucide-react";
 import {
   analyzeByType, brl, brl0, buildCashflow, buildDre, computeTaskCosts, lastMonths, monthKey,
