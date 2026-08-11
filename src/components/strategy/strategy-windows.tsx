@@ -190,8 +190,20 @@ export function SwotWindow({ open, onClose, projectId, projectName }: {
 type PersonaRow = {
   id: string; name: string; role: string | null; tags: string[] | null;
   desires: string[] | null; pains: string[] | null; help: string | null;
+  quote: string | null; persona_type: string | null;
+  age_range: string | null; gender: string | null; location: string | null;
+  family: string | null; education: string | null; income: string | null;
+  company_context: string | null; decision_power: string | null;
+  info_sources: string[] | null; tools: string | null; content_habits: string | null;
+  objections: string[] | null; triggers: string[] | null; journey_stage: string | null;
 };
-const emptyPersona = { name: "", role: "", tags: "", desires: "", pains: "", help: "" };
+const emptyPersona = {
+  name: "", role: "", tags: "", desires: "", pains: "", help: "",
+  quote: "", persona_type: "B2B", age_range: "", gender: "", location: "",
+  family: "", education: "", income: "", company_context: "", decision_power: "",
+  info_sources: "", tools: "", content_habits: "", objections: "", triggers: "",
+  journey_stage: "",
+};
 
 export function PersonasWindow({ open, onClose, projectId, projectName }: {
   open: boolean; onClose: () => void; projectId: string; projectName: string;
@@ -226,6 +238,12 @@ export function PersonasWindow({ open, onClose, projectId, projectName }: {
       .map(({ p, i }) => ({
         name: names[i] || p.name, role: p.role, tags: p.tags,
         desires: p.desires, pains: p.pains, help: p.help,
+        quote: p.quote, persona_type: p.personaType, age_range: p.ageRange,
+        gender: p.gender, location: p.location, family: p.family,
+        education: p.education, income: p.income, company_context: p.companyContext || null,
+        decision_power: p.decisionPower, info_sources: p.infoSources, tools: p.tools,
+        content_habits: p.contentHabits, objections: p.objections, triggers: p.triggers,
+        journey_stage: p.journeyStage,
       }));
     if (!rowsToAdd.length) { toast.error("Selecione ao menos uma persona"); return; }
     addMany.mutate(rowsToAdd, {
@@ -241,6 +259,14 @@ export function PersonasWindow({ open, onClose, projectId, projectName }: {
     setForm({
       name: p.name, role: p.role ?? "", tags: toList(p.tags).join(", "),
       desires: toList(p.desires).join("\n"), pains: toList(p.pains).join("\n"), help: p.help ?? "",
+      quote: p.quote ?? "", persona_type: p.persona_type ?? "B2B",
+      age_range: p.age_range ?? "", gender: p.gender ?? "", location: p.location ?? "",
+      family: p.family ?? "", education: p.education ?? "", income: p.income ?? "",
+      company_context: p.company_context ?? "", decision_power: p.decision_power ?? "",
+      info_sources: toList(p.info_sources).join(", "), tools: p.tools ?? "",
+      content_habits: p.content_habits ?? "",
+      objections: toList(p.objections).join("\n"), triggers: toList(p.triggers).join("\n"),
+      journey_stage: p.journey_stage ?? "",
     });
   };
 
@@ -249,6 +275,12 @@ export function PersonasWindow({ open, onClose, projectId, projectName }: {
     setForm({
       name: names[i] || p.name, role: p.role, tags: p.tags.join(", "),
       desires: p.desires.join("\n"), pains: p.pains.join("\n"), help: p.help,
+      quote: p.quote, persona_type: p.personaType, age_range: p.ageRange,
+      gender: p.gender, location: p.location, family: p.family, education: p.education,
+      income: p.income, company_context: p.companyContext, decision_power: p.decisionPower,
+      info_sources: p.infoSources.join(", "), tools: p.tools, content_habits: p.contentHabits,
+      objections: p.objections.join("\n"), triggers: p.triggers.join("\n"),
+      journey_stage: p.journeyStage,
     });
     setWizOpen(false);
   };
@@ -263,6 +295,22 @@ export function PersonasWindow({ open, onClose, projectId, projectName }: {
       desires: lines(form.desires),
       pains: lines(form.pains),
       help: form.help.trim() || null,
+      quote: form.quote.trim() || null,
+      persona_type: form.persona_type || null,
+      age_range: form.age_range.trim() || null,
+      gender: form.gender.trim() || null,
+      location: form.location.trim() || null,
+      family: form.family.trim() || null,
+      education: form.education.trim() || null,
+      income: form.income.trim() || null,
+      company_context: form.company_context.trim() || null,
+      decision_power: form.decision_power.trim() || null,
+      info_sources: fromCsv(form.info_sources),
+      tools: form.tools.trim() || null,
+      content_habits: form.content_habits.trim() || null,
+      objections: lines(form.objections),
+      triggers: lines(form.triggers),
+      journey_stage: form.journey_stage.trim() || null,
     };
     if (selected) upd.mutate({ id: selected, ...row }, { onSuccess: () => toast.success("Persona atualizada") });
     else add.mutate(row, { onSuccess: () => { setForm({ ...emptyPersona }); toast.success("Persona criada"); } });
