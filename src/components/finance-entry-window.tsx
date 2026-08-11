@@ -22,7 +22,18 @@ export type FinanceEntry = {
   nature: string | null;
   category: string | null;
   competence_month: string | null;
+  task_ids?: string[] | null;
 };
+
+type ProjectTask = {
+  id: string;
+  title: string;
+  status: string;
+  billing_value: number | null;
+  billing_base_value: number | null;
+  billed: boolean;
+};
+
 
 const STATUSES = [
   { value: "pending", label: "Pendente" },
