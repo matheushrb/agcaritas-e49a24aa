@@ -183,6 +183,7 @@ export function Prj05Strategy({
 
   /* ---------------- swot inline add ---------------- */
   const [swotDraft, setSwotDraft] = useState<Record<string, string>>({});
+  const [swotOpen, setSwotOpen] = useState(false);
 
   /* ---------------- personas ---------------- */
   const emptyPersona = { name: "", role: "", tags: "", desires: "", pains: "", help: "" };
