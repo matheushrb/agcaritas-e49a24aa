@@ -84,15 +84,16 @@ const GOAL_DESIRE: Record<PersonaAnswers["goal"], string> = {
   retencao: "Manter clientes comprando por mais tempo",
 };
 
-const NAMES: Record<string, string[]> = {
-  decisor: ["Ricardo", "Marcelo", "Cláudia", "Eduardo"],
-  gestor: ["Marina", "Bruna", "Rafael", "Letícia"],
-  tecnico: ["Diego", "Felipe", "Camila", "Thiago"],
-  financeiro: ["Sandra", "Patrícia", "Alexandre", "Juliana"],
-  usuario: ["Ana", "Lucas", "Bia", "Paulo"],
-  descoberta: ["Júlia", "Matheus", "Carol", "Vinícius"],
-  comparando: ["Fernanda", "Rodrigo", "Aline", "Gustavo"],
-  recorrente: ["Renata", "Sérgio", "Priscila", "André"],
+// Nomes por chave de persona, separados por gênero.
+const NAMES: Record<string, { mulher: string[]; homem: string[] }> = {
+  decisor:    { mulher: ["Cláudia", "Patrícia", "Renata", "Sandra"], homem: ["Ricardo", "Marcelo", "Eduardo", "Roberto"] },
+  gestor:     { mulher: ["Marina", "Bruna", "Letícia", "Camila"], homem: ["Rafael", "Gustavo", "André", "Paulo"] },
+  tecnico:    { mulher: ["Camila", "Bia", "Aline", "Fernanda"], homem: ["Diego", "Felipe", "Thiago", "Vinícius"] },
+  financeiro: { mulher: ["Sandra", "Patrícia", "Juliana", "Renata"], homem: ["Alexandre", "Sérgio", "Eduardo", "Marcelo"] },
+  usuario:    { mulher: ["Ana", "Bia", "Carol", "Júlia"], homem: ["Lucas", "Paulo", "Matheus", "Rodrigo"] },
+  descoberta: { mulher: ["Júlia", "Carol", "Aline", "Fernanda"], homem: ["Matheus", "Vinícius", "Gustavo", "Rodrigo"] },
+  comparando: { mulher: ["Fernanda", "Aline", "Priscila", "Renata"], homem: ["Rodrigo", "Gustavo", "André", "Sérgio"] },
+  recorrente: { mulher: ["Renata", "Priscila", "Cláudia", "Juliana"], homem: ["Sérgio", "André", "Eduardo", "Roberto"] },
 };
 
 const SIZE_LABEL: Record<PersonaAnswers["audienceSize"], string> = {
