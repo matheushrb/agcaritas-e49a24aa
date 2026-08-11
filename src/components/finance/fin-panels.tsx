@@ -259,6 +259,14 @@ export function PlannerPanel({ data }: { data: FinDataset }) {
     accumulatedEmergency: Math.max(0, accumulated) * (state.emergency_pct / 100),
   });
 
+  const be = computeBreakEven({
+    operatingCost: rate.totalMonthly + monthlyDirect,
+    taxPct: state.tax_pct,
+    profitPct: state.profit_pct,
+    emergencyPct: state.emergency_pct,
+    investmentPct: state.investment_pct,
+  });
+
   const save = useMutation({
     mutationFn: async () => {
       const { data: p } = await supabase.from("profiles").select("organization_id").maybeSingle();
@@ -279,6 +287,7 @@ export function PlannerPanel({ data }: { data: FinDataset }) {
     { key: "prolabore_pct", label: "Pró-labore", hint: "Retirada dos sócios", suffix: "%" },
     { key: "profit_pct", label: "Lucro", hint: "Reserva de lucro / reinvestimento", suffix: "%" },
     { key: "emergency_pct", label: "Reserva de emergência", hint: "Percentual guardado todo mês", suffix: "%" },
+    { key: "investment_pct", label: "Capital de investimento", hint: "Percentual reservado para crescer a agência", suffix: "%" },
     { key: "emergency_target_months", label: "Meta da reserva", hint: "Meses de operação cobertos", suffix: "meses" },
   ];
 
@@ -329,6 +338,26 @@ export function PlannerPanel({ data }: { data: FinDataset }) {
                 <div className="text-sm font-semibold mt-0.5">{brl0(a.value)}</div>
               </div>
             ))}
+          </div>
+        </Section>
+      </div>
+
+        <Section
+          title="Break-even e meta de faturamento"
+          hint="Quanto a agência precisa faturar para empatar (o imposto incide sobre a receita, por isso o custo é dividido por 1 − imposto) e quanto precisa faturar para pagar tudo e ainda cumprir lucro, reserva e investimento."
+        >
+          <div className="grid gap-3 sm:grid-cols-3">
+            <Kpi label="Custo operacional do mês" value={brl0(be.operatingCost)} sub="Folha + custos fixos + variáveis" />
+            <Kpi label="Break-even" value={brl0(be.breakEven)} tone={monthlyRevenue >= be.breakEven ? "good" : "bad"}
+              sub={monthlyRevenue >= be.breakEven ? "Já coberto neste mês" : `Faltam ${brl0(be.breakEven - monthlyRevenue)}`} />
+            <Kpi label="Meta de faturamento" value={brl0(be.targetRevenue)} tone={monthlyRevenue >= be.targetRevenue ? "good" : "warn"}
+              sub={`Lucro ${state.profit_pct}% + reserva ${state.emergency_pct}% + investimento ${state.investment_pct}%`} />
+          </div>
+          <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
+            <div className="h-full bg-primary" style={{ width: `${Math.min(100, be.targetRevenue > 0 ? (monthlyRevenue / be.targetRevenue) * 100 : 0)}%` }} />
+          </div>
+          <div className="text-[11px] text-muted-foreground">
+            Faturado no mês: {brl0(monthlyRevenue)} · {pct(be.targetRevenue > 0 ? (monthlyRevenue / be.targetRevenue) * 100 : 0)} da meta
           </div>
         </Section>
       </div>
