@@ -318,49 +318,141 @@ export function PersonasWindow({ open, onClose, projectId, projectName }: {
         </div>
 
         <div style={{ padding: "18px 20px 28px" }}>
-          {aiOpen && (
+          {wizOpen && (
             <div className="swin-card" style={{ border: "1px solid var(--border)", borderRadius: 12, padding: 16, marginBottom: 18, background: "var(--surface-2, transparent)" }}>
               <div className="swin-sec-t" style={{ display: "flex", alignItems: "center", gap: 8 }}>
                 <Sparkles style={{ width: 15, height: 15, color: "var(--primary)" }} /> Assistente de personas
               </div>
               <p style={{ fontSize: 12.5, color: "var(--muted-foreground)", margin: "2px 0 12px" }}>
-                A IA lê o briefing, o cliente e o tipo do projeto para propor personas. Revise, escolha e adicione.
+                Responda o formulário padrão. O sistema define sozinho quantas personas o projeto precisa e como elas são — você só escolhe o nome.
               </p>
+
               <div className="swin-grid">
-                <WinField label="Quantas personas?" hint="De 1 a 5 por geração.">
-                  <select value={aiCount} onChange={e => setAiCount(Number(e.target.value))}>
-                    {[1, 2, 3, 4, 5].map(n => <option key={n} value={n}>{n}</option>)}
+                <WinField label="Tipo de mercado">
+                  <select value={ans.market} onChange={e => setAns({ ...ans, market: e.target.value as PersonaAnswers["market"] })}>
+                    <option value="b2b">B2B — vende para empresas</option>
+                    <option value="b2c">B2C — vende para consumidor</option>
+                    <option value="both">Os dois</option>
                   </select>
                 </WinField>
-                <WinField label="Direcionamento (opcional)" hint="Ex.: foco em decisores B2B do interior de SP" span>
-                  <textarea value={aiNotes} onChange={e => setAiNotes(e.target.value)} rows={2} />
+                <WinField label="Perfil de quem compra">
+                  <select value={ans.audienceSize} onChange={e => setAns({ ...ans, audienceSize: e.target.value as PersonaAnswers["audienceSize"] })}>
+                    <option value="mei">MEI / autônomo</option>
+                    <option value="pme">Pequena empresa</option>
+                    <option value="media">Empresa média</option>
+                    <option value="grande">Grande empresa</option>
+                    <option value="consumidor">Consumidor final</option>
+                  </select>
+                </WinField>
+                <WinField label="Ticket médio">
+                  <select value={ans.ticket} onChange={e => setAns({ ...ans, ticket: e.target.value as PersonaAnswers["ticket"] })}>
+                    <option value="baixo">Baixo</option>
+                    <option value="medio">Médio</option>
+                    <option value="alto">Alto</option>
+                  </select>
+                </WinField>
+                <WinField label="Tempo de decisão">
+                  <select value={ans.cycle} onChange={e => setAns({ ...ans, cycle: e.target.value as PersonaAnswers["cycle"] })}>
+                    <option value="curto">Curto (dias)</option>
+                    <option value="medio">Médio (semanas)</option>
+                    <option value="longo">Longo (meses)</option>
+                  </select>
+                </WinField>
+                <WinField label="Objetivo do projeto">
+                  <select value={ans.goal} onChange={e => setAns({ ...ans, goal: e.target.value as PersonaAnswers["goal"] })}>
+                    <option value="reconhecimento">Reconhecimento de marca</option>
+                    <option value="leads">Geração de leads</option>
+                    <option value="vendas">Vendas diretas</option>
+                    <option value="retencao">Retenção / recompra</option>
+                  </select>
+                </WinField>
+                <WinField label="Principal barreira">
+                  <select value={ans.barrier} onChange={e => setAns({ ...ans, barrier: e.target.value as PersonaAnswers["barrier"] })}>
+                    <option value="preco">Preço / justificar investimento</option>
+                    <option value="confianca">Confiança no fornecedor</option>
+                    <option value="prazo">Pressa por resultado</option>
+                    <option value="complexidade">Assunto complexo demais</option>
+                    <option value="concorrencia">Concorrência forte</option>
+                  </select>
+                </WinField>
+
+                {(ans.market === "b2b" || ans.market === "both") && (
+                  <WinField label="Quem participa da decisão?" hint="Pode marcar mais de um." span>
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                      {DECIDER_OPTIONS.map(o => (
+                        <button
+                          key={o.id} type="button"
+                          className={`swin-btn${ans.deciders.includes(o.id) ? " primary" : ""}`}
+                          onClick={() => setAns({ ...ans, deciders: toggleIn(ans.deciders, o.id) })}
+                        >{o.label}</button>
+                      ))}
+                    </div>
+                  </WinField>
+                )}
+
+                {(ans.market === "b2c" || ans.market === "both") && (
+                  <WinField label="Momentos do consumidor" hint="Pode marcar mais de um." span>
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                      {STAGE_OPTIONS.map(o => (
+                        <button
+                          key={o.id} type="button"
+                          className={`swin-btn${ans.stages.includes(o.id) ? " primary" : ""}`}
+                          onClick={() => setAns({ ...ans, stages: toggleIn(ans.stages, o.id) })}
+                        >{o.label}</button>
+                      ))}
+                    </div>
+                  </WinField>
+                )}
+
+                <WinField label="Onde essas pessoas estão?" hint="Pode marcar mais de um." span>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                    {CHANNEL_OPTIONS.map(o => (
+                      <button
+                        key={o.id} type="button"
+                        className={`swin-btn${ans.channels.includes(o.id) ? " primary" : ""}`}
+                        onClick={() => setAns({ ...ans, channels: toggleIn(ans.channels, o.id) })}
+                      >{o.label}</button>
+                    ))}
+                  </div>
                 </WinField>
               </div>
+
               <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 10 }}>
-                <button type="button" className="swin-btn primary" disabled={aiRun.isPending} onClick={() => aiRun.mutate()}>
-                  {aiRun.isPending ? <Loader2 className="animate-spin" /> : <Sparkles />}
-                  {aiRun.isPending ? "Gerando..." : aiResults.length ? "Gerar novamente" : "Gerar personas"}
+                <button type="button" className="swin-btn primary" onClick={runBuild}>
+                  <Sparkles /> {built ? "Recalcular personas" : "Montar personas"}
                 </button>
               </div>
 
-              {aiResults.length > 0 && (
+              {built && (
                 <div style={{ marginTop: 16, display: "grid", gap: 10 }}>
-                  {aiResults.map((p, i) => (
+                  <small style={{ color: "var(--muted-foreground)" }}>
+                    Com essas respostas, o projeto precisa de <b>{built.length}</b> persona(s).
+                  </small>
+                  {built.map((p, i) => (
                     <div
-                      key={`${p.name}-${i}`}
+                      key={p.key}
                       style={{
                         border: "1px solid var(--border)", borderRadius: 10, padding: 12,
-                        opacity: aiPicked[i] ? 1 : 0.55, background: "var(--surface)",
+                        opacity: picked[i] ? 1 : 0.55, background: "var(--surface)",
                       }}
                     >
                       <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
                         <input
-                          type="checkbox" checked={!!aiPicked[i]} style={{ marginTop: 3 }}
-                          onChange={e => setAiPicked({ ...aiPicked, [i]: e.target.checked })}
+                          type="checkbox" checked={!!picked[i]} style={{ marginTop: 3 }}
+                          onChange={e => setPicked({ ...picked, [i]: e.target.checked })}
                         />
                         <div style={{ flex: 1, minWidth: 0 }}>
-                          <b style={{ fontSize: 13 }}>{p.name}</b>
-                          <small style={{ display: "block", color: "var(--muted-foreground)" }}>{p.role}</small>
+                          <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                            <select
+                              value={names[i] ?? p.name}
+                              onChange={e => setNames({ ...names, [i]: e.target.value })}
+                              style={{ fontWeight: 700, fontSize: 13, padding: "3px 8px", borderRadius: 8, border: "1px solid var(--border)", background: "var(--surface)", color: "inherit" }}
+                            >
+                              {p.nameOptions.map(n => <option key={n} value={n}>{n}</option>)}
+                            </select>
+                            <small style={{ color: "var(--muted-foreground)" }}>{p.role}</small>
+                          </div>
+                          <small style={{ display: "block", color: "var(--muted-foreground)", marginTop: 4 }}>{p.why}</small>
                           <div style={{ display: "flex", flexWrap: "wrap", gap: 6, margin: "8px 0" }}>
                             {p.tags.map((t, ti) => (
                               <span key={ti} style={{ fontSize: 11, padding: "2px 8px", borderRadius: 999, background: "color-mix(in oklab, var(--primary) 12%, transparent)", color: "var(--primary)" }}>{t}</span>
@@ -378,14 +470,14 @@ export function PersonasWindow({ open, onClose, projectId, projectName }: {
                           </div>
                           {p.help && <p style={{ fontSize: 12, marginTop: 8 }}><b>Como ajudamos: </b>{p.help}</p>}
                         </div>
-                        <button type="button" className="swin-btn" onClick={() => editGenerated(p)} title="Editar antes de salvar">
+                        <button type="button" className="swin-btn" onClick={() => editGenerated(p, i)} title="Editar antes de salvar">
                           <Pencil />
                         </button>
                       </div>
                     </div>
                   ))}
                   <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
-                    <button type="button" className="swin-btn" onClick={() => { setAiResults([]); setAiPicked({}); }}>Descartar</button>
+                    <button type="button" className="swin-btn" onClick={() => { setBuilt(null); setPicked({}); setNames({}); }}>Descartar</button>
                     <button type="button" className="swin-btn primary" disabled={addMany.isPending} onClick={applyPicked}>
                       <Check /> Adicionar selecionadas
                     </button>
@@ -394,6 +486,7 @@ export function PersonasWindow({ open, onClose, projectId, projectName }: {
               )}
             </div>
           )}
+
 
           <div className="swin-sec-t">{selected ? "Editar persona" : "Nova persona"}</div>
 
