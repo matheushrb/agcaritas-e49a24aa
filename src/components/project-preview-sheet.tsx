@@ -1,3 +1,4 @@
+import { ClientLogo } from "@/components/client-logo";
 import { Link } from "@tanstack/react-router";
 import {
   ArrowUpRight,
@@ -25,6 +26,7 @@ export type ProjectPreviewData = {
   description: string | null;
   status: ProjectPreviewStatus;
   clientName: string | null;
+  clientLogo?: string | null;
   startDate: string | null;
   endDate: string | null;
   projectType?: string | null;
@@ -96,6 +98,7 @@ export function ProjectPreviewSheet({
               <div className="flex flex-wrap gap-x-5 gap-y-2 text-xs text-muted-foreground">
                 <span className="inline-flex items-center gap-1.5">
                   <Building2 className="h-3.5 w-3.5" />
+                  <ClientLogo value={project.clientLogo} name={project.clientName} size={18} rounded="rounded" className="inline-block align-middle mr-1.5" />
                   {project.clientName || "Projeto interno"}
                 </span>
                 <span className="inline-flex items-center gap-1.5">
