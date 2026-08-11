@@ -198,39 +198,39 @@ export function PersonasWindow({ open, onClose, projectId, projectName }: {
   const [selected, setSelected] = useState<string | null>(null);
   const [form, setForm] = useState({ ...emptyPersona });
 
-  /* ---- geração por IA ---- */
-  const generate = useServerFn(generatePersonas);
-  const [aiOpen, setAiOpen] = useState(false);
-  const [aiCount, setAiCount] = useState(3);
-  const [aiNotes, setAiNotes] = useState("");
-  const [aiResults, setAiResults] = useState<GeneratedPersona[]>([]);
-  const [aiPicked, setAiPicked] = useState<Record<number, boolean>>({});
+  /* ---- assistente por formulário (sem IA, sem créditos) ---- */
+  const [wizOpen, setWizOpen] = useState(false);
+  const [ans, setAns] = useState<PersonaAnswers>({ ...emptyAnswers });
+  const [built, setBuilt] = useState<BuiltPersona[] | null>(null);
+  const [picked, setPicked] = useState<Record<number, boolean>>({});
+  const [names, setNames] = useState<Record<number, string>>({});
 
-  const aiRun = useMutation({
-    mutationFn: async () => generate({ data: { projectId, count: aiCount, notes: aiNotes } }),
-    onSuccess: (list: GeneratedPersona[]) => {
-      setAiResults(list);
-      setAiPicked(Object.fromEntries(list.map((_, i) => [i, true])));
-      if (!list.length) toast.error("A IA não retornou personas. Tente novamente.");
-    },
-    onError: (e: any) => toast.error(e?.message ?? "Erro ao gerar personas"),
-  });
+  const toggleIn = (list: string[], id: string) =>
+    list.includes(id) ? list.filter(x => x !== id) : [...list, id];
+
+  const runBuild = () => {
+    const list = buildPersonas(ans);
+    setBuilt(list);
+    setPicked(Object.fromEntries(list.map((_, i) => [i, true])));
+    setNames(Object.fromEntries(list.map((p, i) => [i, p.name])));
+  };
 
   const applyPicked = () => {
-    const picked = aiResults.filter((_, i) => aiPicked[i]);
-    if (!picked.length) { toast.error("Selecione ao menos uma persona"); return; }
-    addMany.mutate(
-      picked.map(p => ({
-        name: p.name, role: p.role || null, tags: p.tags,
-        desires: p.desires, pains: p.pains, help: p.help || null,
-      })),
-      {
-        onSuccess: () => {
-          toast.success(`${picked.length} persona(s) adicionada(s)`);
-          setAiResults([]); setAiPicked({}); setAiOpen(false);
-        },
+    if (!built) return;
+    const rowsToAdd = built
+      .map((p, i) => ({ p, i }))
+      .filter(({ i }) => picked[i])
+      .map(({ p, i }) => ({
+        name: names[i] || p.name, role: p.role, tags: p.tags,
+        desires: p.desires, pains: p.pains, help: p.help,
+      }));
+    if (!rowsToAdd.length) { toast.error("Selecione ao menos uma persona"); return; }
+    addMany.mutate(rowsToAdd, {
+      onSuccess: () => {
+        toast.success(`${rowsToAdd.length} persona(s) adicionada(s)`);
+        setBuilt(null); setPicked({}); setNames({}); setWizOpen(false);
       },
-    );
+    });
   };
 
   const pick = (p: PersonaRow) => {
@@ -241,14 +241,15 @@ export function PersonasWindow({ open, onClose, projectId, projectName }: {
     });
   };
 
-  const editGenerated = (p: GeneratedPersona) => {
+  const editGenerated = (p: BuiltPersona, i: number) => {
     setSelected(null);
     setForm({
-      name: p.name, role: p.role, tags: p.tags.join(", "),
+      name: names[i] || p.name, role: p.role, tags: p.tags.join(", "),
       desires: p.desires.join("\n"), pains: p.pains.join("\n"), help: p.help,
     });
-    setAiOpen(false);
+    setWizOpen(false);
   };
+
 
   const save = () => {
     if (!form.name.trim()) { toast.error("Informe o nome da persona"); return; }
