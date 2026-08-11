@@ -92,14 +92,22 @@ const threatClass = (t: string) => (t === "Alta" ? "red" : t === "Média" ? "amb
 
 export function Prj05Strategy({
   projectId,
+  projectName = "Projeto",
   description,
   strategy,
+  briefing,
+  briefingTemplateId,
   onSaveBriefing,
 }: {
   projectId: string;
+  projectName?: string;
   description: string;
   strategy?: Strategy | null;
-  onSaveBriefing?: (patch: { description: string; strategy: Strategy }) => void;
+  briefing?: BriefingData | null;
+  briefingTemplateId?: string | null;
+  onSaveBriefing?: (patch: {
+    description: string; strategy: Strategy; briefing?: BriefingData; briefing_template_id?: string | null;
+  }) => void;
 }) {
   const qc = useQueryClient();
   const inv = (k: string) => qc.invalidateQueries({ queryKey: [k, projectId] });
