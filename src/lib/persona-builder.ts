@@ -180,14 +180,31 @@ export function buildPersonas(a: PersonaAnswers): BuiltPersona[] {
   const uniq = Array.from(new Set(keys)).slice(0, 5);
   const channels = a.channels.map(c => CHANNEL_LABEL[c] ?? c);
   const barrier = BARRIER_TEXT[a.barrier];
+  const g = a.gender;
 
   return uniq.map(k => {
     const b = BASE[k] ?? BASE["decisor"]!;
-    const nameOptions = NAMES[k] ?? NAMES["decisor"]!;
+    const bucket = NAMES[k] ?? NAMES["decisor"]!;
+    // Filtra as opções de nome conforme a inclinação de gênero marcada.
+    const nameOptions: string[] =
+      g === "mulher" ? bucket.mulher
+      : g === "homem" ? bucket.homem
+      // equilibrado / indefinido → intercala para manter a mistura
+      : bucket.mulher.flatMap((n, i) => [n, bucket.homem[i]].filter(Boolean) as string[]);
+
     const tags = [...b.tags];
+    if (g === "mulher") tags.unshift("Predominantemente mulher");
+    else if (g === "homem") tags.unshift("Predominantemente homem");
     if (a.ticket === "alto") tags.push("Compra de alto valor");
     if (a.cycle === "curto") tags.push("Decide rápido");
     if (a.audienceSize !== "consumidor") tags.push(SIZE_LABEL[a.audienceSize]);
+
+    const whyBase = b.why;
+    const whyGender = g === "mulher"
+      ? " Você indicou que o público é predominantemente mulher."
+      : g === "homem"
+      ? " Você indicou que o público é predominantemente homem."
+      : "";
 
     return {
       key: k,
@@ -198,7 +215,7 @@ export function buildPersonas(a: PersonaAnswers): BuiltPersona[] {
       desires: [...b.desires, GOAL_DESIRE[a.goal]],
       pains: [...b.pains, barrier.pain],
       help: `${barrier.help}. Presença principal em ${channels.join(", ") || "canais digitais"}.`,
-      why: b.why,
+      why: whyBase + whyGender,
     };
   });
 }
