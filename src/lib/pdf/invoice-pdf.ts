@@ -49,6 +49,7 @@ export interface InvoicePartyClient {
   address?: string | null;
   contact_name?: string | null;
   contact_role?: string | null;
+  logo_url?: string | null;
 }
 
 export interface InvoicePartyAgency {
@@ -223,6 +224,7 @@ export async function generateInvoicePDF(data: InvoicePDFData): Promise<jsPDF> {
   ].filter(Boolean).join("  •  ");
 
   const logoDataUrl = await loadImageAsDataUrl(a.logo_url || caritasLogo.url);
+  const clientLogoDataUrl = c.logo_url ? await loadImageAsDataUrl(c.logo_url) : null;
 
   const subtotal = data.lines.reduce((s, l) => s + Number(l.amount || 0), 0);
   const total = subtotal - Number(data.discount ?? 0) + Number(data.taxes ?? 0);
@@ -303,6 +305,16 @@ export async function generateInvoicePDF(data: InvoicePDFData): Promise<jsPDF> {
     a.email,
   ]);
   const clientTitle = (c.company || c.name || c.legal_name || "").trim();
+  if (clientLogoDataUrl) {
+    try {
+      const props = doc.getImageProperties(clientLogoDataUrl);
+      const maxW = 26, maxH = 10;
+      const ratio = Math.min(maxW / props.width, maxH / props.height);
+      const w = props.width * ratio, h = props.height * ratio;
+      const fmt = /^data:image\/jpe?g/i.test(clientLogoDataUrl) ? "JPEG" : "PNG";
+      doc.addImage(clientLogoDataUrl, fmt, rightX - w, y - 3, w, h);
+    } catch { /* ignora logo inválida */ }
+  }
   const hTo = party(col2X, "DESTINATÁRIO", clientTitle, [
     c.legal_name && c.legal_name.trim().toUpperCase() !== clientTitle.toUpperCase()
       ? `Razão social: ${c.legal_name}` : null,
