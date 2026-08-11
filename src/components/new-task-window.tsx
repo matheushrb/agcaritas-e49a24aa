@@ -737,7 +737,61 @@ export function TaskWindow({
 
 
 
+  /* ---------- Anexos ---------- */
+  useEffect(() => {
+    const missing = attachments.filter(a => a.is_image && a.path && !previews[a.path]);
+    if (missing.length === 0) return;
+    let alive = true;
+    (async () => {
+      const next: Record<string, string> = {};
+      for (const a of missing) {
+        const { data } = await supabase.storage.from("task-files").createSignedUrl(a.path, 60 * 60);
+        if (data?.signedUrl) next[a.path] = data.signedUrl;
+      }
+      if (alive && Object.keys(next).length) setPreviews(p => ({ ...p, ...next }));
+    })();
+    return () => { alive = false; };
+  }, [attachments, previews]);
+
+  async function uploadFiles(files: FileList | null) {
+    if (!files || files.length === 0) return;
+    setUploading(true);
+    try {
+      const added: AttachmentDraft[] = [];
+      for (const file of Array.from(files)) {
+        if (file.size > 15 * 1024 * 1024) { toast.error(`${file.name}: máximo de 15 MB.`); continue; }
+        const ext = file.name.split(".").pop() ?? "bin";
+        const path = `${taskId ?? "novas"}/${uid()}-${Date.now()}.${ext}`;
+        const { error } = await supabase.storage.from("task-files").upload(path, file, { contentType: file.type || undefined });
+        if (error) { toast.error(`${file.name}: ${error.message}`); continue; }
+        added.push({
+          id: uid(), path, name: file.name, type: file.type || "",
+          size: file.size, is_image: (file.type || "").startsWith("image/"),
+        });
+      }
+      if (added.length) {
+        setAttachments(list => [...list, ...added]);
+        const firstImg = added.find(a => a.is_image);
+        if (firstImg && !coverPath) setCoverPath(firstImg.path);
+      }
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  async function removeAttachment(a: AttachmentDraft) {
+    await supabase.storage.from("task-files").remove([a.path]);
+    setAttachments(list => list.filter(x => x.id !== a.id));
+    if (coverPath === a.path) setCoverPath(null);
+  }
+
+  async function openAttachment(a: AttachmentDraft) {
+    const { data } = await supabase.storage.from("task-files").createSignedUrl(a.path, 60 * 10);
+    if (data?.signedUrl) window.open(data.signedUrl, "_blank");
+  }
+
   const reset = () => {
+
     setTitle(defaultTitle); setDescription(""); setProjectId(defaultProjectId); setTaskTypeId(defaultTaskTypeId);
     setAssigneeId(null); setDueDate(""); setPriority("medium"); setStatus("todo"); setStage("briefing"); setCurrentStageId(null);
     setEstimated(""); setBillingEnabled(true); setBaseValue(""); setDeliverables([]); setChecklist([]);
