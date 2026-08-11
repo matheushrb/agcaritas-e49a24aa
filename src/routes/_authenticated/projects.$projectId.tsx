@@ -537,7 +537,7 @@ function ProjectDetail() {
       {activeTab === "timeline" && <div style={{ marginTop: 18 }}><ComingSoon icon={TimerIcon} title="Timeline" description="Roadmap do projeto por fases, com marcos e entregas." /></div>}
       {activeTab === "traffic" && <div style={{ marginTop: 18 }}><ComingSoon icon={Megaphone} title="Tráfego Pago" description="Campanhas, orçamento, CPA e ROAS do projeto." /></div>}
       {activeTab === "campaigns" && <div style={{ marginTop: 18 }}><ComingSoon icon={Rocket} title="Campanhas" description="Lançamentos e campanhas dentro do projeto." /></div>}
-      {activeTab === "docs" && <Prj06Files />}
+      {activeTab === "docs" && <Prj06Files projectId={projectId} />}
 
       <Dialog open={templatePickerOpen} onOpenChange={setTemplatePickerOpen}>
         <DialogContent className="sm:max-w-[520px]">
