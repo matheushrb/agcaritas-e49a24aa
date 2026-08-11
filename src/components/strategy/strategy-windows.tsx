@@ -191,9 +191,44 @@ export function PersonasWindow({ open, onClose, projectId, projectName }: {
   open: boolean; onClose: () => void; projectId: string; projectName: string;
 }) {
   const { data: rows = [] } = useRows<PersonaRow>("project_personas", projectId, "created_at", open);
-  const { add, upd, del } = useCrud("project_personas", projectId);
+  const { add, addMany, upd, del } = useCrud("project_personas", projectId);
   const [selected, setSelected] = useState<string | null>(null);
   const [form, setForm] = useState({ ...emptyPersona });
+
+  /* ---- geração por IA ---- */
+  const generate = useServerFn(generatePersonas);
+  const [aiOpen, setAiOpen] = useState(false);
+  const [aiCount, setAiCount] = useState(3);
+  const [aiNotes, setAiNotes] = useState("");
+  const [aiResults, setAiResults] = useState<GeneratedPersona[]>([]);
+  const [aiPicked, setAiPicked] = useState<Record<number, boolean>>({});
+
+  const aiRun = useMutation({
+    mutationFn: async () => generate({ data: { projectId, count: aiCount, notes: aiNotes } }),
+    onSuccess: (list: GeneratedPersona[]) => {
+      setAiResults(list);
+      setAiPicked(Object.fromEntries(list.map((_, i) => [i, true])));
+      if (!list.length) toast.error("A IA não retornou personas. Tente novamente.");
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Erro ao gerar personas"),
+  });
+
+  const applyPicked = () => {
+    const picked = aiResults.filter((_, i) => aiPicked[i]);
+    if (!picked.length) { toast.error("Selecione ao menos uma persona"); return; }
+    addMany.mutate(
+      picked.map(p => ({
+        name: p.name, role: p.role || null, tags: p.tags,
+        desires: p.desires, pains: p.pains, help: p.help || null,
+      })),
+      {
+        onSuccess: () => {
+          toast.success(`${picked.length} persona(s) adicionada(s)`);
+          setAiResults([]); setAiPicked({}); setAiOpen(false);
+        },
+      },
+    );
+  };
 
   const pick = (p: PersonaRow) => {
     setSelected(p.id);
@@ -201,6 +236,15 @@ export function PersonasWindow({ open, onClose, projectId, projectName }: {
       name: p.name, role: p.role ?? "", tags: toList(p.tags).join(", "),
       desires: toList(p.desires).join("\n"), pains: toList(p.pains).join("\n"), help: p.help ?? "",
     });
+  };
+
+  const editGenerated = (p: GeneratedPersona) => {
+    setSelected(null);
+    setForm({
+      name: p.name, role: p.role, tags: p.tags.join(", "),
+      desires: p.desires.join("\n"), pains: p.pains.join("\n"), help: p.help,
+    });
+    setAiOpen(false);
   };
 
   const save = () => {
@@ -221,9 +265,14 @@ export function PersonasWindow({ open, onClose, projectId, projectName }: {
     <ToolWindow
       open={open} onClose={onClose} icon={Users} title="Personas" subtitle={projectName} size="full"
       headerRight={
-        <button type="button" className="swin-btn" onClick={() => { setSelected(null); setForm({ ...emptyPersona }); }}>
-          <Plus /> Nova persona
-        </button>
+        <>
+          <button type="button" className="swin-btn" onClick={() => { setAiOpen(o => !o); }}>
+            <Sparkles /> {aiOpen ? "Fechar assistente" : "Gerar com IA"}
+          </button>
+          <button type="button" className="swin-btn" onClick={() => { setSelected(null); setForm({ ...emptyPersona }); setAiOpen(false); }}>
+            <Plus /> Nova persona
+          </button>
+        </>
       }
       footer={
         <>
@@ -236,6 +285,7 @@ export function PersonasWindow({ open, onClose, projectId, projectName }: {
       }
     >
       <div className="swin-split" style={{ gridTemplateColumns: "320px minmax(0,1fr)" }}>
+
         <div style={{ padding: 16 }}>
           <div className="swin-sec-t">Personas</div>
           <div className="swin-list">
