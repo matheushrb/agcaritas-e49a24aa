@@ -199,6 +199,7 @@ export type Database = {
       }
       charges: {
         Row: {
+          accounting_nature: string | null
           amount: number
           category: string | null
           client_id: string | null
@@ -226,6 +227,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          accounting_nature?: string | null
           amount: number
           category?: string | null
           client_id?: string | null
@@ -253,6 +255,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          accounting_nature?: string | null
           amount?: number
           category?: string | null
           client_id?: string | null
