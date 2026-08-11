@@ -2011,8 +2011,10 @@ export type Database = {
           name: string
           notes: string | null
           organization_id: string
+          positioning: string | null
           project_id: string
           strengths: string | null
+          threat_level: string
           updated_at: string
           url: string | null
           weaknesses: string | null
@@ -2023,8 +2025,10 @@ export type Database = {
           name: string
           notes?: string | null
           organization_id: string
+          positioning?: string | null
           project_id: string
           strengths?: string | null
+          threat_level?: string
           updated_at?: string
           url?: string | null
           weaknesses?: string | null
@@ -2035,8 +2039,10 @@ export type Database = {
           name?: string
           notes?: string | null
           organization_id?: string
+          positioning?: string | null
           project_id?: string
           strengths?: string | null
+          threat_level?: string
           updated_at?: string
           url?: string | null
           weaknesses?: string | null
@@ -2124,6 +2130,66 @@ export type Database = {
           },
         ]
       }
+      project_kpis: {
+        Row: {
+          created_at: string
+          current_value: number
+          id: string
+          name: string
+          notes: string | null
+          order_index: number
+          organization_id: string
+          period: string | null
+          project_id: string
+          target_value: number | null
+          unit: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          current_value?: number
+          id?: string
+          name: string
+          notes?: string | null
+          order_index?: number
+          organization_id: string
+          period?: string | null
+          project_id: string
+          target_value?: number | null
+          unit?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          current_value?: number
+          id?: string
+          name?: string
+          notes?: string | null
+          order_index?: number
+          organization_id?: string
+          period?: string | null
+          project_id?: string
+          target_value?: number | null
+          unit?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_kpis_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_kpis_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       project_members: {
         Row: {
           created_at: string
@@ -2175,12 +2241,14 @@ export type Database = {
           channels: Json | null
           created_at: string
           desires: Json | null
+          help: string | null
           id: string
           name: string
           organization_id: string
           pains: Json | null
           project_id: string
           role: string | null
+          tags: Json | null
           updated_at: string
         }
         Insert: {
@@ -2188,12 +2256,14 @@ export type Database = {
           channels?: Json | null
           created_at?: string
           desires?: Json | null
+          help?: string | null
           id?: string
           name: string
           organization_id: string
           pains?: Json | null
           project_id: string
           role?: string | null
+          tags?: Json | null
           updated_at?: string
         }
         Update: {
@@ -2201,12 +2271,14 @@ export type Database = {
           channels?: Json | null
           created_at?: string
           desires?: Json | null
+          help?: string | null
           id?: string
           name?: string
           organization_id?: string
           pains?: Json | null
           project_id?: string
           role?: string | null
+          tags?: Json | null
           updated_at?: string
         }
         Relationships: [
@@ -2358,6 +2430,7 @@ export type Database = {
           social_platforms: Json
           start_date: string | null
           status: Database["public"]["Enums"]["project_status"]
+          strategy: Json
           traffic_budget: Json | null
           updated_at: string
           urgency: string | null
@@ -2391,6 +2464,7 @@ export type Database = {
           social_platforms?: Json
           start_date?: string | null
           status?: Database["public"]["Enums"]["project_status"]
+          strategy?: Json
           traffic_budget?: Json | null
           updated_at?: string
           urgency?: string | null
@@ -2424,6 +2498,7 @@ export type Database = {
           social_platforms?: Json
           start_date?: string | null
           status?: Database["public"]["Enums"]["project_status"]
+          strategy?: Json
           traffic_budget?: Json | null
           updated_at?: string
           urgency?: string | null
