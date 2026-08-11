@@ -340,7 +340,6 @@ export function PlannerPanel({ data }: { data: FinDataset }) {
             ))}
           </div>
         </Section>
-      </div>
 
         <Section
           title="Break-even e meta de faturamento"
