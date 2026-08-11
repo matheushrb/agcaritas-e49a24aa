@@ -1,13 +1,16 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import {
   LayoutGrid, Users, Filter, Target, ListChecks, Plus, Trash2, Check, Save,
-  ThumbsUp, ThumbsDown, ArrowUpCircle, AlertOctagon,
+  ThumbsUp, ThumbsDown, ArrowUpCircle, AlertOctagon, Sparkles, Loader2, Pencil,
 } from "lucide-react";
 import { ToolWindow, WinField } from "./tool-window";
+import { generatePersonas, type GeneratedPersona } from "@/lib/personas.functions";
 import "@/strategy-win.css";
+
 
 const sb = supabase as any;
 
@@ -191,9 +194,44 @@ export function PersonasWindow({ open, onClose, projectId, projectName }: {
   open: boolean; onClose: () => void; projectId: string; projectName: string;
 }) {
   const { data: rows = [] } = useRows<PersonaRow>("project_personas", projectId, "created_at", open);
-  const { add, upd, del } = useCrud("project_personas", projectId);
+  const { add, addMany, upd, del } = useCrud("project_personas", projectId);
   const [selected, setSelected] = useState<string | null>(null);
   const [form, setForm] = useState({ ...emptyPersona });
+
+  /* ---- geração por IA ---- */
+  const generate = useServerFn(generatePersonas);
+  const [aiOpen, setAiOpen] = useState(false);
+  const [aiCount, setAiCount] = useState(3);
+  const [aiNotes, setAiNotes] = useState("");
+  const [aiResults, setAiResults] = useState<GeneratedPersona[]>([]);
+  const [aiPicked, setAiPicked] = useState<Record<number, boolean>>({});
+
+  const aiRun = useMutation({
+    mutationFn: async () => generate({ data: { projectId, count: aiCount, notes: aiNotes } }),
+    onSuccess: (list: GeneratedPersona[]) => {
+      setAiResults(list);
+      setAiPicked(Object.fromEntries(list.map((_, i) => [i, true])));
+      if (!list.length) toast.error("A IA não retornou personas. Tente novamente.");
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Erro ao gerar personas"),
+  });
+
+  const applyPicked = () => {
+    const picked = aiResults.filter((_, i) => aiPicked[i]);
+    if (!picked.length) { toast.error("Selecione ao menos uma persona"); return; }
+    addMany.mutate(
+      picked.map(p => ({
+        name: p.name, role: p.role || null, tags: p.tags,
+        desires: p.desires, pains: p.pains, help: p.help || null,
+      })),
+      {
+        onSuccess: () => {
+          toast.success(`${picked.length} persona(s) adicionada(s)`);
+          setAiResults([]); setAiPicked({}); setAiOpen(false);
+        },
+      },
+    );
+  };
 
   const pick = (p: PersonaRow) => {
     setSelected(p.id);
@@ -201,6 +239,15 @@ export function PersonasWindow({ open, onClose, projectId, projectName }: {
       name: p.name, role: p.role ?? "", tags: toList(p.tags).join(", "),
       desires: toList(p.desires).join("\n"), pains: toList(p.pains).join("\n"), help: p.help ?? "",
     });
+  };
+
+  const editGenerated = (p: GeneratedPersona) => {
+    setSelected(null);
+    setForm({
+      name: p.name, role: p.role, tags: p.tags.join(", "),
+      desires: p.desires.join("\n"), pains: p.pains.join("\n"), help: p.help,
+    });
+    setAiOpen(false);
   };
 
   const save = () => {
@@ -221,9 +268,14 @@ export function PersonasWindow({ open, onClose, projectId, projectName }: {
     <ToolWindow
       open={open} onClose={onClose} icon={Users} title="Personas" subtitle={projectName} size="full"
       headerRight={
-        <button type="button" className="swin-btn" onClick={() => { setSelected(null); setForm({ ...emptyPersona }); }}>
-          <Plus /> Nova persona
-        </button>
+        <>
+          <button type="button" className="swin-btn" onClick={() => { setAiOpen(o => !o); }}>
+            <Sparkles /> {aiOpen ? "Fechar assistente" : "Gerar com IA"}
+          </button>
+          <button type="button" className="swin-btn" onClick={() => { setSelected(null); setForm({ ...emptyPersona }); setAiOpen(false); }}>
+            <Plus /> Nova persona
+          </button>
+        </>
       }
       footer={
         <>
@@ -236,6 +288,7 @@ export function PersonasWindow({ open, onClose, projectId, projectName }: {
       }
     >
       <div className="swin-split" style={{ gridTemplateColumns: "320px minmax(0,1fr)" }}>
+
         <div style={{ padding: 16 }}>
           <div className="swin-sec-t">Personas</div>
           <div className="swin-list">
@@ -260,7 +313,85 @@ export function PersonasWindow({ open, onClose, projectId, projectName }: {
         </div>
 
         <div style={{ padding: "18px 20px 28px" }}>
+          {aiOpen && (
+            <div className="swin-card" style={{ border: "1px solid var(--border)", borderRadius: 12, padding: 16, marginBottom: 18, background: "var(--surface-2, transparent)" }}>
+              <div className="swin-sec-t" style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <Sparkles style={{ width: 15, height: 15, color: "var(--primary)" }} /> Assistente de personas
+              </div>
+              <p style={{ fontSize: 12.5, color: "var(--muted-foreground)", margin: "2px 0 12px" }}>
+                A IA lê o briefing, o cliente e o tipo do projeto para propor personas. Revise, escolha e adicione.
+              </p>
+              <div className="swin-grid">
+                <WinField label="Quantas personas?" hint="De 1 a 5 por geração.">
+                  <select value={aiCount} onChange={e => setAiCount(Number(e.target.value))}>
+                    {[1, 2, 3, 4, 5].map(n => <option key={n} value={n}>{n}</option>)}
+                  </select>
+                </WinField>
+                <WinField label="Direcionamento (opcional)" hint="Ex.: foco em decisores B2B do interior de SP" span>
+                  <textarea value={aiNotes} onChange={e => setAiNotes(e.target.value)} rows={2} />
+                </WinField>
+              </div>
+              <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 10 }}>
+                <button type="button" className="swin-btn primary" disabled={aiRun.isPending} onClick={() => aiRun.mutate()}>
+                  {aiRun.isPending ? <Loader2 className="animate-spin" /> : <Sparkles />}
+                  {aiRun.isPending ? "Gerando..." : aiResults.length ? "Gerar novamente" : "Gerar personas"}
+                </button>
+              </div>
+
+              {aiResults.length > 0 && (
+                <div style={{ marginTop: 16, display: "grid", gap: 10 }}>
+                  {aiResults.map((p, i) => (
+                    <div
+                      key={`${p.name}-${i}`}
+                      style={{
+                        border: "1px solid var(--border)", borderRadius: 10, padding: 12,
+                        opacity: aiPicked[i] ? 1 : 0.55, background: "var(--surface)",
+                      }}
+                    >
+                      <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
+                        <input
+                          type="checkbox" checked={!!aiPicked[i]} style={{ marginTop: 3 }}
+                          onChange={e => setAiPicked({ ...aiPicked, [i]: e.target.checked })}
+                        />
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <b style={{ fontSize: 13 }}>{p.name}</b>
+                          <small style={{ display: "block", color: "var(--muted-foreground)" }}>{p.role}</small>
+                          <div style={{ display: "flex", flexWrap: "wrap", gap: 6, margin: "8px 0" }}>
+                            {p.tags.map((t, ti) => (
+                              <span key={ti} style={{ fontSize: 11, padding: "2px 8px", borderRadius: 999, background: "color-mix(in oklab, var(--primary) 12%, transparent)", color: "var(--primary)" }}>{t}</span>
+                            ))}
+                          </div>
+                          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, fontSize: 12 }}>
+                            <div>
+                              <small style={{ color: "var(--muted-foreground)" }}>Objetivos</small>
+                              <ul style={{ margin: "4px 0 0 16px" }}>{p.desires.map((d, di) => <li key={di}>{d}</li>)}</ul>
+                            </div>
+                            <div>
+                              <small style={{ color: "var(--muted-foreground)" }}>Desafios</small>
+                              <ul style={{ margin: "4px 0 0 16px" }}>{p.pains.map((d, di) => <li key={di}>{d}</li>)}</ul>
+                            </div>
+                          </div>
+                          {p.help && <p style={{ fontSize: 12, marginTop: 8 }}><b>Como ajudamos: </b>{p.help}</p>}
+                        </div>
+                        <button type="button" className="swin-btn" onClick={() => editGenerated(p)} title="Editar antes de salvar">
+                          <Pencil />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                  <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
+                    <button type="button" className="swin-btn" onClick={() => { setAiResults([]); setAiPicked({}); }}>Descartar</button>
+                    <button type="button" className="swin-btn primary" disabled={addMany.isPending} onClick={applyPicked}>
+                      <Check /> Adicionar selecionadas
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
           <div className="swin-sec-t">{selected ? "Editar persona" : "Nova persona"}</div>
+
           <div className="swin-grid">
             <WinField label="Nome" hint="Ex.: Marina, gestora de marketing"><input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} /></WinField>
             <WinField label="Cargo / contexto" hint="Ex.: CMO | Tech B2B"><input value={form.role} onChange={e => setForm({ ...form, role: e.target.value })} /></WinField>
