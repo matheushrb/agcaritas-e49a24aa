@@ -389,8 +389,9 @@ export function PlannerPanel({ data }: { data: FinDataset }) {
           <div className="grid gap-2 sm:grid-cols-4 pt-1">
             {[
               { l: "Custos fixos (precificação)", v: costBase.pricingFixed },
+              { l: "Lançamentos marcados como custo fixo (média 3 meses)", v: costBase.fixedFromCharges },
               { l: "Folha da equipe interna", v: costBase.payroll },
-              { l: "Pró-labore", v: costBase.prolabore },
+              { l: costBase.prolaboreSource === "salario" ? "Pró-labore (seu salário no RH)" : "Pró-labore", v: costBase.prolabore },
               { l: "Variáveis (média 3 meses)", v: costBase.variableAvg },
             ].map(x => (
               <div key={x.l} className="rounded-lg border px-3 py-2">
