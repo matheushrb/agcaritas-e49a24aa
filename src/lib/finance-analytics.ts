@@ -425,8 +425,11 @@ export function buildCashflow(input: {
 /* --------- base de custo mensal da agência --------- */
 export type CostBase = {
   pricingFixed: number;    // custos fixos cadastrados na precificação
-  payroll: number;         // folha da equipe interna
-  prolabore: number;       // pró-labore mensal
+  fixedFromCharges: number;// média mensal dos lançamentos marcados como custo fixo
+  fixedTotal: number;      // pricingFixed + fixedFromCharges
+  payroll: number;         // folha da equipe interna (exceto o sócio/pró-labore)
+  prolabore: number;       // pró-labore mensal (salário do sócio)
+  prolaboreSource: "manual" | "salario" | "lancamentos" | "percentual" | "nenhum";
   variableAvg: number;     // média mensal de custos variáveis/mídia/projetos
   taxPct: number;
   total: number;
@@ -441,21 +444,40 @@ export function computeCostBase(input: {
   costs: FinProjectCost[];
   reserves: ReserveSettings;
   monthsForAverage?: number;
+  /** usuário logado — o salário dele na equipe é tratado como pró-labore */
+  currentUserId?: string | null;
 }): CostBase {
-  const { pricingFixed, pricingVariable, members, charges, costs, reserves } = input;
+  const { pricingFixed, pricingVariable, members, charges, costs, reserves, currentUserId } = input;
   const n = Math.max(1, input.monthsForAverage ?? 3);
   const keys = lastMonths(n);
   const inWindow = (d?: string | null) => !!d && keys.includes(monthKey(d));
 
+  // O salário cadastrado do usuário logado é o pró-labore do sócio.
+  const ownMember = currentUserId ? members.find(m => m.user_id === currentUserId) : undefined;
+  const ownSalary = num(ownMember?.monthly_salary);
+
   const payroll = reserves.include_payroll
-    ? members.filter(m => (m.cost_mode ?? "internal_fixed") === "internal_fixed")
+    ? members
+        .filter(m => (m.cost_mode ?? "internal_fixed") === "internal_fixed")
+        .filter(m => !(ownMember && m.id === ownMember.id && ownSalary > 0))
         .reduce((a, m) => a + num(m.monthly_salary), 0)
     : 0;
 
   const proFromCharges = charges
     .filter(c => c.status !== "cancelled" && accNature(c) === "pro_labore" && inWindow(c.competence_month ?? c.paid_at ?? c.due_date))
     .reduce((a, c) => a + Math.abs(num(c.amount)), 0) / n;
-  const prolabore = reserves.prolabore_monthly > 0 ? reserves.prolabore_monthly : proFromCharges;
+
+  let prolabore = 0;
+  let prolaboreSource: CostBase["prolaboreSource"] = "nenhum";
+  if (reserves.prolabore_monthly > 0) { prolabore = reserves.prolabore_monthly; prolaboreSource = "manual"; }
+  else if (ownSalary > 0) { prolabore = ownSalary; prolaboreSource = "salario"; }
+  else if (proFromCharges > 0) { prolabore = proFromCharges; prolaboreSource = "lancamentos"; }
+
+  // Todo lançamento marcado como custo fixo entra na base (média do período).
+  const fixedFromCharges = charges
+    .filter(c => c.status !== "cancelled" && accNature(c) === "custo_fixo" && inWindow(c.competence_month ?? c.paid_at ?? c.due_date))
+    .reduce((a, c) => a + Math.abs(num(c.amount)), 0) / n;
+  const fixedTotal = pricingFixed + fixedFromCharges;
 
   const varFromCharges = charges
     .filter(c => c.status !== "cancelled" && ["custo_variavel", "midia_paga", "reembolso_pago"].includes(accNature(c)) && inWindow(c.competence_month ?? c.paid_at ?? c.due_date))
@@ -466,11 +488,12 @@ export function computeCostBase(input: {
   const variableAvg = Math.max(pricingVariable, varFromCharges + varFromCosts);
 
   return {
-    pricingFixed, payroll, prolabore, variableAvg,
+    pricingFixed, fixedFromCharges, fixedTotal, payroll, prolabore, prolaboreSource, variableAvg,
     taxPct: reserves.tax_pct,
-    total: pricingFixed + payroll + prolabore + variableAvg,
+    total: fixedTotal + payroll + prolabore + variableAvg,
   };
 }
+
 
 /* --------- planejador de reservas --------- */
 export type ReservePlan = {
