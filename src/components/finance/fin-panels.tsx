@@ -27,6 +27,7 @@ export type FinDataset = {
   entries: FinTimeEntry[];
   pricing: PricingSettings;
   reserves: ReserveSettings;
+  currentUserId?: string | null;
 };
 
 const Section = ({ title, hint, right, children }: { title: string; hint?: string; right?: React.ReactNode; children: React.ReactNode }) => (
@@ -266,7 +267,8 @@ export function PlannerPanel({ data }: { data: FinDataset }) {
     charges: data.charges,
     costs: data.costs,
     reserves: state,
-  }), [rate.fixed, rate.variable, data.members, data.charges, data.costs, state]);
+    currentUserId: data.currentUserId,
+  }), [rate.fixed, rate.variable, data.members, data.charges, data.costs, state, data.currentUserId]);
 
   const be = computeBreakEven({
     operatingCost: costBase.total,
@@ -332,7 +334,7 @@ export function PlannerPanel({ data }: { data: FinDataset }) {
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="rounded-xl border p-3">
               <div className="text-xs font-medium">Pró-labore mensal (R$)</div>
-              <div className="text-[11px] text-muted-foreground mb-2">Valor fixo dos sócios. Entra como custo fixo no ponto de equilíbrio. Deixe 0 para usar a média dos lançamentos.</div>
+              <div className="text-[11px] text-muted-foreground mb-2">Deixe 0 para o sistema usar o seu salário cadastrado no RH; se não houver, usa a média dos lançamentos de pró-labore.</div>
               <Input type="number" min={0} className="h-9" value={state.prolabore_monthly}
                 onChange={e => setState(s => ({ ...s, prolabore_monthly: Number(e.target.value) || 0 }))} />
             </div>
@@ -597,7 +599,8 @@ export function MonthGoalBanner({ data, onOpenPlanner }: { data: FinDataset; onO
     charges: data.charges,
     costs: data.costs,
     reserves: data.reserves,
-  }), [rate.fixed, rate.variable, data.members, data.charges, data.costs, data.reserves]);
+    currentUserId: data.currentUserId,
+  }), [rate.fixed, rate.variable, data.members, data.charges, data.costs, data.reserves, data.currentUserId]);
 
   const be = computeBreakEven({
     operatingCost: costBase.total,
@@ -626,7 +629,7 @@ export function MonthGoalBanner({ data, onOpenPlanner }: { data: FinDataset; onO
         <div>
           <div className="flex items-center gap-2 text-sm font-semibold"><Target className="h-4 w-4 text-primary" />Quanto preciso faturar neste mês</div>
           <p className="text-xs text-muted-foreground mt-0.5">
-            Custo para manter a agência de pé: {brl0(costBase.total)} por mês (fixos {brl0(costBase.pricingFixed)} · folha {brl0(costBase.payroll)} · pró-labore {brl0(costBase.prolabore)} · variáveis {brl0(costBase.variableAvg)}).
+            Custo para manter a agência de pé: {brl0(costBase.total)} por mês (fixos {brl0(costBase.fixedTotal)} · folha {brl0(costBase.payroll)} · pró-labore {brl0(costBase.prolabore)}{costBase.prolaboreSource === "salario" ? " (seu salário)" : ""} · variáveis {brl0(costBase.variableAvg)}).
           </p>
         </div>
         {onOpenPlanner && (

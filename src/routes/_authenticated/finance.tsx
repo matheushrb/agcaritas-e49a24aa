@@ -145,6 +145,10 @@ function FinancePage() {
       return data ?? [];
     },
   });
+  const { data: authUserId } = useQuery({
+    queryKey: ["fin-auth-user"],
+    queryFn: async () => (await supabase.auth.getUser()).data.user?.id ?? null,
+  });
   const { data: members = [] } = useQuery({
     queryKey: ["fin-members"],
     queryFn: async () => {
@@ -188,6 +192,7 @@ function FinancePage() {
     taskTypes: taskTypes as any,
     members: members as any,
     entries: entries as any,
+    currentUserId: authUserId ?? null,
     pricing: (pricing ?? { fixed_costs: [], variable_costs: [], billable_hours_month: 120, profit_margin_pct: 30, tax_pct: 6 }) as any,
     reserves,
   };
