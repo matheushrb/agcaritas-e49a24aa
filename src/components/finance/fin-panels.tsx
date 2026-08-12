@@ -295,7 +295,7 @@ export function PlannerPanel({ data }: { data: FinDataset }) {
 
   const fields: { key: keyof ReserveSettings; label: string; hint: string; suffix: string }[] = [
     { key: "tax_pct", label: "Impostos", hint: "Percentual médio sobre o faturamento", suffix: "%" },
-    { key: "prolabore_pct", label: "Pró-labore", hint: "Retirada dos sócios", suffix: "%" },
+    { key: "prolabore_pct", label: "Retirada extra dos sócios", hint: "Distribuição sobre o faturamento depois de cobrir custos, impostos e reservas. Seu salário fixo já entra como pró-labore no custo.", suffix: "%" },
     { key: "profit_pct", label: "Lucro", hint: "Reserva de lucro / reinvestimento", suffix: "%" },
     { key: "emergency_pct", label: "Reserva de emergência", hint: "Percentual guardado todo mês", suffix: "%" },
     { key: "investment_pct", label: "Capital de investimento", hint: "Percentual reservado para crescer a agência", suffix: "%" },
@@ -304,7 +304,7 @@ export function PlannerPanel({ data }: { data: FinDataset }) {
 
   const alloc = [
     { label: "Impostos", value: plan.taxes, color: "bg-amber-500" },
-    { label: "Pró-labore", value: plan.prolabore, color: "bg-violet-500" },
+    { label: "Retirada extra", value: plan.prolabore, color: "bg-violet-500" },
     { label: "Lucro", value: plan.profit, color: "bg-emerald-500" },
     { label: "Emergência", value: plan.emergency, color: "bg-sky-500" },
     { label: "Operação", value: Math.max(0, plan.operation), color: "bg-slate-400" },
@@ -333,7 +333,7 @@ export function PlannerPanel({ data }: { data: FinDataset }) {
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="rounded-xl border p-3">
-              <div className="text-xs font-medium">Pró-labore mensal (R$)</div>
+              <div className="text-xs font-medium">Pró-labore mensal — seu salário (R$)</div>
               <div className="text-[11px] text-muted-foreground mb-2">Deixe 0 para o sistema usar o seu salário cadastrado no RH; se não houver, usa a média dos lançamentos de pró-labore.</div>
               <Input type="number" min={0} className="h-9" value={state.prolabore_monthly}
                 onChange={e => setState(s => ({ ...s, prolabore_monthly: Number(e.target.value) || 0 }))} />
