@@ -788,3 +788,195 @@
 .crm02-panel .crm02-panel-d { font-size: 10.5px; color: var(--cw-muted); margin: 3px 0 10px; }
 
 .crm02-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--cw-divider); }
+
+/* ============================================================
+   FINANCE ENTRY WINDOW — Fintech / online banking aesthetic
+   Hero amount, color-coded type toggle, card sections
+   ============================================================ */
+
+.fe-window { --fe-rev: var(--cw-green, #16a34a); --fe-exp: var(--cw-danger, #e5484d); }
+.fe-window[data-nature="revenue"] { --fe-accent: var(--fe-rev); }
+.fe-window[data-nature="expense"]  { --fe-accent: var(--fe-exp); }
+
+/* Header */
+.fe-header { padding-bottom: 14px; }
+.fe-header-ico { background: color-mix(in oklab, var(--fe-accent) 14%, transparent); color: var(--fe-accent); }
+.fe-header h2 { font-size: 17px; font-weight: 700; letter-spacing: -0.01em; line-height: 1.2; }
+.fe-header p { font-size: 12px; color: var(--cw-muted); margin-top: 2px; }
+.fe-save-btn { white-space: nowrap; }
+
+/* Hero block */
+.fe-hero {
+  display: flex;
+  align-items: stretch;
+  gap: 18px;
+  padding: 16px 22px;
+  background:
+    radial-gradient(120% 120% at 0% 0%, color-mix(in oklab, var(--fe-accent) 9%, transparent), transparent 60%),
+    var(--cw-surface, #fff);
+  border-top: 1px solid var(--cw-divider);
+  border-bottom: 1px solid var(--cw-divider);
+}
+
+/* Type toggle */
+.fe-type-toggle {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 132px;
+}
+.fe-type-btn {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 11px 14px;
+  border-radius: 11px;
+  border: 1.5px solid var(--cw-divider);
+  background: var(--card);
+  color: var(--cw-muted);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all .16s ease;
+}
+.fe-type-btn svg { opacity: .7; }
+.fe-type-btn:hover { border-color: color-mix(in oklab, var(--cw-ink) 18%, transparent); color: var(--cw-ink); }
+.fe-type-btn.is-on.is-revenue { border-color: var(--fe-rev); background: color-mix(in oklab, var(--fe-rev) 10%, transparent); color: var(--fe-rev); }
+.fe-type-btn.is-on.is-revenue svg { opacity: 1; }
+.fe-type-btn.is-on.is-expense  { border-color: var(--fe-exp); background: color-mix(in oklab, var(--fe-exp) 10%, transparent); color: var(--fe-exp); }
+.fe-type-btn.is-on.is-expense svg { opacity: 1; }
+
+/* Amount area */
+.fe-amount-area { flex: 1; min-width: 0; }
+.fe-amount-label { font-size: 11px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--cw-muted); }
+.fe-amount-row { display: flex; align-items: center; gap: 10px; margin-top: 4px; }
+.fe-currency {
+  font-size: 24px; font-weight: 700; color: var(--fe-accent); opacity: .55;
+  font-variant-numeric: tabular-nums;
+}
+.fe-amount-input {
+  flex: 1; min-width: 0; border: none; outline: none; background: transparent;
+  font-size: 34px; font-weight: 800; letter-spacing: -0.02em; line-height: 1.1;
+  color: var(--cw-ink); font-variant-numeric: tabular-nums;
+}
+.fe-amount-input::placeholder { color: color-mix(in oklab, var(--cw-ink) 22%, transparent); font-weight: 600; }
+
+/* Status badge inside hero */
+.fe-status-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 12px 6px 10px; border-radius: 999px;
+  border: 1.5px solid color-mix(in oklab, var(--sc) 40%, transparent);
+  background: color-mix(in oklab, var(--sc) 12%, transparent);
+  color: var(--sc); font-size: 12px; font-weight: 600;
+  position: relative; flex-shrink: 0;
+}
+.fe-status-badge > i { width: 7px; height: 7px; border-radius: 50%; background: var(--sc); flex-shrink: 0; }
+.fe-status-badge select {
+  appearance: none; background: transparent; border: none; outline: none;
+  color: var(--sc); font-weight: 600; font-size: 12px; cursor: pointer; padding-right: 14px;
+}
+.fe-status-badge select option { color: var(--cw-ink); background: var(--card); }
+.fe-status-badge svg { color: var(--sc); }
+
+.fe-amount-sub {
+  display: flex; align-items: center; gap: 10px;
+  margin-top: 6px; font-size: 13px; color: var(--cw-muted);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.fe-amount-date { display: inline-flex; align-items: center; gap: 4px; flex-shrink: 0; }
+
+/* Content layout */
+.fe-content { padding: 18px 22px 6px; }
+
+/* Description field (full width) */
+.fe-desc-field { margin-bottom: 18px; }
+.fe-desc-input { font-size: 14px; padding: 11px 14px; }
+
+/* Sections (cards) */
+.fe-section {
+  border: 1px solid var(--cw-divider);
+  border-radius: 14px;
+  padding: 14px 16px 16px;
+  margin-bottom: 14px;
+  background: color-mix(in oklab, var(--cw-surface) 50%, var(--card));
+}
+.fe-section-head {
+  display: flex; align-items: center; gap: 8px;
+  margin-bottom: 12px; padding-bottom: 10px;
+  border-bottom: 1px dashed var(--cw-divider);
+}
+.fe-section-head h4 {
+  font-size: 13px; font-weight: 700; letter-spacing: 0.01em;
+  margin: 0; color: var(--cw-ink);
+}
+.fe-section-head svg { color: var(--cw-muted); }
+
+.fe-grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.fe-grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+@media (max-width: 720px) {
+  .fe-grid-3 { grid-template-columns: 1fr 1fr; }
+  .fe-grid-2 { grid-template-columns: 1fr; }
+}
+
+.fe-hint { display: block; margin-top: 4px; font-size: 11px; color: var(--cw-muted); line-height: 1.4; }
+
+/* Tasks list */
+.fe-tasks-list {
+  display: flex; flex-direction: column; gap: 6px;
+  max-height: 220px; overflow-y: auto;
+  padding: 2px;
+}
+.fe-task-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 12px; border-radius: 10px;
+  border: 1px solid var(--cw-divider);
+  background: var(--card);
+  cursor: pointer; transition: border-color .15s, background .15s;
+}
+.fe-task-row:hover { border-color: color-mix(in oklab, var(--cw-ink) 18%, transparent); }
+.fe-task-row.is-checked { border-color: color-mix(in oklab, var(--cw-cobalt) 35%, transparent); background: color-mix(in oklab, var(--cw-cobalt) 5%, transparent); }
+.fe-task-row input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--cw-cobalt); flex-shrink: 0; }
+.fe-task-title { flex: 1; min-width: 0; font-size: 13px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fe-task-billed { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em; color: var(--cw-muted); background: color-mix(in oklab, var(--cw-ink) 6%, transparent); padding: 2px 7px; border-radius: 6px; }
+.fe-task-val { font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--cw-ink); }
+
+.fe-tasks-bar {
+  display: flex; align-items: center; gap: 8px;
+  margin-top: 10px; padding-top: 10px;
+  border-top: 1px dashed var(--cw-divider);
+  flex-wrap: wrap;
+}
+.fe-tasks-sum { font-size: 12.5px; font-weight: 600; color: var(--cw-ink); margin-right: auto; }
+
+/* Recurrence */
+.fe-repeat-row { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.fe-switch-label {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-size: 13px; font-weight: 600; color: var(--cw-ink); cursor: pointer;
+}
+.fe-switch-label input { width: 16px; height: 16px; accent-color: var(--cw-cobalt); }
+.fe-repeat-opts { display: flex; gap: 14px; flex-wrap: wrap; }
+.fe-repeat-field { display: flex; flex-direction: column; gap: 4px; font-size: 11px; font-weight: 600; color: var(--cw-muted); text-transform: uppercase; letter-spacing: 0.03em; }
+
+/* Footer */
+.fe-footer { padding: 14px 22px; gap: 0; }
+.fe-foot-info { font-size: 12.5px; color: var(--cw-muted); }
+
+/* Docked variant keeps width */
+.cw-dock .fe-hero { padding: 14px 16px; }
+.cw-dock .fe-content { padding: 14px 16px 4px; }
+.cw-dock .fe-footer { padding: 12px 16px; }
+.cw-dock .fe-grid-3 { grid-template-columns: 1fr; }
+.cw-dock .fe-grid-2 { grid-template-columns: 1fr; }
+.cw-dock .fe-amount-input { font-size: 28px; }
+.cw-dock .fe-currency { font-size: 20px; }
+
+/* Dark mode */
+.dark .fe-hero {
+  background:
+    radial-gradient(120% 120% at 0% 0%, color-mix(in oklab, var(--fe-accent) 14%, transparent), transparent 60%),
+    color-mix(in oklab, var(--cw-surface) 50%, var(--card));
+}
+.dark .fe-section { background: color-mix(in oklab, var(--cw-surface) 30%, var(--card)); }
+.dark .fe-amount-input { color: var(--cw-ink); }
+.dark .fe-status-badge select option { background: #1c2026; }
