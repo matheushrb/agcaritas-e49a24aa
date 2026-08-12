@@ -265,8 +265,8 @@ export function FinanceEntryWindow({
       <div className="cw-header fe-header">
         <span className="cw-title-icon fe-header-ico"><Receipt size={17} /></span>
         <div className="min-w-0 flex-1">
-          <Title><h2>{isEdit ? (description || "Lançamento financeiro") : (isRevenue ? "Nova receita" : "Nova despesa")}</h2></Title>
-          <p>{isRevenue ? "Entrada de dinheiro — cliente, projeto e competência" : "Saída de dinheiro — fornecedor, categoria e competência"}</p>
+          <Title><h2>{isEdit ? (description || "Lançamento financeiro") : "Novo lançamento"}</h2></Title>
+          <p>Registre entradas e saídas com vínculo a cliente, projeto e contabilidade</p>
         </div>
         <div className="cw-head-actions">
           <button type="button" className="cw-btn cw-btn-primary fe-save-btn" disabled={!canSave || save.isPending}
@@ -282,285 +282,35 @@ export function FinanceEntryWindow({
         </div>
       </div>
 
-      <div className="fe-body">
-        {/* ---------- Main column ---------- */}
-        <div className="fe-main">
-          {/* Bloco 1 — Tipo e valor */}
-          <section className="fe-block fe-block-hero">
-            <header className="fe-block-h">
-              <span className="fe-step">1</span>
-              <div>
-                <h4>Tipo e valor</h4>
-                <p>O que entrou ou saiu do caixa</p>
-              </div>
-            </header>
-            <div className="fe-block-b">
-              <div className="fe-type-toggle">
-                <button type="button"
-                  className={`fe-type-btn ${isRevenue ? "is-on is-revenue" : ""}`}
-                  onClick={() => { setNature("revenue"); setAccNature("recebimento_cliente"); setCategory(""); }}>
-                  <ArrowDownLeft size={18} />
-                  <span>Receita</span>
-                </button>
-                <button type="button"
-                  className={`fe-type-btn ${!isRevenue ? "is-on is-expense" : ""}`}
-                  onClick={() => { setNature("expense"); setAccNature("custo_variavel"); setCategory(""); }}>
-                  <ArrowUpRight size={18} />
-                  <span>Despesa</span>
-                </button>
-              </div>
-
-              <div className="fe-amount-row">
-                <span className="fe-currency">R$</span>
-                <input
-                  className="fe-amount-input"
-                  inputMode="decimal"
-                  placeholder="0,00"
-                  value={amount}
-                  onChange={e => setAmount(e.target.value)}
-                  autoFocus
-                />
-              </div>
-
-              <div className="fe-field">
-                <label className="cw-label">Descrição<span className="req">*</span></label>
-                <input className="cw-input fe-desc-input"
-                  placeholder={isRevenue ? "Ex.: Mensalidade Bella Estética — Nov/25" : "Ex.: Assinatura Adobe — Nov/25"}
-                  value={description} onChange={e => setDescription(e.target.value)} />
-              </div>
-            </div>
-          </section>
-
-          {/* Bloco 2 — Vinculação (contextual) */}
-          <section className="fe-block">
-            <header className="fe-block-h">
-              <span className="fe-step">2</span>
-              <div>
-                <h4>{isRevenue ? "De quem vem" : "Para onde vai"}</h4>
-                <p>{isRevenue ? "Origem da receita" : "Destino e alocação da despesa"}</p>
-              </div>
-            </header>
-            <div className="fe-block-b">
-              {isRevenue ? (
-                <div className="fe-grid-2">
-                  <div className="cw-field">
-                    <label className="cw-label">Cliente</label>
-                    <div className="cw-select-wrap">
-                      <select className="cw-select" value={clientId} onChange={e => setClientId(e.target.value)}>
-                        <option value="">Sem cliente</option>
-                        {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                      </select>
-                      <ChevronDown size={14} />
-                    </div>
-                  </div>
-                  <div className="cw-field">
-                    <label className="cw-label">Projeto</label>
-                    <div className="cw-select-wrap">
-                      <select className="cw-select" value={projectId} onChange={e => setProjectId(e.target.value)}>
-                        <option value="">Sem projeto</option>
-                        {projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-                      </select>
-                      <ChevronDown size={14} />
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <>
-                  <div className="fe-grid-2">
-                    <div className="cw-field">
-                      <label className="cw-label">Categoria da despesa</label>
-                      <div className="cw-select-wrap">
-                        <select className="cw-select" value={category} onChange={e => setCategory(e.target.value)}>
-                          <option value="">Sem categoria</option>
-                          {categories.map(c => <option key={c} value={c}>{c}</option>)}
-                        </select>
-                        <ChevronDown size={14} />
-                      </div>
-                    </div>
-                    <div className="cw-field">
-                      <label className="cw-label">Colaborador / fornecedor</label>
-                      <div className="cw-select-wrap">
-                        <select className="cw-select" value={collaboratorId} onChange={e => setCollaboratorId(e.target.value)}>
-                          <option value="">Não se aplica</option>
-                          {teamMembers.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
-                        </select>
-                        <ChevronDown size={14} />
-                      </div>
-                    </div>
-                  </div>
-                  {!linkExpense ? (
-                    <button type="button" className="fe-link-toggle" onClick={() => setLinkExpense(true)}>
-                      <Building2 size={13} /> Alocar em um projeto ou cliente (opcional)
-                    </button>
-                  ) : (
-                    <div className="fe-grid-2 fe-optional-grid">
-                      <div className="cw-field">
-                        <label className="cw-label">Projeto <span className="fe-opt">opcional</span></label>
-                        <div className="cw-select-wrap">
-                          <select className="cw-select" value={projectId} onChange={e => setProjectId(e.target.value)}>
-                            <option value="">Sem projeto</option>
-                            {projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-                          </select>
-                          <ChevronDown size={14} />
-                        </div>
-                      </div>
-                      <div className="cw-field">
-                        <label className="cw-label">Cliente <span className="fe-opt">opcional</span></label>
-                        <div className="cw-select-wrap">
-                          <select className="cw-select" value={clientId} onChange={e => setClientId(e.target.value)}>
-                            <option value="">Sem cliente</option>
-                            {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                          </select>
-                          <ChevronDown size={14} />
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </>
-              )}
-            </div>
-          </section>
-
-          {/* Bloco 3 — Datas e pagamento */}
-          <section className="fe-block">
-            <header className="fe-block-h">
-              <span className="fe-step">3</span>
-              <div>
-                <h4>Datas e pagamento</h4>
-                <p>Quando vence, a que mês pertence e como é pago</p>
-              </div>
-            </header>
-            <div className="fe-block-b">
-              <div className="fe-grid-3">
-                <div className="cw-field">
-                  <label className="cw-label">Vencimento</label>
-                  <input type="date" className="cw-input" value={dueDate ?? ""} onChange={e => setDueDate(e.target.value)} />
-                </div>
-                <div className="cw-field">
-                  <label className="cw-label">Competência</label>
-                  <input type="month" className="cw-input" value={competence} onChange={e => setCompetence(e.target.value)} />
-                </div>
-                <div className="cw-field">
-                  <label className="cw-label">Forma de pagamento</label>
-                  <div className="cw-select-wrap">
-                    <select className="cw-select" value={method} onChange={e => setMethod(e.target.value)}>
-                      <option value="">Não definida</option>
-                      {PAYMENT_METHODS.map(m => <option key={m} value={m}>{m}</option>)}
-                    </select>
-                    <ChevronDown size={14} />
-                  </div>
-                </div>
-              </div>
-              {isRevenue && (
-                <div className="cw-field" style={{ marginTop: 12, maxWidth: 320 }}>
-                  <label className="cw-label">Categoria</label>
-                  <div className="cw-select-wrap">
-                    <select className="cw-select" value={category} onChange={e => setCategory(e.target.value)}>
-                      <option value="">Sem categoria</option>
-                      {categories.map(c => <option key={c} value={c}>{c}</option>)}
-                    </select>
-                    <ChevronDown size={14} />
-                  </div>
-                </div>
-              )}
-
-              {!isEdit && (
-                <div className="fe-repeat-row" style={{ marginTop: 14 }}>
-                  <label className="fe-switch-label">
-                    <input type="checkbox" role="switch" checked={repeat} onChange={e => setRepeat(e.target.checked)} />
-                    <Repeat size={14} /> Repetir mensalmente
-                  </label>
-                  {repeat && (
-                    <div className="fe-repeat-opts">
-                      <div className="fe-repeat-field">
-                        <span>Dia do mês</span>
-                        <input className="cw-input" type="number" min={1} max={28} style={{ width: 80 }}
-                          value={dayOfMonth || String(effectiveDay)}
-                          onChange={e => setDayOfMonth(e.target.value)} />
-                      </div>
-                      <div className="fe-repeat-field">
-                        <span>Repetir até</span>
-                        <input className="cw-input" type="date" style={{ width: 160 }}
-                          value={repeatUntil} onChange={e => setRepeatUntil(e.target.value)} />
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          </section>
-
-          {/* Bloco 4 — Tarefas incluídas */}
-          {!!projectId && (
-            <section className="fe-block">
-              <header className="fe-block-h">
-                <span className="fe-step"><ListChecks size={14} /></span>
-                <div>
-                  <h4>Tarefas incluídas</h4>
-                  <p>Marque as entregas que compõem este lançamento</p>
-                </div>
-              </header>
-              <div className="fe-block-b">
-                {projectTasks.length === 0 ? (
-                  <div className="cw-callout"><Info size={14} /><span>Este projeto ainda não possui tarefas.</span></div>
-                ) : (
-                  <>
-                    <div className="fe-tasks-list">
-                      {projectTasks.map(t => {
-                        const checked = taskIds.includes(t.id);
-                        return (
-                          <label key={t.id} className={`fe-task-row ${checked ? "is-checked" : ""}`}>
-                            <input type="checkbox" checked={checked} onChange={() => toggleTask(t.id)} />
-                            <span className="fe-task-title">{t.title}</span>
-                            {t.billed && <span className="fe-task-billed">já faturada</span>}
-                            <strong className="fe-task-val">{money(taskValue(t))}</strong>
-                          </label>
-                        );
-                      })}
-                    </div>
-                    <div className="fe-tasks-bar">
-                      <span className="fe-tasks-sum">
-                        {taskIds.length} tarefa(s) — soma {money(selectedTotal)}
-                      </span>
-                      <button type="button" className="cw-btn cw-btn-secondary cw-btn-sm"
-                        onClick={() => setTaskIds(projectTasks.map(t => t.id))}>Selecionar todas</button>
-                      <button type="button" className="cw-btn cw-btn-secondary cw-btn-sm"
-                        onClick={() => setTaskIds([])}>Limpar</button>
-                      <button type="button" className="cw-btn cw-btn-primary cw-btn-sm" disabled={selectedTotal <= 0}
-                        onClick={() => setAmount(String(selectedTotal))}>Usar soma como valor</button>
-                    </div>
-                  </>
-                )}
-              </div>
-            </section>
-          )}
-
-          {/* Bloco 5 — Observações */}
-          <section className="fe-block">
-            <header className="fe-block-h">
-              <span className="fe-step"><FileText size={14} /></span>
-              <div>
-                <h4>Observações internas</h4>
-                <p>Só a equipe vê este conteúdo</p>
-              </div>
-            </header>
-            <div className="fe-block-b">
-              <textarea className="cw-textarea" rows={3} placeholder="Notas internas (opcional)"
-                value={notes} onChange={e => setNotes(e.target.value)} />
-            </div>
-          </section>
+      {/* Hero: type toggle + amount */}
+      <div className="fe-hero">
+        <div className="fe-type-toggle">
+          <button type="button"
+            className={`fe-type-btn ${isRevenue ? "is-on is-revenue" : ""}`}
+            onClick={() => { setNature("revenue"); setAccNature("recebimento_cliente"); }}>
+            <ArrowDownLeft size={18} />
+            <span>Receita</span>
+          </button>
+          <button type="button"
+            className={`fe-type-btn ${!isRevenue ? "is-on is-expense" : ""}`}
+            onClick={() => { setNature("expense"); setAccNature("custo_variavel"); }}>
+            <ArrowUpRight size={18} />
+            <span>Despesa</span>
+          </button>
         </div>
 
-        {/* ---------- Side rail ---------- */}
-        <aside className="fe-rail">
-          <div className="fe-rail-card fe-rail-total">
-            <span className="fe-rail-cap">{isRevenue ? "Entrada" : "Saída"}</span>
-            <strong className="fe-rail-value">{isRevenue ? "" : "− "}{money(value)}</strong>
-            <div className="fe-rail-desc">{description || "Sem descrição"}</div>
-          </div>
-
-          <div className="fe-rail-card">
-            <label className="cw-label">Status</label>
+        <div className="fe-amount-area">
+          <label className="fe-amount-label">Valor do lançamento</label>
+          <div className="fe-amount-row">
+            <span className="fe-currency">R$</span>
+            <input
+              className="fe-amount-input"
+              inputMode="decimal"
+              placeholder="0,00"
+              value={amount}
+              onChange={e => setAmount(e.target.value)}
+              autoFocus
+            />
             <div className="fe-status-badge" style={{ "--sc": statusInfo.color } as React.CSSProperties}>
               <i />
               <select value={status} onChange={e => setStatus(e.target.value)}>
@@ -568,30 +318,205 @@ export function FinanceEntryWindow({
               </select>
               <ChevronDown size={12} />
             </div>
-
-            <label className="cw-label" style={{ marginTop: 14 }}>Natureza contábil</label>
-            <div className="cw-select-wrap">
-              <select className="cw-select" value={accNature} onChange={e => setAccNature(e.target.value)}>
-                {ACCOUNTING_NATURES.filter(n => n.side === nature).map(n => (
-                  <option key={n.value} value={n.value}>{n.label}</option>
-                ))}
-              </select>
-              <ChevronDown size={14} />
-            </div>
-            <span className="fe-hint">{ACCOUNTING_NATURES.find(n => n.value === accNature)?.hint}</span>
           </div>
-
-          <div className="fe-rail-card fe-rail-summary">
-            <div className="fe-rail-line"><span><Calendar size={12} /> Vencimento</span><b>{dueDate ? fmtDate(dueDate) : "—"}</b></div>
-            <div className="fe-rail-line"><span><Tag size={12} /> Competência</span><b>{competence || "—"}</b></div>
-            <div className="fe-rail-line"><span><CreditCard size={12} /> Pagamento</span><b>{method || "—"}</b></div>
-            <div className="fe-rail-line">
-              <span><Building2 size={12} /> {isRevenue ? "Cliente" : "Categoria"}</span>
-              <b>{isRevenue ? (clients.find(c => c.id === clientId)?.name ?? "—") : (category || "—")}</b>
-            </div>
-            <div className="fe-rail-line"><span><Wallet size={12} /> Projeto</span><b>{projects.find(p => p.id === projectId)?.name ?? "—"}</b></div>
+          <div className="fe-amount-sub">
+            {description ? description : "Descreva o lançamento abaixo"}
+            {dueDate && <span className="fe-amount-date"><Calendar size={12} /> {fmtDate(dueDate)}</span>}
           </div>
-        </aside>
+        </div>
+      </div>
+
+      {/* Content */}
+      <div className="cw-content fe-content">
+        {/* Description */}
+        <div className="fe-field fe-desc-field">
+          <label className="cw-label">Descrição<span className="req">*</span></label>
+          <input className="cw-input fe-desc-input" placeholder="Ex.: Mensalidade Bella Estética — Nov/25"
+            value={description} onChange={e => setDescription(e.target.value)} />
+        </div>
+
+        {/* Section: Vinculação */}
+        <div className="fe-section">
+          <div className="fe-section-head">
+            <Building2 size={15} />
+            <h4>Vinculação</h4>
+          </div>
+          <div className="fe-grid-3">
+            <div className="cw-field">
+              <label className="cw-label">Cliente</label>
+              <div className="cw-select-wrap">
+                <select className="cw-select" value={clientId} onChange={e => setClientId(e.target.value)}>
+                  <option value="">Sem cliente</option>
+                  {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                </select>
+                <ChevronDown size={14} />
+              </div>
+            </div>
+            <div className="cw-field">
+              <label className="cw-label">Projeto</label>
+              <div className="cw-select-wrap">
+                <select className="cw-select" value={projectId} onChange={e => setProjectId(e.target.value)}>
+                  <option value="">Sem projeto</option>
+                  {projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                </select>
+                <ChevronDown size={14} />
+              </div>
+            </div>
+            <div className="cw-field">
+              <label className="cw-label">Colaborador</label>
+              <div className="cw-select-wrap">
+                <select className="cw-select" value={collaboratorId} onChange={e => setCollaboratorId(e.target.value)}>
+                  <option value="">Sem colaborador</option>
+                  {teamMembers.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
+                </select>
+                <ChevronDown size={14} />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Section: Datas */}
+        <div className="fe-section">
+          <div className="fe-section-head">
+            <Calendar size={15} />
+            <h4>Datas</h4>
+          </div>
+          <div className="fe-grid-3">
+            <div className="cw-field">
+              <label className="cw-label">Vencimento</label>
+              <input type="date" className="cw-input" value={dueDate ?? ""} onChange={e => setDueDate(e.target.value)} />
+            </div>
+            <div className="cw-field">
+              <label className="cw-label">Competência</label>
+              <input type="month" className="cw-input" value={competence} onChange={e => setCompetence(e.target.value)} />
+            </div>
+            <div className="cw-field">
+              <label className="cw-label">Categoria</label>
+              <div className="cw-select-wrap">
+                <select className="cw-select" value={category} onChange={e => setCategory(e.target.value)}>
+                  <option value="">Sem categoria</option>
+                  {categories.map(c => <option key={c} value={c}>{c}</option>)}
+                </select>
+                <ChevronDown size={14} />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Section: Contabilidade */}
+        <div className="fe-section">
+          <div className="fe-section-head">
+            <Wallet size={15} />
+            <h4>Contabilidade</h4>
+          </div>
+          <div className="fe-grid-2">
+            <div className="cw-field">
+              <label className="cw-label">Natureza contábil</label>
+              <div className="cw-select-wrap">
+                <select className="cw-select" value={accNature} onChange={e => setAccNature(e.target.value)}>
+                  {ACCOUNTING_NATURES.filter(n => n.side === nature).map(n => (
+                    <option key={n.value} value={n.value}>{n.label}</option>
+                  ))}
+                </select>
+                <ChevronDown size={14} />
+              </div>
+              <span className="fe-hint">
+                {ACCOUNTING_NATURES.find(n => n.value === accNature)?.hint}
+              </span>
+            </div>
+            <div className="cw-field">
+              <label className="cw-label">Forma de pagamento</label>
+              <div className="cw-select-wrap">
+                <select className="cw-select" value={method} onChange={e => setMethod(e.target.value)}>
+                  <option value="">Não definida</option>
+                  {PAYMENT_METHODS.map(m => <option key={m} value={m}>{m}</option>)}
+                </select>
+                <ChevronDown size={14} />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Tasks linked */}
+        {!!projectId && (
+          <div className="fe-section">
+            <div className="fe-section-head">
+              <ListChecks size={15} />
+              <h4>Tarefas incluídas</h4>
+            </div>
+            {projectTasks.length === 0 ? (
+              <div className="cw-callout"><Info size={14} /><span>Este projeto ainda não possui tarefas.</span></div>
+            ) : (
+              <>
+                <div className="fe-tasks-list">
+                  {projectTasks.map(t => {
+                    const checked = taskIds.includes(t.id);
+                    return (
+                      <label key={t.id} className={`fe-task-row ${checked ? "is-checked" : ""}`}>
+                        <input type="checkbox" checked={checked} onChange={() => toggleTask(t.id)} />
+                        <span className="fe-task-title">{t.title}</span>
+                        {t.billed && <span className="fe-task-billed">já faturada</span>}
+                        <strong className="fe-task-val">{money(taskValue(t))}</strong>
+                      </label>
+                    );
+                  })}
+                </div>
+                <div className="fe-tasks-bar">
+                  <span className="fe-tasks-sum">
+                    {taskIds.length} tarefa(s) — soma {money(selectedTotal)}
+                  </span>
+                  <button type="button" className="cw-btn cw-btn-secondary cw-btn-sm"
+                    onClick={() => setTaskIds(projectTasks.map(t => t.id))}>Selecionar todas</button>
+                  <button type="button" className="cw-btn cw-btn-secondary cw-btn-sm"
+                    onClick={() => setTaskIds([])}>Limpar</button>
+                  <button type="button" className="cw-btn cw-btn-primary cw-btn-sm" disabled={selectedTotal <= 0}
+                    onClick={() => setAmount(String(selectedTotal))}>Usar soma como valor</button>
+                </div>
+              </>
+            )}
+          </div>
+        )}
+
+        {/* Recurrence */}
+        {!isEdit && (
+          <div className="fe-section">
+            <div className="fe-section-head">
+              <Repeat size={15} />
+              <h4>Recorrência</h4>
+            </div>
+            <div className="fe-repeat-row">
+              <label className="fe-switch-label">
+                <input type="checkbox" role="switch" checked={repeat} onChange={e => setRepeat(e.target.checked)} />
+                <Repeat size={14} /> Repetir mensalmente
+              </label>
+              {repeat && (
+                <div className="fe-repeat-opts">
+                  <div className="fe-repeat-field">
+                    <span>Dia do mês</span>
+                    <input className="cw-input" type="number" min={1} max={28} style={{ width: 80 }}
+                      value={dayOfMonth || String(effectiveDay)}
+                      onChange={e => setDayOfMonth(e.target.value)} />
+                  </div>
+                  <div className="fe-repeat-field">
+                    <span>Repetir até</span>
+                    <input className="cw-input" type="date" style={{ width: 160 }}
+                      value={repeatUntil} onChange={e => setRepeatUntil(e.target.value)} />
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Notes */}
+        <div className="fe-section">
+          <div className="fe-section-head">
+            <FileText size={15} />
+            <h4>Observações internas</h4>
+          </div>
+          <textarea className="cw-textarea" rows={3} placeholder="Notas internas (opcional)"
+            value={notes} onChange={e => setNotes(e.target.value)} />
+        </div>
       </div>
 
       {/* Footer */}
@@ -626,7 +551,7 @@ export function FinanceEntryWindow({
   return (
     <Dialog open onOpenChange={onOpenChange}>
       <DialogContent
-        className="cw cw-shell p-0 gap-0 border-0 overflow-hidden [&>button:last-of-type]:hidden w-[calc(100vw-2rem)] max-w-[1080px] sm:max-w-[1080px]"
+        className="cw cw-shell p-0 gap-0 border-0 overflow-hidden [&>button:last-of-type]:hidden w-[calc(100vw-2rem)] max-w-[920px] sm:max-w-[920px]"
         style={{ boxShadow: "0 24px 60px rgba(15,25,40,.20)" }}
       >
         {windowEl}
@@ -634,4 +559,3 @@ export function FinanceEntryWindow({
     </Dialog>
   );
 }
-
