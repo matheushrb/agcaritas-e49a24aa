@@ -5,7 +5,8 @@ import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import {
   X, Save, Minus, Maximize2, PanelRight, Trash2, Receipt,
-  ArrowDownCircle, ArrowUpCircle, ChevronDown, Info, Repeat, ListChecks,
+  ArrowDownLeft, ArrowUpRight, ChevronDown, Info, Repeat, ListChecks,
+  Calendar, FileText, Building2, Tag, CreditCard, Wallet,
 } from "lucide-react";
 import { ACCOUNTING_NATURES } from "@/lib/finance-analytics";
 import "@/windows.css";
@@ -36,14 +37,13 @@ type ProjectTask = {
   billed: boolean;
 };
 
-
 const STATUSES = [
-  { value: "pending", label: "Pendente" },
-  { value: "pending_invoice", label: "A faturar" },
-  { value: "paid", label: "Pago" },
-  { value: "overdue", label: "Atrasado" },
-  { value: "cancelled", label: "Cancelado" },
-  { value: "draft", label: "Rascunho" },
+  { value: "pending", label: "Pendente", color: "#d97706" },
+  { value: "pending_invoice", label: "A faturar", color: "#7c3aed" },
+  { value: "paid", label: "Pago", color: "#16a34a" },
+  { value: "overdue", label: "Atrasado", color: "#dc2626" },
+  { value: "cancelled", label: "Cancelado", color: "#6b7280" },
+  { value: "draft", label: "Rascunho", color: "#6b7280" },
 ];
 
 const PAYMENT_METHODS = [
@@ -51,6 +51,7 @@ const PAYMENT_METHODS = [
 ];
 
 const money = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+const fmtDate = (d: string) => d ? new Date(`${d}T12:00:00`).toLocaleDateString("pt-BR", { day: "2-digit", month: "short" }) : "";
 
 type Props = {
   open: boolean;
@@ -146,6 +147,7 @@ export function FinanceEntryWindow({
 
   const value = Number(String(amount).replace(",", ".") || 0);
   const canSave = description.trim().length > 0 && value > 0;
+  const statusInfo = STATUSES.find(s => s.value === status) ?? STATUSES[0];
 
   const memberPaymentDay = teamMembers.find(m => m.id === collaboratorId)?.payment_day ?? null;
   const effectiveDay = (() => {
@@ -226,7 +228,6 @@ export function FinanceEntryWindow({
     onError: (e: Error) => toast.error(e.message),
   });
 
-
   const remove = useMutation({
     mutationFn: async () => {
       const { error } = await supabase.from("charges").delete().eq("id", entry!.id);
@@ -256,18 +257,19 @@ export function FinanceEntryWindow({
   const Title = ({ children }: { children: React.ReactElement }) =>
     mode === "modal" ? <DialogTitle asChild>{children}</DialogTitle> : children;
 
-
+  const isRevenue = nature === "revenue";
 
   const windowEl = (
-    <div className="cw-window">
-      <div className="cw-header">
-        <span className="cw-title-icon"><Receipt size={17} /></span>
+    <div className="cw-window fe-window" data-nature={nature}>
+      {/* Header */}
+      <div className="cw-header fe-header">
+        <span className="cw-title-icon fe-header-ico"><Receipt size={17} /></span>
         <div className="min-w-0 flex-1">
-          <Title><h2>{isEdit ? (description || "Lançamento financeiro") : "Novo lançamento financeiro"}</h2></Title>
-          <p>Registre entradas e saídas, vincule a cliente/projeto e acompanhe o status de pagamento</p>
+          <Title><h2>{isEdit ? (description || "Lançamento financeiro") : "Novo lançamento"}</h2></Title>
+          <p>Registre entradas e saídas com vínculo a cliente, projeto e contabilidade</p>
         </div>
         <div className="cw-head-actions">
-          <button type="button" className="cw-btn cw-btn-primary cw-btn-sm" disabled={!canSave || save.isPending}
+          <button type="button" className="cw-btn cw-btn-primary fe-save-btn" disabled={!canSave || save.isPending}
             onClick={() => save.mutate()}><Save /> {save.isPending ? "Salvando…" : "Salvar"}</button>
           {isEdit && (
             <button type="button" className="cw-close cw-close-danger" aria-label="Excluir" disabled={remove.isPending}
@@ -280,220 +282,252 @@ export function FinanceEntryWindow({
         </div>
       </div>
 
-      <div className="cw-props">
-        <div className="cw-prop">
-          <div className="cw-label">Status</div>
-          <div className="cw-prop-value">
-            <select className="cw-bare" value={status} onChange={e => setStatus(e.target.value)}>
-              {STATUSES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
-            </select>
-            <ChevronDown size={14} style={{ color: "var(--cw-muted)", flexShrink: 0 }} />
-          </div>
+      {/* Hero: type toggle + amount */}
+      <div className="fe-hero">
+        <div className="fe-type-toggle">
+          <button type="button"
+            className={`fe-type-btn ${isRevenue ? "is-on is-revenue" : ""}`}
+            onClick={() => { setNature("revenue"); setAccNature("recebimento_cliente"); }}>
+            <ArrowDownLeft size={18} />
+            <span>Receita</span>
+          </button>
+          <button type="button"
+            className={`fe-type-btn ${!isRevenue ? "is-on is-expense" : ""}`}
+            onClick={() => { setNature("expense"); setAccNature("custo_variavel"); }}>
+            <ArrowUpRight size={18} />
+            <span>Despesa</span>
+          </button>
         </div>
-        <div className="cw-prop">
-          <div className="cw-label">Cliente</div>
-          <div className="cw-prop-value">
-            <select className="cw-bare" value={clientId} onChange={e => setClientId(e.target.value)}>
-              <option value="">Sem cliente</option>
-              {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-            </select>
-            <ChevronDown size={14} style={{ color: "var(--cw-muted)", flexShrink: 0 }} />
+
+        <div className="fe-amount-area">
+          <label className="fe-amount-label">Valor do lançamento</label>
+          <div className="fe-amount-row">
+            <span className="fe-currency">R$</span>
+            <input
+              className="fe-amount-input"
+              inputMode="decimal"
+              placeholder="0,00"
+              value={amount}
+              onChange={e => setAmount(e.target.value)}
+              autoFocus
+            />
+            <div className="fe-status-badge" style={{ "--sc": statusInfo.color } as React.CSSProperties}>
+              <i />
+              <select value={status} onChange={e => setStatus(e.target.value)}>
+                {STATUSES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+              </select>
+              <ChevronDown size={12} />
+            </div>
           </div>
-        </div>
-        <div className="cw-prop">
-          <div className="cw-label">Projeto</div>
-          <div className="cw-prop-value">
-            <select className="cw-bare" value={projectId} onChange={e => setProjectId(e.target.value)}>
-              <option value="">Sem projeto</option>
-              {projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-            </select>
-            <ChevronDown size={14} style={{ color: "var(--cw-muted)", flexShrink: 0 }} />
-          </div>
-        </div>
-        <div className="cw-prop">
-          <div className="cw-label">Colaborador</div>
-          <div className="cw-prop-value">
-            <select className="cw-bare" value={collaboratorId} onChange={e => setCollaboratorId(e.target.value)}>
-              <option value="">Sem colaborador</option>
-              {teamMembers.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
-            </select>
-            <ChevronDown size={14} style={{ color: "var(--cw-muted)", flexShrink: 0 }} />
-          </div>
-        </div>
-        <div className="cw-prop">
-          <div className="cw-label">Vencimento</div>
-          <div className="cw-prop-value">
-            <input type="date" className="cw-bare" value={dueDate ?? ""} onChange={e => setDueDate(e.target.value)} />
-          </div>
-        </div>
-        <div className="cw-prop">
-          <div className="cw-label">Competência</div>
-          <div className="cw-prop-value">
-            <input type="month" className="cw-bare" value={competence} onChange={e => setCompetence(e.target.value)} />
+          <div className="fe-amount-sub">
+            {description ? description : "Descreva o lançamento abaixo"}
+            {dueDate && <span className="fe-amount-date"><Calendar size={12} /> {fmtDate(dueDate)}</span>}
           </div>
         </div>
       </div>
 
-      <div className="cw-content">
-        <div className="cw-grid cw-grid-2">
-          <div className="cw-field cw-span-full">
-            <label className="cw-label">Tipo de lançamento<span className="req">*</span></label>
-            <div style={{ display: "flex", gap: 10 }}>
-              <button type="button" onClick={() => { setNature("revenue"); setAccNature("recebimento_cliente"); }}
-                className={`cw-btn ${nature === "revenue" ? "cw-btn-primary" : "cw-btn-secondary"}`}>
-                <ArrowDownCircle /> Receita
-              </button>
-              <button type="button" onClick={() => { setNature("expense"); setAccNature("custo_variavel"); }}
-                className={`cw-btn ${nature === "expense" ? "cw-btn-primary" : "cw-btn-secondary"}`}>
-                <ArrowUpCircle /> Despesa
-              </button>
-            </div>
+      {/* Content */}
+      <div className="cw-content fe-content">
+        {/* Description */}
+        <div className="fe-field fe-desc-field">
+          <label className="cw-label">Descrição<span className="req">*</span></label>
+          <input className="cw-input fe-desc-input" placeholder="Ex.: Mensalidade Bella Estética — Nov/25"
+            value={description} onChange={e => setDescription(e.target.value)} />
+        </div>
+
+        {/* Section: Vinculação */}
+        <div className="fe-section">
+          <div className="fe-section-head">
+            <Building2 size={15} />
+            <h4>Vinculação</h4>
           </div>
-
-          <div className="cw-field cw-span-full">
-            <label className="cw-label">Descrição<span className="req">*</span></label>
-            <input className="cw-input" autoFocus placeholder="Ex.: Mensalidade Bella Estética — Nov/25"
-              value={description} onChange={e => setDescription(e.target.value)} />
-          </div>
-
-          <div className="cw-field">
-            <label className="cw-label">Valor (R$)<span className="req">*</span></label>
-            <input className="cw-input" inputMode="decimal" placeholder="0,00"
-              value={amount} onChange={e => setAmount(e.target.value)} />
-          </div>
-
-          <div className="cw-field">
-            <label className="cw-label">Natureza contábil</label>
-            <div className="cw-select-wrap">
-              <select className="cw-select" value={accNature} onChange={e => setAccNature(e.target.value)}>
-                {ACCOUNTING_NATURES.filter(n => n.side === nature).map(n => (
-                  <option key={n.value} value={n.value}>{n.label}</option>
-                ))}
-              </select>
-              <ChevronDown size={14} />
-            </div>
-            <span style={{ fontSize: 11, color: "var(--cw-muted)", marginTop: 4 }}>
-              {ACCOUNTING_NATURES.find(n => n.value === accNature)?.hint}
-            </span>
-          </div>
-
-          <div className="cw-field">
-            <label className="cw-label">Categoria</label>
-            <div className="cw-select-wrap">
-              <select className="cw-select" value={category} onChange={e => setCategory(e.target.value)}>
-                <option value="">Sem categoria</option>
-                {categories.map(c => <option key={c} value={c}>{c}</option>)}
-              </select>
-              <ChevronDown size={14} />
-            </div>
-          </div>
-
-          <div className="cw-field">
-            <label className="cw-label">Forma de pagamento</label>
-            <div className="cw-select-wrap">
-              <select className="cw-select" value={method} onChange={e => setMethod(e.target.value)}>
-                <option value="">Não definida</option>
-                {PAYMENT_METHODS.map(m => <option key={m} value={m}>{m}</option>)}
-              </select>
-              <ChevronDown size={14} />
-            </div>
-          </div>
-
-          <div className="cw-field">
-            <label className="cw-label">Resumo</label>
-            <div className={`cw-callout ${nature === "expense" ? "" : "is-green"}`}>
-              <Info size={14} />
-              <span>
-                {nature === "expense" ? "Saída" : "Entrada"} de <strong>{money(value)}</strong>
-                {dueDate ? ` com vencimento em ${new Date(`${dueDate}T12:00:00`).toLocaleDateString("pt-BR")}` : ""}.
-              </span>
-            </div>
-          </div>
-
-          {!!projectId && (
-            <div className="cw-field cw-span-full">
-              <label className="cw-label" style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                <ListChecks size={14} /> Tarefas incluídas neste lançamento
-              </label>
-              {projectTasks.length === 0 ? (
-                <div className="cw-callout"><Info size={14} /><span>Este projeto ainda não possui tarefas.</span></div>
-              ) : (
-                <>
-                  <div style={{ maxHeight: 220, overflow: "auto", border: "1px solid var(--cw-border)", borderRadius: 10 }}>
-                    {projectTasks.map(t => {
-                      const checked = taskIds.includes(t.id);
-                      return (
-                        <label key={t.id} style={{
-                          display: "flex", alignItems: "center", gap: 10, padding: "8px 12px",
-                          borderBottom: "1px solid var(--cw-border)", fontSize: 13, cursor: "pointer",
-                          background: checked ? "var(--cw-soft, rgba(47,107,239,.06))" : "transparent",
-                        }}>
-                          <input type="checkbox" checked={checked} onChange={() => toggleTask(t.id)} />
-                          <span style={{ flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                            {t.title}
-                          </span>
-                          {t.billed && <span style={{ fontSize: 11, color: "var(--cw-muted)" }}>já faturada</span>}
-                          <strong style={{ fontSize: 12 }}>{money(taskValue(t))}</strong>
-                        </label>
-                      );
-                    })}
-                  </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 8, flexWrap: "wrap" }}>
-                    <span style={{ fontSize: 12, color: "var(--cw-muted)" }}>
-                      {taskIds.length} tarefa(s) — soma {money(selectedTotal)}
-                    </span>
-                    <button type="button" className="cw-btn cw-btn-secondary cw-btn-sm"
-                      onClick={() => setTaskIds(projectTasks.map(t => t.id))}>Selecionar todas</button>
-                    <button type="button" className="cw-btn cw-btn-secondary cw-btn-sm"
-                      onClick={() => setTaskIds([])}>Limpar</button>
-                    <button type="button" className="cw-btn cw-btn-primary cw-btn-sm" disabled={selectedTotal <= 0}
-                      onClick={() => setAmount(String(selectedTotal))}>Usar soma como valor</button>
-                  </div>
-                </>
-              )}
-            </div>
-          )}
-
-          {!isEdit && (
-            <div className="cw-field cw-span-full">
-              <label className="cw-label">Recorrência</label>
-              <div style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" }}>
-                <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, cursor: "pointer" }}>
-                  <input type="checkbox" role="switch" checked={repeat} onChange={e => setRepeat(e.target.checked)} />
-                  <Repeat size={14} /> Repetir mensalmente
-                </label>
-                {repeat && (
-                  <>
-                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                      <span style={{ fontSize: 12, color: "var(--cw-muted)" }}>Dia do mês</span>
-                      <input
-                        className="cw-input" type="number" min={1} max={28} style={{ width: 90 }}
-                        value={dayOfMonth || String(effectiveDay)}
-                        onChange={e => setDayOfMonth(e.target.value)}
-                      />
-                    </div>
-                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                      <span style={{ fontSize: 12, color: "var(--cw-muted)" }}>Repetir até</span>
-                      <input className="cw-input" type="date" style={{ width: 170 }}
-                        value={repeatUntil} onChange={e => setRepeatUntil(e.target.value)} />
-                    </div>
-                  </>
-                )}
+          <div className="fe-grid-3">
+            <div className="cw-field">
+              <label className="cw-label">Cliente</label>
+              <div className="cw-select-wrap">
+                <select className="cw-select" value={clientId} onChange={e => setClientId(e.target.value)}>
+                  <option value="">Sem cliente</option>
+                  {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                </select>
+                <ChevronDown size={14} />
               </div>
             </div>
-          )}
-
-
-          <div className="cw-field cw-span-full">
-            <label className="cw-label">Observações internas</label>
-            <textarea className="cw-textarea" rows={3} placeholder="Notas (opcional)"
-              value={notes} onChange={e => setNotes(e.target.value)} />
+            <div className="cw-field">
+              <label className="cw-label">Projeto</label>
+              <div className="cw-select-wrap">
+                <select className="cw-select" value={projectId} onChange={e => setProjectId(e.target.value)}>
+                  <option value="">Sem projeto</option>
+                  {projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                </select>
+                <ChevronDown size={14} />
+              </div>
+            </div>
+            <div className="cw-field">
+              <label className="cw-label">Colaborador</label>
+              <div className="cw-select-wrap">
+                <select className="cw-select" value={collaboratorId} onChange={e => setCollaboratorId(e.target.value)}>
+                  <option value="">Sem colaborador</option>
+                  {teamMembers.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
+                </select>
+                <ChevronDown size={14} />
+              </div>
+            </div>
           </div>
+        </div>
+
+        {/* Section: Datas */}
+        <div className="fe-section">
+          <div className="fe-section-head">
+            <Calendar size={15} />
+            <h4>Datas</h4>
+          </div>
+          <div className="fe-grid-3">
+            <div className="cw-field">
+              <label className="cw-label">Vencimento</label>
+              <input type="date" className="cw-input" value={dueDate ?? ""} onChange={e => setDueDate(e.target.value)} />
+            </div>
+            <div className="cw-field">
+              <label className="cw-label">Competência</label>
+              <input type="month" className="cw-input" value={competence} onChange={e => setCompetence(e.target.value)} />
+            </div>
+            <div className="cw-field">
+              <label className="cw-label">Categoria</label>
+              <div className="cw-select-wrap">
+                <select className="cw-select" value={category} onChange={e => setCategory(e.target.value)}>
+                  <option value="">Sem categoria</option>
+                  {categories.map(c => <option key={c} value={c}>{c}</option>)}
+                </select>
+                <ChevronDown size={14} />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Section: Contabilidade */}
+        <div className="fe-section">
+          <div className="fe-section-head">
+            <Wallet size={15} />
+            <h4>Contabilidade</h4>
+          </div>
+          <div className="fe-grid-2">
+            <div className="cw-field">
+              <label className="cw-label">Natureza contábil</label>
+              <div className="cw-select-wrap">
+                <select className="cw-select" value={accNature} onChange={e => setAccNature(e.target.value)}>
+                  {ACCOUNTING_NATURES.filter(n => n.side === nature).map(n => (
+                    <option key={n.value} value={n.value}>{n.label}</option>
+                  ))}
+                </select>
+                <ChevronDown size={14} />
+              </div>
+              <span className="fe-hint">
+                {ACCOUNTING_NATURES.find(n => n.value === accNature)?.hint}
+              </span>
+            </div>
+            <div className="cw-field">
+              <label className="cw-label">Forma de pagamento</label>
+              <div className="cw-select-wrap">
+                <select className="cw-select" value={method} onChange={e => setMethod(e.target.value)}>
+                  <option value="">Não definida</option>
+                  {PAYMENT_METHODS.map(m => <option key={m} value={m}>{m}</option>)}
+                </select>
+                <ChevronDown size={14} />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Tasks linked */}
+        {!!projectId && (
+          <div className="fe-section">
+            <div className="fe-section-head">
+              <ListChecks size={15} />
+              <h4>Tarefas incluídas</h4>
+            </div>
+            {projectTasks.length === 0 ? (
+              <div className="cw-callout"><Info size={14} /><span>Este projeto ainda não possui tarefas.</span></div>
+            ) : (
+              <>
+                <div className="fe-tasks-list">
+                  {projectTasks.map(t => {
+                    const checked = taskIds.includes(t.id);
+                    return (
+                      <label key={t.id} className={`fe-task-row ${checked ? "is-checked" : ""}`}>
+                        <input type="checkbox" checked={checked} onChange={() => toggleTask(t.id)} />
+                        <span className="fe-task-title">{t.title}</span>
+                        {t.billed && <span className="fe-task-billed">já faturada</span>}
+                        <strong className="fe-task-val">{money(taskValue(t))}</strong>
+                      </label>
+                    );
+                  })}
+                </div>
+                <div className="fe-tasks-bar">
+                  <span className="fe-tasks-sum">
+                    {taskIds.length} tarefa(s) — soma {money(selectedTotal)}
+                  </span>
+                  <button type="button" className="cw-btn cw-btn-secondary cw-btn-sm"
+                    onClick={() => setTaskIds(projectTasks.map(t => t.id))}>Selecionar todas</button>
+                  <button type="button" className="cw-btn cw-btn-secondary cw-btn-sm"
+                    onClick={() => setTaskIds([])}>Limpar</button>
+                  <button type="button" className="cw-btn cw-btn-primary cw-btn-sm" disabled={selectedTotal <= 0}
+                    onClick={() => setAmount(String(selectedTotal))}>Usar soma como valor</button>
+                </div>
+              </>
+            )}
+          </div>
+        )}
+
+        {/* Recurrence */}
+        {!isEdit && (
+          <div className="fe-section">
+            <div className="fe-section-head">
+              <Repeat size={15} />
+              <h4>Recorrência</h4>
+            </div>
+            <div className="fe-repeat-row">
+              <label className="fe-switch-label">
+                <input type="checkbox" role="switch" checked={repeat} onChange={e => setRepeat(e.target.checked)} />
+                <Repeat size={14} /> Repetir mensalmente
+              </label>
+              {repeat && (
+                <div className="fe-repeat-opts">
+                  <div className="fe-repeat-field">
+                    <span>Dia do mês</span>
+                    <input className="cw-input" type="number" min={1} max={28} style={{ width: 80 }}
+                      value={dayOfMonth || String(effectiveDay)}
+                      onChange={e => setDayOfMonth(e.target.value)} />
+                  </div>
+                  <div className="fe-repeat-field">
+                    <span>Repetir até</span>
+                    <input className="cw-input" type="date" style={{ width: 160 }}
+                      value={repeatUntil} onChange={e => setRepeatUntil(e.target.value)} />
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Notes */}
+        <div className="fe-section">
+          <div className="fe-section-head">
+            <FileText size={15} />
+            <h4>Observações internas</h4>
+          </div>
+          <textarea className="cw-textarea" rows={3} placeholder="Notas internas (opcional)"
+            value={notes} onChange={e => setNotes(e.target.value)} />
         </div>
       </div>
 
-      <div className="cw-footer">
-        <span style={{ fontSize: 11, color: "var(--cw-muted)" }}>{isEdit ? "Editando lançamento existente" : "Novo lançamento"}</span>
+      {/* Footer */}
+      <div className="cw-footer fe-footer">
+        <span className="fe-foot-info">
+          {isEdit ? "Editando lançamento existente" : "Novo lançamento"}
+          {" · "}
+          <strong style={{ color: isRevenue ? "var(--cw-green)" : "var(--cw-danger)" }}>
+            {isRevenue ? "Entrada" : "Saída"} {money(value)}
+          </strong>
+        </span>
         <div style={{ display: "flex", gap: 8, marginLeft: "auto" }}>
           <button type="button" className="cw-btn cw-btn-secondary" onClick={() => onOpenChange(false)}>Cancelar</button>
           <button type="button" className="cw-btn cw-btn-primary" disabled={!canSave || save.isPending}
@@ -517,7 +551,7 @@ export function FinanceEntryWindow({
   return (
     <Dialog open onOpenChange={onOpenChange}>
       <DialogContent
-        className="cw cw-shell p-0 gap-0 border-0 overflow-hidden [&>button:last-of-type]:hidden w-[calc(100vw-2rem)] max-w-[1180px] sm:max-w-[1180px]"
+        className="cw cw-shell p-0 gap-0 border-0 overflow-hidden [&>button:last-of-type]:hidden w-[calc(100vw-2rem)] max-w-[920px] sm:max-w-[920px]"
         style={{ boxShadow: "0 24px 60px rgba(15,25,40,.20)" }}
       >
         {windowEl}
