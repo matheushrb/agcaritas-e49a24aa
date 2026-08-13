@@ -566,6 +566,17 @@ export function Prj05Strategy({
       <CompetitorsWindow open={benchOpen} onClose={() => setBenchOpen(false)} projectId={projectId} projectName={projectName} />
       <KpisWindow open={kpiOpen} onClose={() => setKpiOpen(false)} projectId={projectId} projectName={projectName} />
       <StepsWindow open={stepOpen} onClose={() => setStepOpen(false)} projectId={projectId} projectName={projectName} />
+      <StrategyDocWindow
+        open={docOpen}
+        onClose={() => setDocOpen(false)}
+        projectId={projectId}
+        projectName={projectName}
+        description={description}
+        strategy={s}
+        briefing={briefing}
+        briefingTemplateId={briefingTemplateId}
+      />
+
     </div>
   );
 }
