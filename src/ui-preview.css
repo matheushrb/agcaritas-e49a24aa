@@ -1,0 +1,279 @@
+/* ================================================================
+   Vitrine de UI (rota /ui-preview) — TOTALMENTE ISOLADA.
+   Tudo aqui vive sob .uip, então não afeta nenhuma tela real.
+   Serve para avaliar a direção "ClickUp-like" antes de aplicar.
+   ================================================================ */
+
+.uip {
+  --uip-space-1: 4px;
+  --uip-space-2: 8px;
+  --uip-space-3: 12px;
+  --uip-space-4: 16px;
+  --uip-space-5: 24px;
+  --uip-space-6: 32px;
+
+  --uip-r-sm: 8px;
+  --uip-r-md: 12px;
+  --uip-r-lg: 16px;
+
+  --uip-elev-1: 0 1px 2px rgba(16, 24, 40, 0.06), 0 0 0 1px rgba(16, 24, 40, 0.05);
+  --uip-elev-2: 0 4px 16px -6px rgba(16, 24, 40, 0.16), 0 0 0 1px rgba(16, 24, 40, 0.06);
+
+  --uip-row-h: 36px;
+  --uip-ease: cubic-bezier(0.22, 1, 0.36, 1);
+
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--foreground);
+}
+
+.dark .uip {
+  --uip-elev-1: 0 1px 2px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.06);
+  --uip-elev-2: 0 6px 20px -8px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+
+/* ---------- layout da vitrine ---------- */
+.uip-page { padding: var(--uip-space-5); display: grid; gap: var(--uip-space-6); }
+.uip-head h1 { font-size: 20px; font-weight: 680; letter-spacing: -0.02em; margin: 0; }
+.uip-head p { margin: 4px 0 0; font-size: 12.5px; color: var(--muted-foreground); max-width: 70ch; }
+
+.uip-sec { display: grid; gap: var(--uip-space-3); }
+.uip-sec-h { display: flex; align-items: baseline; gap: var(--uip-space-3); }
+.uip-sec-h b { font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted-foreground); }
+.uip-sec-h span { font-size: 11.5px; color: var(--muted-foreground); }
+
+.uip-card {
+  background: var(--card);
+  border-radius: var(--uip-r-lg);
+  box-shadow: var(--uip-elev-1);
+  padding: var(--uip-space-4);
+  transition: box-shadow 0.14s var(--uip-ease), transform 0.14s var(--uip-ease);
+}
+.uip-card.hoverable:hover { box-shadow: var(--uip-elev-2); transform: translateY(-1px); }
+.uip-row-cards { display: grid; gap: var(--uip-space-3); grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); }
+
+/* ---------- comparação antes/depois ---------- */
+.uip-ab { display: grid; gap: var(--uip-space-3); grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+@media (max-width: 1000px) { .uip-ab { grid-template-columns: minmax(0, 1fr); } }
+.uip-ab-col { display: grid; gap: var(--uip-space-2); align-content: start; }
+.uip-ab-tag {
+  font-size: 10.5px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--muted-foreground);
+}
+.uip-ab-tag.now { color: color-mix(in oklab, var(--muted-foreground) 90%, transparent); }
+.uip-ab-tag.next { color: var(--primary); }
+.uip-ab-box {
+  border: 1px dashed color-mix(in oklab, var(--border) 90%, transparent);
+  border-radius: var(--uip-r-lg);
+  padding: var(--uip-space-4);
+  background: color-mix(in oklab, var(--muted) 26%, transparent);
+}
+.uip-ab-box.next { border-style: solid; background: var(--background); }
+
+/* ---------- chips ---------- */
+.uip-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  height: 22px; padding: 0 9px; border-radius: 999px;
+  font-size: 11.5px; font-weight: 600; white-space: nowrap;
+  background: color-mix(in oklab, var(--uip-c) 12%, transparent);
+  color: var(--uip-c);
+}
+.uip-chip i { width: 6px; height: 6px; border-radius: 999px; background: currentColor; display: block; }
+.uip-chip.blue { --uip-c: #2f6bef; }
+.uip-chip.green { --uip-c: #12a150; }
+.uip-chip.amber { --uip-c: #d98b0a; }
+.uip-chip.red { --uip-c: #e14545; }
+.uip-chip.slate { --uip-c: #6b7280; }
+.uip-chip.purple { --uip-c: #7c5cf0; }
+.dark .uip-chip.blue { --uip-c: #7ea6ff; }
+.dark .uip-chip.green { --uip-c: #4fd18b; }
+.dark .uip-chip.amber { --uip-c: #f0b64c; }
+.dark .uip-chip.red { --uip-c: #ff8080; }
+.dark .uip-chip.slate { --uip-c: #a2acbd; }
+.dark .uip-chip.purple { --uip-c: #b3a0ff; }
+
+/* chip do jeito atual, para comparar */
+.uip-chip-old {
+  display: inline-block; padding: 2px 8px; border-radius: 4px;
+  border: 1px solid var(--border); background: var(--muted);
+  font-size: 11px; color: var(--muted-foreground);
+}
+
+/* ---------- avatares ---------- */
+.uip-avs { display: inline-flex; align-items: center; }
+.uip-av {
+  width: 24px; height: 24px; border-radius: 999px; display: grid; place-items: center;
+  font-size: 10px; font-weight: 700; color: #fff;
+  border: 2px solid var(--card); margin-left: -6px;
+}
+.uip-av:first-child { margin-left: 0; }
+.uip-av.more { background: var(--muted); color: var(--muted-foreground); }
+
+/* ---------- progresso ---------- */
+.uip-prog { display: flex; align-items: center; gap: 8px; }
+.uip-prog .track { width: 84px; height: 4px; border-radius: 999px; background: color-mix(in oklab, var(--muted) 80%, transparent); overflow: hidden; }
+.uip-prog .track i { display: block; height: 100%; border-radius: 999px; transition: width 0.3s var(--uip-ease); }
+.uip-prog .track i.low { background: #e14545; }
+.uip-prog .track i.mid { background: #d98b0a; }
+.uip-prog .track i.high { background: #12a150; }
+.uip-prog span { font-size: 11px; color: var(--muted-foreground); font-variant-numeric: tabular-nums; }
+
+/* ---------- tabela densa ---------- */
+.uip-table { border-radius: var(--uip-r-lg); box-shadow: var(--uip-elev-1); background: var(--card); overflow: hidden; }
+.uip-thead {
+  display: grid; align-items: center;
+  grid-template-columns: 26px minmax(0, 1fr) 120px 92px 84px 130px 96px 32px;
+  height: 32px; padding: 0 10px; gap: 10px;
+  background: color-mix(in oklab, var(--muted) 40%, transparent);
+  border-bottom: 1px solid var(--border);
+  font-size: 10.5px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--muted-foreground);
+}
+.uip-thead .num { text-align: right; }
+
+.uip-group {
+  display: flex; align-items: center; gap: 8px;
+  height: 34px; padding: 0 10px;
+  background: color-mix(in oklab, var(--muted) 24%, transparent);
+  border-bottom: 1px solid var(--border);
+  font-size: 12px; font-weight: 650; cursor: pointer; user-select: none;
+}
+.uip-group .caret { transition: transform 0.15s var(--uip-ease); display: grid; place-items: center; }
+.uip-group.collapsed .caret { transform: rotate(-90deg); }
+.uip-group .bar { width: 3px; height: 14px; border-radius: 999px; background: var(--primary); }
+.uip-group .meta { margin-left: auto; display: flex; gap: 12px; font-weight: 500; font-size: 11.5px; color: var(--muted-foreground); font-variant-numeric: tabular-nums; }
+
+.uip-tr {
+  display: grid; align-items: center;
+  grid-template-columns: 26px minmax(0, 1fr) 120px 92px 84px 130px 96px 32px;
+  min-height: var(--uip-row-h); padding: 0 10px; gap: 10px;
+  border-bottom: 1px solid color-mix(in oklab, var(--border) 60%, transparent);
+  font-size: 12.5px; cursor: pointer;
+  transition: background 0.1s linear;
+}
+.uip-tr:hover { background: color-mix(in oklab, var(--primary) 5%, transparent); }
+.uip-tr.sel { background: color-mix(in oklab, var(--primary) 9%, transparent); }
+.uip-tr .name { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.uip-tr .name span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.uip-tr .num { text-align: right; font-variant-numeric: tabular-nums; }
+.uip-tr .muted { color: var(--muted-foreground); }
+.uip-tr .act { opacity: 0; display: grid; place-items: center; color: var(--muted-foreground); transition: opacity 0.12s linear; }
+.uip-tr:hover .act { opacity: 1; }
+.uip-check {
+  width: 15px; height: 15px; border-radius: 4px; border: 1.5px solid color-mix(in oklab, var(--muted-foreground) 55%, transparent);
+  display: grid; place-items: center; cursor: pointer; background: transparent;
+}
+.uip-check.on { background: var(--primary); border-color: var(--primary); color: #fff; }
+.uip-check svg { width: 10px; height: 10px; }
+
+/* lista "atual" para comparação */
+.uip-oldlist { border: 1px solid var(--border); border-radius: 10px; background: var(--card); overflow: hidden; }
+.uip-oldrow { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 14px; border-bottom: 1px solid var(--border); font-size: 13px; }
+.uip-oldrow:last-child { border-bottom: 0; }
+
+/* barra flutuante de seleção */
+.uip-bulk {
+  position: sticky; bottom: 10px; margin: 10px auto 0; width: fit-content;
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 10px 8px 14px; border-radius: 999px;
+  background: var(--foreground); color: var(--background);
+  box-shadow: 0 10px 30px -10px rgba(16, 24, 40, 0.5);
+  font-size: 12px; font-weight: 600;
+  animation: uip-pop 0.16s var(--uip-ease);
+}
+@keyframes uip-pop { from { opacity: 0; transform: translateY(6px) scale(0.98); } }
+.uip-bulk button {
+  border: 0; border-radius: 999px; padding: 5px 11px; font: inherit; cursor: pointer;
+  background: color-mix(in oklab, var(--background) 18%, transparent); color: inherit;
+}
+.uip-bulk button:hover { background: color-mix(in oklab, var(--background) 30%, transparent); }
+
+/* ---------- chrome: sidebar + breadcrumb ---------- */
+.uip-chrome { display: grid; grid-template-columns: 56px 216px minmax(0, 1fr); border-radius: var(--uip-r-lg); box-shadow: var(--uip-elev-1); overflow: hidden; background: var(--card); min-height: 300px; }
+@media (max-width: 900px) { .uip-chrome { grid-template-columns: 56px minmax(0, 1fr); } .uip-chrome .uip-rail2 { display: none; } }
+.uip-rail1 { background: color-mix(in oklab, var(--muted) 45%, transparent); border-right: 1px solid var(--border); padding: 10px 0; display: grid; gap: 6px; align-content: start; justify-items: center; }
+.uip-rail1 .ico {
+  width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center;
+  color: var(--muted-foreground); cursor: pointer;
+}
+.uip-rail1 .ico:hover { background: color-mix(in oklab, var(--foreground) 6%, transparent); }
+.uip-rail1 .ico.on { background: color-mix(in oklab, var(--primary) 14%, transparent); color: var(--primary); }
+.uip-rail1 .ico svg { width: 17px; height: 17px; }
+
+.uip-rail2 { border-right: 1px solid var(--border); padding: 12px 10px; display: grid; gap: 4px; align-content: start; }
+.uip-rail2 .t { font-size: 10.5px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted-foreground); padding: 4px 8px 6px; }
+.uip-rail2 a {
+  display: flex; align-items: center; gap: 8px; height: 30px; padding: 0 8px; border-radius: 8px;
+  font-size: 12.5px; color: var(--foreground); text-decoration: none; cursor: pointer;
+}
+.uip-rail2 a:hover { background: color-mix(in oklab, var(--foreground) 5%, transparent); }
+.uip-rail2 a.on { background: color-mix(in oklab, var(--primary) 12%, transparent); color: var(--primary); font-weight: 600; }
+.uip-rail2 a .dot { width: 7px; height: 7px; border-radius: 999px; }
+.uip-rail2 a .n { margin-left: auto; font-size: 11px; color: var(--muted-foreground); }
+
+.uip-main { display: grid; grid-template-rows: auto minmax(0, 1fr); }
+.uip-bread { display: flex; align-items: center; gap: 6px; height: 46px; padding: 0 14px; border-bottom: 1px solid var(--border); font-size: 12.5px; }
+.uip-bread .crumb { display: inline-flex; align-items: center; gap: 4px; padding: 3px 7px; border-radius: 7px; cursor: pointer; color: var(--muted-foreground); }
+.uip-bread .crumb:hover { background: color-mix(in oklab, var(--foreground) 6%, transparent); color: var(--foreground); }
+.uip-bread .crumb.last { color: var(--foreground); font-weight: 600; }
+.uip-bread .sep { color: color-mix(in oklab, var(--muted-foreground) 60%, transparent); }
+.uip-bread .right { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+.uip-kbd {
+  display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 10px;
+  border-radius: 8px; border: 1px solid var(--border); background: var(--background);
+  color: var(--muted-foreground); font-size: 12px; cursor: pointer;
+}
+.uip-kbd kbd { font: inherit; font-size: 10.5px; border: 1px solid var(--border); border-radius: 4px; padding: 0 4px; }
+
+/* ---------- itens abertos (dock) ---------- */
+.uip-dock { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.uip-tab {
+  display: inline-flex; align-items: center; gap: 8px; height: 32px; padding: 0 6px 0 10px;
+  border-radius: 999px; background: var(--card); box-shadow: var(--uip-elev-1);
+  font-size: 12px; cursor: pointer;
+}
+.uip-tab:hover { box-shadow: var(--uip-elev-2); }
+.uip-tab .x { width: 18px; height: 18px; border-radius: 999px; display: grid; place-items: center; color: var(--muted-foreground); }
+.uip-tab .x:hover { background: color-mix(in oklab, var(--foreground) 8%, transparent); }
+
+/* ---------- estados: skeleton / vazio / toast ---------- */
+.uip-sk { border-radius: 6px; background: linear-gradient(90deg, color-mix(in oklab, var(--muted) 60%, transparent) 25%, color-mix(in oklab, var(--muted) 90%, transparent) 37%, color-mix(in oklab, var(--muted) 60%, transparent) 63%); background-size: 400% 100%; animation: uip-sh 1.3s ease infinite; }
+@keyframes uip-sh { 0% { background-position: 100% 50%; } 100% { background-position: 0 50%; } }
+
+.uip-empty { display: grid; justify-items: center; gap: 8px; padding: 26px 16px; text-align: center; }
+.uip-empty .ic { width: 44px; height: 44px; border-radius: 14px; display: grid; place-items: center; background: color-mix(in oklab, var(--primary) 10%, transparent); color: var(--primary); }
+.uip-empty .ic svg { width: 20px; height: 20px; }
+.uip-empty b { font-size: 13px; }
+.uip-empty p { margin: 0; font-size: 12px; color: var(--muted-foreground); max-width: 34ch; }
+
+.uip-btn {
+  height: 30px; padding: 0 13px; border-radius: 8px; border: 1px solid var(--border);
+  background: var(--card); color: var(--foreground); font: inherit; font-size: 12.5px; font-weight: 600;
+  cursor: pointer; display: inline-flex; align-items: center; gap: 6px;
+}
+.uip-btn:hover { background: color-mix(in oklab, var(--foreground) 5%, transparent); }
+.uip-btn.primary { background: var(--primary); border-color: var(--primary); color: var(--primary-foreground); }
+.uip-btn svg { width: 14px; height: 14px; }
+.uip-btn:focus-visible { outline: none; box-shadow: 0 0 0 3px color-mix(in oklab, var(--primary) 20%, transparent); }
+
+.uip-toast {
+  display: inline-flex; align-items: center; gap: 12px; padding: 10px 12px 10px 14px;
+  border-radius: 12px; background: var(--card); box-shadow: var(--uip-elev-2); font-size: 12.5px;
+}
+.uip-toast b { font-weight: 600; }
+.uip-toast button { border: 0; background: transparent; color: var(--primary); font: inherit; font-weight: 700; cursor: pointer; }
+
+/* ---------- kanban mini ---------- */
+.uip-kb { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.uip-kb-col { background: color-mix(in oklab, var(--muted) 30%, transparent); border-radius: var(--uip-r-md); padding: 8px; display: grid; gap: 8px; align-content: start; min-height: 150px; }
+.uip-kb-h { display: flex; align-items: center; gap: 7px; font-size: 11.5px; font-weight: 700; padding: 2px 4px; }
+.uip-kb-h .n { margin-left: auto; color: var(--muted-foreground); font-weight: 500; }
+.uip-kb-card { background: var(--card); border-radius: 10px; box-shadow: var(--uip-elev-1); padding: 9px 10px; display: grid; gap: 7px; font-size: 12.5px; cursor: grab; transition: box-shadow .14s var(--uip-ease), transform .14s var(--uip-ease); }
+.uip-kb-card:hover { box-shadow: var(--uip-elev-2); transform: translateY(-1px); }
+.uip-kb-card .ft { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.uip-kb-ghost { border: 1.5px dashed color-mix(in oklab, var(--primary) 45%, transparent); border-radius: 10px; height: 56px; background: color-mix(in oklab, var(--primary) 6%, transparent); }
+
+/* ---------- tokens visuais ---------- */
+.uip-swatches { display: flex; flex-wrap: wrap; gap: 10px; }
+.uip-sw { display: grid; gap: 6px; justify-items: center; font-size: 10.5px; color: var(--muted-foreground); }
+.uip-sw .box { width: 60px; height: 40px; border-radius: var(--uip-r-md); box-shadow: var(--uip-elev-1); }
