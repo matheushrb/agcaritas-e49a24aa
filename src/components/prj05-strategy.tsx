@@ -208,7 +208,9 @@ export function Prj05Strategy({
 
   /* ---------------- steps ---------------- */
   const [stepOpen, setStepOpen] = useState(false);
+  const [docOpen, setDocOpen] = useState(false);
   const [stepForm, setStepForm] = useState({ title: "", due_date: "" });
+
 
   const kpiAvg = useMemo(() => {
     const withTarget = kpis.filter(k => Number(k.target_value ?? 0) > 0);
