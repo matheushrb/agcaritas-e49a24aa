@@ -219,7 +219,14 @@ export function Prj05Strategy({
 
   return (
     <div className="prj05">
+      <div className="p5-card-h" style={{ marginBottom: 12 }}>
+        <div className="p5-ht"><BookOpen /><span className="p5-card-t">Estratégia do projeto</span></div>
+        <button type="button" className="p5-save" style={{ marginTop: 0 }} onClick={() => setDocOpen(true)}>
+          Consolidar em documento
+        </button>
+      </div>
       <div className="p5-grid">
+
         {/* 1. Briefing */}
         <section className="p5-card">
           <div className="p5-card-h">
