@@ -10,6 +10,8 @@ import {
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { BriefingWindow } from "./strategy/briefing-window";
 import { SwotWindow, PersonasWindow, CompetitorsWindow, KpisWindow, StepsWindow } from "./strategy/strategy-windows";
+import { StrategyDocWindow } from "./strategy/strategy-doc-window";
+
 import type { BriefingData } from "@/lib/briefing";
 import "@/prj05.css";
 
