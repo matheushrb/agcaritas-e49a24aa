@@ -10,6 +10,8 @@ import {
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { BriefingWindow } from "./strategy/briefing-window";
 import { SwotWindow, PersonasWindow, CompetitorsWindow, KpisWindow, StepsWindow } from "./strategy/strategy-windows";
+import { StrategyDocWindow } from "./strategy/strategy-doc-window";
+
 import type { BriefingData } from "@/lib/briefing";
 import "@/prj05.css";
 
@@ -208,7 +210,9 @@ export function Prj05Strategy({
 
   /* ---------------- steps ---------------- */
   const [stepOpen, setStepOpen] = useState(false);
+  const [docOpen, setDocOpen] = useState(false);
   const [stepForm, setStepForm] = useState({ title: "", due_date: "" });
+
 
   const kpiAvg = useMemo(() => {
     const withTarget = kpis.filter(k => Number(k.target_value ?? 0) > 0);
@@ -219,7 +223,14 @@ export function Prj05Strategy({
 
   return (
     <div className="prj05">
+      <div className="p5-card-h" style={{ marginBottom: 12 }}>
+        <div className="p5-ht"><BookOpen /><span className="p5-card-t">Estratégia do projeto</span></div>
+        <button type="button" className="p5-save" style={{ marginTop: 0 }} onClick={() => setDocOpen(true)}>
+          Consolidar em documento
+        </button>
+      </div>
       <div className="p5-grid">
+
         {/* 1. Briefing */}
         <section className="p5-card">
           <div className="p5-card-h">
@@ -557,6 +568,17 @@ export function Prj05Strategy({
       <CompetitorsWindow open={benchOpen} onClose={() => setBenchOpen(false)} projectId={projectId} projectName={projectName} />
       <KpisWindow open={kpiOpen} onClose={() => setKpiOpen(false)} projectId={projectId} projectName={projectName} />
       <StepsWindow open={stepOpen} onClose={() => setStepOpen(false)} projectId={projectId} projectName={projectName} />
+      <StrategyDocWindow
+        open={docOpen}
+        onClose={() => setDocOpen(false)}
+        projectId={projectId}
+        projectName={projectName}
+        description={description}
+        strategy={s}
+        briefing={briefing}
+        briefingTemplateId={briefingTemplateId}
+      />
+
     </div>
   );
 }
