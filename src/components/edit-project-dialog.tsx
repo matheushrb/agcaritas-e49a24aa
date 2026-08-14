@@ -570,8 +570,11 @@ export function EditProjectDialog({
         </Tabs>
 
         {/* Footer */}
-        <div className="px-7 py-4 border-t bg-background flex items-center justify-between">
-          <p className="text-xs text-muted-foreground">Alterações são aplicadas imediatamente após salvar.</p>
+        <div
+          className="px-7 py-4 flex items-center justify-between"
+          style={{ background: "var(--surface)", borderTop: "1px solid var(--border)" }}
+        >
+          <p className="text-xs" style={{ color: "var(--muted)" }}>Alterações são aplicadas imediatamente após salvar.</p>
           <div className="flex gap-2">
             <Button variant="outline" className="rounded-full" onClick={() => onOpenChange(false)}>Cancelar</Button>
             <Button className="rounded-full min-w-[160px]" onClick={onSubmit} disabled={save.isPending}>
