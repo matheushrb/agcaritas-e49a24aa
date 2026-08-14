@@ -2,8 +2,8 @@ import { ClientLogo } from "@/components/client-logo";
 import { Link } from "@tanstack/react-router";
 import { ProjectBriefingCard } from "@/components/project-briefing-card";
 
-import {
 import { UserAvatar } from "@/components/user-avatar";
+import {
   ArrowRight, CheckCircle2, Circle, Mail, Phone, FileText, MoreVertical,
 } from "lucide-react";
 
