@@ -267,19 +267,26 @@ export function EditProjectDialog({
           </div>
         </div>
 
-        <Tabs defaultValue="general" className="flex-1 overflow-hidden flex flex-col bg-muted/30">
-          <div className="px-7 pt-4 pb-2 bg-background border-b">
-            <TabsList className="rounded-full bg-muted/70 p-1 gap-1">
-              <TabsTrigger value="general" className="rounded-full gap-1.5 data-[state=active]:bg-background data-[state=active]:shadow-sm">
+        <Tabs
+          defaultValue="general"
+          className="flex-1 overflow-hidden flex flex-col"
+          style={{ background: "var(--bg)" }}
+        >
+          <div
+            className="px-7 pt-4 pb-3"
+            style={{ background: "var(--surface)", borderBottom: "1px solid var(--border)" }}
+          >
+            <TabsList className="cv-dtabs">
+              <TabsTrigger value="general" className="cv-dtab gap-1.5">
                 <FileText className="h-3.5 w-3.5" /> Geral
               </TabsTrigger>
-              <TabsTrigger value="billing" className="rounded-full gap-1.5 data-[state=active]:bg-background data-[state=active]:shadow-sm">
+              <TabsTrigger value="billing" className="cv-dtab gap-1.5">
                 <DollarSign className="h-3.5 w-3.5" /> Faturamento
               </TabsTrigger>
-              <TabsTrigger value="scope" className="rounded-full gap-1.5 data-[state=active]:bg-background data-[state=active]:shadow-sm">
+              <TabsTrigger value="scope" className="cv-dtab gap-1.5">
                 <Layers className="h-3.5 w-3.5" /> Escopo
               </TabsTrigger>
-              <TabsTrigger value="team" className="rounded-full gap-1.5 data-[state=active]:bg-background data-[state=active]:shadow-sm">
+              <TabsTrigger value="team" className="cv-dtab gap-1.5">
                 <UsersIcon className="h-3.5 w-3.5" /> Equipe
               </TabsTrigger>
             </TabsList>
@@ -485,7 +492,7 @@ export function EditProjectDialog({
                           onClick={() => togglePlatform(p.name)}
                           className={cn(
                             "rounded-full pl-1 pr-3 py-1 text-xs font-medium border transition-colors flex items-center gap-1.5",
-                            on ? "border-primary bg-primary text-primary-foreground" : "border-border hover:bg-muted",
+                            on ? "border-primary bg-primary text-primary-foreground" : "border-border",
                           )}
                           style={on ? undefined : { color: p.color ?? undefined, borderColor: (p.color ?? "") + "66" }}
                         >
@@ -563,8 +570,11 @@ export function EditProjectDialog({
         </Tabs>
 
         {/* Footer */}
-        <div className="px-7 py-4 border-t bg-background flex items-center justify-between">
-          <p className="text-xs text-muted-foreground">Alterações são aplicadas imediatamente após salvar.</p>
+        <div
+          className="px-7 py-4 flex items-center justify-between"
+          style={{ background: "var(--surface)", borderTop: "1px solid var(--border)" }}
+        >
+          <p className="text-xs" style={{ color: "var(--muted)" }}>Alterações são aplicadas imediatamente após salvar.</p>
           <div className="flex gap-2">
             <Button variant="outline" className="rounded-full" onClick={() => onOpenChange(false)}>Cancelar</Button>
             <Button className="rounded-full min-w-[160px]" onClick={onSubmit} disabled={save.isPending}>
@@ -589,15 +599,24 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <section className="rounded-2xl border bg-background shadow-sm overflow-hidden">
-      <header className="px-5 py-3.5 border-b bg-muted/40 flex items-start justify-between gap-3">
+    <section
+      className="rounded-2xl overflow-hidden"
+      style={{ background: "var(--surface)", border: "1px solid var(--border)", boxShadow: "var(--shadow)" }}
+    >
+      <header
+        className="px-5 py-3.5 flex items-start justify-between gap-3"
+        style={{ background: "var(--surface-2)", borderBottom: "1px solid var(--border)" }}
+      >
         <div className="flex items-start gap-3 min-w-0">
-          <span className="h-8 w-8 rounded-lg bg-primary/10 text-primary inline-flex items-center justify-center shrink-0">
+          <span
+            className="h-8 w-8 rounded-lg inline-flex items-center justify-center shrink-0"
+            style={{ background: "var(--primary-soft)", color: "var(--primary)" }}
+          >
             {icon}
           </span>
           <div className="min-w-0">
-            <h3 className="text-sm font-semibold leading-tight">{title}</h3>
-            {description && <p className="text-xs text-muted-foreground mt-0.5">{description}</p>}
+            <h3 className="text-sm font-semibold leading-tight" style={{ color: "var(--text)" }}>{title}</h3>
+            {description && <p className="text-xs mt-0.5" style={{ color: "var(--muted)" }}>{description}</p>}
           </div>
         </div>
         {right && <div className="shrink-0">{right}</div>}
@@ -648,12 +667,13 @@ function MoneyInput({ value, onChange }: { value: number | null; onChange: (v: n
 function ToggleCard({ label, checked, onChange }: { label: string; checked: boolean; onChange: (v: boolean) => void }) {
   return (
     <label
-      className={cn(
-        "flex items-center justify-between gap-3 rounded-xl border px-3.5 py-3 cursor-pointer transition",
-        checked ? "border-primary/60 bg-primary/5" : "hover:bg-muted/40",
-      )}
+      className="flex items-center justify-between gap-3 rounded-xl px-3.5 py-3 cursor-pointer transition"
+      style={{
+        background: checked ? "var(--primary-soft)" : "var(--surface)",
+        border: `1px solid ${checked ? "var(--primary)" : "var(--border)"}`,
+      }}
     >
-      <span className="text-sm font-medium">{label}</span>
+      <span className="text-sm font-medium" style={{ color: "var(--text)" }}>{label}</span>
       <Switch checked={checked} onCheckedChange={onChange} />
     </label>
   );
