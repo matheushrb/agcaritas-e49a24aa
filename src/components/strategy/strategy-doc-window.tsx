@@ -248,7 +248,7 @@ export function StrategyDocWindow({
       L.push("");
     }
     return L.join("\n");
-  }, [on, projectName, today, summary, description, strategy, tpl, briefing, swot, personas, benchmarks, kpis, steps]);
+  }, [on, projectName, today, summary, description, strategy, tpl, briefing, swot, personas, benchmarks, kpis, steps, positioningDoc, brandDoc]);
 
   const copy = async () => {
     try {
