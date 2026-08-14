@@ -267,19 +267,26 @@ export function EditProjectDialog({
           </div>
         </div>
 
-        <Tabs defaultValue="general" className="flex-1 overflow-hidden flex flex-col bg-muted/30">
-          <div className="px-7 pt-4 pb-2 bg-background border-b">
-            <TabsList className="rounded-full bg-muted/70 p-1 gap-1">
-              <TabsTrigger value="general" className="rounded-full gap-1.5 data-[state=active]:bg-background data-[state=active]:shadow-sm">
+        <Tabs
+          defaultValue="general"
+          className="flex-1 overflow-hidden flex flex-col"
+          style={{ background: "var(--bg)" }}
+        >
+          <div
+            className="px-7 pt-4 pb-3"
+            style={{ background: "var(--surface)", borderBottom: "1px solid var(--border)" }}
+          >
+            <TabsList className="cv-dtabs">
+              <TabsTrigger value="general" className="cv-dtab gap-1.5">
                 <FileText className="h-3.5 w-3.5" /> Geral
               </TabsTrigger>
-              <TabsTrigger value="billing" className="rounded-full gap-1.5 data-[state=active]:bg-background data-[state=active]:shadow-sm">
+              <TabsTrigger value="billing" className="cv-dtab gap-1.5">
                 <DollarSign className="h-3.5 w-3.5" /> Faturamento
               </TabsTrigger>
-              <TabsTrigger value="scope" className="rounded-full gap-1.5 data-[state=active]:bg-background data-[state=active]:shadow-sm">
+              <TabsTrigger value="scope" className="cv-dtab gap-1.5">
                 <Layers className="h-3.5 w-3.5" /> Escopo
               </TabsTrigger>
-              <TabsTrigger value="team" className="rounded-full gap-1.5 data-[state=active]:bg-background data-[state=active]:shadow-sm">
+              <TabsTrigger value="team" className="cv-dtab gap-1.5">
                 <UsersIcon className="h-3.5 w-3.5" /> Equipe
               </TabsTrigger>
             </TabsList>
