@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { EntityDialog, DialogField, DialogCancelButton } from "@/components/entity-dialog";
+import { EntityDialog, DialogField, DialogCancelButton, dialogTabsListClass, dialogTabClass } from "@/components/entity-dialog";
 import { ClientLogo, ClientLogoPicker } from "@/components/client-logo";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
@@ -569,12 +569,12 @@ export function NewClientDialog({
       size="md"
       main={
         <Tabs value={tab} onValueChange={setTab} className="w-full">
-          <TabsList className="rounded-full bg-muted p-1">
-            <TabsTrigger value="identificacao" className="rounded-full">Identificação</TabsTrigger>
-            <TabsTrigger value="contato" className="rounded-full">Contato</TabsTrigger>
-            <TabsTrigger value="endereco" className="rounded-full">Endereço</TabsTrigger>
-            <TabsTrigger value="financeiro" className="rounded-full">Financeiro</TabsTrigger>
-            <TabsTrigger value="observacoes" className="rounded-full">Notas</TabsTrigger>
+          <TabsList className={dialogTabsListClass}>
+            <TabsTrigger value="identificacao" className={dialogTabClass}>Identificação</TabsTrigger>
+            <TabsTrigger value="contato" className={dialogTabClass}>Contato</TabsTrigger>
+            <TabsTrigger value="endereco" className={dialogTabClass}>Endereço</TabsTrigger>
+            <TabsTrigger value="financeiro" className={dialogTabClass}>Financeiro</TabsTrigger>
+            <TabsTrigger value="observacoes" className={dialogTabClass}>Notas</TabsTrigger>
           </TabsList>
 
           <TabsContent value="identificacao" className="mt-4 space-y-3">

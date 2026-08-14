@@ -33,13 +33,13 @@ export function EntityDialog({
   size?: "md" | "lg";
 }) {
   const toneMap: Record<string, string> = {
-    emerald: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-b border-emerald-500/20",
-    amber:   "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-b border-amber-500/20",
-    red:     "bg-red-500/10 text-red-600 dark:text-red-400 border-b border-red-500/20",
-    blue:    "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-b border-blue-500/20",
-    purple:  "bg-purple-500/10 text-purple-600 dark:text-purple-400 border-b border-purple-500/20",
-    slate:   "bg-slate-500/10 text-slate-600 dark:text-slate-400 border-b border-slate-500/20",
-    pink:    "bg-pink-500/10 text-pink-600 dark:text-pink-400 border-b border-pink-500/20",
+    emerald: "bg-emerald-500/12 text-emerald-600 dark:text-emerald-400",
+    amber:   "bg-amber-500/12 text-amber-600 dark:text-amber-400",
+    red:     "bg-red-500/12 text-red-600 dark:text-red-400",
+    blue:    "bg-blue-500/12 text-blue-600 dark:text-blue-400",
+    purple:  "bg-purple-500/12 text-purple-600 dark:text-purple-400",
+    slate:   "bg-slate-500/12 text-slate-600 dark:text-slate-300",
+    pink:    "bg-pink-500/12 text-pink-600 dark:text-pink-400",
   };
   const width = size === "lg" ? "sm:max-w-[960px]" : "sm:max-w-[720px]";
 
@@ -52,19 +52,20 @@ export function EntityDialog({
           width,
         )}
       >
-        {/* Header */}
-        <div className={cn("relative px-6 pt-6 pb-5", toneMap[tone])}>
+        {/* Header — superfície neutra, cor apenas no ícone (padrão Caritas) */}
+        <div className="relative px-6 pt-5 pb-4 bg-background border-b border-border">
           <div className="flex items-start gap-3">
-            <div className={cn("size-10 rounded-xl bg-background/80 backdrop-blur flex items-center justify-center shadow-sm")}>
+            <div className={cn("size-10 rounded-xl flex items-center justify-center shrink-0", toneMap[tone])}>
               <Icon className="size-5" />
             </div>
             <div className="min-w-0 flex-1">
-              {eyebrow && <div className="text-[11px] uppercase tracking-wider font-medium opacity-70">{eyebrow}</div>}
-              <DialogTitle className="text-lg font-semibold text-foreground leading-tight">{title}</DialogTitle>
-              {subtitle && <p className="text-sm text-muted-foreground mt-0.5">{subtitle}</p>}
+              {eyebrow && <div className="text-[10px] uppercase tracking-[0.16em] font-semibold text-muted-foreground">{eyebrow}</div>}
+              <DialogTitle className="text-[17px] font-semibold text-foreground leading-tight">{title}</DialogTitle>
+              {subtitle && <p className="text-[12.5px] text-muted-foreground mt-0.5">{subtitle}</p>}
             </div>
           </div>
         </div>
+
 
         {/* Body */}
         <div className={cn("flex-1 min-h-0 overflow-auto grid", sidebar ? "grid-cols-1 lg:grid-cols-[1fr_260px]" : "grid-cols-1")}>
@@ -99,3 +100,9 @@ export function DialogField({ label, hint, children }: { label: string; hint?: s
 export function DialogCancelButton({ onClick }: { onClick: () => void }) {
   return <Button variant="ghost" className="rounded-full" onClick={onClick}>Cancelar</Button>;
 }
+
+/** Estilos padrão de abas dentro dos diálogos (mesma linguagem do resto do sistema). */
+export const dialogTabsListClass =
+  "w-full justify-start gap-1 h-auto rounded-xl bg-muted p-1 border border-border";
+export const dialogTabClass =
+  "rounded-lg px-3 py-1.5 text-[12.5px] font-medium text-muted-foreground hover:text-foreground data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm";
