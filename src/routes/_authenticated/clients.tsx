@@ -714,7 +714,7 @@ export function NewClientDialog({
       address_country: form.address_country || null,
       notes: form.notes || null,
     };
-    onSubmit(payload);
+    onSubmit(payload, close);
   };
 
   return (
