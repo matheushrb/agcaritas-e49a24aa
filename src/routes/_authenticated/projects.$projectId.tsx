@@ -464,6 +464,54 @@ function ProjectDetail() {
         </div>
       </div>
 
+      {/* 01b — identificação e contatos */}
+      <div className="p2-idbar">
+        <button type="button" className="p2-chip" onClick={() => client && copyChip(clientDisplay)}>
+          <Building2 /><span className="k">Cliente</span><span className="v">{clientDisplay}</span>
+        </button>
+        {finalClient && (
+          <button type="button" className="p2-chip" onClick={() => copyChip(finalClient)}>
+            <Target /><span className="k">Cliente final</span><span className="v">{finalClient}</span>
+          </button>
+        )}
+        {docValue && (
+          <button type="button" className="p2-chip" onClick={() => copyChip(docValue)}>
+            <FileText /><span className="k">{docKind}</span><span className="v">{docValue}</span>
+          </button>
+        )}
+        {contactName && (
+          <span className="p2-chip">
+            <UsersIcon /><span className="k">Contato</span>
+            <span className="v">{contactName}{contactRole ? ` · ${contactRole}` : ""}</span>
+          </span>
+        )}
+        {contactEmail && (
+          <a className="p2-chip" href={`mailto:${contactEmail}`}>
+            <MailIcon /><span className="k">E-mail</span><span className="v">{contactEmail}</span>
+          </a>
+        )}
+        {contactPhone && (
+          <a className="p2-chip" href={`tel:${contactPhone.replace(/[^\d+]/g, "")}`}>
+            <PhoneIcon /><span className="k">Telefone</span><span className="v">{contactPhone}</span>
+          </a>
+        )}
+        {!contactName && !contactEmail && !contactPhone && (
+          <button type="button" className="p2-chip add" onClick={() => setEditOpen(true)}>
+            <Plus /> Completar cadastro de contato
+          </button>
+        )}
+      </div>
+
+      {/* 01c — mural de avisos */}
+      <NoticeBoard notices={notices} onManage={() => setNoticesOpen(true)} />
+      <NoticeBoardDialog
+        open={noticesOpen}
+        onOpenChange={setNoticesOpen}
+        notices={notices}
+        suggestElectoral={isElectoral}
+        onSave={(n) => saveField.mutate({ compliance_notes: n as unknown as Project["compliance_notes"] })}
+      />
+
       {/* 02 — KPIs do projeto */}
       <div className="p2-kpis">
         <div className="p2-kpi">
