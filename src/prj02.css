@@ -194,3 +194,55 @@
   --p2-muted-2: var(--muted-foreground);
 }
 .dark .prj02 .p2-btn:hover { background: rgba(255,255,255,.06); }
+
+/* ---------- 01b — barra de identificação e contatos ---------- */
+.prj02 .p2-idbar {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 14px;
+}
+.prj02 .p2-chip {
+  display: inline-flex; align-items: center; gap: 8px;
+  height: 32px; padding: 0 12px; border-radius: 999px;
+  background: var(--p2-card); border: 1px solid var(--p2-border-soft);
+  font-size: 12.5px; color: var(--p2-ink); text-decoration: none;
+  max-width: 340px; transition: border-color .15s, box-shadow .15s, transform .15s;
+}
+.prj02 .p2-chip:hover { border-color: var(--p2-primary); box-shadow: 0 2px 8px rgba(47,107,239,.10); }
+.prj02 .p2-chip svg { width: 14px; height: 14px; color: var(--p2-primary); flex: none; }
+.prj02 .p2-chip .k { color: var(--p2-muted-2); font-size: 11px; text-transform: uppercase; letter-spacing: .06em; }
+.prj02 .p2-chip .v { font-weight: 560; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.prj02 .p2-chip.add { border-style: dashed; color: var(--p2-muted); }
+
+/* ---------- 01c — mural de avisos ---------- */
+.prj02 .p2-mural {
+  margin-top: 14px; padding: 14px 16px; border-radius: 14px;
+  background: linear-gradient(180deg, #FFFBEB 0%, #FFFFFF 78%);
+  border: 1px solid #F5DFA6;
+}
+.prj02 .p2-mural-h { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.prj02 .p2-mural-t { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 650; color: #8A5B06; }
+.prj02 .p2-mural-t svg { width: 15px; height: 15px; }
+.prj02 .p2-mural-a { display: flex; gap: 6px; }
+.prj02 .p2-mural-empty { margin: 8px 0 0; font-size: 12.5px; color: var(--p2-muted); max-width: 720px; }
+.prj02 .p2-mural-list {
+  list-style: none; margin: 12px 0 0; padding: 0;
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 8px;
+}
+.prj02 .p2-note {
+  position: relative; display: flex; gap: 10px; padding: 10px 12px; border-radius: 11px;
+  background: var(--p2-card); border: 1px solid var(--p2-border-soft);
+  border-left: 3px solid var(--p2-amber);
+}
+.prj02 .p2-note.legal { border-left-color: var(--p2-red); }
+.prj02 .p2-note.brand { border-left-color: var(--p2-primary); }
+.prj02 .p2-note.info { border-left-color: var(--p2-green); }
+.prj02 .p2-note .ic { width: 15px; height: 15px; margin-top: 2px; flex: none; color: var(--p2-muted-2); }
+.prj02 .p2-note .tx { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.prj02 .p2-note .tx strong { font-size: 12.5px; font-weight: 620; color: var(--p2-ink); }
+.prj02 .p2-note .tx span { font-size: 12px; line-height: 17px; color: var(--p2-muted); }
+.prj02 .p2-note .pin { position: absolute; top: 8px; right: 8px; width: 12px; height: 12px; color: var(--p2-primary); }
+
+.dark .prj02 .p2-chip { background: rgba(255,255,255,.04); border-color: rgba(255,255,255,.10); color: inherit; }
+.dark .prj02 .p2-mural { background: rgba(245,158,11,.07); border-color: rgba(245,158,11,.28); }
+.dark .prj02 .p2-mural-t { color: #F5C463; }
+.dark .prj02 .p2-note { background: rgba(255,255,255,.04); border-color: rgba(255,255,255,.10); }
+.dark .prj02 .p2-note .tx strong { color: #E7ECF5; }
