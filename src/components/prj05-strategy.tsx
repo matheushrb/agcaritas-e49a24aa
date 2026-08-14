@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { BriefingWindow } from "./strategy/briefing-window";
+import { BriefingsCard } from "./strategy/briefings-card";
 import { SwotWindow, PersonasWindow, CompetitorsWindow, KpisWindow, StepsWindow } from "./strategy/strategy-windows";
 import { StrategyDocWindow } from "./strategy/strategy-doc-window";
 import { StrategyDocCard } from "./strategy/doc-tool-window";
@@ -239,7 +240,7 @@ export function Prj05Strategy({
           projectName={projectName}
           description={description}
           strategy={s}
-          onSavePositioning={(patch) => onSaveBriefing?.(patch)}
+          onSavePositioning={(patch: { description: string; strategy: Strategy }) => onSaveBriefing?.(patch)}
         />
 
 
