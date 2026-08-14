@@ -100,3 +100,9 @@ export function DialogField({ label, hint, children }: { label: string; hint?: s
 export function DialogCancelButton({ onClick }: { onClick: () => void }) {
   return <Button variant="ghost" className="rounded-full" onClick={onClick}>Cancelar</Button>;
 }
+
+/** Estilos padrão de abas dentro dos diálogos (mesma linguagem do resto do sistema). */
+export const dialogTabsListClass =
+  "w-full justify-start gap-1 h-auto rounded-xl bg-muted p-1 border border-border";
+export const dialogTabClass =
+  "rounded-lg px-3 py-1.5 text-[12.5px] font-medium text-muted-foreground hover:text-foreground data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm";
