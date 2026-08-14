@@ -91,6 +91,18 @@ body.dark > [role="dialog"] {
   --color-muted-foreground: #98a4b3;
 }
 
+/* Rede de segurança: qualquer diálogo/popover fora de .caritas-ui também
+   precisa de --color-muted como cor de fundo (senão abas e chips ficam escuros). */
+[role="dialog"], [role="alertdialog"], [data-radix-popper-content-wrapper] {
+  --color-muted: #eef0f2;
+  --color-muted-foreground: #6b7280;
+}
+:root.dark [role="dialog"], :root.dark [role="alertdialog"],
+:root.dark [data-radix-popper-content-wrapper] {
+  --color-muted: #17202e;
+  --color-muted-foreground: #98a4b3;
+}
+
 .caritas-ui * { box-sizing: border-box; }
 .caritas-ui button { font: inherit; }
 .caritas-ui h1,
