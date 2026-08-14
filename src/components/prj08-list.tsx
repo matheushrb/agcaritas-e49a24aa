@@ -17,6 +17,7 @@ import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 import type { ProjectPreviewData, ProjectPreviewStatus } from "@/components/project-preview-sheet";
 import "@/prj08.css";
+import { UserAvatar } from "@/components/user-avatar";
 
 type Member = { user_id: string; name: string };
 
@@ -84,9 +85,7 @@ function Avatars({ members }: { members: Member[] }) {
   return (
     <div className="p8-stack">
       {shown.map((m) => (
-        <span key={m.user_id} className="p8-av" style={{ background: dotColor(m.name) }} title={m.name}>
-          {initials(m.name)}
-        </span>
+        <UserAvatar key={m.user_id} userId={m.user_id} name={m.name} size="css" className="p8-av" title={m.name} />
       ))}
       {rest > 0 && <span className="p8-more">+{rest}</span>}
     </div>
@@ -171,9 +170,7 @@ export function Prj08Table({
                 <td>
                   {owner ? (
                     <span className="p8-owner">
-                      <span className="p8-av" style={{ background: dotColor(owner.name) }}>
-                        {initials(owner.name)}
-                      </span>
+                      <UserAvatar userId={owner.user_id} name={owner.name} size="css" className="p8-av" />
                       {owner.name}
                     </span>
                   ) : (
@@ -268,9 +265,7 @@ export function Prj08Preview({
                 <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 6 }}>
                   {owner ? (
                     <>
-                      <span className="p8-av" style={{ background: dotColor(owner.name), width: 28, height: 28, fontSize: 10.5 }}>
-                        {initials(owner.name)}
-                      </span>
+                      <UserAvatar userId={owner.user_id} name={owner.name} size={28} className="p8-av" />
                       <span style={{ fontSize: 12.5, fontWeight: 600 }}>{owner.name}</span>
                     </>
                   ) : (

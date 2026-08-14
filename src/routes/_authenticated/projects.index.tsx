@@ -36,6 +36,7 @@ import { ClientLogo } from "@/components/client-logo";
 import { cn } from "@/lib/utils";
 import { Prj08Table, Prj08Preview } from "@/components/prj08-list";
 import "@/prj01.css";
+import { UserAvatar } from "@/components/user-avatar";
 
 export const Route = createFileRoute("/_authenticated/projects/")({
   validateSearch: (s: { new?: number | string }): { new?: 1 } => ({
@@ -639,7 +640,7 @@ function Avatars({ members }: { members: Member[] }) {
     <div className="avatars">
       {shown.map((m) => (
         <div key={m.user_id} className="av" title={m.name}>
-          {m.avatar ? <img src={m.avatar} alt={m.name} /> : initials(m.name)}
+          <UserAvatar userId={m.user_id} name={m.name} size="fill" />
         </div>
       ))}
       {rest > 0 && <div className="av more">+{rest}</div>}

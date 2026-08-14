@@ -86,7 +86,8 @@ export function UserAvatar({
 }: {
   userId?: string | null;
   name?: string | null;
-  size?: number;
+  /** número em px, "css" (tamanho vem da classe) ou "fill" (100% do pai) */
+  size?: number | "css" | "fill";
   className?: string;
   style?: React.CSSProperties;
   title?: string;
@@ -102,12 +103,14 @@ export function UserAvatar({
     <span
       className={cn("inline-flex shrink-0 items-center justify-center overflow-hidden rounded-full", className)}
       style={{
-        width: size,
-        height: size,
-        flex: `0 0 ${size}px`,
+        ...(size === "css"
+          ? {}
+          : size === "fill"
+            ? { width: "100%", height: "100%" }
+            : { width: size, height: size, flex: `0 0 ${size}px` }),
         background: url ? "var(--surface-2, #f1f3f7)" : personColor(label),
         color: "#fff",
-        fontSize: Math.max(9, Math.round(size * 0.38)),
+        ...(typeof size === "number" ? { fontSize: Math.max(9, Math.round(size * 0.38)) } : {}),
         fontWeight: 700,
         lineHeight: 1,
         ...style,
