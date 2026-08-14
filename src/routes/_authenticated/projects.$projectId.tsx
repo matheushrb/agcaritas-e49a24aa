@@ -478,22 +478,26 @@ function ProjectDetail() {
         {docValue && (
           <button type="button" className="p2-chip" onClick={() => copyChip(docValue)}>
             <FileText /><span className="k">{docKind}</span><span className="v">{docValue}</span>
+            {!project.doc_id && <span className="src">do cliente</span>}
           </button>
         )}
         {contactName && (
           <span className="p2-chip">
             <UsersIcon /><span className="k">Contato</span>
             <span className="v">{contactName}{contactRole ? ` · ${contactRole}` : ""}</span>
+            {!project.contact_name && <span className="src">do cliente</span>}
           </span>
         )}
         {contactEmail && (
           <a className="p2-chip" href={`mailto:${contactEmail}`}>
             <MailIcon /><span className="k">E-mail</span><span className="v">{contactEmail}</span>
+            {!project.contact_email && <span className="src">do cliente</span>}
           </a>
         )}
         {contactPhone && (
           <a className="p2-chip" href={`tel:${contactPhone.replace(/[^\d+]/g, "")}`}>
             <PhoneIcon /><span className="k">Telefone</span><span className="v">{contactPhone}</span>
+            {!project.contact_phone && <span className="src">do cliente</span>}
           </a>
         )}
         {!contactName && !contactEmail && !contactPhone && (

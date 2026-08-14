@@ -246,3 +246,14 @@
 .dark .prj02 .p2-mural-t { color: #F5C463; }
 .dark .prj02 .p2-note { background: rgba(255,255,255,.04); border-color: rgba(255,255,255,.10); }
 .dark .prj02 .p2-note .tx strong { color: #E7ECF5; }
+
+.p2-chip .src{
+  font-size: 10px;
+  line-height: 1;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--p2-primary, #2F6BEF) 12%, transparent);
+  color: var(--p2-primary, #2F6BEF);
+  font-weight: 600;
+  letter-spacing: .02em;
+}
