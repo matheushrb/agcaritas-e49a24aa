@@ -76,6 +76,17 @@ function ClientsPage() {
   const [segmentsOpen, setSegmentsOpen] = useState(false);
   const [revealedId, setRevealedId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [createdSignal, setCreatedSignal] = useState(0);
+  const [view, setView] = useState<"list" | "cards" | "kanban">("list");
+
+  useEffect(() => {
+    const v = typeof window !== "undefined" ? window.localStorage.getItem("caritas:clients-view") : null;
+    if (v === "list" || v === "cards" || v === "kanban") setView(v);
+  }, []);
+  useEffect(() => {
+    if (typeof window !== "undefined") window.localStorage.setItem("caritas:clients-view", view);
+  }, [view]);
+
 
   const { data: segments = [] } = useQuery<string[]>({
     queryKey: ["client-segments"],
