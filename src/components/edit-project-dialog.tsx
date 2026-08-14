@@ -63,7 +63,6 @@ const STRATEGY_KEYS: { key: string; label: string }[] = [
   { key: "roadmap", label: "Roadmap" },
   { key: "kpis", label: "KPIs" },
   { key: "action_plan", label: "Plano de ação" },
-  { key: "campaign_plan", label: "Plano de campanha" },
 ];
 
 const STATUS_LABEL: Record<ProjectStatus, string> = {

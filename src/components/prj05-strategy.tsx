@@ -105,6 +105,7 @@ export function Prj05Strategy({
   briefing,
   briefingTemplateId,
   onSaveBriefing,
+  scope,
 }: {
   projectId: string;
   projectName?: string;
@@ -112,10 +113,15 @@ export function Prj05Strategy({
   strategy?: Strategy | null;
   briefing?: BriefingData | null;
   briefingTemplateId?: string | null;
+  scope?: Record<string, unknown> | null;
   onSaveBriefing?: (patch: {
     description: string; strategy: Strategy; briefing?: BriefingData; briefing_template_id?: string | null;
   }) => void;
 }) {
+  const KNOWN_BLOCKS = ["briefings", "positioning", "brand_manual", "swot", "personas", "competitors", "roadmap", "kpis", "action_plan"];
+  const anyFlag = KNOWN_BLOCKS.some(k => !!(scope ?? {})[k]);
+  const show = (k: string) => (anyFlag ? !!(scope ?? {})[k] : true);
+
   const qc = useQueryClient();
   const inv = (k: string) => qc.invalidateQueries({ queryKey: [k, projectId] });
 
@@ -222,34 +228,34 @@ export function Prj05Strategy({
       <div className="p5-grid">
 
         {/* 1. Briefings */}
-        <BriefingsCard
+        {show("briefings") && <BriefingsCard
           projectId={projectId}
           projectName={projectName}
           description={description}
           strategy={s}
           onSavePositioning={(patch: { description: string; strategy: Strategy }) => onSaveBriefing?.(patch)}
-        />
+        />}
 
 
         {/* 1b. Pesquisa & Posicionamento */}
-        <StrategyDocCard
+        {show("positioning") && <StrategyDocCard
           projectId={projectId}
           projectName={projectName}
           schema={POSITIONING_SCHEMA}
           icon={Compass}
           index={2}
           highlights={["statement", "promise", "differentiators"]}
-        />
+        />}
 
         {/* 1c. Manual de marca */}
-        <StrategyDocCard
+        {show("brand_manual") && <StrategyDocCard
           projectId={projectId}
           projectName={projectName}
           schema={BRAND_SCHEMA}
           icon={Palette}
           index={3}
           highlights={["archetype", "tone", "palette"]}
-        />
+        />}
 
         {/* 2. SWOT */}
         <section className="p5-card">

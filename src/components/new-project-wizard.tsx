@@ -90,7 +90,6 @@ const STRATEGY_ITEMS: { key: string; label: string }[] = [
   { key: "roadmap", label: "Roadmap" },
   { key: "kpis", label: "KPIs & Metas" },
   { key: "action_plan", label: "Plano de ação" },
-  { key: "campaign_plan", label: "Plano de campanha" },
 ];
 
 const STEPS = [
@@ -113,7 +112,7 @@ export const defaultProjectWizardValue: ProjectWizardValue = {
   use_task_type_value: false, allow_value_override: true,
   finance_owner_id: null, payment_terms: "30 dias", due_days: "30 dias", finance_notes: "",
   social_platforms: [], tools: [], strategy_enabled: false,
-  scope_flags: { briefings: true, positioning: false, brand_manual: false, swot: false, personas: false, competitors: false, roadmap: false, kpis: false, action_plan: false, campaign_plan: false },
+  scope_flags: { briefings: true, positioning: false, brand_manual: false, swot: false, personas: false, competitors: false, roadmap: false, kpis: false, action_plan: false },
   traffic_budget: { enabled: false, amount: null, platforms: [] },
   other_budgets: [],
 };
