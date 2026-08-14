@@ -194,6 +194,9 @@ export function StrategyDocWindow({
         L.push("");
       });
     }
+    if (on.positioning) {
+      L.push(...schemaLines(POSITIONING_SCHEMA, positioningDoc, "2. Pesquisa e posicionamento"));
+    }
     if (on.swot) {
       L.push("## 2. Análise SWOT", "");
       QUAD.forEach(q => {
