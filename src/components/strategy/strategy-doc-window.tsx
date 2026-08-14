@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { ToolWindow } from "./tool-window";
 import { fetchBriefingTemplates, type BriefingData } from "@/lib/briefing";
+import { BRAND_SCHEMA, POSITIONING_SCHEMA, splitList, type DocSchema, type StrategyDocData } from "@/lib/strategy-docs";
 import "@/strategy-win.css";
 
 const sb = supabase as any;
