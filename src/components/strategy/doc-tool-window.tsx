@@ -154,9 +154,9 @@ export function StrategyDocCard({
       </div>
 
       {filled === 0 ? (
-        <div className="p5-empty">
-          <p>{schema.subtitle}.</p>
-          <button type="button" className="p5-add" onClick={() => setOpen(true)}>Começar</button>
+        <div style={{ padding: "18px 16px", textAlign: "center" }}>
+          <p className="p5-bt" style={{ marginBottom: 10 }}>{schema.subtitle}.</p>
+          <button type="button" className="p5-save" style={{ marginTop: 0 }} onClick={() => setOpen(true)}>Começar</button>
         </div>
       ) : (
         <div className="p5-brief">
