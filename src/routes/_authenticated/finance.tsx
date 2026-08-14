@@ -9,8 +9,9 @@ import { FinanceEntryWindow } from "@/components/finance-entry-window";
 import { CashflowPanel, DrePanel, PlannerPanel, IntelligencePanel, MonthGoalBanner, type FinDataset } from "@/components/finance/fin-panels";
 import { useAgencyPricing } from "@/components/settings/agency-pricing";
 import { DEFAULT_RESERVES, type ReserveSettings } from "@/lib/finance-analytics";
-import { LayoutDashboard, Waves, FileSpreadsheet, Target, Brain, ListOrdered } from "lucide-react";
+import { LayoutDashboard, Waves, FileSpreadsheet, Target, Brain, ListOrdered, Landmark } from "lucide-react";
 import { EntriesPanel } from "@/components/finance/fin-entries";
+import { AccountsPanel } from "@/components/finance/fin-accounts";
 
 
 export const Route = createFileRoute("/_authenticated/finance")({
@@ -200,6 +201,7 @@ function FinancePage() {
   const TABS = [
     { id: "overview", label: "Visão geral", icon: LayoutDashboard, hint: "Resumo do caixa" },
     { id: "movements", label: "Lançamentos", icon: ListOrdered, hint: "Receitas e despesas" },
+    { id: "accounts", label: "Contas & conciliação", icon: Landmark, hint: "Bancos, saldos e extrato" },
     { id: "cashflow", label: "Fluxo de caixa", icon: Waves, hint: "Realizado e previsto" },
     { id: "dre", label: "DRE", icon: FileSpreadsheet, hint: "Resultado gerencial" },
     { id: "planner", label: "Planejador", icon: Target, hint: "Reservas e metas" },
@@ -244,6 +246,8 @@ function FinancePage() {
               onOpenInvoices={() => navigate({ to: "/invoices" })}
               onOpenEntries={() => setTab("movements")}
             /></>
+          ) : tab === "accounts" ? (
+            <AccountsPanel />
           ) : tab === "cashflow" ? (
             <CashflowPanel data={dataset} />
           ) : tab === "dre" ? (
