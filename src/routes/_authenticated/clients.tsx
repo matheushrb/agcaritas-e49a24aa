@@ -159,30 +159,36 @@ function ClientsPage() {
 
 
   const create = useMutation({
-    mutationFn: async (input: Record<string, unknown>) => {
+    mutationFn: async ({ payload }: { payload: Record<string, unknown>; close: boolean }) => {
       const { data: profile } = await supabase.from("profiles").select("organization_id").maybeSingle();
       if (!profile?.organization_id) throw new Error("Sem organização");
-      const { error } = await supabase.from("clients").insert({ ...(input as { name: string }), organization_id: profile.organization_id });
+      const { error } = await supabase.from("clients").insert({ ...(payload as { name: string }), organization_id: profile.organization_id });
       if (error) throw error;
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["clients-list"] }); toast.success("Cliente criado"); setNewOpen(false); },
+    onSuccess: (_d, v) => {
+      qc.invalidateQueries({ queryKey: ["clients-list"] });
+      toast.success("Cliente criado");
+      setCreatedSignal(s => s + 1);
+      if (v.close) setNewOpen(false);
+    },
     onError: (e: Error) => toast.error(e.message),
   });
 
   const update = useMutation({
-    mutationFn: async (input: Record<string, unknown>) => {
+    mutationFn: async ({ payload }: { payload: Record<string, unknown>; close: boolean }) => {
       if (!editingId) throw new Error("Sem cliente");
-      const { error } = await supabase.from("clients").update(input as never).eq("id", editingId);
+      const { error } = await supabase.from("clients").update(payload as never).eq("id", editingId);
       if (error) throw error;
     },
-    onSuccess: () => {
+    onSuccess: (_d, v) => {
       qc.invalidateQueries({ queryKey: ["clients-list"] });
       qc.invalidateQueries({ queryKey: ["client-edit", editingId] });
       toast.success("Cliente atualizado");
-      setEditingId(null);
+      if (v.close) setEditingId(null);
     },
     onError: (e: Error) => toast.error(e.message),
   });
+
 
   const archive = useMutation({
     mutationFn: async ({ id, archived }: { id: string; archived: boolean }) => {
