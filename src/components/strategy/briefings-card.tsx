@@ -66,8 +66,6 @@ export function BriefingsCard({
 
   const current = briefings.find(b => b.id === openId) ?? null;
   const s = strategy ?? {};
-  const emptyPositioning =
-    !description?.trim() && !s.audience && !s.tone && !s.value_prop && !s.positioning && !(s.essence ?? []).length;
 
   const progress = (b: ProjectBriefing) => {
     const tpl = templates.find(t => t.id === b.template_id);
@@ -80,35 +78,28 @@ export function BriefingsCard({
   return (
     <section className="p5-card">
       <div className="p5-card-h">
-        <div className="p5-ht"><BookOpen /><span className="p5-card-t">1. Briefings e posicionamento</span></div>
+        <div className="p5-ht">
+          <BookOpen />
+          <span className="p5-card-t">Briefings</span>
+          {briefings.length > 0 && (
+            <span
+              style={{
+                fontSize: 10.5, fontWeight: 700, padding: "1px 7px", borderRadius: 999,
+                background: "var(--primary-soft, color-mix(in oklab, var(--primary) 12%, transparent))",
+                color: "var(--primary)",
+              }}
+            >
+              {briefings.length}
+            </span>
+          )}
+        </div>
         <button type="button" className="p5-link" onClick={() => add.mutate(null)}>
           <Plus style={{ width: 13, height: 13 }} /> Novo briefing
         </button>
       </div>
 
-      {/* posicionamento resumido */}
-      {emptyPositioning ? (
-        <p className="p5-empty-t" style={{ fontSize: 12, color: "var(--muted-foreground)" }}>
-          Posicionamento ainda não preenchido — abra um briefing para responder.
-        </p>
-      ) : (
-        <div className="p5-brief">
-          <div><div className="p5-bl">Propósito</div><p className="p5-bt">{description?.trim() || "—"}</p></div>
-          <div><div className="p5-bl">Público-alvo</div><p className="p5-bt">{s.audience || "—"}</p></div>
-          <div>
-            <div className="p5-bl">Essência</div>
-            {(s.essence ?? []).length
-              ? <div className="p5-chips">{(s.essence ?? []).map(c => <span key={c} className="p5-chip">{c}</span>)}</div>
-              : <p className="p5-bt">—</p>}
-          </div>
-          <div><div className="p5-bl">Tom de voz</div><p className="p5-bt">{s.tone || "—"}</p></div>
-          <div><div className="p5-bl">Proposta de valor</div><p className="p5-bt">{s.value_prop || "—"}</p></div>
-          <div><div className="p5-bl">Posicionamento</div><p className="p5-bt">{s.positioning || "—"}</p></div>
-        </div>
-      )}
-
       {/* lista de briefings */}
-      <div style={{ display: "grid", gap: 6, marginTop: 12 }}>
+      <div style={{ display: "grid", gap: 6 }}>
         {briefings.map(b => {
           const p = progress(b);
           return (
@@ -148,9 +139,20 @@ export function BriefingsCard({
         })}
 
         {!briefings.length && (
-          <p style={{ fontSize: 12, color: "var(--muted-foreground)" }}>
-            Nenhum briefing criado. Crie um por frente do projeto (marca, campanha, lançamento…).
-          </p>
+          <button
+            type="button"
+            onClick={() => add.mutate(null)}
+            style={{
+              display: "flex", alignItems: "center", gap: 10, width: "100%", textAlign: "left",
+              padding: "14px 12px", borderRadius: 10, cursor: "pointer",
+              border: "1px dashed var(--border)", background: "transparent", color: "var(--muted-foreground)",
+            }}
+          >
+            <Plus style={{ width: 16, height: 16, color: "var(--primary)" }} />
+            <span style={{ fontSize: 12 }}>
+              Nenhum briefing criado. Crie um por frente do projeto (marca, campanha, lançamento…).
+            </span>
+          </button>
         )}
       </div>
 
