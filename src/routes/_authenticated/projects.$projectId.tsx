@@ -28,7 +28,7 @@ import { Prj03Tasks } from "@/components/prj03-tasks";
 import { Prj04Finance } from "@/components/prj04-finance";
 import { Prj05Strategy } from "@/components/prj05-strategy";
 import { Prj06Files } from "@/components/prj06-files";
-import { Share2, MoreHorizontal, Mail as MailIcon, Target, TrendingUp } from "lucide-react";
+import { Share2, MoreHorizontal, Mail as MailIcon, Phone as PhoneIcon, Target, TrendingUp } from "lucide-react";
 import "@/prj02.css";
 
 export const Route = createFileRoute("/_authenticated/projects/$projectId")({
@@ -293,6 +293,7 @@ function ProjectDetail() {
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const selectedTask = tasks.find(t => t.id === selectedTaskId) ?? null;
   const [editOpen, setEditOpen] = useState(false);
+  const [noticesOpen, setNoticesOpen] = useState(false);
 
   const addTask = useMutation({
     mutationFn: async (input: string | { title: string; task_type_id?: string | null; billing_model?: string | null; billing_value?: number | null }) => {
