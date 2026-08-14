@@ -431,7 +431,7 @@ function ProjectDetail() {
     : client?.person_type === "pf" ? "CPF" : "CNPJ");
   const finalClient = project.final_client || null;
   const clientDisplay = client?.trade_name || client?.name || "Sem cliente";
-  const copyChip = (v: string) => { navigator.clipboard?.writeText(v); toast.success("Copiado"); };
+  
   const isElectoral = /eleitor|campanha/i.test(`${project.name} ${project.project_type ?? ""}`);
 
   return (
