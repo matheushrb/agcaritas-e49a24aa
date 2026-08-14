@@ -954,3 +954,49 @@ body.dark > [role="dialog"] {
   border: 1px solid var(--border); color: inherit; text-decoration: none;
 }
 .cv-rail-links a:hover { border-color: var(--primary); color: var(--primary); }
+
+/* ============================================================
+   DIÁLOGOS — abas padrão (Caritas azul).
+   Não usar utilitárias bg-muted aqui: o token --muted é cor de
+   TEXTO no tema Caritas e deixava a barra de abas cinza-escura,
+   escondendo os rótulos inativos.
+   ============================================================ */
+.cv-dtabs.cv-dtabs {
+  display: flex;
+  width: 100%;
+  gap: 4px;
+  height: auto;
+  padding: 4px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--surface-2) !important;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.cv-dtabs.cv-dtabs::-webkit-scrollbar { display: none; }
+.cv-dtab.cv-dtab {
+  flex: 0 0 auto;
+  border-radius: 9px;
+  padding: 7px 14px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--muted) !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  white-space: nowrap;
+  transition: background .15s ease, color .15s ease;
+}
+.cv-dtab.cv-dtab:hover { color: var(--text) !important; background: rgba(23,105,246,.07) !important; }
+.cv-dtab.cv-dtab[data-state="active"] {
+  background: var(--primary) !important;
+  color: #fff !important;
+  box-shadow: 0 2px 8px rgba(23,105,246,.28) !important;
+}
+
+/* Cabeçalho azul dos diálogos de cadastro */
+.cv-dhead { position: relative; }
+.cv-dhead::before {
+  content: "";
+  position: absolute; inset: 0 0 auto 0; height: 3px;
+  background: linear-gradient(90deg, var(--primary), var(--primary-2));
+}
