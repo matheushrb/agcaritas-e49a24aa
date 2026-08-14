@@ -105,7 +105,7 @@ export function StrategyDocWindow({
   const docRef = useRef<HTMLDivElement>(null);
   const [copied, setCopied] = useState(false);
   const [on, setOn] = useState<Record<SectionKey, boolean>>({
-    brief: true, swot: true, personas: true, bench: true, kpis: true, steps: true,
+    brief: true, positioning: true, swot: true, personas: true, bench: true, brand: true, kpis: true, steps: true,
   });
 
   const list = <T,>(table: string, order: string) =>
