@@ -52,12 +52,13 @@ export function EntityDialog({
           width,
         )}
       >
-        {/* Header — superfície neutra, cor apenas no ícone (padrão Caritas) */}
-        <div className="relative px-6 pt-5 pb-4 bg-background border-b border-border">
+        {/* Header — faixa azul de marca + ícone tonal */}
+        <div className="cv-dhead relative px-6 pt-5 pb-4 bg-background border-b border-border">
           <div className="flex items-start gap-3">
-            <div className={cn("size-10 rounded-xl flex items-center justify-center shrink-0", toneMap[tone])}>
+            <div className="size-10 rounded-xl flex items-center justify-center shrink-0 bg-[var(--primary-soft)] text-[var(--primary)]">
               <Icon className="size-5" />
             </div>
+
             <div className="min-w-0 flex-1">
               {eyebrow && <div className="text-[10px] uppercase tracking-[0.16em] font-semibold text-muted-foreground">{eyebrow}</div>}
               <DialogTitle className="text-[17px] font-semibold text-foreground leading-tight">{title}</DialogTitle>
