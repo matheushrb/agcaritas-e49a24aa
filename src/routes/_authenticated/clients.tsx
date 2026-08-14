@@ -239,11 +239,82 @@ function ClientsPage() {
             <p className="text-sm text-muted-foreground mt-1">Cadastre seu primeiro cliente para vincular projetos e propostas.</p>
             <Button className="rounded-full mt-4" onClick={() => setNewOpen(true)}><Plus className="h-4 w-4 mr-1" />Novo cliente</Button>
           </Card>
+        ) : view === "list" ? (
+          <Card className="rounded-2xl overflow-hidden p-0">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border bg-muted/30 text-[11px] uppercase tracking-wider text-muted-foreground">
+                    <th className="text-left font-medium px-4 py-2.5">Cliente</th>
+                    <th className="text-left font-medium px-4 py-2.5 hidden md:table-cell">Segmento</th>
+                    <th className="text-left font-medium px-4 py-2.5 hidden lg:table-cell">Documento</th>
+                    <th className="text-left font-medium px-4 py-2.5 hidden md:table-cell">Contato</th>
+                    <th className="text-left font-medium px-4 py-2.5">Status</th>
+                    <th className="text-right font-medium px-4 py-2.5">Ações</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filtered.map(c => {
+                    const st = computeClientStatus(c, activeClientIds, prospectClientIds);
+                    return (
+                      <tr key={c.id} className="border-b border-border/60 last:border-0 hover:bg-muted/30">
+                        <td className="px-4 py-2.5">
+                          <div className="flex items-center gap-3 min-w-0">
+                            <ClientLogo value={c.logo_url} name={c.name} size={30} />
+                            <span className="font-medium truncate">{c.name}</span>
+                          </div>
+                        </td>
+                        <td className="px-4 py-2.5 text-muted-foreground hidden md:table-cell">{c.segment ?? "—"}</td>
+                        <td className="px-4 py-2.5 text-muted-foreground hidden lg:table-cell">{c.tax_id ?? "—"}</td>
+                        <td className="px-4 py-2.5 text-muted-foreground hidden md:table-cell">
+                          <div className="truncate max-w-[220px]">{c.email ?? c.phone ?? "—"}</div>
+                        </td>
+                        <td className="px-4 py-2.5">
+                          <Badge className={cn("rounded-full", STATUS[st]?.color)}>{STATUS[st]?.label}</Badge>
+                        </td>
+                        <td className="px-4 py-2.5">
+                          <div className="flex items-center justify-end gap-1">{rowActions(c)}</div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </Card>
+        ) : view === "kanban" ? (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {(["active", "prospect", "inactive"] as const).map(col => {
+              const items = filtered.filter(c => computeClientStatus(c, activeClientIds, prospectClientIds) === col);
+              return (
+                <div key={col} className="rounded-2xl border border-border bg-muted/20 p-3">
+                  <div className="flex items-center justify-between mb-3 px-1">
+                    <div className="text-sm font-semibold">{STATUS[col].label}</div>
+                    <Badge variant="secondary" className="rounded-full">{items.length}</Badge>
+                  </div>
+                  <div className="space-y-2">
+                    {items.length === 0 && <div className="text-xs text-muted-foreground px-1 py-6 text-center">Nenhum cliente</div>}
+                    {items.map(c => (
+                      <div key={c.id} className="rounded-xl border border-border bg-card p-3 hover:shadow-sm transition-shadow">
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <ClientLogo value={c.logo_url} name={c.name} size={32} />
+                          <div className="min-w-0 flex-1">
+                            <div className="font-medium text-sm truncate">{c.name}</div>
+                            <div className="text-xs text-muted-foreground truncate">{c.segment ?? c.email ?? "—"}</div>
+                          </div>
+                        </div>
+                        <div className="mt-2 flex items-center justify-end gap-1">{rowActions(c)}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         ) : (
           <div className="grid grid-cols-1 gap-3">
             {filtered.map(c => {
               const revealed = revealedId === c.id;
-              const isArchived = (c.status ?? "") === "inactive";
               return (
                 <div
                   key={c.id}
@@ -286,36 +357,7 @@ function ClientsPage() {
                       )}
                       aria-hidden={!revealed}
                     >
-                      <Button
-                        size="icon"
-                        variant="outline"
-                        className="h-10 w-10 rounded-full shadow-sm"
-                        title={isArchived ? "Reativar" : "Arquivar"}
-                        onClick={(e) => { e.stopPropagation(); archive.mutate({ id: c.id, archived: !isArchived }); }}
-                      >
-                        {isArchived ? <ArchiveRestore className="h-4 w-4" /> : <Archive className="h-4 w-4" />}
-                      </Button>
-                      <Button
-                        size="icon"
-                        variant="outline"
-                        className="h-10 w-10 rounded-full shadow-sm"
-                        title="Editar"
-                        onClick={(e) => { e.stopPropagation(); setEditingId(c.id); setRevealedId(null); }}
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        size="icon"
-                        variant="outline"
-                        className="h-10 w-10 rounded-full shadow-sm text-destructive hover:text-destructive"
-                        title="Excluir"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (confirm(`Excluir cliente "${c.name}"? Esta ação não pode ser desfeita.`)) remove.mutate(c.id);
-                        }}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      {rowActions(c, "lg")}
                     </div>
                   </div>
                 </div>
@@ -323,6 +365,7 @@ function ClientsPage() {
             })}
           </div>
         )}
+
       </div>
 
       <NewClientDialog open={newOpen} onOpenChange={setNewOpen}
