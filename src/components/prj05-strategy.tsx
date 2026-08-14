@@ -233,45 +233,15 @@ export function Prj05Strategy({
       </div>
       <div className="p5-grid">
 
-        {/* 1. Briefing */}
-        <section className="p5-card">
-          <div className="p5-card-h">
-            <div className="p5-ht"><BookOpen /><span className="p5-card-t">1. Briefing e posicionamento</span></div>
-            <button type="button" className="p5-ghost" onClick={openBrief}><Pencil /></button>
-          </div>
-          {!description?.trim() && !s.audience && !s.tone && !s.value_prop && !s.positioning && !(s.essence ?? []).length ? (
-            <Empty text="Nenhuma informação de posicionamento preenchida." onAdd={openBrief} label="Preencher briefing" />
-          ) : (
-            <div className="p5-brief">
-              <div>
-                <div className="p5-bl">Propósito</div>
-                <p className="p5-bt">{description?.trim() || "—"}</p>
-              </div>
-              <div>
-                <div className="p5-bl">Público-alvo principal</div>
-                <p className="p5-bt">{s.audience || "—"}</p>
-              </div>
-              <div>
-                <div className="p5-bl">Essência da marca</div>
-                {(s.essence ?? []).length
-                  ? <div className="p5-chips">{(s.essence ?? []).map(c => <span key={c} className="p5-chip">{c}</span>)}</div>
-                  : <p className="p5-bt">—</p>}
-              </div>
-              <div>
-                <div className="p5-bl">Tom de voz</div>
-                <p className="p5-bt">{s.tone || "—"}</p>
-              </div>
-              <div>
-                <div className="p5-bl">Proposta de valor</div>
-                <p className="p5-bt">{s.value_prop || "—"}</p>
-              </div>
-              <div>
-                <div className="p5-bl">Posicionamento</div>
-                <p className="p5-bt">{s.positioning || "—"}</p>
-              </div>
-            </div>
-          )}
-        </section>
+        {/* 1. Briefings */}
+        <BriefingsCard
+          projectId={projectId}
+          projectName={projectName}
+          description={description}
+          strategy={s}
+          onSavePositioning={(patch) => onSaveBriefing?.(patch)}
+        />
+
 
         {/* 1b. Pesquisa & Posicionamento */}
         <StrategyDocCard
