@@ -1,67 +1,57 @@
-# Elevar o visual do Caritas ao nível ClickUp
+# Briefings múltiplos + Financeiro completo
 
-Plano visual (não executado agora) para deixar o sistema com aparência de produto profissional. Dividido em 5 frentes, da base para o detalhe.
+Três frentes: prévia/autosalvamento do briefing, vários briefings por projeto e um módulo financeiro no nível de um ERP de gestão (estilo Conta Azul).
 
-## 1. Fundação: tokens e densidade
+## 1. Briefing com prévia e salvamento automático
 
-Hoje o sistema tem vários CSS por tela (`prj01.css`, `fin01.css`, `windows.css`, `tsk02.css`…), cada um com seus próprios raios, sombras e espaçamentos. O primeiro passo é uma camada única de tokens que todos consomem.
+A janela de briefing já tem a prévia lateral do documento. O que muda:
 
-```text
---cv-space-1..6      4 / 8 / 12 / 16 / 24 / 32
---cv-radius-sm/md/lg 8 / 12 / 16
---cv-elev-1          0 1px 2px rgba(16,24,40,.06)
---cv-elev-2          0 4px 16px -6px rgba(16,24,40,.14)
---cv-row-h           36px (linhas de lista, igual ao ClickUp)
---cv-font-ui         13px / 1.45
-```
+- **Rascunho automático**: cada alteração é gravada (debounce de ~800 ms) e também ao fechar a janela, clicar fora ou trocar de aba. Nada se perde; o botão "Salvar" passa a ser apenas a confirmação/finalização.
+- **Indicador de estado** no rodapé: "Salvando…", "Salvo às 14:32", com barra de progresso de preenchimento já existente.
+- Prévia continua espelhando em tempo real o que está sendo digitado, agora incluindo o nome do briefing e o modelo escolhido.
 
-Exemplo de padronização: todo card passa a ser `radius-lg + elev-1`, hover sobe para `elev-2` com `translateY(-1px)` em 120ms. Nada de sombra dura ou borda dupla.
+## 2. Vários briefings por projeto
 
-## 2. Chrome do app (o que mais “vende” a sensação ClickUp)
+Hoje o briefing é único (gravado na linha do projeto). Passa a existir uma lista:
 
-- **Sidebar em dois níveis**: coluna estreita de ícones (56px) + painel de navegação contextual (240px) que muda conforme o módulo (em Projetos lista os projetos favoritos; em Financeiro lista Fluxo, DRE, Lançamentos).
-- **Topbar com breadcrumb vivo**: `Projetos / Portus / Estratégia` com dropdown em cada nível para trocar de item sem voltar.
-- **Barra de comandos ⌘K** unificando busca global, criar tarefa, criar lançamento, abrir projeto.
-- **Barra de abas de itens abertos** (estilo navegador) — tarefas e lançamentos abertos ficam como pílulas no rodapé, retomáveis com um clique. Você já tem os modos minimizado/docked; isso vira a UI oficial disso.
+- Nova tabela `project_briefings`: projeto, título, modelo usado, respostas, status (rascunho/concluído), autor, datas.
+- Na aba **Estratégia** do projeto, o card de Briefing vira uma lista: "Briefing de marca", "Briefing de campanha eleitoral", "Briefing de lançamento"… com status, progresso e data.
+- Ações: novo briefing (escolhendo qualquer modelo cadastrado em Configurações), duplicar, renomear, excluir e abrir.
+- **Salvar como modelo**: qualquer briefing preenchido pode virar um modelo reutilizável em Configurações.
+- O briefing existente de cada projeto é migrado para a nova lista, sem perda de dados.
+- O documento consolidado da estratégia passa a incluir os briefings marcados como concluídos.
 
-## 3. Listas e tabelas de verdade
+## 3. Financeiro completo (nível Conta Azul)
 
-O ClickUp é reconhecido pela tabela densa e configurável. Exemplo aplicado às tarefas:
+Estrutura nova de dados (mantendo o que já existe de faturas, cobranças e custos):
 
-```text
-▸ Portus · Social                                   12 tarefas   R$ 8.400
-  ⬚  Reels institucional      Em produção  Ana  12/ago  ●●●○○ 60%   R$ 1.200
-  ⬚  Carrossel lançamento     Aprovação    Léo  14/ago  ●●●●○ 80%   R$   900
-```
+- **Contas bancárias / caixas**: saldo inicial, saldo atual, tipo (banco, caixa, cartão).
+- **Plano de contas** hierárquico (receitas, custos diretos, despesas fixas/variáveis, impostos, pessoas), ampliando as categorias atuais.
+- **Contas a pagar e a receber**: vencimento, valor, parcelas, fornecedor/cliente, projeto (centro de custo), anexo de comprovante, status (previsto, vencido, pago/recebido, parcial).
+- **Baixas e conciliação**: registrar pagamento/recebimento em uma conta bancária, com data efetiva e valor real; extrato por conta com saldo corrido.
+- **Recorrências**: geração automática de lançamentos mensais (aluguel, salários, assinaturas, contratos).
 
-- Linha de 36px, hover revela ações à direita (comentar, faturar, mais).
-- Cabeçalho de coluna com menu: ordenar, agrupar por, ocultar, fixar.
-- Grupos colapsáveis com somatório na régua do grupo.
-- Seleção múltipla com barra de ação flutuante (“3 selecionadas · Mudar etapa · Faturar · Arquivar”).
-- Edição inline: clicar na célula de etapa abre o seletor no lugar, sem modal.
+Telas do módulo Financeiro (abas laterais):
 
-## 4. Componentes-assinatura
+1. **Visão geral** — saldo consolidado, a receber/a pagar dos próximos 30 dias, inadimplência, resultado do mês.
+2. **A receber** e **A pagar** — listas com filtros por período, status, cliente/fornecedor e projeto; baixa em lote.
+3. **Extrato / Contas** — movimentações por conta bancária com saldo acumulado e conciliação.
+4. **Fluxo de caixa** — realizado x previsto por mês, projeção de saldo, alerta de saldo negativo.
+5. **DRE** — receita bruta, deduções, custos diretos, despesas, resultado operacional e líquido por período (já existe, será ligado ao novo plano de contas).
+6. **Análise inteligente** — rentabilidade por projeto, cliente e tipo de serviço, custo de mão de obra x preço praticado, sugestão de preço, reserva de emergência e meta de lucro (evolução do que já existe).
+7. **Relatórios** — exportação CSV/PDF por período e por centro de custo.
 
-- **Chips de status/etapa**: pílula com ponto colorido, fundo em 10% da cor, texto na cor 700 — um só componente para toda a app.
-- **Avatares**: 24px, empilhados com `-6px`, borda da cor do fundo, `+N` no excedente.
-- **Barra de progresso**: 4px, cor por faixa (vermelho <50, âmbar <80, verde), com tooltip do cálculo.
-- **Empty states ilustrados**: ícone grande esmaecido + título + 1 ação primária (hoje são frases soltas).
-- **Skeletons** em vez de “Carregando…”, respeitando a forma final do conteúdo.
-- **Toasts com ação** (“Tarefa arquivada · Desfazer”).
+Integrações: faturas emitidas geram contas a receber automaticamente; custos de projeto e folha do RH geram contas a pagar; a baixa reflete no fluxo de caixa e no DRE.
 
-## 5. Movimento e polimento
+## Detalhes técnicos
 
-- Modais entram com `scale(.98) → 1` + fade em 140ms; drawers deslizam 180ms `cubic-bezier(.22,1,.36,1)`.
-- Kanban com drag ghost translúcido e placeholder pontilhado na coluna de destino.
-- Foco visível consistente (anel de 3px em 16% do primário) em todos os controles.
-- Dark mode revisado por componente, não por correção pontual: um arquivo de tema, não `dark-fixes.css`.
+- Migrações criam `project_briefings`, `financial_accounts`, `financial_transactions` (a pagar/receber com baixas), `financial_account_entries` (extrato) e ampliam `finance_categories` com hierarquia e natureza contábil; todas com RLS por organização e GRANTs.
+- Autosave do briefing via mutation com debounce e React Query otimista.
+- Cálculos financeiros centralizados em `src/lib/finance-analytics.ts` (extensão), reaproveitando a estética atual do módulo.
 
-## Ordem sugerida de execução
+## Ordem de entrega
 
-1. Tokens + densidade global (base para tudo, baixo risco).
-2. Chips, avatares, progresso, skeletons e empty states (ganho visual imediato em todas as telas).
-3. Tabela/lista padrão + seleção múltipla + agrupamento (maior impacto percebido).
-4. Sidebar em dois níveis, breadcrumb e ⌘K.
-5. Barra de itens abertos e refinamento de movimento.
-
-Cada etapa é entregável sozinha; dá para parar em qualquer ponto sem quebrar o resto.
+1. Briefing: autosave + prévia (rápido).
+2. Briefings múltiplos por projeto + modelos.
+3. Financeiro: base de dados e A pagar/A receber/Extrato.
+4. Financeiro: fluxo de caixa, DRE ligado ao plano de contas, análise e relatórios.
