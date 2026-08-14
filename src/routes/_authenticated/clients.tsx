@@ -677,7 +677,7 @@ export function NewClientDialog({
 
   const canSave = form.name.trim().length > 0;
 
-  const handleSubmit = () => {
+  const handleSubmit = (close = false) => {
     const payload = {
       person_type: form.person_type,
       name: form.name.trim(),
