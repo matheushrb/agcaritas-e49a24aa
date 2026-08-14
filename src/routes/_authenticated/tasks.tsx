@@ -173,10 +173,19 @@ function TasksPage() {
   const { data: projectsMin = [] } = useQuery({
     queryKey: ["projects-min-tasks"],
     queryFn: async () => {
-      const { data } = await supabase.from("projects").select("id,name").order("name");
-      return (data ?? []) as { id: string; name: string }[];
+      const { data } = await supabase
+        .from("projects")
+        .select("id,name,clients(logo_url)")
+        .order("name");
+      return (data ?? []).map((p: any) => ({
+        id: p.id as string,
+        name: p.name as string,
+        clientLogo: (p.clients?.logo_url ?? null) as string | null,
+      }));
     },
   });
+  const projectLogo = (id: string | null) =>
+    (id && projectsMin.find(p => p.id === id)?.clientLogo) || null;
   const projectName = (id: string | null) =>
     (id && projectsMin.find(p => p.id === id)?.name) || "Sem projeto";
 
@@ -312,6 +321,7 @@ function TasksPage() {
         onViewChange={setView}
         tasks={tasks as any}
         projects={projectsMin}
+        projectLogo={projectLogo}
         people={peopleMin}
         onOpen={(id) => { setDraftTask(null); setSelectedId(id); }}
         onNew={handleNew}

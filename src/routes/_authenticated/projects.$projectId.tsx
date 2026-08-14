@@ -24,6 +24,7 @@ import { EditProjectDialog, type EditableProject } from "@/components/edit-proje
 import { NoticeBoard, NoticeBoardDialog, parseNotices, type ProjectNotice } from "@/components/project-notice-board";
 import { ProjectCostsTab } from "@/components/project-costs-tab";
 import { Prj02Overview, p2Initials } from "@/components/prj02-overview";
+import { UserAvatar } from "@/components/user-avatar";
 import { Prj03Tasks } from "@/components/prj03-tasks";
 import { Prj04Finance } from "@/components/prj04-finance";
 import { Prj05Strategy } from "@/components/prj05-strategy";
@@ -534,14 +535,17 @@ function ProjectDetail() {
         </div>
         <div className="p2-kpi">
           <div className="p2-kpi-h"><UsersIcon /> Responsável</div>
-          <div className="p2-kpi-v" style={{ fontSize: 14 }}>{ownerName}</div>
+          <div className="p2-kpi-v" style={{ fontSize: 14, display: "flex", alignItems: "center", gap: 8 }}>
+            <UserAvatar userId={project.owner_id} name={ownerName} size={24} />
+            {ownerName}
+          </div>
           <div className="p2-kpi-f">{ownerRole}</div>
         </div>
         <div className="p2-kpi">
           <div className="p2-kpi-h"><UsersIcon /> Equipe</div>
           <div className="p2-kpi-v">
             <span className="p2-stack">
-              {people.slice(0, 3).map(p => <span className="av" key={p.id}>{p2Initials(p.full_name)}</span>)}
+              {people.slice(0, 3).map(p => <UserAvatar key={p.id} userId={p.id} name={p.full_name} size="css" className="av" />)}
               {people.length > 3 && <span className="more">+{people.length - 3}</span>}
               {!people.length && <span className="more">—</span>}
             </span>
