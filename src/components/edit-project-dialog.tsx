@@ -40,6 +40,12 @@ export type EditableProject = {
   has_timeline: boolean;
   traffic_budget: { enabled?: boolean; amount?: number | null; platforms?: string[] } | null;
   scope_flags: Record<string, boolean> | null;
+  contact_name?: string | null;
+  contact_role?: string | null;
+  contact_email?: string | null;
+  contact_phone?: string | null;
+  final_client?: string | null;
+  doc_id?: string | null;
   social_platforms?: unknown;
 };
 
@@ -215,6 +221,12 @@ export function EditProjectDialog({
       has_timeline: form.has_timeline,
       traffic_budget: form.traffic_budget,
       scope_flags: form.scope_flags,
+      contact_name: form.contact_name ?? null,
+      contact_role: form.contact_role ?? null,
+      contact_email: form.contact_email ?? null,
+      contact_phone: form.contact_phone ?? null,
+      final_client: form.final_client ?? null,
+      doc_id: form.doc_id ?? null,
       social_platforms: selectedPlatforms as unknown as EditableProject["social_platforms"],
     });
   };
