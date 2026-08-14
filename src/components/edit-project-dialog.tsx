@@ -306,6 +306,29 @@ export function EditProjectDialog({
                 </div>
               </Section>
 
+              <Section icon={<UsersIcon className="h-4 w-4" />} title="Contato e documentos" description="Aparece no cabeçalho do projeto. Se ficar vazio, usamos os dados do cliente.">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Field label="Cliente final" icon={<Target className="h-3.5 w-3.5" />}>
+                    <Input value={form.final_client ?? ""} onChange={e => set("final_client", e.target.value || null)} placeholder="Ex.: candidato, marca ou empresa atendida" />
+                  </Field>
+                  <Field label="CNPJ / CPF" icon={<FileText className="h-3.5 w-3.5" />}>
+                    <Input value={form.doc_id ?? ""} onChange={e => set("doc_id", e.target.value || null)} placeholder="00.000.000/0000-00" />
+                  </Field>
+                  <Field label="Nome do contato">
+                    <Input value={form.contact_name ?? ""} onChange={e => set("contact_name", e.target.value || null)} placeholder="Quem responde pelo projeto" />
+                  </Field>
+                  <Field label="Cargo do contato">
+                    <Input value={form.contact_role ?? ""} onChange={e => set("contact_role", e.target.value || null)} placeholder="Ex.: Coordenador de campanha" />
+                  </Field>
+                  <Field label="E-mail">
+                    <Input type="email" value={form.contact_email ?? ""} onChange={e => set("contact_email", e.target.value || null)} placeholder="contato@empresa.com" />
+                  </Field>
+                  <Field label="Telefone">
+                    <Input value={form.contact_phone ?? ""} onChange={e => set("contact_phone", e.target.value || null)} placeholder="(00) 00000-0000" />
+                  </Field>
+                </div>
+              </Section>
+
               <Section icon={<Calendar className="h-4 w-4" />} title="Status e prazos" description="Etapa atual e janela de execução.">
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                   <Field label="Status">
