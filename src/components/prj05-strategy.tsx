@@ -5,12 +5,14 @@ import { toast } from "sonner";
 import {
   BookOpen, Pencil, LayoutGrid, Users, Filter, Target, ListChecks,
   ThumbsUp, ThumbsDown, ArrowUpCircle, AlertOctagon, Check, Calendar,
-  ChevronLeft, ChevronRight, Plus, Trash2,
+  ChevronLeft, ChevronRight, Plus, Trash2, Compass, Palette,
 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { BriefingWindow } from "./strategy/briefing-window";
 import { SwotWindow, PersonasWindow, CompetitorsWindow, KpisWindow, StepsWindow } from "./strategy/strategy-windows";
 import { StrategyDocWindow } from "./strategy/strategy-doc-window";
+import { StrategyDocCard } from "./strategy/doc-tool-window";
+import { BRAND_SCHEMA, POSITIONING_SCHEMA } from "@/lib/strategy-docs";
 
 import type { BriefingData } from "@/lib/briefing";
 import "@/prj05.css";
@@ -271,10 +273,30 @@ export function Prj05Strategy({
           )}
         </section>
 
+        {/* 1b. Pesquisa & Posicionamento */}
+        <StrategyDocCard
+          projectId={projectId}
+          projectName={projectName}
+          schema={POSITIONING_SCHEMA}
+          icon={Compass}
+          index={2}
+          highlights={["statement", "promise", "differentiators"]}
+        />
+
+        {/* 1c. Manual de marca */}
+        <StrategyDocCard
+          projectId={projectId}
+          projectName={projectName}
+          schema={BRAND_SCHEMA}
+          icon={Palette}
+          index={3}
+          highlights={["archetype", "tone", "palette"]}
+        />
+
         {/* 2. SWOT */}
         <section className="p5-card">
           <div className="p5-card-h">
-            <div className="p5-ht"><LayoutGrid /><span className="p5-card-t">2. Análise SWOT</span></div>
+            <div className="p5-ht"><LayoutGrid /><span className="p5-card-t">4. Análise SWOT</span></div>
             <button type="button" className="p5-link" onClick={() => setSwotOpen(true)}>Abrir ferramenta</button>
           </div>
           <div className="p5-swot">
@@ -317,7 +339,7 @@ export function Prj05Strategy({
         {/* 3. Personas */}
         <section className="p5-card">
           <div className="p5-card-h">
-            <div className="p5-ht"><Users /><span className="p5-card-t">3. Personas principais</span></div>
+            <div className="p5-ht"><Users /><span className="p5-card-t">5. Personas principais</span></div>
             <button
               type="button" className="p5-link"
               onClick={() => { setPersonaEdit(null); setPersonaForm({ ...emptyPersona }); setPersonaOpen(true); }}
@@ -383,7 +405,7 @@ export function Prj05Strategy({
         {/* 4. Concorrentes */}
         <section className="p5-card">
           <div className="p5-card-h">
-            <div className="p5-ht"><Filter /><span className="p5-card-t">4. Concorrentes</span></div>
+            <div className="p5-ht"><Filter /><span className="p5-card-t">6. Concorrentes</span></div>
             <button
               type="button" className="p5-link"
               onClick={() => { setBenchEdit(null); setBenchForm({ ...emptyBench }); setBenchOpen(true); }}
@@ -436,7 +458,7 @@ export function Prj05Strategy({
         {/* 5. KPIs estratégicos */}
         <section className="p5-card">
           <div className="p5-card-h">
-            <div className="p5-ht"><Target /><span className="p5-card-t">5. KPIs estratégicos</span></div>
+            <div className="p5-ht"><Target /><span className="p5-card-t">7. KPIs estratégicos</span></div>
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
               {kpiAvg !== null && <span className="p5-badge blue">Média {kpiAvg}%</span>}
               <button
@@ -515,7 +537,7 @@ export function Prj05Strategy({
         {/* 6. Próximos passos */}
         <section className="p5-card">
           <div className="p5-card-h">
-            <div className="p5-ht"><ListChecks /><span className="p5-card-t">6. Próximos passos estratégicos</span></div>
+            <div className="p5-ht"><ListChecks /><span className="p5-card-t">8. Próximos passos estratégicos</span></div>
             <button type="button" className="p5-link" onClick={() => { setStepForm({ title: "", due_date: "" }); setStepOpen(true); }}>
               + Novo passo
             </button>

@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { ToolWindow } from "./tool-window";
 import { fetchBriefingTemplates, type BriefingData } from "@/lib/briefing";
+import { BRAND_SCHEMA, POSITIONING_SCHEMA, splitList, type DocSchema, type StrategyDocData } from "@/lib/strategy-docs";
 import "@/strategy-win.css";
 
 const sb = supabase as any;
@@ -26,11 +27,60 @@ const QUAD = [
   { key: "threat", title: "Ameaças" },
 ];
 
+function schemaLines(schema: DocSchema, data: StrategyDocData, heading: string): string[] {
+  const L: string[] = [`## ${heading}`, ""];
+  schema.sections.forEach(sec => {
+    L.push(`### ${sec.title}`, "");
+    sec.fields.forEach(f => {
+      const raw = String(data?.[f.key] ?? "").trim();
+      const val = f.type === "chips" || f.type === "colors" ? splitList(raw).join(", ") : raw;
+      L.push(`**${f.label}:** ${val || "—"}`);
+    });
+    L.push("");
+  });
+  return L;
+}
+
+function SchemaBlock({ schema, data, heading }: { schema: DocSchema; data: StrategyDocData; heading: string }) {
+  return (
+    <>
+      <h2>{heading}</h2>
+      {schema.sections.map(sec => (
+        <div key={sec.title}>
+          <h3>{sec.title}</h3>
+          {sec.fields.map(f => {
+            const raw = String(data?.[f.key] ?? "").trim();
+            if (f.type === "chips" || f.type === "colors") {
+              const items = splitList(raw);
+              return (
+                <div className="doc-q" key={f.key}>
+                  <b>{f.label}</b>
+                  {items.length
+                    ? <div className="doc-chips">{items.map(c => <span key={c} className="doc-chip">{c}</span>)}</div>
+                    : <p className="empty">Não preenchido</p>}
+                </div>
+              );
+            }
+            return (
+              <div className="doc-q" key={f.key}>
+                <b>{f.label}</b>
+                <p className={raw ? "" : "empty"}>{raw || "Não preenchido"}</p>
+              </div>
+            );
+          })}
+        </div>
+      ))}
+    </>
+  );
+}
+
 const SECTIONS = [
   { key: "brief", label: "Briefing" },
+  { key: "positioning", label: "Posicionamento" },
   { key: "swot", label: "SWOT" },
   { key: "personas", label: "Personas" },
   { key: "bench", label: "Concorrentes" },
+  { key: "brand", label: "Manual de marca" },
   { key: "kpis", label: "KPIs" },
   { key: "steps", label: "Próximos passos" },
 ] as const;
@@ -55,7 +105,7 @@ export function StrategyDocWindow({
   const docRef = useRef<HTMLDivElement>(null);
   const [copied, setCopied] = useState(false);
   const [on, setOn] = useState<Record<SectionKey, boolean>>({
-    brief: true, swot: true, personas: true, bench: true, kpis: true, steps: true,
+    brief: true, positioning: true, swot: true, personas: true, bench: true, brand: true, kpis: true, steps: true,
   });
 
   const list = <T,>(table: string, order: string) =>
@@ -74,6 +124,22 @@ export function StrategyDocWindow({
   const { data: benchmarks = [] } = list<BenchRow>("project_benchmarks", "created_at");
   const { data: kpis = [] } = list<KpiRow>("project_kpis", "order_index");
   const { data: steps = [] } = list<StepRow>("project_action_items", "order_index");
+
+  const { data: docs = {} } = useQuery({
+    queryKey: ["doc", "project_strategy_docs", projectId],
+    enabled: open,
+    queryFn: async (): Promise<Record<string, StrategyDocData>> => {
+      const { data, error } = await sb.from("project_strategy_docs").select("kind, data").eq("project_id", projectId);
+      if (error) throw error;
+      const out: Record<string, StrategyDocData> = {};
+      (data ?? []).forEach((r: any) => { out[r.kind] = (r.data ?? {}) as StrategyDocData; });
+      return out;
+    },
+  });
+  const positioningDoc = docs["positioning"] ?? {};
+  const brandDoc = docs["brand_manual"] ?? {};
+
+
 
   const { data: templates = [] } = useQuery({
     queryKey: ["briefing_templates", "briefing"],
@@ -128,6 +194,9 @@ export function StrategyDocWindow({
         L.push("");
       });
     }
+    if (on.positioning) {
+      L.push(...schemaLines(POSITIONING_SCHEMA, positioningDoc, "2. Pesquisa e posicionamento"));
+    }
     if (on.swot) {
       L.push("## 2. Análise SWOT", "");
       QUAD.forEach(q => {
@@ -159,6 +228,9 @@ export function StrategyDocWindow({
         L.push(`- Gap vs. nós: ${c.weaknesses || "—"}`, "");
       });
     }
+    if (on.brand) {
+      L.push(...schemaLines(BRAND_SCHEMA, brandDoc, "5. Manual de marca"));
+    }
     if (on.kpis) {
       L.push("## 5. KPIs estratégicos", "");
       if (!kpis.length) L.push("- Nenhum indicador definido.", "");
@@ -176,7 +248,7 @@ export function StrategyDocWindow({
       L.push("");
     }
     return L.join("\n");
-  }, [on, projectName, today, summary, description, strategy, tpl, briefing, swot, personas, benchmarks, kpis, steps]);
+  }, [on, projectName, today, summary, description, strategy, tpl, briefing, swot, personas, benchmarks, kpis, steps, positioningDoc, brandDoc]);
 
   const copy = async () => {
     try {
@@ -298,6 +370,10 @@ export function StrategyDocWindow({
             </>
           )}
 
+          {on.positioning && (
+            <SchemaBlock schema={POSITIONING_SCHEMA} data={positioningDoc} heading="2. Pesquisa e posicionamento" />
+          )}
+
           {on.swot && (
             <>
               <h2>2. Análise SWOT</h2>
@@ -357,6 +433,10 @@ export function StrategyDocWindow({
                 </table>
               )}
             </>
+          )}
+
+          {on.brand && (
+            <SchemaBlock schema={BRAND_SCHEMA} data={brandDoc} heading="5. Manual de marca" />
           )}
 
           {on.kpis && (
