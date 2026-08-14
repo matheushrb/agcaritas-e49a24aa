@@ -199,8 +199,10 @@ export type Database = {
       }
       charges: {
         Row: {
+          account_id: string | null
           accounting_nature: string | null
           amount: number
+          attachment_path: string | null
           category: string | null
           client_id: string | null
           collaborator_id: string | null
@@ -209,11 +211,16 @@ export type Database = {
           created_at: string
           deliverable_id: string | null
           description: string
+          document_number: string | null
           due_date: string
           id: string
+          installment_no: number | null
+          installment_total: number | null
           invoice_id: string | null
           nature: string | null
+          notes: string | null
           organization_id: string
+          paid_amount: number
           paid_at: string | null
           parent_charge_id: string | null
           payment_method: string | null
@@ -221,14 +228,17 @@ export type Database = {
           recurring_charge_id: string | null
           service_label: string | null
           status: Database["public"]["Enums"]["charge_status"]
+          supplier_id: string | null
           task_id: string | null
           task_ids: Json
           type: string | null
           updated_at: string
         }
         Insert: {
+          account_id?: string | null
           accounting_nature?: string | null
           amount: number
+          attachment_path?: string | null
           category?: string | null
           client_id?: string | null
           collaborator_id?: string | null
@@ -237,11 +247,16 @@ export type Database = {
           created_at?: string
           deliverable_id?: string | null
           description: string
+          document_number?: string | null
           due_date: string
           id?: string
+          installment_no?: number | null
+          installment_total?: number | null
           invoice_id?: string | null
           nature?: string | null
+          notes?: string | null
           organization_id: string
+          paid_amount?: number
           paid_at?: string | null
           parent_charge_id?: string | null
           payment_method?: string | null
@@ -249,14 +264,17 @@ export type Database = {
           recurring_charge_id?: string | null
           service_label?: string | null
           status?: Database["public"]["Enums"]["charge_status"]
+          supplier_id?: string | null
           task_id?: string | null
           task_ids?: Json
           type?: string | null
           updated_at?: string
         }
         Update: {
+          account_id?: string | null
           accounting_nature?: string | null
           amount?: number
+          attachment_path?: string | null
           category?: string | null
           client_id?: string | null
           collaborator_id?: string | null
@@ -265,11 +283,16 @@ export type Database = {
           created_at?: string
           deliverable_id?: string | null
           description?: string
+          document_number?: string | null
           due_date?: string
           id?: string
+          installment_no?: number | null
+          installment_total?: number | null
           invoice_id?: string | null
           nature?: string | null
+          notes?: string | null
           organization_id?: string
+          paid_amount?: number
           paid_at?: string | null
           parent_charge_id?: string | null
           payment_method?: string | null
@@ -277,12 +300,20 @@ export type Database = {
           recurring_charge_id?: string | null
           service_label?: string | null
           status?: Database["public"]["Enums"]["charge_status"]
+          supplier_id?: string | null
           task_id?: string | null
           task_ids?: Json
           type?: string | null
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "charges_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "financial_accounts"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "charges_client_id_fkey"
             columns: ["client_id"]
@@ -337,6 +368,13 @@ export type Database = {
             columns: ["recurring_charge_id"]
             isOneToOne: false
             referencedRelation: "recurring_charges"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "charges_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
             referencedColumns: ["id"]
           },
           {
@@ -844,30 +882,169 @@ export type Database = {
         Row: {
           active: boolean
           created_at: string
+          dre_group: string | null
           id: string
           name: string
           nature: string
           organization_id: string
+          parent_id: string | null
+          sort_order: number
         }
         Insert: {
           active?: boolean
           created_at?: string
+          dre_group?: string | null
           id?: string
           name: string
           nature: string
           organization_id: string
+          parent_id?: string | null
+          sort_order?: number
         }
         Update: {
           active?: boolean
           created_at?: string
+          dre_group?: string | null
           id?: string
           name?: string
           nature?: string
           organization_id?: string
+          parent_id?: string | null
+          sort_order?: number
         }
         Relationships: [
           {
             foreignKeyName: "finance_categories_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "finance_categories_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "finance_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      financial_accounts: {
+        Row: {
+          active: boolean
+          bank_name: string | null
+          color: string | null
+          created_at: string
+          id: string
+          kind: string
+          name: string
+          opening_balance: number
+          opening_date: string
+          organization_id: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          bank_name?: string | null
+          color?: string | null
+          created_at?: string
+          id?: string
+          kind?: string
+          name: string
+          opening_balance?: number
+          opening_date?: string
+          organization_id: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          bank_name?: string | null
+          color?: string | null
+          created_at?: string
+          id?: string
+          kind?: string
+          name?: string
+          opening_balance?: number
+          opening_date?: string
+          organization_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "financial_accounts_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      financial_entries: {
+        Row: {
+          account_id: string
+          amount: number
+          category: string | null
+          charge_id: string | null
+          created_at: string
+          description: string
+          direction: string
+          entry_date: string
+          id: string
+          notes: string | null
+          organization_id: string
+          payment_method: string | null
+          reconciled: boolean
+          updated_at: string
+        }
+        Insert: {
+          account_id: string
+          amount: number
+          category?: string | null
+          charge_id?: string | null
+          created_at?: string
+          description?: string
+          direction?: string
+          entry_date?: string
+          id?: string
+          notes?: string | null
+          organization_id: string
+          payment_method?: string | null
+          reconciled?: boolean
+          updated_at?: string
+        }
+        Update: {
+          account_id?: string
+          amount?: number
+          category?: string | null
+          charge_id?: string | null
+          created_at?: string
+          description?: string
+          direction?: string
+          entry_date?: string
+          id?: string
+          notes?: string | null
+          organization_id?: string
+          payment_method?: string | null
+          reconciled?: boolean
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "financial_entries_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "financial_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "financial_entries_charge_id_fkey"
+            columns: ["charge_id"]
+            isOneToOne: false
+            referencedRelation: "charges"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "financial_entries_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
@@ -2080,6 +2257,67 @@ export type Database = {
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_briefings: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          data: Json
+          id: string
+          organization_id: string
+          project_id: string
+          status: string
+          template_id: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          data?: Json
+          id?: string
+          organization_id: string
+          project_id: string
+          status?: string
+          template_id?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          data?: Json
+          id?: string
+          organization_id?: string
+          project_id?: string
+          status?: string
+          template_id?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_briefings_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_briefings_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_briefings_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "briefing_templates"
             referencedColumns: ["id"]
           },
         ]
