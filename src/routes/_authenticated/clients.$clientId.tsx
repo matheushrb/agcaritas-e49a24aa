@@ -137,8 +137,8 @@ function ClientDetailPage() {
       qc.invalidateQueries({ queryKey: ["client", clientId] });
       qc.invalidateQueries({ queryKey: ["clients-list"] });
       toast.success("Cliente atualizado");
-      setEditOpen(false);
     },
+
     onError: (e: Error) => toast.error(e.message),
   });
 
@@ -216,7 +216,7 @@ function ClientDetailPage() {
         onOpenChange={setEditOpen}
         mode="edit"
         initial={client as never}
-        onSubmit={v => updateClient.mutate(v)}
+        onSubmit={(v, close) => updateClient.mutate(v, { onSuccess: () => { if (close) setEditOpen(false); } })}
         pending={updateClient.isPending}
       />
     </div>

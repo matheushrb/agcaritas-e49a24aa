@@ -13,7 +13,7 @@ import { ClientLogo, ClientLogoPicker } from "@/components/client-logo";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
   Search, Plus, Users as UsersIcon, Building2, Mail, Phone, Loader2, Sparkles,
-  Pencil, Archive, Trash2, ArchiveRestore, Tag, X,
+  Pencil, Archive, Trash2, ArchiveRestore, Tag, X, List, Rows3, LayoutGrid,
 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { toast } from "sonner";
@@ -76,6 +76,17 @@ function ClientsPage() {
   const [segmentsOpen, setSegmentsOpen] = useState(false);
   const [revealedId, setRevealedId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [createdSignal, setCreatedSignal] = useState(0);
+  const [view, setView] = useState<"list" | "cards" | "kanban">("list");
+
+  useEffect(() => {
+    const v = typeof window !== "undefined" ? window.localStorage.getItem("caritas:clients-view") : null;
+    if (v === "list" || v === "cards" || v === "kanban") setView(v);
+  }, []);
+  useEffect(() => {
+    if (typeof window !== "undefined") window.localStorage.setItem("caritas:clients-view", view);
+  }, [view]);
+
 
   const { data: segments = [] } = useQuery<string[]>({
     queryKey: ["client-segments"],
@@ -148,30 +159,36 @@ function ClientsPage() {
 
 
   const create = useMutation({
-    mutationFn: async (input: Record<string, unknown>) => {
+    mutationFn: async ({ payload }: { payload: Record<string, unknown>; close: boolean }) => {
       const { data: profile } = await supabase.from("profiles").select("organization_id").maybeSingle();
       if (!profile?.organization_id) throw new Error("Sem organização");
-      const { error } = await supabase.from("clients").insert({ ...(input as { name: string }), organization_id: profile.organization_id });
+      const { error } = await supabase.from("clients").insert({ ...(payload as { name: string }), organization_id: profile.organization_id });
       if (error) throw error;
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["clients-list"] }); toast.success("Cliente criado"); setNewOpen(false); },
+    onSuccess: (_d, v) => {
+      qc.invalidateQueries({ queryKey: ["clients-list"] });
+      toast.success("Cliente criado");
+      setCreatedSignal(s => s + 1);
+      if (v.close) setNewOpen(false);
+    },
     onError: (e: Error) => toast.error(e.message),
   });
 
   const update = useMutation({
-    mutationFn: async (input: Record<string, unknown>) => {
+    mutationFn: async ({ payload }: { payload: Record<string, unknown>; close: boolean }) => {
       if (!editingId) throw new Error("Sem cliente");
-      const { error } = await supabase.from("clients").update(input as never).eq("id", editingId);
+      const { error } = await supabase.from("clients").update(payload as never).eq("id", editingId);
       if (error) throw error;
     },
-    onSuccess: () => {
+    onSuccess: (_d, v) => {
       qc.invalidateQueries({ queryKey: ["clients-list"] });
       qc.invalidateQueries({ queryKey: ["client-edit", editingId] });
       toast.success("Cliente atualizado");
-      setEditingId(null);
+      if (v.close) setEditingId(null);
     },
     onError: (e: Error) => toast.error(e.message),
   });
+
 
   const archive = useMutation({
     mutationFn: async ({ id, archived }: { id: string; archived: boolean }) => {
@@ -191,7 +208,36 @@ function ClientsPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const rowActions = (c: Client, size: "sm" | "lg" = "sm") => {
+    const isArchived = (c.status ?? "") === "inactive";
+    const btn = size === "lg" ? "h-10 w-10" : "h-8 w-8";
+    const ico = size === "lg" ? "h-4 w-4" : "h-3.5 w-3.5";
+    return (
+      <>
+        <Button size="icon" variant="outline" className={cn(btn, "rounded-full shadow-sm")}
+          title={isArchived ? "Reativar" : "Arquivar"}
+          onClick={(e) => { e.stopPropagation(); archive.mutate({ id: c.id, archived: !isArchived }); }}>
+          {isArchived ? <ArchiveRestore className={ico} /> : <Archive className={ico} />}
+        </Button>
+        <Button size="icon" variant="outline" className={cn(btn, "rounded-full shadow-sm")}
+          title="Editar"
+          onClick={(e) => { e.stopPropagation(); setEditingId(c.id); setRevealedId(null); }}>
+          <Pencil className={ico} />
+        </Button>
+        <Button size="icon" variant="outline" className={cn(btn, "rounded-full shadow-sm text-destructive hover:text-destructive")}
+          title="Excluir"
+          onClick={(e) => {
+            e.stopPropagation();
+            if (confirm(`Excluir cliente "${c.name}"? Esta ação não pode ser desfeita.`)) remove.mutate(c.id);
+          }}>
+          <Trash2 className={ico} />
+        </Button>
+      </>
+    );
+  };
+
   return (
+
     <>
       <div className="space-y-6">
         <header className="flex flex-wrap items-end justify-between gap-4">
@@ -227,6 +273,28 @@ function ClientsPage() {
             <Button variant="outline" className="rounded-full gap-1.5" onClick={() => setSegmentsOpen(true)}>
               <Tag className="h-4 w-4" /> Segmentos
             </Button>
+            <div className="ml-auto inline-flex items-center rounded-full border border-border bg-muted/40 p-0.5">
+              {([
+                { k: "list", icon: List, label: "Lista" },
+                { k: "cards", icon: Rows3, label: "Cards" },
+                { k: "kanban", icon: LayoutGrid, label: "Quadros" },
+              ] as const).map(v => (
+                <button
+                  key={v.k}
+                  type="button"
+                  onClick={() => setView(v.k)}
+                  title={v.label}
+                  className={cn(
+                    "inline-flex items-center gap-1.5 rounded-full px-3 h-8 text-xs font-medium transition-colors",
+                    view === v.k ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground",
+                  )}
+                >
+                  <v.icon className="h-3.5 w-3.5" />
+                  <span className="hidden sm:inline">{v.label}</span>
+                </button>
+              ))}
+            </div>
+
           </div>
         </Card>
 
@@ -239,11 +307,82 @@ function ClientsPage() {
             <p className="text-sm text-muted-foreground mt-1">Cadastre seu primeiro cliente para vincular projetos e propostas.</p>
             <Button className="rounded-full mt-4" onClick={() => setNewOpen(true)}><Plus className="h-4 w-4 mr-1" />Novo cliente</Button>
           </Card>
+        ) : view === "list" ? (
+          <Card className="rounded-2xl overflow-hidden p-0">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border bg-muted/30 text-[11px] uppercase tracking-wider text-muted-foreground">
+                    <th className="text-left font-medium px-4 py-2.5">Cliente</th>
+                    <th className="text-left font-medium px-4 py-2.5 hidden md:table-cell">Segmento</th>
+                    <th className="text-left font-medium px-4 py-2.5 hidden lg:table-cell">Documento</th>
+                    <th className="text-left font-medium px-4 py-2.5 hidden md:table-cell">Contato</th>
+                    <th className="text-left font-medium px-4 py-2.5">Status</th>
+                    <th className="text-right font-medium px-4 py-2.5">Ações</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filtered.map(c => {
+                    const st = computeClientStatus(c, activeClientIds, prospectClientIds);
+                    return (
+                      <tr key={c.id} className="border-b border-border/60 last:border-0 hover:bg-muted/30">
+                        <td className="px-4 py-2.5">
+                          <div className="flex items-center gap-3 min-w-0">
+                            <ClientLogo value={c.logo_url} name={c.name} size={30} />
+                            <span className="font-medium truncate">{c.name}</span>
+                          </div>
+                        </td>
+                        <td className="px-4 py-2.5 text-muted-foreground hidden md:table-cell">{c.segment ?? "—"}</td>
+                        <td className="px-4 py-2.5 text-muted-foreground hidden lg:table-cell">{c.tax_id ?? "—"}</td>
+                        <td className="px-4 py-2.5 text-muted-foreground hidden md:table-cell">
+                          <div className="truncate max-w-[220px]">{c.email ?? c.phone ?? "—"}</div>
+                        </td>
+                        <td className="px-4 py-2.5">
+                          <Badge className={cn("rounded-full", STATUS[st]?.color)}>{STATUS[st]?.label}</Badge>
+                        </td>
+                        <td className="px-4 py-2.5">
+                          <div className="flex items-center justify-end gap-1">{rowActions(c)}</div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </Card>
+        ) : view === "kanban" ? (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {(["active", "prospect", "inactive"] as const).map(col => {
+              const items = filtered.filter(c => computeClientStatus(c, activeClientIds, prospectClientIds) === col);
+              return (
+                <div key={col} className="rounded-2xl border border-border bg-muted/20 p-3">
+                  <div className="flex items-center justify-between mb-3 px-1">
+                    <div className="text-sm font-semibold">{STATUS[col].label}</div>
+                    <Badge variant="secondary" className="rounded-full">{items.length}</Badge>
+                  </div>
+                  <div className="space-y-2">
+                    {items.length === 0 && <div className="text-xs text-muted-foreground px-1 py-6 text-center">Nenhum cliente</div>}
+                    {items.map(c => (
+                      <div key={c.id} className="rounded-xl border border-border bg-card p-3 hover:shadow-sm transition-shadow">
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <ClientLogo value={c.logo_url} name={c.name} size={32} />
+                          <div className="min-w-0 flex-1">
+                            <div className="font-medium text-sm truncate">{c.name}</div>
+                            <div className="text-xs text-muted-foreground truncate">{c.segment ?? c.email ?? "—"}</div>
+                          </div>
+                        </div>
+                        <div className="mt-2 flex items-center justify-end gap-1">{rowActions(c)}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         ) : (
           <div className="grid grid-cols-1 gap-3">
             {filtered.map(c => {
               const revealed = revealedId === c.id;
-              const isArchived = (c.status ?? "") === "inactive";
               return (
                 <div
                   key={c.id}
@@ -286,36 +425,7 @@ function ClientsPage() {
                       )}
                       aria-hidden={!revealed}
                     >
-                      <Button
-                        size="icon"
-                        variant="outline"
-                        className="h-10 w-10 rounded-full shadow-sm"
-                        title={isArchived ? "Reativar" : "Arquivar"}
-                        onClick={(e) => { e.stopPropagation(); archive.mutate({ id: c.id, archived: !isArchived }); }}
-                      >
-                        {isArchived ? <ArchiveRestore className="h-4 w-4" /> : <Archive className="h-4 w-4" />}
-                      </Button>
-                      <Button
-                        size="icon"
-                        variant="outline"
-                        className="h-10 w-10 rounded-full shadow-sm"
-                        title="Editar"
-                        onClick={(e) => { e.stopPropagation(); setEditingId(c.id); setRevealedId(null); }}
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        size="icon"
-                        variant="outline"
-                        className="h-10 w-10 rounded-full shadow-sm text-destructive hover:text-destructive"
-                        title="Excluir"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (confirm(`Excluir cliente "${c.name}"? Esta ação não pode ser desfeita.`)) remove.mutate(c.id);
-                        }}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      {rowActions(c, "lg")}
                     </div>
                   </div>
                 </div>
@@ -323,17 +433,20 @@ function ClientsPage() {
             })}
           </div>
         )}
+
       </div>
 
       <NewClientDialog open={newOpen} onOpenChange={setNewOpen}
         segments={segments.length ? segments : DEFAULT_SEGMENTS}
-        onSubmit={v => create.mutate(v)} pending={create.isPending} />
+        onSubmit={(payload, close) => create.mutate({ payload, close })} pending={create.isPending}
+        savedSignal={createdSignal} />
 
       <NewClientDialog
         open={!!editingId && !!editingClient}
         onOpenChange={(v) => { if (!v) setEditingId(null); }}
         segments={segments.length ? segments : DEFAULT_SEGMENTS}
-        onSubmit={v => update.mutate(v)}
+        onSubmit={(payload, close) => update.mutate({ payload, close })}
+
         pending={update.isPending}
         mode="edit"
         initial={editingClient ? {
@@ -432,30 +545,75 @@ const initialForm: FormState = {
   notes: "",
 };
 
+const DRAFT_KEY = "caritas:client-draft";
+
+function loadDraft(): Partial<FormState> | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.localStorage.getItem(DRAFT_KEY);
+    return raw ? (JSON.parse(raw) as Partial<FormState>) : null;
+  } catch { return null; }
+}
+
 export function NewClientDialog({
-  open, onOpenChange, onSubmit, pending, initial, mode = "create", segments = DEFAULT_SEGMENTS,
+  open, onOpenChange, onSubmit, pending, initial, mode = "create", segments = DEFAULT_SEGMENTS, savedSignal = 0,
 }: {
   open: boolean; onOpenChange: (v: boolean) => void;
-  onSubmit: (v: Record<string, unknown>) => void;
+  onSubmit: (v: Record<string, unknown>, close: boolean) => void;
   pending: boolean;
   initial?: Partial<FormState>;
   mode?: "create" | "edit";
   segments?: string[];
+  savedSignal?: number;
 }) {
   const [form, setForm] = useState<FormState>({ ...initialForm, ...(initial ?? {}) });
   const [tab, setTab] = useState("identificacao");
   const [lookingUpCnpj, setLookingUpCnpj] = useState(false);
   const [lookingUpCep, setLookingUpCep] = useState(false);
+  const [restored, setRestored] = useState(false);
 
-  // Recarrega form quando abre em modo edit com dados diferentes
+  // Recarrega form quando abre — em modo criação restaura o rascunho salvo
   useEffect(() => {
-    if (open) setForm({ ...initialForm, ...(initial ?? {}) });
+    if (!open) return;
+    if (mode === "edit") {
+      setForm({ ...initialForm, ...(initial ?? {}) });
+      return;
+    }
+    const draft = loadDraft();
+    setForm({ ...initialForm, ...(initial ?? {}), ...(draft ?? {}) });
+    setRestored(!!draft);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, initial]);
+  }, [open, initial, mode]);
+
+  // Autosave do rascunho (somente criação)
+  useEffect(() => {
+    if (!open || mode === "edit" || typeof window === "undefined") return;
+    const t = setTimeout(() => {
+      try { window.localStorage.setItem(DRAFT_KEY, JSON.stringify(form)); } catch { /* ignora */ }
+    }, 300);
+    return () => clearTimeout(t);
+  }, [form, open, mode]);
+
+  // Após criar com sucesso: limpa rascunho e deixa a janela pronta para o próximo
+  useEffect(() => {
+    if (savedSignal === 0 || mode === "edit") return;
+    if (typeof window !== "undefined") window.localStorage.removeItem(DRAFT_KEY);
+    setForm({ ...initialForm });
+    setRestored(false);
+    setTab("identificacao");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [savedSignal]);
 
   const set = <K extends keyof FormState>(k: K, v: FormState[K]) => setForm(f => ({ ...f, [k]: v }));
-  const reset = () => { setForm({ ...initialForm, ...(initial ?? {}) }); setTab("identificacao"); };
-  const handleOpen = (v: boolean) => { onOpenChange(v); if (!v) reset(); };
+  const discardDraft = () => {
+    if (typeof window !== "undefined") window.localStorage.removeItem(DRAFT_KEY);
+    setForm({ ...initialForm, ...(initial ?? {}) });
+    setRestored(false);
+    setTab("identificacao");
+  };
+  // Fechar NÃO apaga o que foi preenchido — o rascunho volta ao reabrir
+  const handleOpen = (v: boolean) => { onOpenChange(v); };
+
 
 
   // Auto CNPJ lookup quando completa 14 dígitos
@@ -519,7 +677,7 @@ export function NewClientDialog({
 
   const canSave = form.name.trim().length > 0;
 
-  const handleSubmit = () => {
+  const handleSubmit = (close = false) => {
     const payload = {
       person_type: form.person_type,
       name: form.name.trim(),
@@ -556,7 +714,7 @@ export function NewClientDialog({
       address_country: form.address_country || null,
       notes: form.notes || null,
     };
-    onSubmit(payload);
+    onSubmit(payload, close);
   };
 
   return (
@@ -769,12 +927,22 @@ export function NewClientDialog({
       }
       footer={
         <>
+          {mode === "create" && restored && (
+            <div className="mr-auto flex items-center gap-2 text-[11px] text-muted-foreground">
+              <span>Rascunho restaurado</span>
+              <button type="button" className="underline hover:text-foreground" onClick={discardDraft}>descartar</button>
+            </div>
+          )}
           <DialogCancelButton onClick={() => handleOpen(false)} />
-          <Button className="rounded-full" disabled={!canSave || pending} onClick={handleSubmit}>
-            {pending ? <><Loader2 className="h-4 w-4 mr-1.5 animate-spin" />Salvando</> : (mode === "edit" ? "Salvar alterações" : "Criar cliente")}
+          <Button variant="outline" className="rounded-full" disabled={!canSave || pending} onClick={() => handleSubmit(false)}>
+            {pending ? <><Loader2 className="h-4 w-4 mr-1.5 animate-spin" />Salvando</> : "Salvar"}
+          </Button>
+          <Button className="rounded-full" disabled={!canSave || pending} onClick={() => handleSubmit(true)}>
+            {mode === "edit" ? "Salvar e fechar" : "Criar e fechar"}
           </Button>
         </>
       }
+
     />
   );
 }
