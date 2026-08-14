@@ -195,22 +195,30 @@
 }
 .dark .prj02 .p2-btn:hover { background: rgba(255,255,255,.06); }
 
-/* ---------- 01b — barra de identificação e contatos ---------- */
-.prj02 .p2-idbar {
-  display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 14px;
+/* ---------- 01b — quadro de identificação e contatos ---------- */
+.prj02 .p2-idcard {
+  margin-top: 14px;
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  border: 1px solid var(--p2-border-soft); border-radius: 14px;
+  background: var(--p2-card); overflow: hidden;
 }
-.prj02 .p2-chip {
-  display: inline-flex; align-items: center; gap: 8px;
-  height: 32px; padding: 0 12px; border-radius: 999px;
-  background: var(--p2-card); border: 1px solid var(--p2-border-soft);
-  font-size: 12.5px; color: var(--p2-ink); text-decoration: none;
-  max-width: 340px; transition: border-color .15s, box-shadow .15s, transform .15s;
+.prj02 .p2-idcell {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 12px 14px; min-width: 0; text-align: left; text-decoration: none;
+  background: transparent; color: var(--p2-ink);
+  border-right: 1px solid var(--p2-border-soft);
+  border-top: 1px solid var(--p2-border-soft);
+  transition: background .15s;
 }
-.prj02 .p2-chip:hover { border-color: var(--p2-primary); box-shadow: 0 2px 8px rgba(47,107,239,.10); }
-.prj02 .p2-chip svg { width: 14px; height: 14px; color: var(--p2-primary); flex: none; }
-.prj02 .p2-chip .k { color: var(--p2-muted-2); font-size: 11px; text-transform: uppercase; letter-spacing: .06em; }
-.prj02 .p2-chip .v { font-weight: 560; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.prj02 .p2-chip.add { border-style: dashed; color: var(--p2-muted); }
+.prj02 .p2-idcard > .p2-idcell:nth-child(-n+4) { border-top: none; }
+.prj02 .p2-idcell:last-child { border-right: none; }
+.prj02 .p2-idcell:hover { background: color-mix(in oklab, var(--p2-primary, #2F6BEF) 6%, transparent); cursor: pointer; }
+.prj02 .p2-idcell > svg { width: 15px; height: 15px; color: var(--p2-primary); flex: none; margin-top: 2px; }
+.prj02 .p2-idcell .tx { min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.prj02 .p2-idcell .k { color: var(--p2-muted-2); font-size: 10.5px; text-transform: uppercase; letter-spacing: .06em; }
+.prj02 .p2-idcell .v { font-size: 13px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.prj02 .p2-idcell.add { color: var(--p2-muted); }
+
 
 /* ---------- 01c — mural de avisos ---------- */
 .prj02 .p2-mural {
