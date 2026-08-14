@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { BookOpen, Save } from "lucide-react";
+import { BookOpen, Check, Loader2, Save } from "lucide-react";
 import { ToolWindow, WinField } from "./tool-window";
 import {
   fetchBriefingTemplates, type BriefingData, type BriefingField, type BriefingTemplate,
@@ -26,19 +26,31 @@ type Base = {
 
 const fromCsv = (v: string) => v.split(",").map(s => s.trim()).filter(Boolean);
 
+export type BriefingPatch = {
+  title: string;
+  description: string;
+  strategy: Strategy;
+  briefing: BriefingData;
+  briefing_template_id: string | null;
+  status: "draft" | "done";
+};
+
 export function BriefingWindow({
-  open, onClose, projectName, description, strategy, briefing, templateId, onSave,
+  open, onClose, projectName, title: initialTitle = "Briefing", status: initialStatus = "draft",
+  description, strategy, briefing, templateId, onSave, showPositioning = true,
 }: {
   open: boolean;
   onClose: () => void;
   projectName: string;
+  title?: string;
+  status?: "draft" | "done";
   description: string;
   strategy: Strategy;
   briefing: BriefingData;
   templateId: string | null;
-  onSave: (patch: {
-    description: string; strategy: Strategy; briefing: BriefingData; briefing_template_id: string | null;
-  }) => void;
+  showPositioning?: boolean;
+  /** Chamado no autosave (debounce) e ao fechar. */
+  onSave: (patch: BriefingPatch) => void | Promise<void>;
 }) {
   const { data: templates = [] } = useQuery({
     queryKey: ["briefing_templates", "briefing"],
@@ -47,6 +59,8 @@ export function BriefingWindow({
   });
 
   const [tplId, setTplId] = useState<string | null>(templateId);
+  const [title, setTitle] = useState(initialTitle);
+  const [status, setStatus] = useState<"draft" | "done">(initialStatus);
   const [data, setData] = useState<BriefingData>(briefing ?? {});
   const [base, setBase] = useState<Base>({
     description,
@@ -56,10 +70,14 @@ export function BriefingWindow({
     value_prop: strategy.value_prop ?? "",
     positioning: strategy.positioning ?? "",
   });
+  const [saveState, setSaveState] = useState<"idle" | "saving" | "saved">("idle");
+  const [savedAt, setSavedAt] = useState<Date | null>(null);
 
   useEffect(() => {
     if (!open) return;
     setTplId(templateId);
+    setTitle(initialTitle);
+    setStatus(initialStatus);
     setData(briefing ?? {});
     setBase({
       description,
@@ -69,7 +87,71 @@ export function BriefingWindow({
       value_prop: strategy.value_prop ?? "",
       positioning: strategy.positioning ?? "",
     });
+    setSaveState("idle");
+    setSavedAt(null);
   }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const buildPatch = useCallback((): BriefingPatch => ({
+    title: title.trim() || "Briefing",
+    description: base.description,
+    strategy: {
+      audience: base.audience.trim() || undefined,
+      essence: fromCsv(base.essence),
+      tone: base.tone.trim() || undefined,
+      value_prop: base.value_prop.trim() || undefined,
+      positioning: base.positioning.trim() || undefined,
+    },
+    briefing: data,
+    briefing_template_id: tplId,
+    status,
+  }), [title, base, data, tplId, status]);
+
+  /* -------- autosave com debounce + flush ao fechar -------- */
+  const patchRef = useRef(buildPatch);
+  patchRef.current = buildPatch;
+  const dirtyRef = useRef(false);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const firstRun = useRef(true);
+
+  const flush = useCallback(async () => {
+    if (!dirtyRef.current) return;
+    dirtyRef.current = false;
+    if (timerRef.current) clearTimeout(timerRef.current);
+    setSaveState("saving");
+    await onSave(patchRef.current());
+    setSavedAt(new Date());
+    setSaveState("saved");
+  }, [onSave]);
+
+  useEffect(() => {
+    if (!open) return;
+    if (firstRun.current) { firstRun.current = false; return; }
+    dirtyRef.current = true;
+    setSaveState("saving");
+    if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => { void flush(); }, 800);
+    return () => { if (timerRef.current) clearTimeout(timerRef.current); };
+  }, [title, status, tplId, data, base, open, flush]);
+
+  useEffect(() => {
+    if (open) firstRun.current = true;
+  }, [open]);
+
+  // salva também se o usuário sair da aba / fechar o navegador
+  useEffect(() => {
+    if (!open) return;
+    const onHide = () => { void flush(); };
+    document.addEventListener("visibilitychange", onHide);
+    window.addEventListener("beforeunload", onHide);
+    return () => {
+      document.removeEventListener("visibilitychange", onHide);
+      window.removeEventListener("beforeunload", onHide);
+    };
+  }, [open, flush]);
+
+  const closeAndSave = useCallback(() => {
+    void flush().finally(() => onClose());
+  }, [flush, onClose]);
 
   const tpl: BriefingTemplate | null = useMemo(
     () => templates.find(t => t.id === tplId) ?? null,
@@ -77,9 +159,10 @@ export function BriefingWindow({
   );
 
   const tplFields = useMemo(() => (tpl?.sections ?? []).flatMap(s => s.fields ?? []), [tpl]);
-  const baseFilled = BASE.filter(f => String(base[f.key] ?? "").trim() !== "").length;
+  const baseList = showPositioning ? BASE : [];
+  const baseFilled = baseList.filter(f => String(base[f.key] ?? "").trim() !== "").length;
   const tplFilled = tplFields.filter(f => String(data?.[f.key] ?? "").trim() !== "").length;
-  const total = BASE.length + tplFields.length;
+  const total = baseList.length + tplFields.length;
   const filled = baseFilled + tplFilled;
   const pct = total ? Math.round((filled / total) * 100) : 0;
 
@@ -107,35 +190,44 @@ export function BriefingWindow({
     );
   };
 
-  const save = () => {
-    onSave({
-      description: base.description,
-      strategy: {
-        audience: base.audience.trim() || undefined,
-        essence: fromCsv(base.essence),
-        tone: base.tone.trim() || undefined,
-        value_prop: base.value_prop.trim() || undefined,
-        positioning: base.positioning.trim() || undefined,
-      },
-      briefing: data,
-      briefing_template_id: tplId,
-    });
-    onClose();
+  const finish = () => {
+    setStatus("done");
+    dirtyRef.current = true;
+    void (async () => {
+      setSaveState("saving");
+      await onSave({ ...patchRef.current(), status: "done" });
+      dirtyRef.current = false;
+      setSavedAt(new Date());
+      setSaveState("saved");
+      onClose();
+    })();
   };
+
+  const savedLabel =
+    saveState === "saving" ? "Salvando…" :
+    savedAt ? `Salvo às ${savedAt.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}` :
+    "Rascunho salvo automaticamente";
 
   return (
     <ToolWindow
       open={open}
-      onClose={onClose}
+      onClose={closeAndSave}
       icon={BookOpen}
       title="Briefing e posicionamento"
       subtitle={projectName}
       size="full"
       headerRight={
         <>
+          <input
+            value={title}
+            onChange={e => setTitle(e.target.value)}
+            placeholder="Nome do briefing"
+            className="swin-f"
+            style={{ height: 32, borderRadius: 9, border: "1px solid var(--border)", background: "var(--background)", fontSize: 12.5, padding: "0 10px", minWidth: 200, color: "var(--foreground)" }}
+          />
           <select
             className="swin-f"
-            style={{ height: 32, borderRadius: 9, border: "1px solid var(--border)", background: "var(--background)", fontSize: 12.5, padding: "0 10px" }}
+            style={{ height: 32, borderRadius: 9, border: "1px solid var(--border)", background: "var(--background)", fontSize: 12.5, padding: "0 10px", color: "var(--foreground)" }}
             value={tplId ?? ""}
             onChange={e => setTplId(e.target.value || null)}
           >
@@ -150,10 +242,15 @@ export function BriefingWindow({
       }
       footer={
         <>
-          <small>As respostas alimentam a prévia do documento ao lado.</small>
+          <small style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+            {saveState === "saving"
+              ? <Loader2 style={{ width: 13, height: 13 }} className="animate-spin" />
+              : <Check style={{ width: 13, height: 13, color: "var(--success)" }} />}
+            {savedLabel}
+          </small>
           <div style={{ display: "flex", gap: 8 }}>
-            <button type="button" className="swin-btn" onClick={onClose}>Cancelar</button>
-            <button type="button" className="swin-btn primary" onClick={save}><Save /> Salvar briefing</button>
+            <button type="button" className="swin-btn" onClick={closeAndSave}>Fechar</button>
+            <button type="button" className="swin-btn primary" onClick={finish}><Save /> Concluir briefing</button>
           </div>
         </>
       }
@@ -161,20 +258,22 @@ export function BriefingWindow({
       <div className="swin-split">
         {/* ---------- formulário ---------- */}
         <div style={{ padding: "18px 20px 28px" }}>
-          <div className="swin-sec">
-            <div className="swin-sec-t">Posicionamento da marca</div>
-            <div className="swin-grid">
-              {BASE.map(f => (
-                <WinField key={f.key} label={f.label} hint={f.hint} span={f.long}>
-                  {f.long ? (
-                    <textarea value={base[f.key]} onChange={e => setBase({ ...base, [f.key]: e.target.value })} />
-                  ) : (
-                    <input value={base[f.key]} onChange={e => setBase({ ...base, [f.key]: e.target.value })} />
-                  )}
-                </WinField>
-              ))}
+          {showPositioning && (
+            <div className="swin-sec">
+              <div className="swin-sec-t">Posicionamento da marca</div>
+              <div className="swin-grid">
+                {BASE.map(f => (
+                  <WinField key={f.key} label={f.label} hint={f.hint} span={f.long}>
+                    {f.long ? (
+                      <textarea value={base[f.key]} onChange={e => setBase({ ...base, [f.key]: e.target.value })} />
+                    ) : (
+                      <input value={base[f.key]} onChange={e => setBase({ ...base, [f.key]: e.target.value })} />
+                    )}
+                  </WinField>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
           {tpl ? (
             tpl.sections.map((sec, i) => (
@@ -193,27 +292,31 @@ export function BriefingWindow({
         {/* ---------- documento ---------- */}
         <div className="swin-doc-wrap">
           <article className="swin-doc">
-            <div className="doc-brand">Briefing estratégico</div>
+            <div className="doc-brand">{title || "Briefing estratégico"}</div>
             <h1>{projectName || "Projeto"}</h1>
             <div className="doc-sub">
               {tpl ? tpl.name : "Posicionamento"} · {new Date().toLocaleDateString("pt-BR")}
             </div>
             <hr />
 
-            <h2>Posicionamento</h2>
-            {BASE.map(f => {
-              const raw = String(base[f.key] ?? "").trim();
-              return (
-                <div className="doc-q" key={f.key}>
-                  <b>{f.label}</b>
-                  {f.chips && raw ? (
-                    <div className="doc-chips">{fromCsv(raw).map(c => <span key={c} className="doc-chip">{c}</span>)}</div>
-                  ) : (
-                    <p className={raw ? "" : "empty"}>{raw || "Não preenchido"}</p>
-                  )}
-                </div>
-              );
-            })}
+            {showPositioning && (
+              <>
+                <h2>Posicionamento</h2>
+                {BASE.map(f => {
+                  const raw = String(base[f.key] ?? "").trim();
+                  return (
+                    <div className="doc-q" key={f.key}>
+                      <b>{f.label}</b>
+                      {f.chips && raw ? (
+                        <div className="doc-chips">{fromCsv(raw).map(c => <span key={c} className="doc-chip">{c}</span>)}</div>
+                      ) : (
+                        <p className={raw ? "" : "empty"}>{raw || "Não preenchido"}</p>
+                      )}
+                    </div>
+                  );
+                })}
+              </>
+            )}
 
             {tpl?.sections.map((sec, i) => (
               <div key={i}>

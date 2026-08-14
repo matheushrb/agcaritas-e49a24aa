@@ -8,7 +8,7 @@ import {
   ChevronLeft, ChevronRight, Plus, Trash2, Compass, Palette,
 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { BriefingWindow } from "./strategy/briefing-window";
+import { BriefingsCard } from "./strategy/briefings-card";
 import { SwotWindow, PersonasWindow, CompetitorsWindow, KpisWindow, StepsWindow } from "./strategy/strategy-windows";
 import { StrategyDocWindow } from "./strategy/strategy-doc-window";
 import { StrategyDocCard } from "./strategy/doc-tool-window";
@@ -172,18 +172,6 @@ export function Prj05Strategy({
 
   /* ---------------- briefing ---------------- */
   const s: Strategy = strategy ?? {};
-  const [briefOpen, setBriefOpen] = useState(false);
-  const [brief, setBrief] = useState({
-    description, audience: s.audience ?? "", essence: (s.essence ?? []).join(", "),
-    tone: s.tone ?? "", value_prop: s.value_prop ?? "", positioning: s.positioning ?? "",
-  });
-  const openBrief = () => {
-    setBrief({
-      description, audience: s.audience ?? "", essence: (s.essence ?? []).join(", "),
-      tone: s.tone ?? "", value_prop: s.value_prop ?? "", positioning: s.positioning ?? "",
-    });
-    setBriefOpen(true);
-  };
 
   /* ---------------- swot inline add ---------------- */
   const [swotDraft, setSwotDraft] = useState<Record<string, string>>({});
@@ -233,45 +221,15 @@ export function Prj05Strategy({
       </div>
       <div className="p5-grid">
 
-        {/* 1. Briefing */}
-        <section className="p5-card">
-          <div className="p5-card-h">
-            <div className="p5-ht"><BookOpen /><span className="p5-card-t">1. Briefing e posicionamento</span></div>
-            <button type="button" className="p5-ghost" onClick={openBrief}><Pencil /></button>
-          </div>
-          {!description?.trim() && !s.audience && !s.tone && !s.value_prop && !s.positioning && !(s.essence ?? []).length ? (
-            <Empty text="Nenhuma informação de posicionamento preenchida." onAdd={openBrief} label="Preencher briefing" />
-          ) : (
-            <div className="p5-brief">
-              <div>
-                <div className="p5-bl">Propósito</div>
-                <p className="p5-bt">{description?.trim() || "—"}</p>
-              </div>
-              <div>
-                <div className="p5-bl">Público-alvo principal</div>
-                <p className="p5-bt">{s.audience || "—"}</p>
-              </div>
-              <div>
-                <div className="p5-bl">Essência da marca</div>
-                {(s.essence ?? []).length
-                  ? <div className="p5-chips">{(s.essence ?? []).map(c => <span key={c} className="p5-chip">{c}</span>)}</div>
-                  : <p className="p5-bt">—</p>}
-              </div>
-              <div>
-                <div className="p5-bl">Tom de voz</div>
-                <p className="p5-bt">{s.tone || "—"}</p>
-              </div>
-              <div>
-                <div className="p5-bl">Proposta de valor</div>
-                <p className="p5-bt">{s.value_prop || "—"}</p>
-              </div>
-              <div>
-                <div className="p5-bl">Posicionamento</div>
-                <p className="p5-bt">{s.positioning || "—"}</p>
-              </div>
-            </div>
-          )}
-        </section>
+        {/* 1. Briefings */}
+        <BriefingsCard
+          projectId={projectId}
+          projectName={projectName}
+          description={description}
+          strategy={s}
+          onSavePositioning={(patch: { description: string; strategy: Strategy }) => onSaveBriefing?.(patch)}
+        />
+
 
         {/* 1b. Pesquisa & Posicionamento */}
         <StrategyDocCard
@@ -575,16 +533,6 @@ export function Prj05Strategy({
 
       {/* ---------------- janelas de ferramentas ---------------- */}
 
-      <BriefingWindow
-        open={briefOpen}
-        onClose={() => setBriefOpen(false)}
-        projectName={projectName}
-        description={description}
-        strategy={s}
-        briefing={briefing ?? {}}
-        templateId={briefingTemplateId ?? null}
-        onSave={(patch) => { onSaveBriefing?.(patch); setBriefOpen(false); }}
-      />
       <SwotWindow open={swotOpen} onClose={() => setSwotOpen(false)} projectId={projectId} projectName={projectName} />
       <PersonasWindow open={personaOpen} onClose={() => setPersonaOpen(false)} projectId={projectId} projectName={projectName} />
       <CompetitorsWindow open={benchOpen} onClose={() => setBenchOpen(false)} projectId={projectId} projectName={projectName} />
