@@ -435,6 +435,10 @@ export function StrategyDocWindow({
             </>
           )}
 
+          {on.brand && (
+            <SchemaBlock schema={BRAND_SCHEMA} data={brandDoc} heading="5. Manual de marca" />
+          )}
+
           {on.kpis && (
             <>
               <h2>5. KPIs estratégicos{kpiAvg !== null ? ` — média ${kpiAvg}%` : ""}</h2>
