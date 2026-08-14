@@ -228,6 +228,9 @@ export function StrategyDocWindow({
         L.push(`- Gap vs. nós: ${c.weaknesses || "—"}`, "");
       });
     }
+    if (on.brand) {
+      L.push(...schemaLines(BRAND_SCHEMA, brandDoc, "5. Manual de marca"));
+    }
     if (on.kpis) {
       L.push("## 5. KPIs estratégicos", "");
       if (!kpis.length) L.push("- Nenhum indicador definido.", "");
