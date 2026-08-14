@@ -258,7 +258,7 @@ export function Prj05Strategy({
         />}
 
         {/* 2. SWOT */}
-        <section className="p5-card">
+        {show("swot") && (<section className="p5-card">
           <div className="p5-card-h">
             <div className="p5-ht"><LayoutGrid /><span className="p5-card-t">4. Análise SWOT</span></div>
             <button type="button" className="p5-link" onClick={() => setSwotOpen(true)}>Abrir ferramenta</button>
@@ -298,10 +298,10 @@ export function Prj05Strategy({
               );
             })}
           </div>
-        </section>
+        </section>)}
 
         {/* 3. Personas */}
-        <section className="p5-card">
+        {show("personas") && (<section className="p5-card">
           <div className="p5-card-h">
             <div className="p5-ht"><Users /><span className="p5-card-t">5. Personas principais</span></div>
             <button
@@ -362,12 +362,12 @@ export function Prj05Strategy({
               )}
             </div>
           )}
-        </section>
+        </section>)}
       </div>
 
       <div className="p5-grid">
         {/* 4. Concorrentes */}
-        <section className="p5-card">
+        {show("competitors") && (<section className="p5-card">
           <div className="p5-card-h">
             <div className="p5-ht"><Filter /><span className="p5-card-t">6. Concorrentes</span></div>
             <button
@@ -417,10 +417,10 @@ export function Prj05Strategy({
               </tbody>
             </table>
           )}
-        </section>
+        </section>)}
 
         {/* 5. KPIs estratégicos */}
-        <section className="p5-card">
+        {show("kpis") && (<section className="p5-card">
           <div className="p5-card-h">
             <div className="p5-ht"><Target /><span className="p5-card-t">7. KPIs estratégicos</span></div>
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -496,10 +496,10 @@ export function Prj05Strategy({
               })}
             </div>
           )}
-        </section>
+        </section>)}
 
         {/* 6. Próximos passos */}
-        <section className="p5-card">
+        {show("action_plan") && (<section className="p5-card">
           <div className="p5-card-h">
             <div className="p5-ht"><ListChecks /><span className="p5-card-t">8. Próximos passos estratégicos</span></div>
             <button type="button" className="p5-link" onClick={() => { setStepForm({ title: "", due_date: "" }); setStepOpen(true); }}>
@@ -534,7 +534,7 @@ export function Prj05Strategy({
               <Plus /> Adicionar iniciativa
             </button>
           </div>
-        </section>
+        </section>)}
       </div>
 
       {/* ---------------- janelas de ferramentas ---------------- */}
