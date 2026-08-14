@@ -191,7 +191,36 @@ function ClientsPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const rowActions = (c: Client, size: "sm" | "lg" = "sm") => {
+    const isArchived = (c.status ?? "") === "inactive";
+    const btn = size === "lg" ? "h-10 w-10" : "h-8 w-8";
+    const ico = size === "lg" ? "h-4 w-4" : "h-3.5 w-3.5";
+    return (
+      <>
+        <Button size="icon" variant="outline" className={cn(btn, "rounded-full shadow-sm")}
+          title={isArchived ? "Reativar" : "Arquivar"}
+          onClick={(e) => { e.stopPropagation(); archive.mutate({ id: c.id, archived: !isArchived }); }}>
+          {isArchived ? <ArchiveRestore className={ico} /> : <Archive className={ico} />}
+        </Button>
+        <Button size="icon" variant="outline" className={cn(btn, "rounded-full shadow-sm")}
+          title="Editar"
+          onClick={(e) => { e.stopPropagation(); setEditingId(c.id); setRevealedId(null); }}>
+          <Pencil className={ico} />
+        </Button>
+        <Button size="icon" variant="outline" className={cn(btn, "rounded-full shadow-sm text-destructive hover:text-destructive")}
+          title="Excluir"
+          onClick={(e) => {
+            e.stopPropagation();
+            if (confirm(`Excluir cliente "${c.name}"? Esta ação não pode ser desfeita.`)) remove.mutate(c.id);
+          }}>
+          <Trash2 className={ico} />
+        </Button>
+      </>
+    );
+  };
+
   return (
+
     <>
       <div className="space-y-6">
         <header className="flex flex-wrap items-end justify-between gap-4">
