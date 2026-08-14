@@ -54,12 +54,16 @@ type Profile = { id: string; full_name: string | null; avatar_url: string | null
 type Member = { id: string; user_id: string; role: string | null };
 
 const STRATEGY_KEYS: { key: string; label: string }[] = [
+  { key: "briefings", label: "Briefings" },
+  { key: "positioning", label: "Pesquisa & Posicionamento" },
+  { key: "brand_manual", label: "Manual de marca" },
   { key: "swot", label: "SWOT" },
   { key: "personas", label: "Personas" },
   { key: "competitors", label: "Concorrentes" },
   { key: "roadmap", label: "Roadmap" },
   { key: "kpis", label: "KPIs" },
   { key: "action_plan", label: "Plano de ação" },
+  { key: "campaign_plan", label: "Plano de campanha" },
 ];
 
 const STATUS_LABEL: Record<ProjectStatus, string> = {
