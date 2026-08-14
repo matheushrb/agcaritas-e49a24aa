@@ -927,12 +927,22 @@ export function NewClientDialog({
       }
       footer={
         <>
+          {mode === "create" && restored && (
+            <div className="mr-auto flex items-center gap-2 text-[11px] text-muted-foreground">
+              <span>Rascunho restaurado</span>
+              <button type="button" className="underline hover:text-foreground" onClick={discardDraft}>descartar</button>
+            </div>
+          )}
           <DialogCancelButton onClick={() => handleOpen(false)} />
-          <Button className="rounded-full" disabled={!canSave || pending} onClick={handleSubmit}>
-            {pending ? <><Loader2 className="h-4 w-4 mr-1.5 animate-spin" />Salvando</> : (mode === "edit" ? "Salvar alterações" : "Criar cliente")}
+          <Button variant="outline" className="rounded-full" disabled={!canSave || pending} onClick={() => handleSubmit(false)}>
+            {pending ? <><Loader2 className="h-4 w-4 mr-1.5 animate-spin" />Salvando</> : "Salvar"}
+          </Button>
+          <Button className="rounded-full" disabled={!canSave || pending} onClick={() => handleSubmit(true)}>
+            {mode === "edit" ? "Salvar e fechar" : "Criar e fechar"}
           </Button>
         </>
       }
+
     />
   );
 }
