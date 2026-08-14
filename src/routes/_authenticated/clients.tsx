@@ -13,7 +13,7 @@ import { ClientLogo, ClientLogoPicker } from "@/components/client-logo";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
   Search, Plus, Users as UsersIcon, Building2, Mail, Phone, Loader2, Sparkles,
-  Pencil, Archive, Trash2, ArchiveRestore, Tag, X,
+  Pencil, Archive, Trash2, ArchiveRestore, Tag, X, List, Rows3, LayoutGrid,
 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { toast } from "sonner";
