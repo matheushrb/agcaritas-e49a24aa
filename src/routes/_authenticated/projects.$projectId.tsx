@@ -21,6 +21,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { TaskWindow } from "@/components/new-task-window";
 import { EditProjectDialog, type EditableProject } from "@/components/edit-project-dialog";
+import { NoticeBoard, NoticeBoardDialog, parseNotices, type ProjectNotice } from "@/components/project-notice-board";
 import { ProjectCostsTab } from "@/components/project-costs-tab";
 import { Prj02Overview, p2Initials } from "@/components/prj02-overview";
 import { Prj03Tasks } from "@/components/prj03-tasks";
@@ -72,6 +73,13 @@ type Project = {
   has_timeline?: boolean;
   traffic_budget?: { enabled?: boolean; amount?: number | null; platforms?: string[] } | null;
   scope_flags?: Record<string, unknown> | null;
+  contact_name?: string | null;
+  contact_role?: string | null;
+  contact_email?: string | null;
+  contact_phone?: string | null;
+  final_client?: string | null;
+  doc_id?: string | null;
+  compliance_notes?: unknown;
 };
 type Task = {
   id: string;
@@ -112,7 +120,12 @@ type Charge = {
   paid_at: string | null;
   project_id: string | null;
 };
-type Client = { id: string; name: string; trade_name: string | null };
+type Client = {
+  id: string; name: string; trade_name: string | null; logo_url?: string | null;
+  legal_name?: string | null; tax_id?: string | null; person_type?: string | null;
+  contact_name?: string | null; contact_role?: string | null; contact_email?: string | null;
+  contact_phone?: string | null; email?: string | null; phone?: string | null;
+};
 
 const STATUS_META: Record<ProjectStatus, { label: string; color: string }> = {
   planning: { label: "Planejamento", color: "bg-muted text-muted-foreground" },
