@@ -27,11 +27,60 @@ const QUAD = [
   { key: "threat", title: "Ameaças" },
 ];
 
+function schemaLines(schema: DocSchema, data: StrategyDocData, heading: string): string[] {
+  const L: string[] = [`## ${heading}`, ""];
+  schema.sections.forEach(sec => {
+    L.push(`### ${sec.title}`, "");
+    sec.fields.forEach(f => {
+      const raw = String(data?.[f.key] ?? "").trim();
+      const val = f.type === "chips" || f.type === "colors" ? splitList(raw).join(", ") : raw;
+      L.push(`**${f.label}:** ${val || "—"}`);
+    });
+    L.push("");
+  });
+  return L;
+}
+
+function SchemaBlock({ schema, data, heading }: { schema: DocSchema; data: StrategyDocData; heading: string }) {
+  return (
+    <>
+      <h2>{heading}</h2>
+      {schema.sections.map(sec => (
+        <div key={sec.title}>
+          <h3>{sec.title}</h3>
+          {sec.fields.map(f => {
+            const raw = String(data?.[f.key] ?? "").trim();
+            if (f.type === "chips" || f.type === "colors") {
+              const items = splitList(raw);
+              return (
+                <div className="doc-q" key={f.key}>
+                  <b>{f.label}</b>
+                  {items.length
+                    ? <div className="doc-chips">{items.map(c => <span key={c} className="doc-chip">{c}</span>)}</div>
+                    : <p className="empty">Não preenchido</p>}
+                </div>
+              );
+            }
+            return (
+              <div className="doc-q" key={f.key}>
+                <b>{f.label}</b>
+                <p className={raw ? "" : "empty"}>{raw || "Não preenchido"}</p>
+              </div>
+            );
+          })}
+        </div>
+      ))}
+    </>
+  );
+}
+
 const SECTIONS = [
   { key: "brief", label: "Briefing" },
+  { key: "positioning", label: "Posicionamento" },
   { key: "swot", label: "SWOT" },
   { key: "personas", label: "Personas" },
   { key: "bench", label: "Concorrentes" },
+  { key: "brand", label: "Manual de marca" },
   { key: "kpis", label: "KPIs" },
   { key: "steps", label: "Próximos passos" },
 ] as const;
