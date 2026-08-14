@@ -2,6 +2,7 @@ import { ClientLogo } from "@/components/client-logo";
 import { Link } from "@tanstack/react-router";
 import { ProjectBriefingCard } from "@/components/project-briefing-card";
 
+import { UserAvatar } from "@/components/user-avatar";
 import {
   ArrowRight, CheckCircle2, Circle, Mail, Phone, FileText, MoreVertical,
 } from "lucide-react";
@@ -138,7 +139,7 @@ export function Prj02Overview({
         <div className="p2-hr" />
         <div className="p2-label">Contato principal</div>
         <div className="p2-person">
-          <div className="av">{p2Initials(ownerName)}</div>
+          <UserAvatar name={ownerName} size="css" className="av" />
           <div><div className="nm">{ownerName}</div><div className="rl">{ownerRole}</div></div>
           <div className="sp">
             <button className="p2-ico-btn" type="button"><Mail /></button>
@@ -153,7 +154,7 @@ export function Prj02Overview({
         <div className="p2-card-h"><span className="p2-card-t">3. Responsável e equipe</span></div>
         <div className="p2-label">Responsável</div>
         <div className="p2-person">
-          <div className="av">{p2Initials(ownerName)}</div>
+          <UserAvatar name={ownerName} size="css" className="av" />
           <div><div className="nm">{ownerName}</div><div className="rl">{ownerRole}</div></div>
           <div className="sp"><button className="p2-ico-btn" type="button"><Mail /></button></div>
         </div>
@@ -162,7 +163,7 @@ export function Prj02Overview({
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           {people.slice(0, 3).map(p => (
             <div className="p2-person" key={p.id}>
-              <div className="av" style={{ width: 28, height: 28, fontSize: 10 }}>{p2Initials(p.full_name)}</div>
+              <UserAvatar userId={p.id} name={p.full_name} size={28} className="av" />
               <div><div className="nm">{p.full_name ?? "Sem nome"}</div><div className="rl">{p.role ?? "Equipe"}</div></div>
             </div>
           ))}
@@ -225,7 +226,7 @@ export function Prj02Overview({
         <div>
           {activity.length ? activity.map(a => (
             <div className="p2-act" key={a.id}>
-              <div className="av">{p2Initials(nameOf(a.assignee_id))}</div>
+              <UserAvatar userId={a.assignee_id} name={nameOf(a.assignee_id)} size="css" className="av" />
               <div className="tx">
                 <b>{nameOf(a.assignee_id)}</b> {a.status === "done" ? "concluiu a tarefa" : "está trabalhando em"}
                 <span className="l2">{a.title}</span>

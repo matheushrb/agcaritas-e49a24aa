@@ -6,6 +6,8 @@ import {
 } from "lucide-react";
 import "@/tsk02.css";
 import { useStageIndex, stageInfoOf } from "@/lib/task-types";
+import { UserAvatar } from "@/components/user-avatar";
+import { ClientLogo } from "@/components/client-logo";
 
 
 export type TskTask = {
@@ -79,6 +81,7 @@ type Props = {
   projects: { id: string; name: string }[];
   people: { id: string; full_name: string | null; display_name: string | null; role_title: string | null }[];
   projectSub?: (id: string | null) => string;
+  projectLogo?: (id: string | null) => string | null;
   onOpen: (id: string) => void;
   onNew: () => void;
   onQuickCreate: (title: string) => void;
@@ -88,7 +91,7 @@ type Props = {
 };
 
 export function Tsk02List({
-  view, onViewChange, tasks, projects, people, projectSub,
+  view, onViewChange, tasks, projects, people, projectSub, projectLogo,
   onOpen, onNew, onQuickCreate, onStatusChange, onArchiveChange, children,
 }: Props) {
   const { data: stageIndex } = useStageIndex();
@@ -357,7 +360,11 @@ export function Tsk02List({
                   <div className="k-tcode">{taskCode(t, pn)}</div>
                 </div>
                 <div className="k-cell k-proj">
-                  <span className="k-pav" style={{ background: hashColor(pn) }}>{initials(pn)}</span>
+                  {projectLogo?.(t.project_id) ? (
+                    <ClientLogo value={projectLogo(t.project_id)} name={pn} size={30} rounded="rounded-lg" className="k-pav-logo" />
+                  ) : (
+                    <span className="k-pav" style={{ background: hashColor(pn) }}>{initials(pn)}</span>
+                  )}
                   <div style={{ minWidth: 0 }}>
                     <div className="k-pname" title={pn}>{pn}</div>
                     <div className="k-psub">{projectSub?.(t.project_id) || STATUS_LABEL[t.status]}</div>
@@ -375,7 +382,7 @@ export function Tsk02List({
                 </div>
 
                 <div className="k-cell k-user">
-                  <span className="k-av" style={{ background: hashColor(per.name) }}>{initials(per.name)}</span>
+                  <UserAvatar userId={t.assignee_id} name={per.name} size="css" className="k-av" />
                   <div style={{ minWidth: 0 }}>
                     <div className="k-uname">{per.name}</div>
                     <div className="k-urole">{per.role}</div>

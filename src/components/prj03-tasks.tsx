@@ -5,6 +5,7 @@ import {
 } from "lucide-react";
 import "@/prj03.css";
 import { useStageIndex, stageInfoOf } from "@/lib/task-types";
+import { UserAvatar } from "@/components/user-avatar";
 
 
 export type P3Task = {
@@ -284,7 +285,7 @@ export function Prj03Tasks({ tasks, people, onOpen, onQuickCreate, pending }: {
 
                     <td>
                       {name ? (
-                        <span className="p3-assignee"><span className="p3-av">{initials(name)}</span>{name}</span>
+                        <span className="p3-assignee"><UserAvatar userId={t.assignee_id} name={name} size="css" className="p3-av" />{name}</span>
                       ) : <span className="p3-date">Não atribuída</span>}
                     </td>
                     <td><span className={`p3-pill ${PRIORITY[t.priority].cls}`}>{PRIORITY[t.priority].label}</span></td>

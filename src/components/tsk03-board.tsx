@@ -6,6 +6,7 @@ import {
 import { hashColor, initials, daysDiff, fmtDate, type TskTask } from "./tsk02-list";
 import "@/tsk0304.css";
 import { useStageIndex, stageInfoOf } from "@/lib/task-types";
+import { UserAvatar } from "@/components/user-avatar";
 
 
 const COLS: { key: TskTask["status"]; label: string; color: string }[] = [
@@ -95,7 +96,7 @@ export function Tsk03Board({ tasks, projectName, person, onOpen, onNew, onStatus
                   </div>
 
                   <div className="cm">
-                    <span className="av-sm" style={{ background: hashColor(per.name) }}>{initials(per.name)}</span>
+                    <UserAvatar userId={t.assignee_id} name={per.name} size="css" className="av-sm" />
                     <span style={{ fontSize: 12, fontWeight: 500 }}>{per.name}</span>
                     {t.due_date && (
                       <span className={`cdate ${late ? "late" : ""}`}><Calendar size={12} /> {fmtDate(t.due_date)}</span>
@@ -139,9 +140,7 @@ export function Tsk03Board({ tasks, projectName, person, onOpen, onNew, onStatus
                 <div>
                   <div className="gl">Responsável</div>
                   <div className="gv">
-                    <span className="av-sm" style={{ width: 22, height: 22, flex: "0 0 22px", borderRadius: 999, display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 9, fontWeight: 700, color: "#fff", background: hashColor(person(sel.assignee_id).name) }}>
-                      {initials(person(sel.assignee_id).name)}
-                    </span>
+                    <UserAvatar userId={sel.assignee_id} name={person(sel.assignee_id).name} size={22} className="av-sm" />
                     {person(sel.assignee_id).name}
                   </div>
                   <div className="gs">{person(sel.assignee_id).role}</div>

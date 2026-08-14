@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { List as ListIcon, LayoutGrid, Columns3, GanttChartSquare, Circle } from "lucide-react";
 import "@/tsk01.css";
+import { UserAvatar } from "@/components/user-avatar";
 
 export type TskView = "list" | "board" | "kanban" | "gantt";
 
@@ -166,9 +167,7 @@ function ListView({ tasks, projectName, assigneeName, onOpen, onQuickCreate, onS
             </div>
 
             <div className="t-tcell t-with-av">
-              <span className="t-av" style={{ background: `hsl(${avatarHue(who.name)} 62% 92%)`, color: `hsl(${avatarHue(who.name)} 55% 32%)` }}>
-                {initials(who.name)}
-              </span>
+              <UserAvatar userId={t.assignee_id} name={who.name} size="css" className="t-av" />
               <div>
                 <div className="t-name t-name-sm">{who.name}</div>
                 {who.role ? <div className="t-sub">{who.role}</div> : null}
