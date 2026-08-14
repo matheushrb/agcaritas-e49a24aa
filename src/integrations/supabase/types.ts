@@ -2553,10 +2553,17 @@ export type Database = {
           briefing: Json
           briefing_template_id: string | null
           client_id: string | null
+          compliance_notes: Json
+          contact_email: string | null
+          contact_name: string | null
+          contact_phone: string | null
+          contact_role: string | null
           contract_id: string | null
           created_at: string
           description: string | null
+          doc_id: string | null
           end_date: string | null
+          final_client: string | null
           fixed_value: number | null
           has_content_calendar: boolean
           has_content_grid: boolean
@@ -2587,10 +2594,17 @@ export type Database = {
           briefing?: Json
           briefing_template_id?: string | null
           client_id?: string | null
+          compliance_notes?: Json
+          contact_email?: string | null
+          contact_name?: string | null
+          contact_phone?: string | null
+          contact_role?: string | null
           contract_id?: string | null
           created_at?: string
           description?: string | null
+          doc_id?: string | null
           end_date?: string | null
+          final_client?: string | null
           fixed_value?: number | null
           has_content_calendar?: boolean
           has_content_grid?: boolean
@@ -2621,10 +2635,17 @@ export type Database = {
           briefing?: Json
           briefing_template_id?: string | null
           client_id?: string | null
+          compliance_notes?: Json
+          contact_email?: string | null
+          contact_name?: string | null
+          contact_phone?: string | null
+          contact_role?: string | null
           contract_id?: string | null
           created_at?: string
           description?: string | null
+          doc_id?: string | null
           end_date?: string | null
+          final_client?: string | null
           fixed_value?: number | null
           has_content_calendar?: boolean
           has_content_grid?: boolean

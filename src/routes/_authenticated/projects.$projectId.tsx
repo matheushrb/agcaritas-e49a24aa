@@ -21,13 +21,14 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { TaskWindow } from "@/components/new-task-window";
 import { EditProjectDialog, type EditableProject } from "@/components/edit-project-dialog";
+import { NoticeBoard, NoticeBoardDialog, parseNotices, type ProjectNotice } from "@/components/project-notice-board";
 import { ProjectCostsTab } from "@/components/project-costs-tab";
 import { Prj02Overview, p2Initials } from "@/components/prj02-overview";
 import { Prj03Tasks } from "@/components/prj03-tasks";
 import { Prj04Finance } from "@/components/prj04-finance";
 import { Prj05Strategy } from "@/components/prj05-strategy";
 import { Prj06Files } from "@/components/prj06-files";
-import { Share2, MoreHorizontal, Mail as MailIcon, Target, TrendingUp } from "lucide-react";
+import { Share2, MoreHorizontal, Mail as MailIcon, Phone as PhoneIcon, Target, TrendingUp } from "lucide-react";
 import "@/prj02.css";
 
 export const Route = createFileRoute("/_authenticated/projects/$projectId")({
@@ -72,6 +73,13 @@ type Project = {
   has_timeline?: boolean;
   traffic_budget?: { enabled?: boolean; amount?: number | null; platforms?: string[] } | null;
   scope_flags?: Record<string, unknown> | null;
+  contact_name?: string | null;
+  contact_role?: string | null;
+  contact_email?: string | null;
+  contact_phone?: string | null;
+  final_client?: string | null;
+  doc_id?: string | null;
+  compliance_notes?: unknown;
 };
 type Task = {
   id: string;
@@ -112,7 +120,12 @@ type Charge = {
   paid_at: string | null;
   project_id: string | null;
 };
-type Client = { id: string; name: string; trade_name: string | null };
+type Client = {
+  id: string; name: string; trade_name: string | null; logo_url?: string | null;
+  legal_name?: string | null; tax_id?: string | null; person_type?: string | null;
+  contact_name?: string | null; contact_role?: string | null; contact_email?: string | null;
+  contact_phone?: string | null; email?: string | null; phone?: string | null;
+};
 
 const STATUS_META: Record<ProjectStatus, { label: string; color: string }> = {
   planning: { label: "Planejamento", color: "bg-muted text-muted-foreground" },
@@ -144,7 +157,7 @@ function ProjectDetail() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("projects")
-        .select("id,organization_id,name,description,status,client_id,owner_id,start_date,end_date,created_at,project_type,billing_model,urgency,fixed_value,monthly_value,hourly_rate,printing_budget,notes,has_content_calendar,has_content_grid,has_timeline,traffic_budget,scope_flags,social_platforms")
+        .select("id,organization_id,name,description,status,client_id,owner_id,start_date,end_date,created_at,project_type,billing_model,urgency,fixed_value,monthly_value,hourly_rate,printing_budget,notes,has_content_calendar,has_content_grid,has_timeline,traffic_budget,scope_flags,social_platforms,contact_name,contact_role,contact_email,contact_phone,final_client,doc_id,compliance_notes")
         .eq("id", projectId)
         .maybeSingle();
       if (error) throw error;
@@ -158,7 +171,7 @@ function ProjectDetail() {
     enabled: !!project?.client_id,
     queryFn: async () => {
       if (!project?.client_id) return null;
-      const { data } = await supabase.from("clients").select("id,name,trade_name,logo_url").eq("id", project.client_id).maybeSingle();
+      const { data } = await supabase.from("clients").select("id,name,trade_name,logo_url,legal_name,tax_id,person_type,contact_name,contact_role,contact_email,contact_phone,email,phone").eq("id", project.client_id).maybeSingle();
       return (data as Client) ?? null;
     },
   });
@@ -280,6 +293,7 @@ function ProjectDetail() {
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const selectedTask = tasks.find(t => t.id === selectedTaskId) ?? null;
   const [editOpen, setEditOpen] = useState(false);
+  const [noticesOpen, setNoticesOpen] = useState(false);
 
   const addTask = useMutation({
     mutationFn: async (input: string | { title: string; task_type_id?: string | null; billing_model?: string | null; billing_value?: number | null }) => {
@@ -406,6 +420,19 @@ function ProjectDetail() {
     { id: "docs", label: "Arquivos", count: filesCount },
   ];
 
+  const notices: ProjectNotice[] = parseNotices(project.compliance_notes);
+  const contactName = project.contact_name || client?.contact_name || null;
+  const contactRole = project.contact_role || client?.contact_role || null;
+  const contactEmail = project.contact_email || client?.contact_email || client?.email || null;
+  const contactPhone = project.contact_phone || client?.contact_phone || client?.phone || null;
+  const docValue = project.doc_id || client?.tax_id || null;
+  const docKind = (project.doc_id ? (project.doc_id.replace(/\D/g, "").length <= 11 ? "CPF" : "CNPJ")
+    : client?.person_type === "pf" ? "CPF" : "CNPJ");
+  const finalClient = project.final_client || null;
+  const clientDisplay = client?.trade_name || client?.name || "Sem cliente";
+  const copyChip = (v: string) => { navigator.clipboard?.writeText(v); toast.success("Copiado"); };
+  const isElectoral = /eleitor|campanha/i.test(`${project.name} ${project.project_type ?? ""}`);
+
   return (
     <div className="prj02">
       {/* 01 — cabeçalho global e projeto */}
@@ -437,6 +464,54 @@ function ProjectDetail() {
           <Link to="/invoices" search={{ projectId: project.id, new: "1" }} className="p2-btn icon" title="Faturar"><Receipt /></Link>
         </div>
       </div>
+
+      {/* 01b — identificação e contatos */}
+      <div className="p2-idbar">
+        <button type="button" className="p2-chip" onClick={() => client && copyChip(clientDisplay)}>
+          <Building2 /><span className="k">Cliente</span><span className="v">{clientDisplay}</span>
+        </button>
+        {finalClient && (
+          <button type="button" className="p2-chip" onClick={() => copyChip(finalClient)}>
+            <Target /><span className="k">Cliente final</span><span className="v">{finalClient}</span>
+          </button>
+        )}
+        {docValue && (
+          <button type="button" className="p2-chip" onClick={() => copyChip(docValue)}>
+            <FileText /><span className="k">{docKind}</span><span className="v">{docValue}</span>
+          </button>
+        )}
+        {contactName && (
+          <span className="p2-chip">
+            <UsersIcon /><span className="k">Contato</span>
+            <span className="v">{contactName}{contactRole ? ` · ${contactRole}` : ""}</span>
+          </span>
+        )}
+        {contactEmail && (
+          <a className="p2-chip" href={`mailto:${contactEmail}`}>
+            <MailIcon /><span className="k">E-mail</span><span className="v">{contactEmail}</span>
+          </a>
+        )}
+        {contactPhone && (
+          <a className="p2-chip" href={`tel:${contactPhone.replace(/[^\d+]/g, "")}`}>
+            <PhoneIcon /><span className="k">Telefone</span><span className="v">{contactPhone}</span>
+          </a>
+        )}
+        {!contactName && !contactEmail && !contactPhone && (
+          <button type="button" className="p2-chip add" onClick={() => setEditOpen(true)}>
+            <Plus /> Completar cadastro de contato
+          </button>
+        )}
+      </div>
+
+      {/* 01c — mural de avisos */}
+      <NoticeBoard notices={notices} onManage={() => setNoticesOpen(true)} />
+      <NoticeBoardDialog
+        open={noticesOpen}
+        onOpenChange={setNoticesOpen}
+        notices={notices}
+        suggestElectoral={isElectoral}
+        onSave={(n) => saveField.mutate({ compliance_notes: n as unknown as Project["compliance_notes"] })}
+      />
 
       {/* 02 — KPIs do projeto */}
       <div className="p2-kpis">
