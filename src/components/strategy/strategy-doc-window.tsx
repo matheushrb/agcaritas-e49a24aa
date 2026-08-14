@@ -370,6 +370,10 @@ export function StrategyDocWindow({
             </>
           )}
 
+          {on.positioning && (
+            <SchemaBlock schema={POSITIONING_SCHEMA} data={positioningDoc} heading="2. Pesquisa e posicionamento" />
+          )}
+
           {on.swot && (
             <>
               <h2>2. Análise SWOT</h2>
