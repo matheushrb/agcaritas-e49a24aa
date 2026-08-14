@@ -664,12 +664,13 @@ function MoneyInput({ value, onChange }: { value: number | null; onChange: (v: n
 function ToggleCard({ label, checked, onChange }: { label: string; checked: boolean; onChange: (v: boolean) => void }) {
   return (
     <label
-      className={cn(
-        "flex items-center justify-between gap-3 rounded-xl border px-3.5 py-3 cursor-pointer transition",
-        checked ? "border-primary/60 bg-primary/5" : "hover:bg-muted/40",
-      )}
+      className="flex items-center justify-between gap-3 rounded-xl px-3.5 py-3 cursor-pointer transition"
+      style={{
+        background: checked ? "var(--primary-soft)" : "var(--surface)",
+        border: `1px solid ${checked ? "var(--primary)" : "var(--border)"}`,
+      }}
     >
-      <span className="text-sm font-medium">{label}</span>
+      <span className="text-sm font-medium" style={{ color: "var(--text)" }}>{label}</span>
       <Switch checked={checked} onCheckedChange={onChange} />
     </label>
   );
