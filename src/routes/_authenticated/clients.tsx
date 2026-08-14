@@ -545,30 +545,75 @@ const initialForm: FormState = {
   notes: "",
 };
 
+const DRAFT_KEY = "caritas:client-draft";
+
+function loadDraft(): Partial<FormState> | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.localStorage.getItem(DRAFT_KEY);
+    return raw ? (JSON.parse(raw) as Partial<FormState>) : null;
+  } catch { return null; }
+}
+
 export function NewClientDialog({
-  open, onOpenChange, onSubmit, pending, initial, mode = "create", segments = DEFAULT_SEGMENTS,
+  open, onOpenChange, onSubmit, pending, initial, mode = "create", segments = DEFAULT_SEGMENTS, savedSignal = 0,
 }: {
   open: boolean; onOpenChange: (v: boolean) => void;
-  onSubmit: (v: Record<string, unknown>) => void;
+  onSubmit: (v: Record<string, unknown>, close: boolean) => void;
   pending: boolean;
   initial?: Partial<FormState>;
   mode?: "create" | "edit";
   segments?: string[];
+  savedSignal?: number;
 }) {
   const [form, setForm] = useState<FormState>({ ...initialForm, ...(initial ?? {}) });
   const [tab, setTab] = useState("identificacao");
   const [lookingUpCnpj, setLookingUpCnpj] = useState(false);
   const [lookingUpCep, setLookingUpCep] = useState(false);
+  const [restored, setRestored] = useState(false);
 
-  // Recarrega form quando abre em modo edit com dados diferentes
+  // Recarrega form quando abre — em modo criação restaura o rascunho salvo
   useEffect(() => {
-    if (open) setForm({ ...initialForm, ...(initial ?? {}) });
+    if (!open) return;
+    if (mode === "edit") {
+      setForm({ ...initialForm, ...(initial ?? {}) });
+      return;
+    }
+    const draft = loadDraft();
+    setForm({ ...initialForm, ...(initial ?? {}), ...(draft ?? {}) });
+    setRestored(!!draft);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, initial]);
+  }, [open, initial, mode]);
+
+  // Autosave do rascunho (somente criação)
+  useEffect(() => {
+    if (!open || mode === "edit" || typeof window === "undefined") return;
+    const t = setTimeout(() => {
+      try { window.localStorage.setItem(DRAFT_KEY, JSON.stringify(form)); } catch { /* ignora */ }
+    }, 300);
+    return () => clearTimeout(t);
+  }, [form, open, mode]);
+
+  // Após criar com sucesso: limpa rascunho e deixa a janela pronta para o próximo
+  useEffect(() => {
+    if (savedSignal === 0 || mode === "edit") return;
+    if (typeof window !== "undefined") window.localStorage.removeItem(DRAFT_KEY);
+    setForm({ ...initialForm });
+    setRestored(false);
+    setTab("identificacao");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [savedSignal]);
 
   const set = <K extends keyof FormState>(k: K, v: FormState[K]) => setForm(f => ({ ...f, [k]: v }));
-  const reset = () => { setForm({ ...initialForm, ...(initial ?? {}) }); setTab("identificacao"); };
-  const handleOpen = (v: boolean) => { onOpenChange(v); if (!v) reset(); };
+  const discardDraft = () => {
+    if (typeof window !== "undefined") window.localStorage.removeItem(DRAFT_KEY);
+    setForm({ ...initialForm, ...(initial ?? {}) });
+    setRestored(false);
+    setTab("identificacao");
+  };
+  // Fechar NÃO apaga o que foi preenchido — o rascunho volta ao reabrir
+  const handleOpen = (v: boolean) => { onOpenChange(v); };
+
 
 
   // Auto CNPJ lookup quando completa 14 dígitos
