@@ -596,15 +596,24 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <section className="rounded-2xl border bg-background shadow-sm overflow-hidden">
-      <header className="px-5 py-3.5 border-b bg-muted/40 flex items-start justify-between gap-3">
+    <section
+      className="rounded-2xl overflow-hidden"
+      style={{ background: "var(--surface)", border: "1px solid var(--border)", boxShadow: "var(--shadow)" }}
+    >
+      <header
+        className="px-5 py-3.5 flex items-start justify-between gap-3"
+        style={{ background: "var(--surface-2)", borderBottom: "1px solid var(--border)" }}
+      >
         <div className="flex items-start gap-3 min-w-0">
-          <span className="h-8 w-8 rounded-lg bg-primary/10 text-primary inline-flex items-center justify-center shrink-0">
+          <span
+            className="h-8 w-8 rounded-lg inline-flex items-center justify-center shrink-0"
+            style={{ background: "var(--primary-soft)", color: "var(--primary)" }}
+          >
             {icon}
           </span>
           <div className="min-w-0">
-            <h3 className="text-sm font-semibold leading-tight">{title}</h3>
-            {description && <p className="text-xs text-muted-foreground mt-0.5">{description}</p>}
+            <h3 className="text-sm font-semibold leading-tight" style={{ color: "var(--text)" }}>{title}</h3>
+            {description && <p className="text-xs mt-0.5" style={{ color: "var(--muted)" }}>{description}</p>}
           </div>
         </div>
         {right && <div className="shrink-0">{right}</div>}
