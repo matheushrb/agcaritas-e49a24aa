@@ -419,6 +419,19 @@ function ProjectDetail() {
     { id: "docs", label: "Arquivos", count: filesCount },
   ];
 
+  const notices: ProjectNotice[] = parseNotices(project.compliance_notes);
+  const contactName = project.contact_name || client?.contact_name || null;
+  const contactRole = project.contact_role || client?.contact_role || null;
+  const contactEmail = project.contact_email || client?.contact_email || client?.email || null;
+  const contactPhone = project.contact_phone || client?.contact_phone || client?.phone || null;
+  const docValue = project.doc_id || client?.tax_id || null;
+  const docKind = (project.doc_id ? (project.doc_id.replace(/\D/g, "").length <= 11 ? "CPF" : "CNPJ")
+    : client?.person_type === "pf" ? "CPF" : "CNPJ");
+  const finalClient = project.final_client || null;
+  const clientDisplay = client?.trade_name || client?.name || "Sem cliente";
+  const copyChip = (v: string) => { navigator.clipboard?.writeText(v); toast.success("Copiado"); };
+  const isElectoral = /eleitor|campanha/i.test(`${project.name} ${project.project_type ?? ""}`);
+
   return (
     <div className="prj02">
       {/* 01 — cabeçalho global e projeto */}
