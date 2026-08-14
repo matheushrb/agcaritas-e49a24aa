@@ -66,8 +66,6 @@ export function BriefingsCard({
 
   const current = briefings.find(b => b.id === openId) ?? null;
   const s = strategy ?? {};
-  const emptyPositioning =
-    !description?.trim() && !s.audience && !s.tone && !s.value_prop && !s.positioning && !(s.essence ?? []).length;
 
   const progress = (b: ProjectBriefing) => {
     const tpl = templates.find(t => t.id === b.template_id);
