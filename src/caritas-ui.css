@@ -17,6 +17,10 @@
   --teal: #14a9a0;
   --shadow: 0 1px 5px rgba(19, 31, 55, 0.022);
   --radius: 10px;
+  /* mantém as utilitárias do Tailwind (bg-muted) com cor de FUNDO,
+     mesmo com --muted usado aqui como cor de texto secundário */
+  --color-muted: #eef0f2;
+  --color-muted-foreground: #6b7280;
 
   min-height: 100vh;
   background: var(--bg);
@@ -38,6 +42,8 @@
   --primary-2: #7e95f5;
   --primary-soft: #101b3b;
   --shadow: 0 10px 30px rgba(0, 0, 0, 0.22);
+  --color-muted: #17202e;
+  --color-muted-foreground: #98a4b3;
 }
 
 /* Portais (popover / dropdown / select / dialog) são renderizados fora de
