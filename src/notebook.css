@@ -29,7 +29,7 @@
   .caritas-ui .cv-theme,
   .caritas-ui .cv-icon-button { height: 30px; }
   .caritas-ui .cv-icon-button { width: 30px; }
-  .caritas-ui .cv-avatar { width: 28px; height: 28px; font-size: 11px; }
+  .caritas-ui .cv-avatar { width: 28px; height: 28px; min-width: 28px; flex: 0 0 28px; font-size: 11px; }
   .caritas-ui .cv-profile { gap: 7px; }
   .caritas-ui .cv-profile > div:nth-child(2) { min-width: 82px; }
 
