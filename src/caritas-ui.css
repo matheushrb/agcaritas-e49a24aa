@@ -258,6 +258,10 @@ body.dark > [role="dialog"] {
 .cv-avatar {
   width: 34px;
   height: 34px;
+  min-width: 34px;
+  flex: 0 0 34px;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
   border-radius: 50%;
   background: var(--primary);
   color: white;
@@ -265,6 +269,8 @@ body.dark > [role="dialog"] {
   place-items: center;
   font-size: 12px;
 }
+.cv-avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+
 .cv-profile > div:nth-child(2) { display: flex; flex-direction: column; min-width: 106px; }
 .cv-profile strong { font-size: 11px; }
 .cv-profile span { font-size: 9px; color: var(--muted); }
