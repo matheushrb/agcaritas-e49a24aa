@@ -129,3 +129,69 @@ export function DocToolWindow({
     </ToolWindow>
   );
 }
+
+/* ------------------------------------------------------ card da aba */
+
+export function StrategyDocCard({
+  projectId, projectName, schema, icon: Icon, index, highlights,
+}: {
+  projectId: string;
+  projectName: string;
+  schema: DocSchema;
+  icon: LucideIcon;
+  index: number;
+  highlights: string[];
+}) {
+  const [open, setOpen] = useState(false);
+  const { data } = useStrategyDoc(projectId, schema.kind);
+  const { filled, total, pct } = countFilled(schema, data);
+
+  return (
+    <section className="p5-card">
+      <div className="p5-card-h">
+        <div className="p5-ht"><Icon /><span className="p5-card-t">{index}. {schema.title}</span></div>
+        <button type="button" className="p5-link" onClick={() => setOpen(true)}>Abrir ferramenta</button>
+      </div>
+
+      {filled === 0 ? (
+        <div className="p5-empty">
+          <p>{schema.subtitle}.</p>
+          <button type="button" className="p5-add" onClick={() => setOpen(true)}>Começar</button>
+        </div>
+      ) : (
+        <div className="p5-brief">
+          {highlights.map(key => {
+            const field = schema.sections.flatMap(s => s.fields).find(f => f.key === key);
+            if (!field) return null;
+            const raw = String(data[key] ?? "").trim();
+            return (
+              <div key={key}>
+                <div className="p5-bl">{field.label}</div>
+                {field.type === "chips" || field.type === "colors" ? (
+                  splitList(raw).length
+                    ? <div className="p5-chips">{splitList(raw).map(c => <span key={c} className="p5-chip">{c}</span>)}</div>
+                    : <p className="p5-bt">—</p>
+                ) : (
+                  <p className="p5-bt">{raw || "—"}</p>
+                )}
+              </div>
+            );
+          })}
+          <div className="swin-progress" style={{ marginTop: 4 }}>
+            <div className="bar"><i style={{ width: `${pct}%` }} /></div>
+            <span>{filled}/{total} campos</span>
+          </div>
+        </div>
+      )}
+
+      <DocToolWindow
+        open={open}
+        onClose={() => setOpen(false)}
+        projectId={projectId}
+        projectName={projectName}
+        schema={schema}
+        icon={Icon}
+      />
+    </section>
+  );
+}
