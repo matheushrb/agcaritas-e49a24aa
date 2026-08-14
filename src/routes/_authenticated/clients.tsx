@@ -438,13 +438,15 @@ function ClientsPage() {
 
       <NewClientDialog open={newOpen} onOpenChange={setNewOpen}
         segments={segments.length ? segments : DEFAULT_SEGMENTS}
-        onSubmit={v => create.mutate(v)} pending={create.isPending} />
+        onSubmit={(payload, close) => create.mutate({ payload, close })} pending={create.isPending}
+        savedSignal={createdSignal} />
 
       <NewClientDialog
         open={!!editingId && !!editingClient}
         onOpenChange={(v) => { if (!v) setEditingId(null); }}
         segments={segments.length ? segments : DEFAULT_SEGMENTS}
-        onSubmit={v => update.mutate(v)}
+        onSubmit={(payload, close) => update.mutate({ payload, close })}
+
         pending={update.isPending}
         mode="edit"
         initial={editingClient ? {
