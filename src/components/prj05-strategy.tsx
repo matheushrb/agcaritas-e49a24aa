@@ -271,6 +271,26 @@ export function Prj05Strategy({
           )}
         </section>
 
+        {/* 1b. Pesquisa & Posicionamento */}
+        <StrategyDocCard
+          projectId={projectId}
+          projectName={projectName}
+          schema={POSITIONING_SCHEMA}
+          icon={Compass}
+          index={2}
+          highlights={["statement", "promise", "differentiators"]}
+        />
+
+        {/* 1c. Manual de marca */}
+        <StrategyDocCard
+          projectId={projectId}
+          projectName={projectName}
+          schema={BRAND_SCHEMA}
+          icon={Palette}
+          index={3}
+          highlights={["archetype", "tone", "palette"]}
+        />
+
         {/* 2. SWOT */}
         <section className="p5-card">
           <div className="p5-card-h">
