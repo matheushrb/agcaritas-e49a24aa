@@ -125,6 +125,22 @@ export function StrategyDocWindow({
   const { data: kpis = [] } = list<KpiRow>("project_kpis", "order_index");
   const { data: steps = [] } = list<StepRow>("project_action_items", "order_index");
 
+  const { data: docs = {} } = useQuery({
+    queryKey: ["doc", "project_strategy_docs", projectId],
+    enabled: open,
+    queryFn: async (): Promise<Record<string, StrategyDocData>> => {
+      const { data, error } = await sb.from("project_strategy_docs").select("kind, data").eq("project_id", projectId);
+      if (error) throw error;
+      const out: Record<string, StrategyDocData> = {};
+      (data ?? []).forEach((r: any) => { out[r.kind] = (r.data ?? {}) as StrategyDocData; });
+      return out;
+    },
+  });
+  const positioningDoc = docs["positioning"] ?? {};
+  const brandDoc = docs["brand_manual"] ?? {};
+
+
+
   const { data: templates = [] } = useQuery({
     queryKey: ["briefing_templates", "briefing"],
     queryFn: async () => (await fetchBriefingTemplates()).filter(t => t.template_type === "briefing"),
