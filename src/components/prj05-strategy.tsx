@@ -8,7 +8,6 @@ import {
   ChevronLeft, ChevronRight, Plus, Trash2, Compass, Palette,
 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { BriefingWindow } from "./strategy/briefing-window";
 import { BriefingsCard } from "./strategy/briefings-card";
 import { SwotWindow, PersonasWindow, CompetitorsWindow, KpisWindow, StepsWindow } from "./strategy/strategy-windows";
 import { StrategyDocWindow } from "./strategy/strategy-doc-window";
@@ -173,18 +172,6 @@ export function Prj05Strategy({
 
   /* ---------------- briefing ---------------- */
   const s: Strategy = strategy ?? {};
-  const [briefOpen, setBriefOpen] = useState(false);
-  const [brief, setBrief] = useState({
-    description, audience: s.audience ?? "", essence: (s.essence ?? []).join(", "),
-    tone: s.tone ?? "", value_prop: s.value_prop ?? "", positioning: s.positioning ?? "",
-  });
-  const openBrief = () => {
-    setBrief({
-      description, audience: s.audience ?? "", essence: (s.essence ?? []).join(", "),
-      tone: s.tone ?? "", value_prop: s.value_prop ?? "", positioning: s.positioning ?? "",
-    });
-    setBriefOpen(true);
-  };
 
   /* ---------------- swot inline add ---------------- */
   const [swotDraft, setSwotDraft] = useState<Record<string, string>>({});
@@ -546,16 +533,6 @@ export function Prj05Strategy({
 
       {/* ---------------- janelas de ferramentas ---------------- */}
 
-      <BriefingWindow
-        open={briefOpen}
-        onClose={() => setBriefOpen(false)}
-        projectName={projectName}
-        description={description}
-        strategy={s}
-        briefing={briefing ?? {}}
-        templateId={briefingTemplateId ?? null}
-        onSave={(patch) => { onSaveBriefing?.(patch); setBriefOpen(false); }}
-      />
       <SwotWindow open={swotOpen} onClose={() => setSwotOpen(false)} projectId={projectId} projectName={projectName} />
       <PersonasWindow open={personaOpen} onClose={() => setPersonaOpen(false)} projectId={projectId} projectName={projectName} />
       <CompetitorsWindow open={benchOpen} onClose={() => setBenchOpen(false)} projectId={projectId} projectName={projectName} />
