@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { EntityDialog, DialogField, DialogCancelButton } from "@/components/entity-dialog";
+import { EntityDialog, DialogField, DialogCancelButton, dialogTabsListClass, dialogTabClass } from "@/components/entity-dialog";
 import { ClientLogo, ClientLogoPicker } from "@/components/client-logo";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
