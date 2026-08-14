@@ -216,7 +216,7 @@ function ClientDetailPage() {
         onOpenChange={setEditOpen}
         mode="edit"
         initial={client as never}
-        onSubmit={v => updateClient.mutate(v)}
+        onSubmit={(v, close) => updateClient.mutate(v, { onSuccess: () => { if (close) setEditOpen(false); } })}
         pending={updateClient.isPending}
       />
     </div>
