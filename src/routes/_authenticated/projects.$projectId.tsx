@@ -158,7 +158,7 @@ function ProjectDetail() {
     enabled: !!project?.client_id,
     queryFn: async () => {
       if (!project?.client_id) return null;
-      const { data } = await supabase.from("clients").select("id,name,trade_name,logo_url").eq("id", project.client_id).maybeSingle();
+      const { data } = await supabase.from("clients").select("id,name,trade_name,logo_url,legal_name,tax_id,person_type,contact_name,contact_role,contact_email,contact_phone,email,phone").eq("id", project.client_id).maybeSingle();
       return (data as Client) ?? null;
     },
   });
