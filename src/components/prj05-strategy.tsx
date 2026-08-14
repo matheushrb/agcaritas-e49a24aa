@@ -5,12 +5,14 @@ import { toast } from "sonner";
 import {
   BookOpen, Pencil, LayoutGrid, Users, Filter, Target, ListChecks,
   ThumbsUp, ThumbsDown, ArrowUpCircle, AlertOctagon, Check, Calendar,
-  ChevronLeft, ChevronRight, Plus, Trash2,
+  ChevronLeft, ChevronRight, Plus, Trash2, Compass, Palette,
 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { BriefingWindow } from "./strategy/briefing-window";
 import { SwotWindow, PersonasWindow, CompetitorsWindow, KpisWindow, StepsWindow } from "./strategy/strategy-windows";
 import { StrategyDocWindow } from "./strategy/strategy-doc-window";
+import { StrategyDocCard } from "./strategy/doc-tool-window";
+import { BRAND_SCHEMA, POSITIONING_SCHEMA } from "@/lib/strategy-docs";
 
 import type { BriefingData } from "@/lib/briefing";
 import "@/prj05.css";
