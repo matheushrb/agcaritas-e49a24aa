@@ -431,7 +431,7 @@ function ProjectDetail() {
     : client?.person_type === "pf" ? "CPF" : "CNPJ");
   const finalClient = project.final_client || null;
   const clientDisplay = client?.trade_name || client?.name || "Sem cliente";
-  const copyChip = (v: string) => { navigator.clipboard?.writeText(v); toast.success("Copiado"); };
+  
   const isElectoral = /eleitor|campanha/i.test(`${project.name} ${project.project_type ?? ""}`);
 
   return (
@@ -466,47 +466,56 @@ function ProjectDetail() {
         </div>
       </div>
 
-      {/* 01b — identificação e contatos */}
-      <div className="p2-idbar">
-        <button type="button" className="p2-chip" onClick={() => client && copyChip(clientDisplay)}>
-          <Building2 /><span className="k">Cliente</span><span className="v">{clientDisplay}</span>
-        </button>
+      {/* 01b — quadro de identificação e contatos */}
+      <div className="p2-idcard">
+        {client ? (
+          <Link to="/clients/$clientId" params={{ clientId: client.id }} className="p2-idcell">
+            <Building2 /><span className="tx"><span className="k">Cliente</span><span className="v">{clientDisplay}</span></span>
+          </Link>
+        ) : (
+          <button type="button" className="p2-idcell" onClick={() => setEditOpen(true)}>
+            <Building2 /><span className="tx"><span className="k">Cliente</span><span className="v">Sem cliente</span></span>
+          </button>
+        )}
         {finalClient && (
-          <button type="button" className="p2-chip" onClick={() => copyChip(finalClient)}>
-            <Target /><span className="k">Cliente final</span><span className="v">{finalClient}</span>
+          <button type="button" className="p2-idcell" onClick={() => setEditOpen(true)}>
+            <Target /><span className="tx"><span className="k">Cliente final</span><span className="v">{finalClient}</span></span>
           </button>
         )}
-        {docValue && (
-          <button type="button" className="p2-chip" onClick={() => copyChip(docValue)}>
-            <FileText /><span className="k">{docKind}</span><span className="v">{docValue}</span>
-            {!project.doc_id && <span className="src">do cliente</span>}
-          </button>
-        )}
-        {contactName && (
-          <span className="p2-chip">
-            <UsersIcon /><span className="k">Contato</span>
-            <span className="v">{contactName}{contactRole ? ` · ${contactRole}` : ""}</span>
-            {!project.contact_name && <span className="src">do cliente</span>}
+        <button type="button" className="p2-idcell" onClick={() => setEditOpen(true)}>
+          <FileText />
+          <span className="tx">
+            <span className="k">{docKind}</span>
+            <span className="v">{docValue || "Não informado"}</span>
+            {docValue && !project.doc_id && <span className="src">do cliente</span>}
           </span>
-        )}
-        {contactEmail && (
-          <a className="p2-chip" href={`mailto:${contactEmail}`}>
-            <MailIcon /><span className="k">E-mail</span><span className="v">{contactEmail}</span>
-            {!project.contact_email && <span className="src">do cliente</span>}
-          </a>
-        )}
-        {contactPhone && (
-          <a className="p2-chip" href={`tel:${contactPhone.replace(/[^\d+]/g, "")}`}>
-            <PhoneIcon /><span className="k">Telefone</span><span className="v">{contactPhone}</span>
-            {!project.contact_phone && <span className="src">do cliente</span>}
-          </a>
-        )}
-        {!contactName && !contactEmail && !contactPhone && (
-          <button type="button" className="p2-chip add" onClick={() => setEditOpen(true)}>
-            <Plus /> Completar cadastro de contato
-          </button>
-        )}
+        </button>
+        <button type="button" className="p2-idcell" onClick={() => setEditOpen(true)}>
+          <UsersIcon />
+          <span className="tx">
+            <span className="k">Contato</span>
+            <span className="v">{contactName ? `${contactName}${contactRole ? ` · ${contactRole}` : ""}` : "Não informado"}</span>
+            {contactName && !project.contact_name && <span className="src">do cliente</span>}
+          </span>
+        </button>
+        <button type="button" className="p2-idcell" onClick={() => setEditOpen(true)}>
+          <MailIcon />
+          <span className="tx">
+            <span className="k">E-mail</span>
+            <span className="v">{contactEmail || "Não informado"}</span>
+            {contactEmail && !project.contact_email && <span className="src">do cliente</span>}
+          </span>
+        </button>
+        <button type="button" className="p2-idcell" onClick={() => setEditOpen(true)}>
+          <PhoneIcon />
+          <span className="tx">
+            <span className="k">Telefone</span>
+            <span className="v">{contactPhone || "Não informado"}</span>
+            {contactPhone && !project.contact_phone && <span className="src">do cliente</span>}
+          </span>
+        </button>
       </div>
+
 
       {/* 01c — mural de avisos */}
       <NoticeBoard notices={notices} onManage={() => setNoticesOpen(true)} />
