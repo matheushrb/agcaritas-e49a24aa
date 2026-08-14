@@ -492,7 +492,7 @@ export function EditProjectDialog({
                           onClick={() => togglePlatform(p.name)}
                           className={cn(
                             "rounded-full pl-1 pr-3 py-1 text-xs font-medium border transition-colors flex items-center gap-1.5",
-                            on ? "border-primary bg-primary text-primary-foreground" : "border-border hover:bg-muted",
+                            on ? "border-primary bg-primary text-primary-foreground" : "border-border",
                           )}
                           style={on ? undefined : { color: p.color ?? undefined, borderColor: (p.color ?? "") + "66" }}
                         >
