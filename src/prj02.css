@@ -249,13 +249,14 @@
 .prj02 .p2-note .tx span { font-size: 12px; line-height: 17px; color: var(--p2-muted); }
 .prj02 .p2-note .pin { position: absolute; top: 8px; right: 8px; width: 12px; height: 12px; color: var(--p2-primary); }
 
-.dark .prj02 .p2-chip { background: rgba(255,255,255,.04); border-color: rgba(255,255,255,.10); color: inherit; }
+.dark .prj02 .p2-idcard { background: rgba(255,255,255,.04); border-color: rgba(255,255,255,.10); }
+.dark .prj02 .p2-idcell { border-color: rgba(255,255,255,.10); }
 .dark .prj02 .p2-mural { background: rgba(245,158,11,.07); border-color: rgba(245,158,11,.28); }
 .dark .prj02 .p2-mural-t { color: #F5C463; }
 .dark .prj02 .p2-note { background: rgba(255,255,255,.04); border-color: rgba(255,255,255,.10); }
 .dark .prj02 .p2-note .tx strong { color: #E7ECF5; }
 
-.p2-chip .src{
+.p2-idcell .src{
   font-size: 10px;
   line-height: 1;
   padding: 2px 6px;
@@ -264,4 +265,6 @@
   color: var(--p2-primary, #2F6BEF);
   font-weight: 600;
   letter-spacing: .02em;
+  align-self: flex-start;
 }
+
