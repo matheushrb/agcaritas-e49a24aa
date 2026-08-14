@@ -137,8 +137,8 @@ function ClientDetailPage() {
       qc.invalidateQueries({ queryKey: ["client", clientId] });
       qc.invalidateQueries({ queryKey: ["clients-list"] });
       toast.success("Cliente atualizado");
-      setEditOpen(false);
     },
+
     onError: (e: Error) => toast.error(e.message),
   });
 
