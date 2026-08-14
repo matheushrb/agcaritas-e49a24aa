@@ -629,6 +629,8 @@ function ProjectDetail() {
           strategy={(project as any).strategy ?? {}}
           briefing={((project as any).briefing ?? {}) as never}
           briefingTemplateId={(project as any).briefing_template_id ?? null}
+          scope={scope}
+
           onSaveBriefing={(patch) => saveField.mutate(patch as never)}
         />
       )}

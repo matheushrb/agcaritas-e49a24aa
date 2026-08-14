@@ -56,10 +56,7 @@ export type ProjectWizardValue = {
   social_platforms: string[];
   tools: string[];
   strategy_enabled: boolean;
-  scope_flags: {
-    swot: boolean; personas: boolean; competitors: boolean;
-    roadmap: boolean; kpis: boolean; action_plan: boolean;
-  };
+  scope_flags: Record<string, boolean>;
   traffic_budget: { enabled: boolean; amount: number | null; platforms: string[] } | null;
   other_budgets: { label: string; amount: number }[];
 };
@@ -83,7 +80,10 @@ const PRIORITY_OPTIONS = [
   { value: "critical", label: "Urgente" },
 ];
 
-const STRATEGY_ITEMS: { key: keyof ProjectWizardValue["scope_flags"]; label: string }[] = [
+const STRATEGY_ITEMS: { key: string; label: string }[] = [
+  { key: "briefings", label: "Briefings" },
+  { key: "positioning", label: "Pesquisa & Posicionamento" },
+  { key: "brand_manual", label: "Manual de marca" },
   { key: "swot", label: "Análise SWOT" },
   { key: "personas", label: "Personas" },
   { key: "competitors", label: "Concorrentes" },
@@ -112,7 +112,7 @@ export const defaultProjectWizardValue: ProjectWizardValue = {
   use_task_type_value: false, allow_value_override: true,
   finance_owner_id: null, payment_terms: "30 dias", due_days: "30 dias", finance_notes: "",
   social_platforms: [], tools: [], strategy_enabled: false,
-  scope_flags: { swot: false, personas: false, competitors: false, roadmap: false, kpis: false, action_plan: false },
+  scope_flags: { briefings: true, positioning: false, brand_manual: false, swot: false, personas: false, competitors: false, roadmap: false, kpis: false, action_plan: false },
   traffic_budget: { enabled: false, amount: null, platforms: [] },
   other_budgets: [],
 };
