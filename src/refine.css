@@ -61,14 +61,13 @@
   letter-spacing: 0.05em;
   text-transform: uppercase;
   color: var(--muted);
-  white-space: nowrap;
+  line-height: 1.25;
   overflow: hidden;
-  text-overflow: ellipsis;
 }
-.caritas-ui .cv-kpi-main { margin: 8px 0 4px; gap: 8px; min-width: 0; }
+.caritas-ui .cv-kpi-main { margin: 6px 0 4px; gap: 8px; min-width: 0; }
 .caritas-ui .cv-kpi-label > svg { flex: none; }
 .caritas-ui .cv-kpi-main strong {
-  font-size: 26px;
+  font-size: clamp(19px, 1.55vw, 26px);
   font-weight: 700;
   letter-spacing: -0.03em;
   line-height: 1.05;
@@ -91,10 +90,15 @@
 .caritas-ui .cv-section-head .cv-link { white-space: nowrap; flex: none; }
 .caritas-ui .cv-section-head h2,
 .caritas-ui .cv-section-head h3 {
-  font-size: 15.5px;
+  font-size: 15px;
   font-weight: 650;
   letter-spacing: -0.018em;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
+.caritas-ui .cv-section-head.compact { flex-wrap: nowrap; }
 .caritas-ui .cv-section-head p { font-size: 12px; margin-top: 4px; }
 
 /* ---------- grids internos: respiro ---------- */
