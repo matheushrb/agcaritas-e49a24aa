@@ -1119,23 +1119,30 @@
 
 /* ===== Propriedades estilo ClickUp: linhas finas, rótulo + valor inline ===== */
 .cw-headzone.is-slim > .cw-props.cw-cu {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0 28px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  column-gap: 18px;
+  row-gap: 2px;
   padding: 6px 22px 8px;
   border-bottom: none;
 }
 .cw-props.cw-cu .cw-prop {
-  display: grid;
-  grid-template-columns: 128px minmax(0, 1fr);
+  display: inline-flex;
   align-items: center;
   gap: 8px;
   padding: 0;
-  min-height: 30px;
+  min-height: 28px;
   border: none;
   min-width: 0;
-  flex: none;
+  flex: 0 1 auto;
+  max-width: 100%;
 }
+.cw-props.cw-cu .cw-prop > .cw-label { flex: none; }
+.cw-props.cw-cu .cw-prop-value { flex: 0 1 auto; min-width: 0; }
+.cw-props.cw-cu .cw-prop-value select,
+.cw-props.cw-cu .cw-prop-value input { width: auto; max-width: 220px; }
+
 .cw-props.cw-cu .cw-label {
   display: flex; align-items: center; gap: 7px;
   font-size: 12px; font-weight: 500; letter-spacing: 0;
