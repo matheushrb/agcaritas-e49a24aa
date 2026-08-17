@@ -287,30 +287,8 @@ function ClientsPage() {
             <Button variant="outline" className="rounded-full gap-1.5" onClick={() => setSegmentsOpen(true)}>
               <Tag className="h-4 w-4" /> Segmentos
             </Button>
-            <div className="ml-auto inline-flex items-center rounded-full border border-border bg-muted/40 p-0.5">
-              {([
-                { k: "list", icon: List, label: "Lista" },
-                { k: "cards", icon: Rows3, label: "Cards" },
-                { k: "kanban", icon: LayoutGrid, label: "Quadros" },
-              ] as const).map(v => (
-                <button
-                  key={v.k}
-                  type="button"
-                  onClick={() => setView(v.k)}
-                  title={v.label}
-                  className={cn(
-                    "inline-flex items-center gap-1.5 rounded-full px-3 h-8 text-xs font-medium transition-colors",
-                    view === v.k ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground",
-                  )}
-                >
-                  <v.icon className="h-3.5 w-3.5" />
-                  <span className="hidden sm:inline">{v.label}</span>
-                </button>
-              ))}
-            </div>
-
-          </div>
-        </Card>
+          </>
+        </ListToolbar>
 
         {isLoading ? (
           <div className="text-sm text-muted-foreground">Carregando…</div>
