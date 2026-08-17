@@ -174,7 +174,7 @@ export function TaskWindow({
   const [notes, setNotes] = useState("");
   const [liveItems, setLiveItems] = useState<LiveDraft[]>([]);
   const [tech, setTech] = useState<TechSheet>(EMPTY_TECH);
-  const [tab, setTab] = useState<"details" | "briefing" | "live" | "tech">("details");
+  const [tab, setTab] = useState<"details" | "work" | "files" | "briefing" | "live" | "tech">("details");
   const [headOpen, setHeadOpen] = useState(false);
 
   const [briefingTemplateId, setBriefingTemplateId] = useState<string | null>(null);
@@ -1058,12 +1058,8 @@ export function TaskWindow({
             </div>
           </div>
 
-          <div className={`cw-headzone${headOpen ? " is-open" : " is-collapsed"}`}>
-          <button type="button" className="cw-headzone-toggle" onClick={() => setHeadOpen(v => !v)}>
-            <SlidersHorizontal size={13} />
-            {headOpen ? "Ocultar propriedades e fluxo" : "Propriedades e fluxo de etapas"}
-            <ChevronDown size={14} className="cw-headzone-caret" />
-          </button>
+          <div className="cw-headzone is-open is-slim">
+
 
           {/* PROPRIEDADES COMPACTAS */}
           <div className="cw-props">
@@ -1181,6 +1177,14 @@ export function TaskWindow({
                 <button type="button" className={`cw-tab${tab === "details" ? " is-on" : ""}`} onClick={() => setTab("details")}>
                   <ListChecks size={14} /> Detalhes
                 </button>
+                <button type="button" className={`cw-tab${tab === "work" ? " is-on" : ""}`} onClick={() => setTab("work")}>
+                  <Check size={14} /> Subtarefas e checklist
+                  {(subtasks.length + checklist.length) > 0 && <span className="cw-tab-count">{subtasks.length + checklist.length}</span>}
+                </button>
+                <button type="button" className={`cw-tab${tab === "files" ? " is-on" : ""}`} onClick={() => setTab("files")}>
+                  <Paperclip size={14} /> Anexos
+                  {attachments.length > 0 && <span className="cw-tab-count">{attachments.length}</span>}
+                </button>
                 <button type="button"
                   className={`cw-tab${tab === "briefing" ? " is-on" : ""}${briefingFilled ? " is-filled" : ""}`}
                   onClick={() => setTab("briefing")}>
@@ -1217,7 +1221,9 @@ export function TaskWindow({
                 <textarea className="cw-textarea" rows={9} style={{ minHeight: 190, resize: "vertical" }} value={description}
                   onChange={e => setDescription(e.target.value)} placeholder="Contexto, referências e o que precisa ser entregue..." />
               </div>
+              </div>
 
+              <div hidden={tab !== "work"}>
               {/* SUBTAREFAS */}
               <div className="cw-section">
                 <div className="cw-mini-head">
@@ -1282,7 +1288,9 @@ export function TaskWindow({
                   </div>
                 ))}
               </div>
+              </div>
 
+              <div hidden={tab !== "files"}>
               {/* ANEXOS E CAPA */}
               <div className="cw-section">
                 <div className="cw-section-head">
@@ -1334,8 +1342,9 @@ export function TaskWindow({
                   </div>
                 )}
               </div>
+              </div>
 
-
+              <div hidden={tab !== "details"}>
               {/* ENTREGÁVEIS */}
               <div className="cw-section">
                 <div className="cw-section-head">
