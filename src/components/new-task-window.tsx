@@ -1120,14 +1120,18 @@ export function TaskWindow({
 
 
           {/* FLUXO DE ETAPAS */}
-          <div className="cw-stageband">
-            <div className="cw-stageband-head">
+          <div className={`cw-stageband${stagesOpen ? " is-open" : " is-shut"}`}>
+            <button type="button" className="cw-stageband-head" onClick={() => setStagesOpen(v => !v)}>
+              <ChevronRight size={14} className="cw-stageband-caret" />
               <Layers size={14} />
               <strong>ETAPA DA TAREFA</strong>
               {taskTypes.find((t: any) => t.id === taskTypeId)?.name && (
                 <span className="cw-stageband-type">{taskTypes.find((t: any) => t.id === taskTypeId)?.name}</span>
               )}
-            </div>
+              {!stagesOpen && flowSteps[activeIdx] && (
+                <span className="cw-stageband-now">{flowSteps[activeIdx].label}</span>
+              )}
+            </button>
             <div className="cw-stageband-row">
               {flowSteps.map((s, i) => (
                 <button
