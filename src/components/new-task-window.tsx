@@ -1061,57 +1061,51 @@ export function TaskWindow({
 
 
           {/* PROPRIEDADES COMPACTAS */}
-          <div className="cw-props">
+          <div className="cw-props cw-cu">
             <div className="cw-prop">
-
-              <div className="cw-label">Projeto</div>
+              <div className="cw-label"><Layers size={13} /> Projeto</div>
               <div className="cw-prop-value">
                 <select value={projectId ?? ""} onChange={e => setProjectId(e.target.value || null)}>
-                  <option value="">Sem projeto</option>
+                  <option value="">Vazio</option>
                   {projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                 </select>
-                <ChevronDown size={14} style={{ color: "var(--cw-muted)", flexShrink: 0 }} />
               </div>
             </div>
             <div className="cw-prop">
-              <div className="cw-label">Tipo de tarefa</div>
+              <div className="cw-label"><ListChecks size={13} /> Tipo</div>
               <div className="cw-prop-value">
                 <select value={taskTypeId ?? ""} onChange={e => setTaskTypeId(e.target.value || null)}>
-                  <option value="">Selecione</option>
+                  <option value="">Vazio</option>
                   {taskTypes.map((t: any) => <option key={t.id} value={t.id}>{t.name}</option>)}
                 </select>
-                <ChevronDown size={14} style={{ color: "var(--cw-muted)", flexShrink: 0 }} />
               </div>
             </div>
             <div className="cw-prop">
-              <div className="cw-label">Responsável</div>
+              <div className="cw-label"><Info size={13} /> Responsável</div>
               <div className="cw-prop-value">
                 <select value={assigneeId ?? ""} onChange={e => setAssigneeId(e.target.value || null)}>
-                  <option value="">Não atribuído</option>
+                  <option value="">Vazio</option>
                   {people.map(p => <option key={p.id} value={p.id}>{p.display_name || p.full_name}</option>)}
                 </select>
-                <ChevronDown size={14} style={{ color: "var(--cw-muted)", flexShrink: 0 }} />
               </div>
             </div>
-            <div className="cw-prop" style={{ gridColumn: "span 2" }}>
-              <div className="cw-label">Período (início → prazo)</div>
+            <div className="cw-prop">
+              <div className="cw-label"><CalendarDays size={13} /> Datas</div>
               <div className="cw-prop-value">
                 <CwDateRange start={startDate} end={dueDate}
                   onChange={(s, e) => { setStartDate(s); setDueDate(e); }} />
               </div>
             </div>
-
-
             <div className="cw-prop">
-              <div className="cw-label">Prioridade</div>
+              <div className="cw-label"><Clock size={13} /> Prioridade</div>
               <div className="cw-prop-value">
                 <select value={priority} onChange={e => setPriority(e.target.value)}>
                   {PRIORITIES.map(p => <option key={p.value} value={p.value}>{p.label}</option>)}
                 </select>
-                <ChevronDown size={14} style={{ color: "var(--cw-muted)", flexShrink: 0 }} />
               </div>
             </div>
           </div>
+
 
           {/* FLUXO DE ETAPAS */}
           <div className="cw-stageband">
