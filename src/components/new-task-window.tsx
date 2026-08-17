@@ -1058,10 +1058,17 @@ export function TaskWindow({
             </div>
           </div>
 
+          <div className={`cw-headzone${headOpen ? " is-open" : " is-collapsed"}`}>
+          <button type="button" className="cw-headzone-toggle" onClick={() => setHeadOpen(v => !v)}>
+            <SlidersHorizontal size={13} />
+            {headOpen ? "Ocultar propriedades e fluxo" : "Propriedades e fluxo de etapas"}
+            <ChevronDown size={14} className="cw-headzone-caret" />
+          </button>
 
           {/* PROPRIEDADES COMPACTAS */}
           <div className="cw-props">
             <div className="cw-prop">
+
               <div className="cw-label">Projeto</div>
               <div className="cw-prop-value">
                 <select value={projectId ?? ""} onChange={e => setProjectId(e.target.value || null)}>
