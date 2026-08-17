@@ -35,11 +35,11 @@ const STAGES: { id: Stage; label: string; status: StatusGroup }[] = [
 
 
 const PRIORITIES = [
-  { value: "low", label: "Baixa" },
-  { value: "medium", label: "Média" },
-  { value: "high", label: "Alta" },
-  { value: "urgent", label: "Urgente" },
-  { value: "critical", label: "Crítica" },
+  { value: "low", label: "Baixa", color: "#94a3b8" },
+  { value: "medium", label: "Média", color: "#2f74ff" },
+  { value: "high", label: "Alta", color: "#f59e0b" },
+  { value: "urgent", label: "Urgente", color: "#f97316" },
+  { value: "critical", label: "Crítica", color: "#ef4444" },
 ];
 
 const STATUSES = [
