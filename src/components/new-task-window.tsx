@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import {
   X, Plus, Trash2, Check, Info, ChevronDown, ListChecks, DollarSign,
   Paperclip, Save, Clock, CalendarDays, Layers, Trash, Minus, Maximize2, PanelRight,
-  Play, Square, Radio, SlidersHorizontal, FileText,
+  Play, Square, Radio, SlidersHorizontal, FileText, Flag, ChevronRight,
 } from "lucide-react";
 import { BriefingForm } from "@/components/briefing-form";
 import { fetchBriefingTemplates, briefingProgress, type BriefingData } from "@/lib/briefing";
@@ -35,11 +35,11 @@ const STAGES: { id: Stage; label: string; status: StatusGroup }[] = [
 
 
 const PRIORITIES = [
-  { value: "low", label: "Baixa" },
-  { value: "medium", label: "Média" },
-  { value: "high", label: "Alta" },
-  { value: "urgent", label: "Urgente" },
-  { value: "critical", label: "Crítica" },
+  { value: "low", label: "Baixa", color: "#94a3b8" },
+  { value: "medium", label: "Média", color: "#2f74ff" },
+  { value: "high", label: "Alta", color: "#f59e0b" },
+  { value: "urgent", label: "Urgente", color: "#f97316" },
+  { value: "critical", label: "Crítica", color: "#ef4444" },
 ];
 
 const STATUSES = [
@@ -825,6 +825,7 @@ export function TaskWindow({
   const [baseline, setBaseline] = useState("");
   const [askUnsaved, setAskUnsaved] = useState(false);
   const [askDelete, setAskDelete] = useState(false);
+  const [stagesOpen, setStagesOpen] = useState(false);
 
 
   const payload = () => ({
@@ -1096,26 +1097,41 @@ export function TaskWindow({
                   onChange={(s, e) => { setStartDate(s); setDueDate(e); }} />
               </div>
             </div>
-            <div className="cw-prop">
-              <div className="cw-label"><Clock size={13} /> Prioridade</div>
-              <div className="cw-prop-value">
-                <select value={priority} onChange={e => setPriority(e.target.value)}>
-                  {PRIORITIES.map(p => <option key={p.value} value={p.value}>{p.label}</option>)}
-                </select>
+            <div className="cw-prop cw-prop-prio">
+              <div className="cw-label"><Flag size={13} /> Prioridade</div>
+              <div className="cw-prop-value cw-flags">
+                {PRIORITIES.map(p => (
+                  <button
+                    type="button"
+                    key={p.value}
+                    title={p.label}
+                    aria-label={p.label}
+                    onClick={() => setPriority(p.value)}
+                    className={`cw-flag${priority === p.value ? " is-on" : ""}`}
+                    style={{ ["--fc" as string]: p.color }}
+                  >
+                    <Flag size={13} />
+                    <span>{p.label}</span>
+                  </button>
+                ))}
               </div>
             </div>
           </div>
 
 
           {/* FLUXO DE ETAPAS */}
-          <div className="cw-stageband">
-            <div className="cw-stageband-head">
+          <div className={`cw-stageband${stagesOpen ? " is-open" : " is-shut"}`}>
+            <button type="button" className="cw-stageband-head" onClick={() => setStagesOpen(v => !v)}>
+              <ChevronRight size={14} className="cw-stageband-caret" />
               <Layers size={14} />
               <strong>ETAPA DA TAREFA</strong>
               {taskTypes.find((t: any) => t.id === taskTypeId)?.name && (
                 <span className="cw-stageband-type">{taskTypes.find((t: any) => t.id === taskTypeId)?.name}</span>
               )}
-            </div>
+              {!stagesOpen && flowSteps[activeIdx] && (
+                <span className="cw-stageband-now">{flowSteps[activeIdx].label}</span>
+              )}
+            </button>
             <div className="cw-stageband-row">
               {flowSteps.map((s, i) => (
                 <button
