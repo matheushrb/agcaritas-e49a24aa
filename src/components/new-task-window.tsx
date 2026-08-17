@@ -1097,12 +1097,23 @@ export function TaskWindow({
                   onChange={(s, e) => { setStartDate(s); setDueDate(e); }} />
               </div>
             </div>
-            <div className="cw-prop">
-              <div className="cw-label"><Clock size={13} /> Prioridade</div>
-              <div className="cw-prop-value">
-                <select value={priority} onChange={e => setPriority(e.target.value)}>
-                  {PRIORITIES.map(p => <option key={p.value} value={p.value}>{p.label}</option>)}
-                </select>
+            <div className="cw-prop cw-prop-prio">
+              <div className="cw-label"><Flag size={13} /> Prioridade</div>
+              <div className="cw-prop-value cw-flags">
+                {PRIORITIES.map(p => (
+                  <button
+                    type="button"
+                    key={p.value}
+                    title={p.label}
+                    aria-label={p.label}
+                    onClick={() => setPriority(p.value)}
+                    className={`cw-flag${priority === p.value ? " is-on" : ""}`}
+                    style={{ ["--fc" as string]: p.color }}
+                  >
+                    <Flag size={13} />
+                    <span>{p.label}</span>
+                  </button>
+                ))}
               </div>
             </div>
           </div>
