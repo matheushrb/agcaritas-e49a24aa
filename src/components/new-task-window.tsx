@@ -1167,6 +1167,9 @@ export function TaskWindow({
               Ao mudar a etapa, o status é sincronizado automaticamente. Os prazos das etapas são contados a partir da data de entrega.
             </p>
           </div>
+          </div>
+
+
 
 
 
