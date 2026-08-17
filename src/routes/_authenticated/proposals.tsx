@@ -196,12 +196,12 @@ function ProposalsPage() {
 
   return (
     <div className="space-y-5">
-      <header className="flex flex-wrap items-end justify-between gap-4">
+      <header className="cv-page-head flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-muted-foreground">
             Comercial
           </p>
-          <h1 className="mt-1 font-display text-3xl font-bold tracking-tight">Propostas</h1>
+          <h1 className="mt-1 font-display">Propostas</h1>
           <p className="mt-1 text-sm text-muted-foreground">
             Criação, envio e acompanhamento de propostas comerciais.
           </p>

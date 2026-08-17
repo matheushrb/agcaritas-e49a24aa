@@ -241,9 +241,9 @@ function ClientsPage() {
 
     <>
       <div className="space-y-6">
-        <header className="flex flex-wrap items-end justify-between gap-4">
+        <header className="cv-page-head flex flex-wrap items-end justify-between gap-4">
           <div>
-            <h1 className="font-display text-3xl font-bold tracking-tight">Clientes</h1>
+            <h1 className="font-display">Clientes</h1>
             <p className="text-sm text-muted-foreground">Base de clientes ativos, prospects e histórico — vinculados a projetos, propostas e financeiro.</p>
           </div>
           <Button className="rounded-full gap-1.5" onClick={() => setNewOpen(true)}>

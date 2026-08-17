@@ -184,10 +184,10 @@ function CalendarPage() {
   };
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between flex-wrap gap-3">
+    <div className="space-y-6">
+      <div className="cv-page-head flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl font-semibold flex items-center gap-2"><CalendarIcon className="size-6" />Agenda</h1>
+          <h1 className="flex items-center gap-2"><CalendarIcon className="size-6" />Agenda</h1>
           <p className="text-sm text-muted-foreground">Reuniões, entregas e compromissos da equipe. Clique em qualquer dia para criar um novo.</p>
         </div>
         <div className="flex items-center gap-2">

@@ -84,9 +84,9 @@ function GoalsPage() {
 
   return (
     <div className="space-y-6">
-      <header className="flex flex-wrap items-end justify-between gap-4">
+      <header className="cv-page-head flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="font-display text-3xl font-bold tracking-tight">Metas</h1>
+          <h1 className="font-display">Metas</h1>
           <p className="text-sm text-muted-foreground">Objetivos da agência e do time — receita, entregas e qualidade.</p>
         </div>
         <Button className="rounded-full gap-1.5" onClick={() => setOpen(true)}><Plus className="h-4 w-4" /> Nova meta</Button>
