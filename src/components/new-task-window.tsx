@@ -1778,8 +1778,9 @@ export function TaskWindow({
                               <Trash2 size={13} />
                             </button>
                           </div>
-                        )
-                      ))}
+                        );
+                      })}
+
                       {timeEntries.length === 0 && <span className="cw-hint">Nenhum apontamento ainda.</span>}
                     </div>
 
