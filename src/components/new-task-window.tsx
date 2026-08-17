@@ -144,6 +144,7 @@ export function TaskWindow({
 }) {
   const qc = useQueryClient();
   const isEdit = !!taskId;
+  console.log("TW", taskId);
 
   const [title, setTitle] = useState(defaultTitle);
   const [description, setDescription] = useState("");
@@ -232,6 +233,7 @@ export function TaskWindow({
 
   /* Remove seleções que não pertencem mais às plataformas do projeto. */
   useEffect(() => {
+    console.log("E1L235");
     if (!projectId || projectPlatformNames.length === 0) return;
     const allowed = new Set(platforms.map((p: any) => String(p.name)));
     setPlatformsSel(sel => (sel.every(s => allowed.has(s)) ? sel : sel.filter(s => allowed.has(s))));
@@ -255,12 +257,14 @@ export function TaskWindow({
   );
 
   useEffect(() => {
+    console.log("E2L258");
     if ((tab === "live" && !showLiveTab) || (tab === "tech" && !showTechTab)) setTab("details");
   }, [tab, showLiveTab, showTechTab]);
 
 
   /* Modelo de briefing sugerido pelo tipo de tarefa. */
   useEffect(() => {
+    console.log("E3L264");
     if (!activeType?.briefing_template_id) return;
     setBriefingTemplateId(prev => prev ?? activeType.briefing_template_id);
   }, [activeType?.briefing_template_id]);
@@ -470,6 +474,7 @@ export function TaskWindow({
   /* Nova tarefa com modelo: já entra na 1ª etapa do tipo e aplica as automações. */
   const [seededStageType, setSeededStageType] = useState<string | null>(null);
   useEffect(() => {
+    console.log("E4L473");
     if (!open || isEdit) return;
     if (!taskTypeId || typeStages.length === 0) return;
     if (seededStageType === taskTypeId) return;
@@ -527,6 +532,7 @@ export function TaskWindow({
   });
 
   useEffect(() => {
+    console.log("E5L530");
     if (!open || !isEdit) return;
     setSubtasks(childRows.map((r: any) => ({
       id: r.id,
@@ -542,6 +548,7 @@ export function TaskWindow({
 
 
   useEffect(() => {
+    console.log("E6L545");
     if (!open) return;
     if (!isEdit) return;
     if (!existing) return;
@@ -703,12 +710,14 @@ export function TaskWindow({
   const [nowTick, setNowTick] = useState(Date.now());
 
   useEffect(() => {
+    console.log("E7L706");
     if (!timerKey) { setTimerStart(null); return; }
     const raw = localStorage.getItem(timerKey);
     setTimerStart(raw ? Number(raw) : null);
   }, [timerKey]);
 
   useEffect(() => {
+    console.log("E8L712");
     if (timerStart == null) return;
     const t = setInterval(() => setNowTick(Date.now()), 1000);
     return () => clearInterval(t);
@@ -757,6 +766,7 @@ export function TaskWindow({
 
   /* ---------- Anexos ---------- */
   useEffect(() => {
+    console.log("E9L760");
     const missing = attachments.filter(a => a.is_image && a.path && !previews[a.path]);
     if (missing.length === 0) return;
     let alive = true;
@@ -951,9 +961,11 @@ export function TaskWindow({
 
   const [mode, setMode] = useState<"modal" | "docked" | "minimized">("modal");
   useEffect(() => { if (open) setMode("modal"); }, [open]);
+    console.log("E10L954");
 
   /* snapshot inicial para detectar alterações */
   useEffect(() => {
+    console.log("E11L957");
     if (!open) { setBaseline(""); return; }
     if (isEdit && !existing) return;
     const t = setTimeout(() => setBaseline(JSON.stringify(payload())), 0);
