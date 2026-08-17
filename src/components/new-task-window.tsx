@@ -19,6 +19,8 @@ import { computeStageWindows, stageAlert, fmtBr, type StageWindow } from "@/lib/
 
 import "@/windows.css";
 
+const EMPTY_ARR: any[] = [];
+
 
 
 type Stage = "briefing" | "creation" | "review" | "approval" | "delivery";
@@ -178,32 +180,32 @@ export function TaskWindow({
   const setT = (k: keyof TechSheet, v: string) => setTech(t => ({ ...t, [k]: v }));
 
 
-  const { data: projects = [] } = useQuery({
+  const { data: projects = EMPTY_ARR } = useQuery({
     queryKey: ["projects_min_platforms"],
     queryFn: async () => {
       const { data } = await supabase.from("projects").select("id,name,client_id,social_platforms").order("name");
       return (data ?? []) as { id: string; name: string; client_id: string | null; social_platforms: any }[];
     },
   });
-  const { data: taskTypes = [] } = useQuery({
+  const { data: taskTypes = EMPTY_ARR } = useQuery({
     queryKey: ["task_types_min_v2"],
     queryFn: async () => {
       const { data } = await (supabase as any).from("task_types").select("id,name,default_price,active,has_broadcast,has_live,has_tech_sheet,briefing_template_id").order("name");
       return ((data ?? []) as any[]).filter(t => t.active !== false);
     },
   });
-  const { data: briefingTemplates = [] } = useQuery({
+  const { data: briefingTemplates = EMPTY_ARR } = useQuery({
     queryKey: ["briefing_templates"],
     queryFn: fetchBriefingTemplates,
   });
-  const { data: people = [] } = useQuery({
+  const { data: people = EMPTY_ARR } = useQuery({
     queryKey: ["profiles_people"],
     queryFn: async () => {
       const { data } = await supabase.from("profiles").select("id,full_name,display_name").order("full_name");
       return (data ?? []) as { id: string; full_name: string; display_name: string | null }[];
     },
   });
-  const { data: allPlatforms = [] } = useQuery({
+  const { data: allPlatforms = EMPTY_ARR } = useQuery({
     queryKey: ["platforms"],
     queryFn: async () => {
       const { data } = await (supabase as any).from("platforms").select("id,name,active").order("sort_order");
@@ -264,7 +266,7 @@ export function TaskWindow({
   }, [activeType?.briefing_template_id]);
 
   /* ---------- Etapas: do tipo de tarefa (quando houver) ou padrão ---------- */
-  const { data: typeStages = [] } = useTaskTypeStages(taskTypeId);
+  const { data: typeStages = EMPTY_ARR } = useTaskTypeStages(taskTypeId);
 
   const flowSteps = useMemo(() => {
     if (typeStages.length) {
@@ -510,7 +512,7 @@ export function TaskWindow({
   });
 
   /* Subtarefas reais (linhas em tasks com parent_task_id). */
-  const { data: childRows = [] } = useQuery({
+  const { data: childRows = EMPTY_ARR } = useQuery({
     queryKey: ["task-subtasks", taskId],
     enabled: !!taskId && open,
     queryFn: async () => {
@@ -623,7 +625,7 @@ export function TaskWindow({
   }, [status, stagePct, checklistPct]);
 
   /* ---------- Timesheet ---------- */
-  const { data: timeEntries = [] } = useQuery({
+  const { data: timeEntries = EMPTY_ARR } = useQuery({
     queryKey: ["task-time-entries", taskId],
     enabled: !!taskId && open,
     queryFn: async () => {
@@ -1204,6 +1206,71 @@ export function TaskWindow({
                   onChange={e => setDescription(e.target.value)} placeholder="Contexto, referências e o que precisa ser entregue..." />
               </div>
 
+              {/* SUBTAREFAS */}
+              <div className="cw-section">
+                <div className="cw-mini-head">
+                  <h5>Subtarefas {subtasks.length > 0 && <span style={{ color: "var(--cw-muted)", fontWeight: 400 }}>({subtasks.length})</span>}</h5>
+                  <button type="button" className="cw-link"
+                    onClick={() => setSubtasks(s => [...s, { id: uid(), rowId: null, title: "", task_type_id: null, value: null, status: "todo", due_date: null }])}>
+                    <Plus size={13} /> Adicionar subtarefa
+                  </button>
+                </div>
+                {subtasks.length === 0 && (
+                  <div style={{ fontSize: 11, color: "var(--cw-muted)" }}>
+                    Nenhuma subtarefa. Cada subtarefa vira uma tarefa própria, com seu tipo e valor.
+                  </div>
+                )}
+                {subtasks.map(s => (
+                  <div key={s.id} className="cw-subtask-row">
+                    <input type="text" className="cw-input" value={s.title} placeholder="Título da subtarefa"
+                      onChange={e => setSubtasks(list => list.map(x => x.id === s.id ? { ...x, title: e.target.value } : x))} />
+                    <select className="cw-select" value={s.task_type_id ?? ""}
+                      onChange={e => setSubtasks(list => list.map(x => x.id === s.id ? { ...x, task_type_id: e.target.value || null } : x))}>
+                      <option value="">Tipo da tarefa pai</option>
+                      {taskTypes.map((t: any) => <option key={t.id} value={t.id}>{t.name}</option>)}
+                    </select>
+                    <select className="cw-select" value={s.status}
+                      onChange={e => setSubtasks(list => list.map(x => x.id === s.id ? { ...x, status: e.target.value } : x))}>
+                      {STATUSES.map(st => <option key={st.value} value={st.value}>{st.label}</option>)}
+                    </select>
+                    <input type="number" min={0} step="0.01" className="cw-input" style={{ width: 110 }} placeholder="R$"
+                      value={s.value ?? ""}
+                      onChange={e => setSubtasks(list => list.map(x => x.id === s.id ? { ...x, value: e.target.value ? Number(e.target.value) : null } : x))} />
+                    <button type="button" className="cw-row-icon"
+                      onClick={() => {
+                        if (s.rowId) setRemovedSubtaskIds(r => [...r, s.rowId!]);
+                        setSubtasks(list => list.filter(x => x.id !== s.id));
+                      }}>
+                      <Trash2 size={13} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+
+
+
+              {/* CHECKLIST */}
+              <div className="cw-section">
+                <div className="cw-mini-head">
+                  <h5>Checklist {checklist.length > 0 && <span style={{ color: "var(--cw-muted)", fontWeight: 400 }}>({doneCount}/{checklist.length})</span>}</h5>
+                  <button type="button" className="cw-link" onClick={() => setChecklist(c => [...c, { id: uid(), title: "", done: false }])}>
+                    <Plus size={13} /> Adicionar item
+                  </button>
+                </div>
+                {checklist.length === 0 && <div style={{ fontSize: 11, color: "var(--cw-muted)" }}>Nenhum item de checklist.</div>}
+                {checklist.map(c => (
+                  <div key={c.id} className={`cw-check-item${c.done ? " is-done" : ""}`}>
+                    <input type="checkbox" checked={c.done}
+                      onChange={e => setChecklist(list => list.map(x => x.id === c.id ? { ...x, done: e.target.checked } : x))} />
+                    <input type="text" value={c.title} placeholder="Descreva o item"
+                      onChange={e => setChecklist(list => list.map(x => x.id === c.id ? { ...x, title: e.target.value } : x))} />
+                    <button type="button" className="cw-row-icon" onClick={() => setChecklist(list => list.filter(x => x.id !== c.id))}>
+                      <Trash2 size={13} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+
               {/* ANEXOS E CAPA */}
               <div className="cw-section">
                 <div className="cw-section-head">
@@ -1347,71 +1414,6 @@ export function TaskWindow({
                 </table>
               </div>
 
-              {/* CHECKLIST */}
-              <div className="cw-section">
-                <div className="cw-mini-head">
-                  <h5>Checklist {checklist.length > 0 && <span style={{ color: "var(--cw-muted)", fontWeight: 400 }}>({doneCount}/{checklist.length})</span>}</h5>
-                  <button type="button" className="cw-link" onClick={() => setChecklist(c => [...c, { id: uid(), title: "", done: false }])}>
-                    <Plus size={13} /> Adicionar item
-                  </button>
-                </div>
-                {checklist.length === 0 && <div style={{ fontSize: 11, color: "var(--cw-muted)" }}>Nenhum item de checklist.</div>}
-                {checklist.map(c => (
-                  <div key={c.id} className={`cw-check-item${c.done ? " is-done" : ""}`}>
-                    <input type="checkbox" checked={c.done}
-                      onChange={e => setChecklist(list => list.map(x => x.id === c.id ? { ...x, done: e.target.checked } : x))} />
-                    <input type="text" value={c.title} placeholder="Descreva o item"
-                      onChange={e => setChecklist(list => list.map(x => x.id === c.id ? { ...x, title: e.target.value } : x))} />
-                    <button type="button" className="cw-row-icon" onClick={() => setChecklist(list => list.filter(x => x.id !== c.id))}>
-                      <Trash2 size={13} />
-                    </button>
-                  </div>
-                ))}
-              </div>
-
-              {/* SUBTAREFAS */}
-              <div className="cw-section">
-                <div className="cw-mini-head">
-                  <h5>Subtarefas {subtasks.length > 0 && <span style={{ color: "var(--cw-muted)", fontWeight: 400 }}>({subtasks.length})</span>}</h5>
-                  <button type="button" className="cw-link"
-                    onClick={() => setSubtasks(s => [...s, { id: uid(), rowId: null, title: "", task_type_id: null, value: null, status: "todo", due_date: null }])}>
-                    <Plus size={13} /> Adicionar subtarefa
-                  </button>
-                </div>
-                {subtasks.length === 0 && (
-                  <div style={{ fontSize: 11, color: "var(--cw-muted)" }}>
-                    Nenhuma subtarefa. Cada subtarefa vira uma tarefa própria, com seu tipo e valor.
-                  </div>
-                )}
-                {subtasks.map(s => (
-                  <div key={s.id} className="cw-subtask-row">
-                    <input type="text" className="cw-input" value={s.title} placeholder="Título da subtarefa"
-                      onChange={e => setSubtasks(list => list.map(x => x.id === s.id ? { ...x, title: e.target.value } : x))} />
-                    <select className="cw-select" value={s.task_type_id ?? ""}
-                      onChange={e => setSubtasks(list => list.map(x => x.id === s.id ? { ...x, task_type_id: e.target.value || null } : x))}>
-                      <option value="">Tipo da tarefa pai</option>
-                      {taskTypes.map((t: any) => <option key={t.id} value={t.id}>{t.name}</option>)}
-                    </select>
-                    <select className="cw-select" value={s.status}
-                      onChange={e => setSubtasks(list => list.map(x => x.id === s.id ? { ...x, status: e.target.value } : x))}>
-                      {STATUSES.map(st => <option key={st.value} value={st.value}>{st.label}</option>)}
-                    </select>
-                    <input type="number" min={0} step="0.01" className="cw-input" style={{ width: 110 }} placeholder="R$"
-                      value={s.value ?? ""}
-                      onChange={e => setSubtasks(list => list.map(x => x.id === s.id ? { ...x, value: e.target.value ? Number(e.target.value) : null } : x))} />
-                    <button type="button" className="cw-row-icon"
-                      onClick={() => {
-                        if (s.rowId) setRemovedSubtaskIds(r => [...r, s.rowId!]);
-                        setSubtasks(list => list.filter(x => x.id !== s.id));
-                      }}>
-                      <Trash2 size={13} />
-                    </button>
-                  </div>
-                ))}
-              </div>
-
-
-
               {/* PLATAFORMAS / CANAIS */}
               <div className="cw-section">
                 <div className="cw-section-head">
@@ -1444,16 +1446,6 @@ export function TaskWindow({
                 </div>
               </div>
 
-              {/* ANEXOS */}
-              <div className="cw-section">
-                <div className="cw-section-head"><div><h4>Anexos</h4></div></div>
-                <div className="cw-card cw-card-pad flex items-center gap-3" style={{ borderStyle: "dashed" }}>
-                  <Paperclip size={16} style={{ color: "var(--cw-muted)" }} />
-                  <span style={{ fontSize: 11.5, color: "var(--cw-muted)" }}>
-                    Os arquivos podem ser anexados na aba Arquivos do projeto.
-                  </span>
-                </div>
-              </div>
               </div>
 
               {/* BRIEFING */}
