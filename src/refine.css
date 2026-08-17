@@ -53,25 +53,40 @@
 
 /* ---------- KPIs: mais ar, número protagonista ---------- */
 .caritas-ui .cv-kpi-grid { gap: 14px; margin-bottom: 14px; }
-.caritas-ui .cv-kpi { height: 122px; padding: 16px 18px; }
+.caritas-ui .cv-kpi { height: 126px; padding: 15px 17px; }
 .caritas-ui .cv-kpi-label {
-  font-size: 11.5px;
+  font-size: 10.5px;
   font-weight: 600;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
   color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
-.caritas-ui .cv-kpi-main { margin: 10px 0 6px; }
+.caritas-ui .cv-kpi-main { margin: 8px 0 4px; gap: 8px; }
 .caritas-ui .cv-kpi-main strong {
-  font-size: 30px;
+  font-size: 26px;
   font-weight: 700;
   letter-spacing: -0.03em;
+  line-height: 1.05;
   font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
-.caritas-ui .cv-kpi small { font-size: 11px; }
+.caritas-ui .cv-kpi small {
+  font-size: 10.5px;
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 
 /* ---------- títulos de seção ---------- */
-.caritas-ui .cv-section-head { margin-bottom: 15px; }
+.caritas-ui .cv-section-head { margin-bottom: 15px; gap: 12px; }
+.caritas-ui .cv-section-head > :first-child { min-width: 0; }
+.caritas-ui .cv-section-head .cv-link { white-space: nowrap; flex: none; }
 .caritas-ui .cv-section-head h2,
 .caritas-ui .cv-section-head h3 {
   font-size: 15.5px;
