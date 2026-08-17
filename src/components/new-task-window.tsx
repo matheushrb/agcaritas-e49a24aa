@@ -1228,7 +1228,7 @@ export function TaskWindow({
               </div>
               </div>
 
-              <div hidden={tab !== "work"}>
+              <div hidden={tab !== "subtasks"}>
               {/* SUBTAREFAS */}
               <div className="cw-section">
                 <div className="cw-mini-head">
@@ -1269,9 +1269,9 @@ export function TaskWindow({
                   </div>
                 ))}
               </div>
+              </div>
 
-
-
+              <div hidden={tab !== "checklist"}>
               {/* CHECKLIST */}
               <div className="cw-section">
                 <div className="cw-mini-head">
