@@ -1745,14 +1745,16 @@ export function TaskWindow({
                       </div>
                     )}
                     <div style={{ marginTop: 8 }}>
-                      {timeEntries.slice(0, 6).map(e => (
-                        editEntry?.id === e.id ? (
+                      {timeEntries.slice(0, 6).map(e => {
+                        const ee = editEntry;
+                        return ee && ee.id === e.id ? (
                           <div key={e.id} className="cw-ts-form" style={{ marginTop: 4 }}>
                             <div className="cw-input" style={{ display: "flex", alignItems: "center" }}>
-                              <CwDate value={editEntry.date} onChange={v => setEditEntry(prev => prev ? { ...prev, date: v } : prev)} />
+                              <CwDate value={ee.date} onChange={v => setEditEntry(prev => prev ? { ...prev, date: v } : prev)} />
                             </div>
-                            <input className="cw-input" type="number" step="0.25" value={editEntry.hours}
+                            <input className="cw-input" type="number" step="0.25" value={ee.hours}
                               onChange={ev => setEditEntry(prev => prev ? { ...prev, hours: ev.target.value } : prev)} placeholder="Horas" />
+
 
                             <button type="button" className="cw-btn cw-btn-sm cw-btn-primary" disabled={updateTime.isPending}
                               onClick={() => updateTime.mutate()}>Salvar</button>
