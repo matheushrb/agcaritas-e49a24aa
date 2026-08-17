@@ -67,7 +67,7 @@
 .caritas-ui .cv-kpi-main { margin: 6px 0 4px; gap: 8px; min-width: 0; }
 .caritas-ui .cv-kpi-label > svg { flex: none; }
 .caritas-ui .cv-kpi-main strong {
-  font-size: clamp(19px, 1.55vw, 26px);
+  font-size: clamp(17px, 1.45vw, 25px);
   font-weight: 700;
   letter-spacing: -0.03em;
   line-height: 1.05;
@@ -162,4 +162,4 @@
 
 /* Valor do KPI tem prioridade sobre o gráfico em miniatura */
 .caritas-ui .cv-kpi-main > strong { flex: 1 1 auto; }
-.caritas-ui .cv-kpi-main > :not(strong) { flex: 0 1 auto; min-width: 0; max-width: 74px; }
+.caritas-ui .cv-kpi-main > :not(strong) { flex: 0 1 auto; min-width: 0; max-width: 52px; }
