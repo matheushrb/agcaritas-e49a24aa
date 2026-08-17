@@ -340,3 +340,18 @@
   --p6-muted-2: var(--muted-foreground);
   --p6-primary-soft: rgba(47,107,239,.2);
 }
+
+.p6-crumbs { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; padding: 0 14px 10px; font-size: 12.5px; }
+.p6-crumbs button {
+  display: inline-flex; align-items: center; gap: 5px; border: 0; background: transparent;
+  color: var(--muted-foreground); font-weight: 600; padding: 4px 7px; border-radius: 8px; cursor: pointer;
+}
+.p6-crumbs button:hover { background: color-mix(in oklab, var(--foreground) 6%, transparent); }
+.p6-crumbs button.active { color: #2F6BEF; }
+.p6-crumbs svg { width: 14px; height: 14px; }
+.p6-crumbs em { color: var(--muted-foreground); font-style: normal; opacity: .6; }
+.p6-move { margin-left: auto; display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted-foreground); }
+.p6-move select {
+  border: 1px solid var(--border); background: var(--background); color: var(--foreground);
+  border-radius: 8px; padding: 5px 8px; font-size: 12px;
+}
