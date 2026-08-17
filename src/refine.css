@@ -159,3 +159,7 @@
   .caritas-ui .cv-lower-grid,
   .caritas-ui .cv-dashboard-grid { gap: 11px; }
 }
+
+/* Valor do KPI tem prioridade sobre o gráfico em miniatura */
+.caritas-ui .cv-kpi-main > strong { flex: 1 1 auto; }
+.caritas-ui .cv-kpi-main > :not(strong) { flex: 0 1 auto; min-width: 0; max-width: 74px; }
