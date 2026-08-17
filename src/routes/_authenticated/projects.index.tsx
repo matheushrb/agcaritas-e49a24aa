@@ -425,7 +425,23 @@ function ProjectsPage() {
         </div>
 
         {/* FILTER ROW */}
+        <ListToolbar
+          count={filtered.length}
+          countLabel={filtered.length === 1 ? "projeto" : "projetos"}
+          right={
+            <ViewSwitch
+              value={view}
+              onChange={setView}
+              options={[
+                { k: "cards", icon: LayoutGrid, label: "Cards" },
+                { k: "list", icon: List, label: "Lista" },
+                { k: "kanban", icon: Columns, label: "Kanban" },
+              ] as const}
+            />
+          }
+        >
         <div className="filter-row">
+
           <div className="search-input">
             <Search />
             <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar projetos..." />
