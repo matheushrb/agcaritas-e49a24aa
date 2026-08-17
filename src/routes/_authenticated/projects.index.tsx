@@ -35,6 +35,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { ClientLogo } from "@/components/client-logo";
 import { cn } from "@/lib/utils";
 import { Prj08Table, Prj08Preview } from "@/components/prj08-list";
+import { ListToolbar, ViewSwitch } from "@/components/list-toolbar";
 import "@/prj01.css";
 import { UserAvatar } from "@/components/user-avatar";
 
@@ -398,17 +399,6 @@ function ProjectsPage() {
             <p>Acompanhe o andamento dos projetos, prazos, equipe e resultados em um só lugar.</p>
           </div>
           <div className="header-actions">
-            <div className="view-switch">
-              <button type="button" className={view === "cards" ? "active" : ""} onClick={() => setView("cards")}>
-                <LayoutGrid /> Cards
-              </button>
-              <button type="button" className={view === "list" ? "active" : ""} onClick={() => setView("list")}>
-                <List /> Lista
-              </button>
-              <button type="button" className={view === "kanban" ? "active" : ""} onClick={() => setView("kanban")}>
-                <Columns /> Kanban
-              </button>
-            </div>
             <button type="button" className="btn-primary" onClick={() => setNewOpen(true)}>
               <Plus /> Novo projeto
             </button>
@@ -425,7 +415,23 @@ function ProjectsPage() {
         </div>
 
         {/* FILTER ROW */}
+        <ListToolbar
+          count={filtered.length}
+          countLabel={filtered.length === 1 ? "projeto" : "projetos"}
+          right={
+            <ViewSwitch
+              value={view}
+              onChange={setView}
+              options={[
+                { k: "cards", icon: LayoutGrid, label: "Cards" },
+                { k: "list", icon: List, label: "Lista" },
+                { k: "kanban", icon: Columns, label: "Kanban" },
+              ] as const}
+            />
+          }
+        >
         <div className="filter-row">
+
           <div className="search-input">
             <Search />
             <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar projetos..." />
@@ -495,6 +501,8 @@ function ProjectsPage() {
             </select>
           </div>
         </div>
+        </ListToolbar>
+
 
         {/* CONTEÚDO */}
         {isLoading ? (

@@ -10,6 +10,7 @@ import { useDroppable, useDraggable } from "@dnd-kit/core";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { ListToolbar } from "@/components/list-toolbar";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription,
@@ -393,6 +394,28 @@ function CrmPage() {
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          <Button className="rounded-full gap-2" onClick={() => { setNewLeadStage(null); setModalOpen(true); }}>
+            <Plus className="h-4 w-4" /> Novo lead
+          </Button>
+        </div>
+      </header>
+
+      {/* KPIs */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+        <KpiCard label="Pipeline em aberto" value={brl(pipeline)} icon={TrendingUp} tone="text-blue-500" subtitle={`${leads.length} leads`} />
+        <KpiCard label="Previsão ponderada" value={brl(weighted)} icon={Target} tone="text-violet-500" subtitle="Baseado na probabilidade" />
+        <KpiCard label="Receita ganha" value={brl(wonValue)} icon={DollarSign} tone="text-emerald-500" subtitle={`${wonLeads.length} negócios`} />
+        <KpiCard label="Taxa de conversão" value={`${conversion}%`} icon={CheckCircle2} tone="text-amber-500" subtitle="Do total de leads" />
+        <KpiCard
+          label="Próximos contatos"
+          value={String(upcomingContacts)}
+          icon={CalendarDays}
+          tone="text-sky-500"
+          subtitle="Nos próximos 7 dias"
+        />
+      </div>
+
+      <ListToolbar count={filtered.length} countLabel={filtered.length === 1 ? "lead" : "leads"}>
           <div className="relative min-w-[240px]">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
@@ -424,30 +447,7 @@ function CrmPage() {
               ))}
             </SelectContent>
           </Select>
-          <Button className="rounded-full gap-2" onClick={() => { setNewLeadStage(null); setModalOpen(true); }}>
-            <Plus className="h-4 w-4" /> Novo lead
-          </Button>
-        </div>
-      </header>
-
-      {/* KPIs */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-        <KpiCard label="Pipeline em aberto" value={brl(pipeline)} icon={TrendingUp} tone="text-blue-500" subtitle={`${leads.length} leads`} />
-        <KpiCard label="Previsão ponderada" value={brl(weighted)} icon={Target} tone="text-violet-500" subtitle="Baseado na probabilidade" />
-        <KpiCard label="Receita ganha" value={brl(wonValue)} icon={DollarSign} tone="text-emerald-500" subtitle={`${wonLeads.length} negócios`} />
-        <KpiCard label="Taxa de conversão" value={`${conversion}%`} icon={CheckCircle2} tone="text-amber-500" subtitle="Do total de leads" />
-        <KpiCard
-          label="Próximos contatos"
-          value={String(upcomingContacts)}
-          icon={CalendarDays}
-          tone="text-sky-500"
-          subtitle="Nos próximos 7 dias"
-        />
-      </div>
-
-      <p className="text-xs text-muted-foreground">
-        {filtered.length} de {leads.length} leads
-      </p>
+      </ListToolbar>
 
 
       {/* Kanban */}
