@@ -980,3 +980,60 @@
 .dark .fe-section { background: color-mix(in oklab, var(--cw-surface) 30%, var(--card)); }
 .dark .fe-amount-input { color: var(--cw-ink); }
 .dark .fe-status-badge select option { background: #1c2026; }
+
+/* ===========================================================
+   Janela de tarefa — hierarquia e rolagem (v2)
+   =========================================================== */
+.cw-window { max-height: min(96vh, 1120px); }
+
+/* Corpo: coluna principal rola sozinha; resumo lateral fica fixo */
+.cw-task-body {
+  overflow: hidden;
+  align-items: start;
+  padding: 0;
+  gap: 0;
+}
+.cw-task-body > div:first-child {
+  min-width: 0;
+  height: 100%;
+  overflow: auto;
+  padding: 14px 22px 26px;
+  scroll-behavior: smooth;
+}
+.cw-task-body > .cw-side {
+  height: 100%;
+  overflow: auto;
+  padding: 16px 18px 22px;
+  border-left: 1px solid var(--cw-divider);
+  background: var(--cw-neutral-bg, #f7f9fc);
+}
+.dark .cw-task-body > .cw-side { background: rgba(255,255,255,.02); }
+
+/* Abas fixas ao rolar */
+.cw-task-body .cw-tabs {
+  position: sticky;
+  top: 0;
+  z-index: 4;
+  background: var(--cw-surface);
+  padding-top: 6px;
+  margin-bottom: 14px;
+}
+
+/* Blocos com cartão: separa visualmente cada ferramenta */
+.cw-task-body .cw-section {
+  border: 1px solid var(--cw-border);
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin-top: 16px;
+  background: var(--cw-surface);
+}
+.cw-task-body .cw-section > .cw-section-head { margin-bottom: 10px; }
+.cw-task-body .cw-section h4 { font-size: 13px; font-weight: 700; letter-spacing: -.01em; }
+.cw-task-body .cw-section h5 { font-size: 12.5px; font-weight: 700; }
+.cw-task-body .cw-mini-head { margin-bottom: 8px; }
+
+@media (max-width: 1180px) {
+  .cw-task-body { overflow: auto; }
+  .cw-task-body > div:first-child,
+  .cw-task-body > .cw-side { height: auto; overflow: visible; border-left: 0; }
+}
