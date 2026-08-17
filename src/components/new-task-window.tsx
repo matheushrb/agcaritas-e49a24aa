@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import {
   X, Plus, Trash2, Check, Info, ChevronDown, ListChecks, DollarSign,
   Paperclip, Save, Clock, CalendarDays, Layers, Trash, Minus, Maximize2, PanelRight,
-  Play, Square, Radio, SlidersHorizontal, FileText,
+  Play, Square, Radio, SlidersHorizontal, FileText, Flag, ChevronRight,
 } from "lucide-react";
 import { BriefingForm } from "@/components/briefing-form";
 import { fetchBriefingTemplates, briefingProgress, type BriefingData } from "@/lib/briefing";
