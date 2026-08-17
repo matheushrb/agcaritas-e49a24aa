@@ -1366,3 +1366,59 @@
 .cw-props.cw-cu .cw-prop-prio .cw-flags { flex-wrap: nowrap !important; overflow-x: auto; scrollbar-width: none; }
 .cw-props.cw-cu .cw-prop-prio .cw-flags::-webkit-scrollbar { display: none; }
 .cw-task-body .cw-tabs { border-bottom: 0; padding: 12px 0 10px; margin-bottom: 12px; }
+
+/* ===========================================================
+   TASK WINDOW v5 — compactação (altura mínima do topo)
+   =========================================================== */
+.cw-header { padding: 10px 16px 8px !important; gap: 10px !important; }
+.cw-header .cw-title-icon { width: 26px !important; height: 26px !important; border-radius: 7px !important; }
+.cw-header .cw-title-icon svg { width: 14px; height: 14px; }
+.cw-head-title { font-size: 15.5px !important; line-height: 22px !important; padding: 1px 6px !important; }
+.cw-headzone.is-slim .cw-title-input,
+.cw-headzone.is-slim .cw-head-title { font-size: 15.5px !important; }
+.cw-head-meta { margin-top: 1px !important; gap: 5px !important; }
+.cw-head-crumb { font-size: 10.5px !important; }
+
+/* propriedades: linhas rótulo-inline, sem colunas gigantes */
+.cw-headzone.is-slim > .cw-props.cw-cu,
+.cw-props.cw-cu {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  align-items: center !important;
+  gap: 2px 6px !important;
+  padding: 4px 14px 6px !important;
+}
+.cw-props.cw-cu .cw-prop {
+  flex: 0 1 auto !important;
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: 6px !important;
+  min-height: 26px !important;
+  padding: 0 8px 0 0 !important;
+  border-left: 0 !important;
+  min-width: 0;
+  max-width: 260px;
+}
+.cw-props.cw-cu .cw-prop > .cw-label {
+  font-size: 10px !important; letter-spacing: .04em !important;
+  text-transform: none !important; font-weight: 600 !important;
+  white-space: nowrap; flex: none;
+}
+.cw-props.cw-cu .cw-prop > .cw-label span { display: none; }
+.cw-props.cw-cu .cw-prop > .cw-label svg { width: 13px !important; height: 13px !important; opacity: .7; }
+.cw-props.cw-cu .cw-prop-value { min-height: 24px !important; padding: 0 6px !important; }
+.cw-props.cw-cu .cw-prop-value select,
+.cw-props.cw-cu .cw-prop-value input { font-size: 12px !important; font-weight: 600 !important; }
+.cw-props.cw-cu .cw-prop-prio { grid-column: auto !important; max-width: none; }
+.cw-flag { height: 20px !important; padding: 0 5px !important; font-size: 10.5px !important; }
+.cw-flag svg { width: 13px; height: 13px; }
+
+/* etapas + abas mais rentes */
+.cw-headzone.is-slim > .cw-stageband { margin: 0 14px 6px !important; padding: 6px 8px !important; }
+.cw-headzone.is-slim > .cw-stageband.is-shut { padding: 4px 8px !important; margin-bottom: 6px !important; }
+.cw-task-body .cw-tabs { padding: 8px 0 8px !important; margin-bottom: 10px !important; }
+.cw-seg { padding: 5px 10px !important; font-size: 12px !important; }
+.cw-segbox { padding: 2px !important; border-radius: 9px !important; }
+.cw-task-body > div:first-child { padding: 0 16px 16px !important; }
+.cw-task-body .cw-textarea { min-height: 120px !important; }
