@@ -250,8 +250,22 @@ function ClientsPage() {
           </Button>
         </header>
 
-        <Card className="p-3 rounded-2xl">
-          <div className="flex flex-wrap items-center gap-2">
+        <ListToolbar
+          count={filtered.length}
+          countLabel={filtered.length === 1 ? "cliente" : "clientes"}
+          right={
+            <ViewSwitch
+              value={view}
+              onChange={setView}
+              options={[
+                { k: "list", icon: List, label: "Lista" },
+                { k: "cards", icon: Rows3, label: "Cards" },
+                { k: "kanban", icon: LayoutGrid, label: "Quadros" },
+              ] as const}
+            />
+          }
+        >
+          <>
             <div className="relative flex-1 min-w-[200px]">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input placeholder="Buscar cliente..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9 rounded-full" />
