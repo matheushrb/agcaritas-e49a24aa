@@ -4,7 +4,7 @@ import {
   Settings, Moon, Sun, LogOut, Bell, CheckSquare, Target, Truck, Lightbulb,
   Megaphone, Building2, Receipt, HelpCircle,
   Inbox, MessageSquare, FileSignature, Check, Trash2, Asterisk, ChevronDown,
-  PanelLeftClose, PanelLeftOpen,
+  PanelLeftClose, PanelLeftOpen, Rows3, Rows2,
 } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -48,11 +48,22 @@ export function AppShell({ children }: { children: ReactNode }) {
   const { theme, setTheme } = useTheme();
   const pathname = useRouterState({ select: s => s.location.pathname });
   const [expanded, setExpanded] = useState(false);
+  const [density, setDensity] = useState<"cozy" | "compact">("cozy");
 
   useEffect(() => {
     const saved = localStorage.getItem("caritas.nav.expanded");
     if (saved === "1") setExpanded(true);
+    const d = localStorage.getItem("caritas.density");
+    if (d === "compact" || d === "cozy") setDensity(d);
   }, []);
+
+  const toggleDensity = () => {
+    setDensity(v => {
+      const next = v === "compact" ? "cozy" : "compact";
+      localStorage.setItem("caritas.density", next);
+      return next;
+    });
+  };
 
   const toggleNav = () => {
     setExpanded(v => {
@@ -83,7 +94,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   };
 
   return (
-    <div className="caritas-ui" data-theme={theme} data-nav={expanded ? "expanded" : "collapsed"}>
+    <div className="caritas-ui" data-theme={theme} data-nav={expanded ? "expanded" : "collapsed"} data-density={density}>
       <aside className="cv-sidebar">
         <div className="cv-sidebar-logo">
           <span className="cv-sb-brand">
@@ -141,7 +152,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       </aside>
 
       <div className="cv-shell">
-        <TopBar theme={theme} onToggleTheme={setTheme} pathname={pathname} />
+        <TopBar theme={theme} onToggleTheme={setTheme} pathname={pathname} density={density} onToggleDensity={toggleDensity} />
         <main className="cv-main">{children}</main>
       </div>
     </div>
@@ -150,8 +161,14 @@ export function AppShell({ children }: { children: ReactNode }) {
 
 
 function TopBar({
-  theme, onToggleTheme, pathname,
-}: { theme: "light" | "dark"; onToggleTheme: (t: "light" | "dark") => void; pathname: string }) {
+  theme, onToggleTheme, pathname, density, onToggleDensity,
+}: {
+  theme: "light" | "dark";
+  onToggleTheme: (t: "light" | "dark") => void;
+  pathname: string;
+  density: "cozy" | "compact";
+  onToggleDensity: () => void;
+}) {
   const { data: me } = useQuery({
     queryKey: ["topbar-profile"],
     queryFn: async () => {
@@ -194,6 +211,15 @@ function TopBar({
           {theme === "dark" ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
           <span style={{ fontSize: 12 }}>{theme === "dark" ? "Escuro" : "Claro"}</span>
           <ChevronDown className="h-3.5 w-3.5" />
+        </button>
+        <button
+          type="button"
+          onClick={onToggleDensity}
+          className="cv-icon-button"
+          title={density === "compact" ? "Densidade compacta (clique para confortável)" : "Densidade confortável (clique para compacta)"}
+          aria-label="Alternar densidade da interface"
+        >
+          {density === "compact" ? <Rows3 className="h-4 w-4" /> : <Rows2 className="h-4 w-4" />}
         </button>
         <TopbarWeather />
         <TopbarCalendar />

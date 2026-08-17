@@ -1,0 +1,243 @@
+/* ==========================================================================
+   Caritas Design System — a "régua" única (etapa 1)
+   Escala de espaço, raio, sombra, tipografia + modos de densidade.
+   Importada por último: é a fonte da verdade sobre as folhas legadas.
+   ========================================================================== */
+
+.caritas-ui {
+  /* --- escala de espaço (4 / 8 / 12 / 16 / 24 / 32) --- */
+  --s1: 4px;
+  --s2: 8px;
+  --s3: 12px;
+  --s4: 16px;
+  --s5: 24px;
+  --s6: 32px;
+
+  /* --- raio --- */
+  --r-sm: 8px;
+  --r-md: 12px;
+  --r-lg: 16px;
+  --r-pill: 999px;
+  --radius: var(--r-md);
+
+  /* --- 3 sombras, nunca mais --- */
+  --sh-1: 0 1px 2px rgba(18, 32, 62, 0.05);
+  --sh-2: 0 1px 2px rgba(18, 32, 62, 0.05), 0 8px 22px -14px rgba(18, 32, 62, 0.34);
+  --sh-3: 0 18px 48px -22px rgba(18, 32, 62, 0.42);
+  --shadow: var(--sh-2);
+
+  /* --- tipografia: 2 pesos de texto + 2 de título --- */
+  --fw-regular: 450;
+  --fw-medium: 560;
+  --fw-bold: 680;
+  --t-display: 30px;
+  --t-title: 20px;
+  --t-section: 15px;
+  --t-body: 13.5px;
+  --t-sub: 12.5px;
+  --t-micro: 10.5px;
+
+  /* --- densidade (confortável é o padrão) --- */
+  --d-row: 46px;
+  --d-control: 36px;
+  --d-pad: 18px;
+  --d-gap: 16px;
+
+  /* --- movimento --- */
+  --ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --fast: 0.14s;
+
+  font-size: var(--t-body);
+  letter-spacing: -0.006em;
+}
+
+.caritas-ui[data-density="compact"] {
+  --d-row: 36px;
+  --d-control: 32px;
+  --d-pad: 13px;
+  --d-gap: 11px;
+  --t-display: 25px;
+  --t-title: 18px;
+  --t-section: 14px;
+  --t-body: 13px;
+}
+
+.caritas-ui[data-theme="dark"] {
+  --sh-1: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --sh-2: 0 1px 2px rgba(0, 0, 0, 0.4), 0 10px 26px -16px rgba(0, 0, 0, 0.7);
+  --sh-3: 0 20px 50px -24px rgba(0, 0, 0, 0.8);
+}
+
+/* --------------------------------------------------------------------------
+   Superfícies: fundo cinza-gelo + cartão branco. Menos borda, mais hierarquia.
+   -------------------------------------------------------------------------- */
+.caritas-ui .cv-card,
+.caritas-ui .cv-panel,
+.caritas-ui .cv-rail,
+.caritas-ui .cv-kpi {
+  border-radius: var(--r-lg);
+  box-shadow: var(--sh-1);
+  transition: box-shadow var(--fast) var(--ease), transform var(--fast) var(--ease);
+}
+.caritas-ui .cv-main { padding: var(--s5) var(--s6) var(--s6); gap: var(--d-gap); }
+.caritas-ui .cv-kpi-grid,
+.caritas-ui .cv-focus-grid,
+.caritas-ui .cv-lower-grid,
+.caritas-ui .cv-dashboard-grid { gap: var(--d-gap); }
+.caritas-ui .cv-panel,
+.caritas-ui .cv-rail { padding: var(--d-pad); }
+
+/* --------------------------------------------------------------------------
+   Tipografia da página
+   -------------------------------------------------------------------------- */
+.caritas-ui .cv-page-head h1 {
+  font-size: var(--t-display);
+  font-weight: var(--fw-bold);
+  letter-spacing: -0.028em;
+  line-height: 1.1;
+}
+.caritas-ui .cv-page-head p { font-size: var(--t-sub); }
+.caritas-ui .cv-section-head h2,
+.caritas-ui .cv-section-head h3 { font-size: var(--t-section); font-weight: var(--fw-bold); }
+.caritas-ui .cv-micro,
+.caritas-ui .cv-kpi-label,
+.caritas-ui .cv-table-head {
+  font-size: var(--t-micro);
+  font-weight: var(--fw-medium);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* --------------------------------------------------------------------------
+   Linhas de tabela / lista: hover de produto, não hover de site
+   -------------------------------------------------------------------------- */
+.caritas-ui .cv-table-row,
+.caritas-ui .cv-row {
+  min-height: var(--d-row);
+  transition: background var(--fast) var(--ease);
+}
+.caritas-ui .cv-table-row:hover,
+.caritas-ui .cv-row:hover { background: var(--surface-2); }
+.caritas-ui .cv-table-row[data-selected="true"],
+.caritas-ui .cv-row[data-selected="true"] {
+  background: var(--primary-soft);
+  box-shadow: inset 3px 0 0 var(--primary);
+}
+
+/* --------------------------------------------------------------------------
+   Controles: altura única em toda a aplicação
+   -------------------------------------------------------------------------- */
+.caritas-ui .cv-button,
+.caritas-ui .cv-btn,
+.caritas-ui .cv-select,
+.caritas-ui .cv-input,
+.caritas-ui .cv-icon-button {
+  height: var(--d-control);
+  border-radius: var(--r-sm);
+  font-weight: var(--fw-medium);
+  transition: background var(--fast) var(--ease), border-color var(--fast) var(--ease),
+    box-shadow var(--fast) var(--ease);
+}
+.caritas-ui .cv-icon-button { width: var(--d-control); }
+.caritas-ui .cv-button:focus-visible,
+.caritas-ui .cv-btn:focus-visible,
+.caritas-ui .cv-input:focus-visible,
+.caritas-ui .cv-icon-button:focus-visible,
+.caritas-ui a:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px color-mix(in oklab, var(--primary) 55%, transparent);
+}
+
+/* --------------------------------------------------------------------------
+   Toolbar universal de listagem (Projetos / Tarefas / Clientes / CRM)
+   -------------------------------------------------------------------------- */
+.cv-toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  flex-wrap: wrap;
+  padding: var(--s2) 0 var(--s3);
+  margin-bottom: var(--s3);
+  border-bottom: 1px solid var(--border);
+}
+.cv-toolbar .cv-toolbar-spacer { flex: 1 1 auto; min-width: var(--s2); }
+.cv-views {
+  display: inline-flex;
+  gap: 2px;
+  padding: 3px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+}
+.cv-view {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: calc(var(--d-control) - 10px);
+  padding: 0 10px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 12.5px;
+  font-weight: var(--fw-medium);
+  cursor: pointer;
+  transition: background var(--fast) var(--ease), color var(--fast) var(--ease);
+}
+.cv-view:hover { color: var(--text); }
+.cv-view[data-active="true"] {
+  background: var(--surface);
+  color: var(--primary);
+  box-shadow: var(--sh-1);
+}
+.cv-count {
+  display: inline-flex;
+  align-items: center;
+  height: 20px;
+  padding: 0 8px;
+  border-radius: var(--r-pill);
+  background: var(--primary-soft);
+  color: var(--primary);
+  font-size: 11.5px;
+  font-weight: var(--fw-bold);
+  font-variant-numeric: tabular-nums;
+}
+
+/* --------------------------------------------------------------------------
+   Estados: skeleton e vazio (nada de spinner solto)
+   -------------------------------------------------------------------------- */
+.cv-skel {
+  border-radius: var(--r-sm);
+  background: linear-gradient(90deg,
+    color-mix(in oklab, var(--border) 55%, transparent) 25%,
+    color-mix(in oklab, var(--border) 20%, transparent) 37%,
+    color-mix(in oklab, var(--border) 55%, transparent) 63%);
+  background-size: 400% 100%;
+  animation: cv-shimmer 1.3s ease-in-out infinite;
+}
+@keyframes cv-shimmer { 0% { background-position: 100% 0; } 100% { background-position: 0 0; } }
+
+.cv-empty {
+  display: grid;
+  justify-items: center;
+  gap: var(--s2);
+  padding: var(--s6) var(--s4);
+  text-align: center;
+  color: var(--muted);
+}
+.cv-empty .cv-empty-icon {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  border-radius: var(--r-md);
+  background: var(--primary-soft);
+  color: var(--primary);
+}
+.cv-empty strong { color: var(--text); font-size: var(--t-section); font-weight: var(--fw-bold); }
+.cv-empty p { font-size: var(--t-sub); max-width: 42ch; }
+
+@media (prefers-reduced-motion: reduce) {
+  .caritas-ui *, .cv-skel { animation: none !important; transition: none !important; }
+}
