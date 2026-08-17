@@ -1088,3 +1088,31 @@
 .cw-headzone.is-slim .cw-stageband-row { overflow-x: auto; padding-bottom: 2px; }
 .cw-headzone.is-slim .cw-stage-step { padding: 6px 10px; flex: 0 0 auto; }
 .cw-headzone.is-slim .cw-stage-dates { font-size: 9.5px; }
+
+/* Quadro segmentado das seções principais */
+.cw-segbox {
+  display: inline-flex; gap: 2px; padding: 3px;
+  background: var(--cw-soft, #F4F6FA);
+  border: 1px solid var(--cw-border, #E3E8EF);
+  border-radius: 12px; margin-bottom: -1px; align-self: center;
+}
+.cw-seg {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 7px 13px; border: 0; background: transparent; cursor: pointer;
+  border-radius: 9px; font-size: 12.5px; font-weight: 600; color: var(--cw-muted);
+  transition: background .15s ease, color .15s ease, box-shadow .15s ease;
+}
+.cw-seg:hover { color: var(--cw-ink); }
+.cw-seg.is-on {
+  background: var(--cw-surface, #fff); color: var(--cw-primary, #2F6BEF);
+  box-shadow: 0 1px 3px rgba(16,27,46,.10);
+}
+.cw-seg .cw-tab-count { margin-left: 2px; }
+.cw-tabs { align-items: center; }
+
+/* Etapas com largura uniforme */
+.cw-stageband-row { display: grid !important; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 8px; }
+.cw-stage-step { width: 100%; min-width: 0; }
+.cw-headzone.is-slim .cw-stageband-row { overflow-x: auto; }
+.cw-headzone.is-slim .cw-stage-step { flex: none; }
+.cw-stage-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

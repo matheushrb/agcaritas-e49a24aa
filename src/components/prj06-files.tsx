@@ -82,6 +82,7 @@ export function Prj06Files({ projectId }: { projectId: string }) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [checked, setChecked] = useState<string[]>([]);
   const [sideTab, setSideTab] = useState("Detalhes");
+  const [cwd, setCwd] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
   const { data: rows = [], isLoading } = useQuery({
@@ -127,6 +128,7 @@ export function Prj06Files({ projectId }: { projectId: string }) {
           project_id: projectId,
           name: f.name,
           item_type: "file",
+          folder: cwd,
           storage_path: path,
           mime_type: f.type || null,
           size_bytes: f.size,
@@ -154,6 +156,7 @@ export function Prj06Files({ projectId }: { projectId: string }) {
         project_id: projectId,
         name: name.trim(),
         item_type: "folder",
+        folder: cwd,
         uploaded_by: uid,
         uploaded_by_name: who,
       });
@@ -173,6 +176,7 @@ export function Prj06Files({ projectId }: { projectId: string }) {
         project_id: projectId,
         name: label,
         item_type: "link",
+        folder: cwd,
         external_url: url.trim(),
         uploaded_by: uid,
         uploaded_by_name: who,
@@ -193,6 +197,22 @@ export function Prj06Files({ projectId }: { projectId: string }) {
     onError: (e: any) => toast.error(e?.message ?? "Erro ao excluir"),
   });
 
+  const folderPath = (r: Row) => (r.folder ? `${r.folder}/` : "") + r.name;
+
+  const allFolders = useMemo(
+    () => rows.filter(r => r.item_type === "folder").map(folderPath).sort(),
+    [rows],
+  );
+
+  const move = useMutation({
+    mutationFn: async ({ ids, target }: { ids: string[]; target: string | null }) => {
+      const { error } = await sb.from("project_files").update({ folder: target }).in("id", ids);
+      if (error) throw error;
+    },
+    onSuccess: () => { setChecked([]); invalidate(); toast.success("Itens movidos"); },
+    onError: (e: any) => toast.error(e?.message ?? "Erro ao mover"),
+  });
+
   const addTag = useMutation({
     mutationFn: async (row: Row) => {
       const t = window.prompt("Nova tag");
@@ -206,6 +226,7 @@ export function Prj06Files({ projectId }: { projectId: string }) {
   });
 
   const open = async (row: Row) => {
+    if (row.item_type === "folder") { setCwd(folderPath(row)); setSelectedId(null); return; }
     if (row.item_type === "link" && row.external_url) { window.open(row.external_url, "_blank"); return; }
     if (!row.storage_path) return;
     const { data, error } = await sb.storage.from(BUCKET).createSignedUrl(row.storage_path, 3600);
@@ -224,9 +245,10 @@ export function Prj06Files({ projectId }: { projectId: string }) {
     return rows.filter(r => {
       const okChip = chip === "all" || (r.tags ?? []).includes(chip);
       const okQuery = !q || r.name.toLowerCase().includes(q) || (r.folder ?? "").toLowerCase().includes(q);
-      return okChip && okQuery;
+      const okFolder = q ? true : (r.folder ?? null) === cwd;
+      return okChip && okQuery && okFolder;
     });
-  }, [rows, query, chip]);
+  }, [rows, query, chip, cwd]);
 
   const selected = filtered.find(r => r.id === selectedId) ?? rows.find(r => r.id === selectedId) ?? null;
   const allChecked = filtered.length > 0 && filtered.every(r => checked.includes(r.id));
@@ -266,6 +288,33 @@ export function Prj06Files({ projectId }: { projectId: string }) {
           </div>
         </div>
 
+        <div className="p6-crumbs">
+          <button type="button" className={cwd === null ? "active" : ""} onClick={() => setCwd(null)}>
+            <Folder /> Raiz
+          </button>
+          {(cwd ?? "").split("/").filter(Boolean).map((part, i, arr) => (
+            <span key={`${part}-${i}`}>
+              <em>/</em>
+              <button type="button" className={i === arr.length - 1 ? "active" : ""}
+                onClick={() => setCwd(arr.slice(0, i + 1).join("/"))}>{part}</button>
+            </span>
+          ))}
+          {checked.length > 0 && (
+            <label className="p6-move">
+              Mover {checked.length} {checked.length === 1 ? "item" : "itens"} para
+              <select value="" onChange={e => {
+                const v = e.target.value;
+                if (!v) return;
+                move.mutate({ ids: checked, target: v === "__root__" ? null : v });
+              }}>
+                <option value="">Escolher pasta…</option>
+                <option value="__root__">Raiz</option>
+                {allFolders.map(f => <option key={f} value={f}>{f}</option>)}
+              </select>
+            </label>
+          )}
+        </div>
+
         {view === "list" ? (
           <table className="p6-table">
             <thead>
@@ -286,7 +335,10 @@ export function Prj06Files({ projectId }: { projectId: string }) {
             </thead>
             <tbody>
               {filtered.map(f => (
-                <tr key={f.id} className={f.id === selectedId ? "sel" : ""} onClick={() => setSelectedId(f.id)}>
+                <tr key={f.id} className={f.id === selectedId ? "sel" : ""}
+                  onClick={() => (f.item_type === "folder" ? open(f) : setSelectedId(f.id))}
+                  onDoubleClick={() => open(f)}
+                  style={{ cursor: "pointer" }}>
                   <td onClick={e => e.stopPropagation()}>
                     <input type="checkbox" checked={checked.includes(f.id)} onChange={() => toggle(f.id)} aria-label={`Selecionar ${f.name}`} />
                   </td>
@@ -316,7 +368,7 @@ export function Prj06Files({ projectId }: { projectId: string }) {
               ))}
               {filtered.length === 0 && (
                 <tr><td colSpan={9}><div className="p6-empty">
-                  {isLoading ? "Carregando…" : "Nenhum arquivo neste projeto. Use “Enviar arquivos” para começar."}
+                  {isLoading ? "Carregando…" : (cwd ? `Pasta “${cwd}” vazia. Envie arquivos ou mova itens para cá.` : "Nenhum arquivo neste projeto. Use “Enviar arquivos” para começar.")}
                 </div></td></tr>
               )}
             </tbody>
@@ -345,10 +397,21 @@ export function Prj06Files({ projectId }: { projectId: string }) {
         ) : (
           <>
             <div className="p6-side-actions">
-              <button type="button" className="p6-open" onClick={() => open(selected)}>Abrir arquivo</button>
+              <button type="button" className="p6-open" onClick={() => open(selected)}>
+                {selected.item_type === "folder" ? "Abrir pasta" : "Abrir arquivo"}
+              </button>
               <button type="button" className="p6-icon-btn" aria-label="Baixar" onClick={() => open(selected)}><Download /></button>
               <button type="button" className="p6-icon-btn" aria-label="Excluir" onClick={() => remove.mutate(selected)}><Trash2 /></button>
             </div>
+
+            <label className="p6-move" style={{ marginBottom: 10 }}>
+              Pasta
+              <select value={selected.folder ?? "__root__"}
+                onChange={e => move.mutate({ ids: [selected.id], target: e.target.value === "__root__" ? null : e.target.value })}>
+                <option value="__root__">Raiz</option>
+                {allFolders.filter(f => f !== folderPath(selected)).map(f => <option key={f} value={f}>{f}</option>)}
+              </select>
+            </label>
 
             <div className="p6-stabs">
               {["Detalhes", "Versões"].map(t => (

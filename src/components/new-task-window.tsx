@@ -174,7 +174,7 @@ export function TaskWindow({
   const [notes, setNotes] = useState("");
   const [liveItems, setLiveItems] = useState<LiveDraft[]>([]);
   const [tech, setTech] = useState<TechSheet>(EMPTY_TECH);
-  const [tab, setTab] = useState<"details" | "work" | "files" | "briefing" | "live" | "tech">("details");
+  const [tab, setTab] = useState<"details" | "subtasks" | "checklist" | "files" | "briefing" | "live" | "tech">("details");
 
   const [briefingTemplateId, setBriefingTemplateId] = useState<string | null>(null);
   const [briefingData, setBriefingData] = useState<BriefingData>({});
@@ -1173,17 +1173,23 @@ export function TaskWindow({
           <div className="cw-task-body">
             <div>
               <div className="cw-tabs">
-                <button type="button" className={`cw-tab${tab === "details" ? " is-on" : ""}`} onClick={() => setTab("details")}>
-                  <ListChecks size={14} /> Detalhes
-                </button>
-                <button type="button" className={`cw-tab${tab === "work" ? " is-on" : ""}`} onClick={() => setTab("work")}>
-                  <Check size={14} /> Subtarefas e checklist
-                  {(subtasks.length + checklist.length) > 0 && <span className="cw-tab-count">{subtasks.length + checklist.length}</span>}
-                </button>
-                <button type="button" className={`cw-tab${tab === "files" ? " is-on" : ""}`} onClick={() => setTab("files")}>
-                  <Paperclip size={14} /> Anexos
-                  {attachments.length > 0 && <span className="cw-tab-count">{attachments.length}</span>}
-                </button>
+                <div className="cw-segbox" role="tablist" aria-label="Seções principais">
+                  <button type="button" className={`cw-seg${tab === "details" ? " is-on" : ""}`} onClick={() => setTab("details")}>
+                    <ListChecks size={14} /> Detalhes
+                  </button>
+                  <button type="button" className={`cw-seg${tab === "subtasks" ? " is-on" : ""}`} onClick={() => setTab("subtasks")}>
+                    <ListChecks size={14} /> Subtarefas
+                    {subtasks.length > 0 && <span className="cw-tab-count">{subtasks.length}</span>}
+                  </button>
+                  <button type="button" className={`cw-seg${tab === "checklist" ? " is-on" : ""}`} onClick={() => setTab("checklist")}>
+                    <Check size={14} /> Checklist
+                    {checklist.length > 0 && <span className="cw-tab-count">{doneCount}/{checklist.length}</span>}
+                  </button>
+                  <button type="button" className={`cw-seg${tab === "files" ? " is-on" : ""}`} onClick={() => setTab("files")}>
+                    <Paperclip size={14} /> Anexos
+                    {attachments.length > 0 && <span className="cw-tab-count">{attachments.length}</span>}
+                  </button>
+                </div>
                 <button type="button"
                   className={`cw-tab${tab === "briefing" ? " is-on" : ""}${briefingFilled ? " is-filled" : ""}`}
                   onClick={() => setTab("briefing")}>
@@ -1222,7 +1228,7 @@ export function TaskWindow({
               </div>
               </div>
 
-              <div hidden={tab !== "work"}>
+              <div hidden={tab !== "subtasks"}>
               {/* SUBTAREFAS */}
               <div className="cw-section">
                 <div className="cw-mini-head">
@@ -1263,9 +1269,9 @@ export function TaskWindow({
                   </div>
                 ))}
               </div>
+              </div>
 
-
-
+              <div hidden={tab !== "checklist"}>
               {/* CHECKLIST */}
               <div className="cw-section">
                 <div className="cw-mini-head">
