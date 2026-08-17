@@ -194,8 +194,16 @@ function TopBar({
     ? name.split(" ").filter(Boolean).slice(0, 2).map((p: string) => p[0]!.toUpperCase()).join("")
     : "C";
 
+  const [stuck, setStuck] = useState(false);
+  useEffect(() => {
+    const onScroll = () => setStuck(window.scrollY > 4);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
   return (
-    <header className="cv-topbar">
+    <header className="cv-topbar" data-stuck={stuck ? "true" : "false"}>
       <Link to="/dashboard" className="cv-brand" style={{ textDecoration: "none", color: "inherit" }}>
         <img src={caritasLogo.url} alt="Agência Caritas" style={{ height: 26, width: "auto" }} />
       </Link>

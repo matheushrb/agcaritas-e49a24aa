@@ -241,3 +241,31 @@
 @media (prefers-reduced-motion: reduce) {
   .caritas-ui *, .cv-skel { animation: none !important; transition: none !important; }
 }
+
+/* --------------------------------------------------------------------------
+   Topbar fixa (menu superior) — acompanha a rolagem e se separa do fundo
+   -------------------------------------------------------------------------- */
+.caritas-ui .cv-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 60;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  box-shadow: var(--sh-1);
+  padding-left: var(--s4);
+  padding-right: var(--s4);
+  margin: var(--s2) var(--s3) 0 0;
+  backdrop-filter: saturate(140%) blur(8px);
+  transition: box-shadow var(--fast) var(--ease), border-color var(--fast) var(--ease);
+}
+.caritas-ui .cv-topbar[data-stuck="true"] {
+  box-shadow: var(--sh-2);
+}
+.caritas-ui .cv-main { padding-top: var(--s4); }
+
+/* a topbar já cria a moldura: a barra de busca fica plana dentro dela */
+.caritas-ui .cv-topbar .cv-search {
+  box-shadow: none;
+  background: var(--surface-2);
+}

@@ -19,6 +19,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { lookupCNPJ, lookupCEP, maskCNPJ, maskCPF, maskCEP, maskPhone, onlyDigits } from "@/lib/br-lookup";
+import { ListToolbar, ViewSwitch } from "@/components/list-toolbar";
 
 export const Route = createFileRoute("/_authenticated/clients")({
   head: () => ({ meta: [{ title: "Clientes · Caritas" }] }),
@@ -250,8 +251,22 @@ function ClientsPage() {
           </Button>
         </header>
 
-        <Card className="p-3 rounded-2xl">
-          <div className="flex flex-wrap items-center gap-2">
+        <ListToolbar
+          count={filtered.length}
+          countLabel={filtered.length === 1 ? "cliente" : "clientes"}
+          right={
+            <ViewSwitch
+              value={view}
+              onChange={setView}
+              options={[
+                { k: "list", icon: List, label: "Lista" },
+                { k: "cards", icon: Rows3, label: "Cards" },
+                { k: "kanban", icon: LayoutGrid, label: "Quadros" },
+              ] as const}
+            />
+          }
+        >
+          <>
             <div className="relative flex-1 min-w-[200px]">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input placeholder="Buscar cliente..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9 rounded-full" />
@@ -273,30 +288,8 @@ function ClientsPage() {
             <Button variant="outline" className="rounded-full gap-1.5" onClick={() => setSegmentsOpen(true)}>
               <Tag className="h-4 w-4" /> Segmentos
             </Button>
-            <div className="ml-auto inline-flex items-center rounded-full border border-border bg-muted/40 p-0.5">
-              {([
-                { k: "list", icon: List, label: "Lista" },
-                { k: "cards", icon: Rows3, label: "Cards" },
-                { k: "kanban", icon: LayoutGrid, label: "Quadros" },
-              ] as const).map(v => (
-                <button
-                  key={v.k}
-                  type="button"
-                  onClick={() => setView(v.k)}
-                  title={v.label}
-                  className={cn(
-                    "inline-flex items-center gap-1.5 rounded-full px-3 h-8 text-xs font-medium transition-colors",
-                    view === v.k ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground",
-                  )}
-                >
-                  <v.icon className="h-3.5 w-3.5" />
-                  <span className="hidden sm:inline">{v.label}</span>
-                </button>
-              ))}
-            </div>
-
-          </div>
-        </Card>
+          </>
+        </ListToolbar>
 
         {isLoading ? (
           <div className="text-sm text-muted-foreground">Carregando…</div>
