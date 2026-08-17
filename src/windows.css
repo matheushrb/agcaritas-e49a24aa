@@ -1037,3 +1037,38 @@
   .cw-task-body > div:first-child,
   .cw-task-body > .cw-side { height: auto; overflow: visible; border-left: 0; }
 }
+
+/* ===========================================================
+   Janela de tarefa — zona superior recolhível (v3)
+   =========================================================== */
+.cw-headzone { flex-shrink: 0; border-bottom: 1px solid var(--cw-divider); }
+.cw-headzone-toggle {
+  display: flex; align-items: center; gap: 6px;
+  width: 100%; padding: 7px 22px;
+  font-size: 11.5px; font-weight: 700; letter-spacing: .02em;
+  color: var(--cw-muted); background: transparent; border: 0; cursor: pointer;
+}
+.cw-headzone-toggle:hover { color: var(--cw-ink); }
+.cw-headzone-caret { margin-left: auto; transition: transform .16s ease; }
+.cw-headzone.is-open .cw-headzone-caret { transform: rotate(180deg); }
+
+.cw-headzone > .cw-props { padding-top: 4px; padding-bottom: 10px; }
+.cw-headzone > .cw-stageband { margin: 0 22px 12px; }
+
+/* Recolhido: some com as propriedades e reduz o fluxo a uma linha rolável */
+.cw-headzone.is-collapsed > .cw-props { display: none; }
+.cw-headzone.is-collapsed > .cw-stageband { margin: 0 22px 8px; padding: 8px 10px; }
+.cw-headzone.is-collapsed .cw-stageband-head,
+.cw-headzone.is-collapsed .cw-stageband-hint,
+.cw-headzone.is-collapsed .cw-stage-dates,
+.cw-headzone.is-collapsed .cw-stage-sub { display: none; }
+.cw-headzone.is-collapsed .cw-stageband-row {
+  flex-wrap: nowrap; overflow-x: auto; gap: 6px; padding-bottom: 2px;
+}
+.cw-headzone.is-collapsed .cw-stage-step { padding: 5px 9px; flex: 0 0 auto; }
+.cw-headzone.is-collapsed .cw-stage-banner { margin-top: 6px; }
+
+/* Cabeçalho mais enxuto para sobrar área de trabalho */
+.cw-header { padding: 12px 22px 11px; }
+.cw-header h2 { font-size: 18px; line-height: 24px; }
+.cw-header p { display: none; }

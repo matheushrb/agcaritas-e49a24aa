@@ -248,7 +248,9 @@
 .caritas-ui .cv-topbar {
   position: sticky;
   top: 0;
-  z-index: 60;
+  /* abaixo de overlays/diálogos (z-50 do Radix): a barra acompanha a rolagem,
+     mas nunca fica por cima de janelas abertas */
+  z-index: 20;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--r-lg);
