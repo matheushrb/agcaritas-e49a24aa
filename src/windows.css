@@ -1357,3 +1357,12 @@
 .cw-task-body > div:first-child { padding: 0 20px 20px; }
 .cw-task-body .cw-section { border-radius: 12px; }
 .cw-task-body .cw-textarea { min-height: 150px; }
+
+/* v4 — ajustes finais */
+.cw-header > div { flex: 1 1 auto; min-width: 0; }
+.cw-header .cw-head-title { width: 100%; flex: 1 1 auto; }
+.cw-header .cw-head-actions { flex: 0 0 auto; }
+.cw-props.cw-cu .cw-prop-prio { grid-column: span 2; }
+.cw-props.cw-cu .cw-prop-prio .cw-flags { flex-wrap: nowrap !important; overflow-x: auto; scrollbar-width: none; }
+.cw-props.cw-cu .cw-prop-prio .cw-flags::-webkit-scrollbar { display: none; }
+.cw-task-body .cw-tabs { border-bottom: 0; padding: 12px 0 10px; margin-bottom: 12px; }

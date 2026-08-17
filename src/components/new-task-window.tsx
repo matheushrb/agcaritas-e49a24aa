@@ -1246,7 +1246,7 @@ export function TaskWindow({
               <div className="cw-field">
                 <span className="cw-label">Descrição / briefing</span>
 
-                <textarea className="cw-textarea" rows={9} style={{ minHeight: 190, resize: "vertical" }} value={description}
+                <textarea className="cw-textarea" rows={6} style={{ minHeight: 132, resize: "vertical" }} value={description}
                   onChange={e => setDescription(e.target.value)} placeholder="Contexto, referências e o que precisa ser entregue..." />
               </div>
               </div>
