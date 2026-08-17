@@ -1130,11 +1130,12 @@ export function TaskWindow({
                     style={{ ["--fc" as string]: p.color }}
                   >
                     <Flag size={13} />
-                    <span>{p.label}</span>
+                    {priority === p.value && <span>{p.label}</span>}
                   </button>
                 ))}
               </div>
             </div>
+
           </div>
 
 
