@@ -1031,11 +1031,30 @@ export function TaskWindow({
           <div className="cw-header">
             <span className="cw-title-icon"><ListChecks size={17} /></span>
             <div className="min-w-0 flex-1">
-              {titleEl(<h2>{isEdit ? (title || "Tarefa") : "Nova Tarefa"}</h2>)}
-              <p>{isEdit
-                ? "Edite a tarefa, os entregáveis e acompanhe o fluxo de produção"
-                : "Crie a tarefa, defina os entregáveis e acompanhe o fluxo de produção"}</p>
+              {mode === "modal" && (
+                <DialogTitle className="sr-only">{isEdit ? (title || "Tarefa") : "Nova Tarefa"}</DialogTitle>
+              )}
+              <input
+                className="cw-head-title"
+                value={title}
+                maxLength={140}
+                autoFocus={!isEdit}
+                onChange={e => setTitle(e.target.value)}
+                placeholder={isEdit ? "Tarefa sem título" : "Nova tarefa — dê um nome"}
+                aria-label="Título da tarefa"
+              />
+              <div className="cw-head-meta">
+                {projects.find(p => p.id === projectId)?.name && (
+                  <span className="cw-head-crumb">{projects.find(p => p.id === projectId)?.name}</span>
+                )}
+                {flowSteps[activeIdx] && (
+                  <span className="cw-head-crumb is-stage" style={{ ["--sc" as string]: flowSteps[activeIdx].color }}>
+                    <i /> {flowSteps[activeIdx].label}
+                  </span>
+                )}
+              </div>
             </div>
+
             <div className="cw-head-actions">
               {timerChip}
 
