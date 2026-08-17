@@ -969,8 +969,6 @@ export function TaskWindow({
   const canSave = title.trim().length > 0;
 
 
-  const titleEl = (node: React.ReactElement) =>
-    mode === "modal" ? <DialogTitle asChild>{node}</DialogTitle> : node;
 
   if (!open) return null;
 
