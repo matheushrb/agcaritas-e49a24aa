@@ -6,6 +6,7 @@
 @import "./dark-fixes.css";
 @import "./polish.css";
 @import "./notebook.css";
+@import "./refine.css";
 
 
 @custom-variant dark (&:is(.dark *));

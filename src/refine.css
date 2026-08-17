@@ -1,0 +1,161 @@
+/* ==========================================================================
+   Caritas — camada de refino "editorial" (respiro + escala tipográfica)
+   Inspiração: SaaS premium (fundo azul-gelo, cards brancos, pílulas, títulos
+   com peso). Aplica-se apenas às telas internas (.caritas-ui), sem mexer
+   na estrutura/layout dos componentes.
+   ========================================================================== */
+
+.caritas-ui {
+  /* fundo azul-gelo em vez de cinza neutro — dá profundidade aos cards */
+  --bg: #eef2f9;
+  --surface-2: #f7f9fc;
+  --border: #e2e7f0;
+  --primary-soft: #eaf1ff;
+  --radius: 14px;
+  --shadow: 0 1px 2px rgba(21, 38, 74, 0.04), 0 10px 26px -18px rgba(21, 38, 74, 0.35);
+  letter-spacing: -0.006em;
+}
+
+.caritas-ui[data-theme="dark"] {
+  --bg: #05080c;
+  --surface-2: #0e1622;
+  --border: #1e2733;
+}
+
+/* ---------- respiro geral ---------- */
+.caritas-ui .cv-main { padding: 20px 30px 30px 28px; }
+
+/* ---------- cabeçalho da página: escala e hierarquia ---------- */
+.caritas-ui .cv-page-head {
+  height: auto;
+  align-items: center;
+  margin: 0 0 20px;
+  padding-bottom: 2px;
+}
+.caritas-ui .cv-page-head h1 {
+  font-size: 30px;
+  font-weight: 700;
+  letter-spacing: -0.028em;
+  line-height: 1.08;
+  margin: 0 0 5px;
+}
+.caritas-ui .cv-page-head p {
+  font-size: 13.5px;
+  line-height: 1.45;
+  max-width: 62ch;
+}
+
+/* ---------- superfícies ---------- */
+.caritas-ui .cv-card {
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+/* ---------- KPIs: mais ar, número protagonista ---------- */
+.caritas-ui .cv-kpi-grid { gap: 14px; margin-bottom: 14px; }
+.caritas-ui .cv-kpi { height: 126px; padding: 15px 17px; }
+.caritas-ui .cv-kpi-label {
+  min-width: 0;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--muted);
+  line-height: 1.25;
+  overflow: hidden;
+}
+.caritas-ui .cv-kpi-main { margin: 6px 0 4px; gap: 8px; min-width: 0; }
+.caritas-ui .cv-kpi-label > svg { flex: none; }
+.caritas-ui .cv-kpi-main strong {
+  font-size: clamp(19px, 1.55vw, 26px);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.05;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.caritas-ui .cv-kpi small {
+  font-size: 10.5px;
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ---------- títulos de seção ---------- */
+.caritas-ui .cv-section-head { margin-bottom: 15px; gap: 12px; }
+.caritas-ui .cv-section-head > :first-child { min-width: 0; }
+.caritas-ui .cv-section-head .cv-link { white-space: nowrap; flex: none; }
+.caritas-ui .cv-section-head h2,
+.caritas-ui .cv-section-head h3 {
+  font-size: 15px;
+  font-weight: 650;
+  letter-spacing: -0.018em;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.caritas-ui .cv-section-head.compact { flex-wrap: nowrap; }
+.caritas-ui .cv-section-head p { font-size: 12px; margin-top: 4px; }
+
+/* ---------- grids internos: respiro ---------- */
+.caritas-ui .cv-dashboard-grid { gap: 16px; grid-template-columns: minmax(0, 1fr) 310px; }
+.caritas-ui .cv-lower-grid { gap: 16px; }
+.caritas-ui .cv-focus-grid { gap: 12px; }
+.caritas-ui .cv-right-rail { height: auto; gap: 16px; }
+
+/* ---------- tabelas: legibilidade ---------- */
+.caritas-ui .cv-table { font-size: 12.5px; }
+.caritas-ui .cv-table-row { min-height: 42px; }
+.caritas-ui .cv-table-head {
+  font-size: 10.5px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.caritas-ui .cv-table-row small { font-size: 11px; }
+
+/* ---------- pílulas: botões, chips e links ---------- */
+.caritas-ui .cv-btn,
+.caritas-ui .cv-page-actions button,
+.caritas-ui .cv-page-actions a {
+  border-radius: 999px;
+}
+.caritas-ui .cv-chip,
+.caritas-ui .cv-tag,
+.caritas-ui .cv-kind { border-radius: 999px; }
+
+.caritas-ui .cv-link {
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 999px;
+  transition: color 160ms var(--cw-ease, ease), background 160ms var(--cw-ease, ease);
+}
+
+/* ---------- valores grandes ---------- */
+.caritas-ui .cv-big-value {
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+}
+.caritas-ui .cv-micro {
+  font-size: 11px;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* ---------- notebooks / telas curtas: volta a comprimir ---------- */
+@media (max-height: 820px) {
+  .caritas-ui .cv-main { padding: 14px 22px 20px 20px; }
+  .caritas-ui .cv-page-head { margin-bottom: 14px; }
+  .caritas-ui .cv-page-head h1 { font-size: 25px; }
+  .caritas-ui .cv-kpi { height: 108px; padding: 13px 15px; }
+  .caritas-ui .cv-kpi-main strong { font-size: 25px; }
+  .caritas-ui .cv-kpi-grid,
+  .caritas-ui .cv-lower-grid,
+  .caritas-ui .cv-dashboard-grid { gap: 11px; }
+}
