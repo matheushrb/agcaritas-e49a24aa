@@ -175,6 +175,8 @@ export function TaskWindow({
   const [liveItems, setLiveItems] = useState<LiveDraft[]>([]);
   const [tech, setTech] = useState<TechSheet>(EMPTY_TECH);
   const [tab, setTab] = useState<"details" | "briefing" | "live" | "tech">("details");
+  const [headOpen, setHeadOpen] = useState(false);
+
   const [briefingTemplateId, setBriefingTemplateId] = useState<string | null>(null);
   const [briefingData, setBriefingData] = useState<BriefingData>({});
   const setT = (k: keyof TechSheet, v: string) => setTech(t => ({ ...t, [k]: v }));
