@@ -1749,10 +1749,11 @@ export function TaskWindow({
                         editEntry?.id === e.id ? (
                           <div key={e.id} className="cw-ts-form" style={{ marginTop: 4 }}>
                             <div className="cw-input" style={{ display: "flex", alignItems: "center" }}>
-                              <CwDate value={editEntry.date} onChange={v => setEditEntry({ ...editEntry, date: v })} />
+                              <CwDate value={editEntry.date} onChange={v => setEditEntry(prev => prev ? { ...prev, date: v } : prev)} />
                             </div>
                             <input className="cw-input" type="number" step="0.25" value={editEntry.hours}
-                              onChange={ev => setEditEntry({ ...editEntry, hours: ev.target.value })} placeholder="Horas" />
+                              onChange={ev => setEditEntry(prev => prev ? { ...prev, hours: ev.target.value } : prev)} placeholder="Horas" />
+
                             <button type="button" className="cw-btn cw-btn-sm cw-btn-primary" disabled={updateTime.isPending}
                               onClick={() => updateTime.mutate()}>Salvar</button>
                             <button type="button" className="cw-icon-btn" onClick={() => setEditEntry(null)} title="Cancelar">
