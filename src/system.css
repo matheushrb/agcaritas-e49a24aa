@@ -269,3 +269,26 @@
   box-shadow: none;
   background: var(--surface-2);
 }
+
+/* Alternador de visualização das Tarefas alinhado ao padrão universal */
+.tskv .t-switch {
+  gap: 2px !important;
+  padding: 3px !important;
+  background: var(--surface-2) !important;
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm) !important;
+}
+.tskv .t-switch button {
+  height: calc(var(--d-control) - 10px);
+  border-radius: 6px !important;
+  color: var(--muted) !important;
+  background: transparent !important;
+  font-size: 12.5px;
+  font-weight: var(--fw-medium);
+}
+.tskv .t-switch button:hover { color: var(--text) !important; }
+.tskv .t-switch button.on {
+  background: var(--surface) !important;
+  color: var(--primary) !important;
+  box-shadow: var(--sh-1) !important;
+}
