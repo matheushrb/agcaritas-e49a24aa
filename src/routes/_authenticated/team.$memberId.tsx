@@ -124,7 +124,7 @@ function MemberProfile() {
   const openTasks = tasks.filter(t => t.status !== "done");
 
   return (
-    <div className="p-6 space-y-5">
+    <div className="space-y-5">
       <Link to="/team" search={{ tab: "people" }} className="inline-flex items-center gap-1.5 text-[13px] text-muted-foreground hover:text-foreground">
         <ArrowLeft className="size-4" />Voltar para pessoas
       </Link>

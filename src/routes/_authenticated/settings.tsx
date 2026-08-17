@@ -49,8 +49,8 @@ const TABS = [
 function SettingsPage() {
   return (
     <div className="cv-settings space-y-6">
-      <header className="cv-set-head">
-        <h1 className="font-display text-3xl font-bold tracking-tight">Configurações</h1>
+      <header className="cv-set-head cv-page-head">
+        <h1 className="font-display">Configurações</h1>
         <p className="text-sm">Configurações globais da agência — dados cadastrais, serviços, plataformas, tipos de tarefa, funil, usuários e integrações.</p>
       </header>
 

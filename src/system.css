@@ -294,3 +294,27 @@
   color: var(--primary) !important;
   box-shadow: var(--sh-1) !important;
 }
+
+/* --------------------------------------------------------------------------
+   Cabeçalho universal de página (cv-page-head)
+   -------------------------------------------------------------------------- */
+.caritas-ui .cv-page-head { margin-bottom: var(--s2); }
+.caritas-ui .cv-page-head h1 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+}
+.caritas-ui .cv-page-head h1 svg {
+  width: 22px;
+  height: 22px;
+  color: var(--primary);
+  flex: none;
+}
+.caritas-ui .cv-page-head > div > p,
+.caritas-ui .cv-page-head > p {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: var(--t-sub);
+  max-width: 78ch;
+}

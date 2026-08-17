@@ -106,10 +106,10 @@ function HrPage() {
   });
 
   return (
-    <div className="p-6 space-y-5">
-      <div className="flex items-center justify-between gap-4 flex-wrap">
+    <div className="space-y-5">
+      <div className="cv-page-head flex items-center justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-2xl font-semibold flex items-center gap-2"><Users className="size-6" />RH</h1>
+          <h1 className="flex items-center gap-2"><Users className="size-6" />RH</h1>
           <p className="text-sm text-muted-foreground">Pessoas, vínculos, custo e capacidade da agência.</p>
         </div>
         <div className="flex items-center gap-2">

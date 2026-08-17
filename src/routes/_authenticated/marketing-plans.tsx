@@ -96,10 +96,10 @@ function MarketingPlansPage() {
   });
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="space-y-6">
+      <div className="cv-page-head flex items-center justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-2xl font-semibold flex items-center gap-2"><Megaphone className="size-6" />Marketing</h1>
+          <h1 className="flex items-center gap-2"><Megaphone className="size-6" />Marketing</h1>
           <p className="text-sm text-muted-foreground">Planos de marketing e campanhas. Ao aprovar, um projeto é criado automaticamente.</p>
         </div>
         <Button onClick={() => setNewOpen(true)}><Plus className="size-4 mr-1" />Novo plano</Button>
