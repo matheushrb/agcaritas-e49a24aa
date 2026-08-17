@@ -174,7 +174,7 @@ export function TaskWindow({
   const [notes, setNotes] = useState("");
   const [liveItems, setLiveItems] = useState<LiveDraft[]>([]);
   const [tech, setTech] = useState<TechSheet>(EMPTY_TECH);
-  const [tab, setTab] = useState<"details" | "work" | "files" | "briefing" | "live" | "tech">("details");
+  const [tab, setTab] = useState<"details" | "subtasks" | "checklist" | "files" | "briefing" | "live" | "tech">("details");
 
   const [briefingTemplateId, setBriefingTemplateId] = useState<string | null>(null);
   const [briefingData, setBriefingData] = useState<BriefingData>({});
