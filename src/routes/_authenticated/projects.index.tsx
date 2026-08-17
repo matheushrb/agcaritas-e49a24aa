@@ -511,6 +511,8 @@ function ProjectsPage() {
             </select>
           </div>
         </div>
+        </ListToolbar>
+
 
         {/* CONTEÚDO */}
         {isLoading ? (
