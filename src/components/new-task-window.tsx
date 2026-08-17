@@ -175,6 +175,8 @@ export function TaskWindow({
   const [liveItems, setLiveItems] = useState<LiveDraft[]>([]);
   const [tech, setTech] = useState<TechSheet>(EMPTY_TECH);
   const [tab, setTab] = useState<"details" | "briefing" | "live" | "tech">("details");
+  const [headOpen, setHeadOpen] = useState(false);
+
   const [briefingTemplateId, setBriefingTemplateId] = useState<string | null>(null);
   const [briefingData, setBriefingData] = useState<BriefingData>({});
   const setT = (k: keyof TechSheet, v: string) => setTech(t => ({ ...t, [k]: v }));
@@ -1056,10 +1058,17 @@ export function TaskWindow({
             </div>
           </div>
 
+          <div className={`cw-headzone${headOpen ? " is-open" : " is-collapsed"}`}>
+          <button type="button" className="cw-headzone-toggle" onClick={() => setHeadOpen(v => !v)}>
+            <SlidersHorizontal size={13} />
+            {headOpen ? "Ocultar propriedades e fluxo" : "Propriedades e fluxo de etapas"}
+            <ChevronDown size={14} className="cw-headzone-caret" />
+          </button>
 
           {/* PROPRIEDADES COMPACTAS */}
           <div className="cw-props">
             <div className="cw-prop">
+
               <div className="cw-label">Projeto</div>
               <div className="cw-prop-value">
                 <select value={projectId ?? ""} onChange={e => setProjectId(e.target.value || null)}>
@@ -1158,6 +1167,9 @@ export function TaskWindow({
               Ao mudar a etapa, o status é sincronizado automaticamente. Os prazos das etapas são contados a partir da data de entrega.
             </p>
           </div>
+          </div>
+
+
 
 
 
