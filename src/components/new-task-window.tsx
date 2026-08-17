@@ -1219,40 +1219,35 @@ export function TaskWindow({
                     <Paperclip size={14} /> Anexos
                     {attachments.length > 0 && <span className="cw-tab-count">{attachments.length}</span>}
                   </button>
+                  <button type="button"
+                    className={`cw-seg${tab === "briefing" ? " is-on" : ""}${briefingFilled ? " is-filled" : ""}`}
+                    onClick={() => setTab("briefing")}>
+                    <FileText size={14} /> Briefing
+                  </button>
+                  {showLiveTab && (
+                    <button type="button"
+                      className={`cw-seg${tab === "live" ? " is-on" : ""}${liveItems.length > 0 ? " is-live" : ""}`}
+                      onClick={() => setTab("live")}>
+                      <Radio size={14} /> Ao Vivo
+                      {liveItems.length > 0 && <span className="cw-tab-count">{liveItems.length}</span>}
+                    </button>
+                  )}
+                  {showTechTab && (
+                    <button type="button"
+                      className={`cw-seg${tab === "tech" ? " is-on" : ""}${techFilled ? " is-filled" : ""}`}
+                      onClick={() => setTab("tech")}>
+                      <SlidersHorizontal size={14} /> Ficha técnica
+                    </button>
+                  )}
                 </div>
-                <button type="button"
-                  className={`cw-tab${tab === "briefing" ? " is-on" : ""}${briefingFilled ? " is-filled" : ""}`}
-                  onClick={() => setTab("briefing")}>
-                  <FileText size={14} /> Briefing
-                </button>
-                {showLiveTab && (
-                  <button type="button"
-                    className={`cw-tab${tab === "live" ? " is-on" : ""}${liveItems.length > 0 ? " is-live" : ""}`}
-                    onClick={() => setTab("live")}>
-                    <Radio size={14} /> Ao Vivo / Estreia
-                    {liveItems.length > 0 && <span className="cw-tab-count">{liveItems.length}</span>}
-                  </button>
-                )}
-                {showTechTab && (
-                  <button type="button"
-                    className={`cw-tab${tab === "tech" ? " is-on" : ""}${techFilled ? " is-filled" : ""}`}
-                    onClick={() => setTab("tech")}>
-                    <SlidersHorizontal size={14} /> Ficha técnica
-                  </button>
-                )}
               </div>
 
 
               <div hidden={tab !== "details"}>
 
               <div className="cw-field">
-                <span className="cw-label">Título da tarefa<span className="req">*</span></span>
-                <input className="cw-input" autoFocus value={title} maxLength={140}
-                  onChange={e => setTitle(e.target.value)} placeholder="Ex.: Reels institucional — roteiro e gravação" />
-              </div>
-
-              <div className="cw-field" style={{ marginTop: 14 }}>
                 <span className="cw-label">Descrição / briefing</span>
+
                 <textarea className="cw-textarea" rows={9} style={{ minHeight: 190, resize: "vertical" }} value={description}
                   onChange={e => setDescription(e.target.value)} placeholder="Contexto, referências e o que precisa ser entregue..." />
               </div>
