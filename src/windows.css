@@ -1072,3 +1072,19 @@
 .cw-header { padding: 12px 22px 11px; }
 .cw-header h2 { font-size: 18px; line-height: 24px; }
 .cw-header p { display: none; }
+
+/* Zona superior slim: propriedades compactas em uma faixa + trilha de etapas enxuta */
+.cw-headzone.is-slim > .cw-props {
+  padding: 8px 22px 8px;
+  display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: flex-end;
+}
+.cw-headzone.is-slim > .cw-props .cw-prop { grid-column: auto !important; min-width: 150px; flex: 1 1 150px; }
+.cw-headzone.is-slim > .cw-props .cw-label { font-size: 9.5px; letter-spacing: .06em; margin-bottom: 2px; }
+.cw-headzone.is-slim > .cw-props .cw-prop-value { min-height: 30px; padding: 2px 8px; }
+.cw-headzone.is-slim > .cw-props .cw-prop-value select { font-size: 12px; }
+.cw-headzone.is-slim > .cw-stageband { margin: 0 22px 10px; padding: 8px 10px; }
+.cw-headzone.is-slim .cw-stageband-hint { display: none; }
+.cw-headzone.is-slim .cw-stageband-head { margin-bottom: 6px; font-size: 10px; }
+.cw-headzone.is-slim .cw-stageband-row { overflow-x: auto; padding-bottom: 2px; }
+.cw-headzone.is-slim .cw-stage-step { padding: 6px 10px; flex: 0 0 auto; }
+.cw-headzone.is-slim .cw-stage-dates { font-size: 9.5px; }
