@@ -163,3 +163,5 @@
 /* Valor do KPI tem prioridade sobre o gráfico em miniatura */
 .caritas-ui .cv-kpi-main > strong { flex: 1 1 auto; }
 .caritas-ui .cv-kpi-main > :not(strong) { flex: 0 1 auto; min-width: 0; max-width: 52px; }
+.caritas-ui .cv-kpi-main strong,
+.caritas-ui .cv-kpi-main strong * { overflow: visible; text-overflow: clip; }
