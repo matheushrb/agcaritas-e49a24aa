@@ -23,11 +23,16 @@ export type P3Task = {
 };
 export type P3Person = { id: string; full_name: string | null; role: string | null };
 
-const PRIORITY: Record<P3Task["priority"], { label: string; cls: string }> = {
+const PRIORITY_MAP: Record<string, { label: string; cls: string }> = {
+  critical: { label: "Crítica", cls: "high" },
+  urgent: { label: "Urgente", cls: "high" },
   high: { label: "Alta", cls: "high" },
   medium: { label: "Média", cls: "med" },
   low: { label: "Baixa", cls: "low" },
 };
+const PRIORITY = new Proxy(PRIORITY_MAP, {
+  get: (t, k: string) => t[k] ?? { label: "Média", cls: "med" },
+}) as Record<string, { label: string; cls: string }>;
 const STATUS_LABEL: Record<P3Task["status"], string> = {
   todo: "A fazer",
   in_progress: "Em andamento",
