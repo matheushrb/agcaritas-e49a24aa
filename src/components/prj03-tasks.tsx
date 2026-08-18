@@ -12,7 +12,7 @@ export type P3Task = {
   id: string;
   title: string;
   status: "todo" | "in_progress" | "review" | "done";
-  priority: "low" | "medium" | "high";
+  priority: "low" | "medium" | "high" | "critical" | "urgent" | string;
   due_date: string | null;
   assignee_id: string | null;
   estimated_hours: number | null;
