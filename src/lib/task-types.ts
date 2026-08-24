@@ -24,8 +24,8 @@ export type TaskTypeStageRow = {
   status_group: StatusGroup;
   weight: number;
   auto_checklist: string[];
-  auto_deliverables: { label: string; platform: string; type: string; value: number | null }[];
-  auto_live: { title: string; kind: "live" | "premiere"; platform: string }[];
+  auto_deliverables: { label: string; platform: string; type: string; value: number | null; icon?: string | null }[];
+  auto_live: { title: string; kind: "live" | "premiere"; platform: string; use_task_title?: boolean }[];
   /** Subtarefas criadas ao atingir a etapa — cada uma com tipo e valor próprios. */
   auto_subtasks: { title: string; task_type_id: string | null; value: number | null }[];
   /** Dias antes da entrega em que a etapa deve começar / terminar. */
