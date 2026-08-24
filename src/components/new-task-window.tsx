@@ -414,7 +414,9 @@ export function TaskWindow({
           })
           .map(d => ({
             id: uid(),
-            platform: String(d.label || d.platform || ""),
+            label: String(d.label || ""),
+            icon: d.icon ?? null,
+            platform: String(d.platform || ""),
             type: String(d.type || "other"),
             billing_enabled: !!d.value,
             billing_value: d.value ?? null,
@@ -430,6 +432,7 @@ export function TaskWindow({
       setLiveItems(prev => {
         const seen = new Set(prev.map(l => l.title.trim().toLowerCase()));
         const add = autoLive
+          .map(l => ({ ...l, title: l?.use_task_title ? (title || "").trim() : String(l?.title ?? "") }))
           .filter(l => l && l.title && !seen.has(String(l.title).trim().toLowerCase()))
           .map(l => ({
             id: uid(),
