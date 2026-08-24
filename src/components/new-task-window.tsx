@@ -56,6 +56,9 @@ const STAGE_PALETTE = ["#7F8C9E", "#8B5CF6", "#EF4444", "#0EA5E9", "#F97316", "#
 
 type DeliverableDraft = {
   id: string; platform: string; type: string;
+  /** Nome do entregável e ícone exibido na tabela. */
+  label?: string | null;
+  icon?: string | null;
   billing_enabled: boolean; billing_value: number | null; delivered: boolean;
   /** Data combinada para a entrega (prazo). */
   due_date?: string | null;
@@ -366,7 +369,7 @@ export function TaskWindow({
     const dropSub = gather("auto_subtasks", (s: any) => norm(s?.title));
 
     setChecklist(prev => prev.filter(c => !dropChk(norm(c.title))));
-    setDeliverables(prev => prev.filter(d => d.invoiced || !dropDel(norm(d.platform))));
+    setDeliverables(prev => prev.filter(d => d.invoiced || !dropDel(norm(d.label || d.platform))));
     setLiveItems(prev => prev.filter(l => !dropLive(norm(l.title))));
     setSubtasks(prev => {
       const removed = prev.filter(s => dropSub(norm(s.title)));
@@ -411,7 +414,9 @@ export function TaskWindow({
           })
           .map(d => ({
             id: uid(),
-            platform: String(d.label || d.platform || ""),
+            label: String(d.label || ""),
+            icon: d.icon ?? null,
+            platform: String(d.platform || ""),
             type: String(d.type || "other"),
             billing_enabled: !!d.value,
             billing_value: d.value ?? null,
@@ -427,6 +432,7 @@ export function TaskWindow({
       setLiveItems(prev => {
         const seen = new Set(prev.map(l => l.title.trim().toLowerCase()));
         const add = autoLive
+          .map(l => ({ ...l, title: l?.use_task_title ? (title || "").trim() : String(l?.title ?? "") }))
           .filter(l => l && l.title && !seen.has(String(l.title).trim().toLowerCase()))
           .map(l => ({
             id: uid(),
