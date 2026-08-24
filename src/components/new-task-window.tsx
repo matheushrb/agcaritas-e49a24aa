@@ -56,6 +56,9 @@ const STAGE_PALETTE = ["#7F8C9E", "#8B5CF6", "#EF4444", "#0EA5E9", "#F97316", "#
 
 type DeliverableDraft = {
   id: string; platform: string; type: string;
+  /** Nome do entregável e ícone exibido na tabela. */
+  label?: string | null;
+  icon?: string | null;
   billing_enabled: boolean; billing_value: number | null; delivered: boolean;
   /** Data combinada para a entrega (prazo). */
   due_date?: string | null;
