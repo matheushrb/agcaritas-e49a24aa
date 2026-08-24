@@ -1023,11 +1023,27 @@ function StageRow({ stage, canUp, canDown, movePending, onMove, onPatch, onDelet
                 <ul className="space-y-1.5">
                   {lives.map((l, idx) => (
                     <li key={idx} className="flex items-center gap-2">
+                      <label
+                        className={cn(
+                          "h-7 shrink-0 px-2 rounded-lg border text-[11px] flex items-center gap-1.5 cursor-pointer select-none",
+                          l.use_task_title ? "bg-primary/10 text-primary border-primary/30" : "bg-background text-muted-foreground",
+                        )}
+                        title="Criar a transmissão com o mesmo nome da tarefa"
+                      >
+                        <input
+                          type="checkbox"
+                          className="h-3 w-3"
+                          checked={!!l.use_task_title}
+                          onChange={e => commitLives(lives.map((x, i) => (i === idx ? { ...x, use_task_title: e.target.checked } : x)))}
+                        />
+                        Nome da tarefa
+                      </label>
                       <Input
-                        value={l.title}
+                        value={l.use_task_title ? "" : l.title}
+                        disabled={!!l.use_task_title}
                         onChange={e => draftLive(idx, { title: e.target.value })}
                         onBlur={() => commitLives(lives)}
-                        placeholder="Título da transmissão"
+                        placeholder={l.use_task_title ? "Usará o nome da tarefa" : "Título da transmissão"}
                         className="h-7 text-xs rounded-lg flex-1"
                       />
                       <select
