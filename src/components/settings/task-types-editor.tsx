@@ -52,9 +52,9 @@ export type TaskTypeStage = {
 };
 
 /** Entregável criado automaticamente ao atingir a etapa. */
-export type AutoDeliverable = { label: string; platform: string; type: string; value: number | null };
+export type AutoDeliverable = { label: string; platform: string; type: string; value: number | null; icon?: string | null };
 /** Transmissão ao vivo / estreia criada automaticamente ao atingir a etapa. */
-export type AutoLive = { title: string; kind: "live" | "premiere"; platform: string };
+export type AutoLive = { title: string; kind: "live" | "premiere"; platform: string; use_task_title?: boolean };
 /** Subtarefa criada automaticamente ao atingir a etapa — com tipo e valor próprios. */
 export type AutoSubtask = { title: string; task_type_id: string | null; value: number | null };
 
