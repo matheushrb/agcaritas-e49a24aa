@@ -961,6 +961,10 @@ function StageRow({ stage, canUp, canDown, movePending, onMove, onPatch, onDelet
                 <ul className="space-y-1.5">
                   {deliverables.map((d, idx) => (
                     <li key={idx} className="flex items-center gap-2">
+                      <IconPicker
+                        value={d.icon ?? null}
+                        onChange={v => commitDeliverables(deliverables.map((x, i) => (i === idx ? { ...x, icon: v } : x)))}
+                      />
                       <Input
                         value={d.label}
                         onChange={e => draftDeliverable(idx, { label: e.target.value })}
