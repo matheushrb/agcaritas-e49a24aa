@@ -369,7 +369,7 @@ export function TaskWindow({
     const dropSub = gather("auto_subtasks", (s: any) => norm(s?.title));
 
     setChecklist(prev => prev.filter(c => !dropChk(norm(c.title))));
-    setDeliverables(prev => prev.filter(d => d.invoiced || !dropDel(norm(d.platform))));
+    setDeliverables(prev => prev.filter(d => d.invoiced || !dropDel(norm(d.label || d.platform))));
     setLiveItems(prev => prev.filter(l => !dropLive(norm(l.title))));
     setSubtasks(prev => {
       const removed = prev.filter(s => dropSub(norm(s.title)));
