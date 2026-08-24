@@ -58,10 +58,5 @@
   .caritas-ui .cv-focus-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
 
-/* --- Janelas operacionais: nunca ultrapassar a tela do notebook --- */
-@media (max-height: 900px) {
-  .cw-window { max-height: min(92vh, 780px); }
-  .cw-header { padding: 14px 18px 12px; }
-  .cw-header h2 { font-size: 18px; line-height: 24px; }
-  .cw-shell { padding: 6px; border-radius: 12px; }
-}
+/* --- Janelas operacionais: densidade de notebook em src/windows.css --- */
+
