@@ -2,7 +2,7 @@ import { useMemo, useState, useEffect } from "react";
 import {
   Search, Plus, Download, List as ListIcon, LayoutGrid, GanttChartSquare,
   CalendarDays, Clock, Timer, CheckCircle2, AlertTriangle, MoreVertical,
-  ChevronLeft, ChevronRight, FilterX,
+  ChevronLeft, ChevronRight, ChevronDown, FilterX,
 } from "lucide-react";
 import "@/tsk02.css";
 import { useStageIndex, stageInfoOf } from "@/lib/task-types";
@@ -109,6 +109,7 @@ export function Tsk02List({
   const [menu, setMenu] = useState<string | null>(null);
   const [sel, setSel] = useState<Record<string, boolean>>({});
   const [quick, setQuick] = useState("");
+  const [collapsedStages, setCollapsedStages] = useState<Set<string>>(new Set());
 
   useEffect(() => { setPage(1); }, [q, status, assignee, priority, project, deadline, archived, hideDone, perPage]);
   useEffect(() => {
@@ -181,6 +182,17 @@ export function Tsk02List({
   const totalPages = Math.max(1, Math.ceil(filtered.length / perPage));
   const current = Math.min(page, totalPages);
   const rows = filtered.slice((current - 1) * perPage, current * perPage);
+  const groupedRows = useMemo(() => {
+    const groups = new Map<string, { key: string; name: string; color: string; rows: TskTask[] }>();
+    rows.forEach(task => {
+      const stage = stageInfoOf(task, stageIndex);
+      const key = task.current_stage_id || task.stage || stage.name;
+      const group = groups.get(key);
+      if (group) group.rows.push(task);
+      else groups.set(key, { key, name: stage.name, color: stage.color, rows: [task] });
+    });
+    return Array.from(groups.values());
+  }, [rows, stageIndex]);
   const from = filtered.length === 0 ? 0 : (current - 1) * perPage + 1;
   const to = Math.min(current * perPage, filtered.length);
 
@@ -345,7 +357,22 @@ export function Tsk02List({
 
           {rows.length === 0 ? (
             <div className="k-empty">Nenhuma tarefa encontrada com os filtros atuais.</div>
-          ) : rows.map(t => {
+          ) : groupedRows.map(group => (
+            <div className="k-stagegroup" key={group.key}>
+              <button
+                type="button"
+                className="k-stagehead"
+                onClick={() => setCollapsedStages(previous => {
+                  const next = new Set(previous);
+                  if (next.has(group.key)) next.delete(group.key); else next.add(group.key);
+                  return next;
+                })}
+              >
+                <ChevronDown className={collapsedStages.has(group.key) ? "is-collapsed" : ""} size={14} />
+                <span className="k-stagebadge" style={{ borderColor: group.color, color: group.color }}>{group.name}</span>
+                <span className="k-stagecount">{group.rows.length}</span>
+              </button>
+              {!collapsedStages.has(group.key) && group.rows.map(t => {
             const pn = projName(t.project_id);
             const per = person(t.assignee_id);
             const late = isLate(t);
@@ -427,7 +454,9 @@ export function Tsk02List({
                 </div>
               </div>
             );
-          })}
+              })}
+            </div>
+          ))}
 
           <div className="k-quick">
             <input
