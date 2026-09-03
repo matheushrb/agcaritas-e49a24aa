@@ -862,7 +862,7 @@ export function TaskWindow({
     billing_value: baseValue ? Number(baseValue) : null,
     platform: platformsSel.join(", ") || null,
     deliverables: deliverables.map(d => ({
-      id: d.id, platform: d.platform, type: d.type,
+      id: d.id, platform: d.platform, type: d.type, label: d.label ?? "", icon: d.icon ?? null,
       billing_enabled: d.billing_enabled, billing_model: "per_task",
       billing_value: d.billing_value, delivered: d.delivered, invoiced: !!d.invoiced,
       due_date: d.due_date || null,
