@@ -125,7 +125,7 @@ const fmtDate = (d: string | null) => (d ? new Date(`${d}T00:00:00`).toLocaleDat
    Componente principal
    ============================================================ */
 export function NewProjectWizard({
-  open, onOpenChange, clients, onCreate, pending, onSaveDraft,
+  open, onOpenChange, clients, onCreate, pending, onSaveDraft, mode = "create", initialValue,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
@@ -133,10 +133,23 @@ export function NewProjectWizard({
   onCreate: (v: ProjectWizardValue) => void;
   pending: boolean;
   onSaveDraft?: (v: ProjectWizardValue) => void;
+  mode?: "create" | "edit";
+  initialValue?: ProjectWizardValue | null;
 }) {
+  const isEdit = mode === "edit";
   const [step, setStep] = useState(1);
-  const [v, setV] = useState<ProjectWizardValue>(defaultProjectWizardValue);
+  const [v, setV] = useState<ProjectWizardValue>(initialValue ?? defaultProjectWizardValue);
   const [touched, setTouched] = useState(false);
+
+  /* Em edição, recarrega os valores do projeto ao abrir */
+  useEffect(() => {
+    if (!open || !isEdit || !initialValue) return;
+    setV(initialValue);
+    setStep(1);
+    setTouched(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, isEdit, initialValue]);
+
 
   const { data: projectTypes = [] } = useQuery({
     queryKey: ["project_types"],
@@ -177,7 +190,7 @@ export function NewProjectWizard({
     setV(p => ({ ...p, [k]: val }));
   };
 
-  const reset = () => { setStep(1); setV(defaultProjectWizardValue); setTouched(false); };
+  const reset = () => { setStep(1); setV(initialValue ?? defaultProjectWizardValue); setTouched(false); };
   const handleOpen = (o: boolean) => { onOpenChange(o); if (!o) reset(); };
   const requestClose = () => {
     if (touched && !window.confirm("Existem alterações não salvas. Deseja fechar mesmo assim?")) return;
@@ -237,6 +250,7 @@ export function NewProjectWizard({
   const allOk = step1Ok && step2Ok;
 
   const canGo = (target: number) => {
+    if (isEdit) return true;
     if (target <= step) return true;
     if (target >= 2 && !step1Ok) return false;
     if (target >= 3 && !step2Ok) return false;
@@ -257,8 +271,8 @@ export function NewProjectWizard({
           {/* HEADER */}
           <div className="cw-header">
             <div className="min-w-0 flex-1">
-              <DialogTitle asChild><h2>Novo Projeto</h2></DialogTitle>
-              <p>Crie um novo projeto em 5 etapas simples</p>
+              <DialogTitle asChild><h2>{isEdit ? "Editar Projeto" : "Novo Projeto"}</h2></DialogTitle>
+              <p>{isEdit ? "Ajuste dados, etapas, equipe e financeiro do projeto" : "Crie um novo projeto em 5 etapas simples"}</p>
             </div>
             <button type="button" className="cw-close" onClick={requestClose} aria-label="Fechar"><X size={18} /></button>
           </div>
@@ -331,13 +345,14 @@ export function NewProjectWizard({
               <button type="button" className="cw-btn cw-btn-secondary" onClick={back} disabled={step === 1}>
                 <ChevronLeft /> Voltar
               </button>
-              {step < 5 ? (
-                <button type="button" className="cw-btn cw-btn-primary" onClick={next} disabled={nextDisabled}>
+              {step < 5 && (
+                <button type="button" className="cw-btn cw-btn-secondary" onClick={next} disabled={nextDisabled}>
                   Continuar <ChevronRight />
                 </button>
-              ) : (
+              )}
+              {(step === 5 || isEdit) && (
                 <button type="button" className="cw-btn cw-btn-primary" disabled={pending || !allOk} onClick={() => onCreate(v)}>
-                  {pending ? "Criando…" : "Criar projeto"} <Check />
+                  {pending ? "Salvando…" : isEdit ? "Salvar alterações" : "Criar projeto"} <Check />
                 </button>
               )}
             </div>

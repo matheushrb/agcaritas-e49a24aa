@@ -2857,6 +2857,7 @@ export type Database = {
           project_type: string | null
           scope_flags: Json | null
           social_platforms: Json
+          stages: Json
           start_date: string | null
           status: Database["public"]["Enums"]["project_status"]
           strategy: Json
@@ -2898,6 +2899,7 @@ export type Database = {
           project_type?: string | null
           scope_flags?: Json | null
           social_platforms?: Json
+          stages?: Json
           start_date?: string | null
           status?: Database["public"]["Enums"]["project_status"]
           strategy?: Json
@@ -2939,6 +2941,7 @@ export type Database = {
           project_type?: string | null
           scope_flags?: Json | null
           social_platforms?: Json
+          stages?: Json
           start_date?: string | null
           status?: Database["public"]["Enums"]["project_status"]
           strategy?: Json
