@@ -125,7 +125,7 @@ const fmtDate = (d: string | null) => (d ? new Date(`${d}T00:00:00`).toLocaleDat
    Componente principal
    ============================================================ */
 export function NewProjectWizard({
-  open, onOpenChange, clients, onCreate, pending, onSaveDraft,
+  open, onOpenChange, clients, onCreate, pending, onSaveDraft, mode = "create", initialValue,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
@@ -133,10 +133,23 @@ export function NewProjectWizard({
   onCreate: (v: ProjectWizardValue) => void;
   pending: boolean;
   onSaveDraft?: (v: ProjectWizardValue) => void;
+  mode?: "create" | "edit";
+  initialValue?: ProjectWizardValue | null;
 }) {
+  const isEdit = mode === "edit";
   const [step, setStep] = useState(1);
-  const [v, setV] = useState<ProjectWizardValue>(defaultProjectWizardValue);
+  const [v, setV] = useState<ProjectWizardValue>(initialValue ?? defaultProjectWizardValue);
   const [touched, setTouched] = useState(false);
+
+  /* Em edição, recarrega os valores do projeto ao abrir */
+  useEffect(() => {
+    if (!open || !isEdit || !initialValue) return;
+    setV(initialValue);
+    setStep(1);
+    setTouched(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, isEdit, initialValue]);
+
 
   const { data: projectTypes = [] } = useQuery({
     queryKey: ["project_types"],
