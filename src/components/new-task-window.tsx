@@ -835,6 +835,7 @@ export function TaskWindow({
   const [askUnsaved, setAskUnsaved] = useState(false);
   const [askDelete, setAskDelete] = useState(false);
   const [stagesOpen, setStagesOpen] = useState(false);
+  const [fieldsOpen, setFieldsOpen] = useState(true);
 
 
   const payload = () => ({
