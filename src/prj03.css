@@ -252,3 +252,51 @@
   --p3-muted: var(--muted-foreground);
   --p3-muted-2: var(--muted-foreground);
 }
+
+/* ---------- lista compacta estilo ClickUp ---------- */
+.prj03 .p3-table-compact { overflow: hidden; }
+.prj03 .p3-table-compact thead th {
+  padding: 8px 10px; font-size: 11px; font-weight: 600;
+  color: var(--p3-muted); border-bottom: 1px solid var(--p3-border-soft);
+  background: #FAFBFD;
+}
+.prj03 .p3-table-compact tbody td {
+  padding: 5px 10px; font-size: 12.5px; border-bottom: 1px solid #F2F4F8;
+}
+.prj03 .p3-table-compact .p3-group-row { cursor: pointer; user-select: none; }
+.prj03 .p3-table-compact .p3-group-row td {
+  padding: 6px 10px; background: #F5F7FB; border-bottom: 1px solid var(--p3-border-soft);
+}
+.prj03 .p3-table-compact .p3-group-row:hover td { background: #EFF3FA; }
+.prj03 .p3-group-h { display: inline-flex; align-items: center; gap: 8px; }
+.prj03 .p3-group-chev { width: 13px; height: 13px; color: var(--p3-muted-2); transition: transform .15s; }
+.prj03 .p3-group-chev.closed { transform: rotate(-90deg); }
+.prj03 .p3-group-pill {
+  display: inline-flex; align-items: center; gap: 5px;
+  height: 19px; padding: 0 8px; border-radius: 5px;
+  font-size: 10.5px; font-weight: 700; letter-spacing: .4px;
+  color: #fff; text-transform: uppercase; white-space: nowrap;
+}
+.prj03 .p3-group-pill .dot { width: 5px; height: 5px; border-radius: 50%; background: rgba(255,255,255,.85); }
+.prj03 .p3-group-count { font-size: 11px; font-weight: 600; color: var(--p3-muted-2); }
+.prj03 .p3-table-compact .p3-task-row { cursor: pointer; }
+.prj03 .p3-table-compact .p3-task-row:hover td { background: #F7FAFF; }
+.prj03 .p3-table-compact .p3-tname {
+  display: block; max-width: 340px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  font-size: 12.5px;
+}
+.prj03 .p3-table-compact .p3-assignee { gap: 6px; }
+.prj03 .p3-table-compact .p3-av { width: 20px; height: 20px; font-size: 9px; }
+.prj03 .p3-table-compact .p3-aname {
+  max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.prj03 .p3-table-compact .p3-pill { height: 20px; padding: 0 8px; font-size: 11px; border-radius: 5px; }
+.prj03 .p3-table-compact .p3-date { font-size: 12px; }
+.prj03 .p3-table-compact .p3-prog { gap: 6px; }
+.prj03 .p3-table-compact .p3-prog .track { width: 56px; height: 4px; }
+.prj03 .p3-table-compact .p3-prog b { font-size: 11px; }
+.prj03 .p3-table-compact .p3-kebab {
+  width: 24px; height: 24px; border-radius: 5px; border: 0; background: transparent;
+  color: var(--p3-muted-2); cursor: pointer; display: inline-flex; align-items: center; justify-content: center;
+}
+.prj03 .p3-table-compact .p3-kebab:hover { background: #EDF1F7; color: var(--p3-ink); }
