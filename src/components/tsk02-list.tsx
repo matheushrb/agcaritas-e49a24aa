@@ -2,7 +2,8 @@ import { useMemo, useState, useEffect } from "react";
 import {
   Search, Plus, Download, List as ListIcon, LayoutGrid, GanttChartSquare,
   CalendarDays, Clock, Timer, CheckCircle2, AlertTriangle, MoreVertical,
-  ChevronLeft, ChevronRight, ChevronDown, FilterX,
+  ChevronLeft, ChevronRight, ChevronDown, ChevronRight as ExpandIcon, FilterX,
+  Circle, MessageSquare, Flag,
 } from "lucide-react";
 import "@/tsk02.css";
 import { useStageIndex, stageInfoOf } from "@/lib/task-types";
@@ -86,13 +87,14 @@ type Props = {
   onNew: () => void;
   onQuickCreate: (title: string) => void;
   onStatusChange: (id: string, status: TskTask["status"]) => void;
+  onProgressChange?: (id: string, progress: number) => void;
   onArchiveChange?: (id: string, archived: boolean) => void;
   children?: (rows: TskTask[]) => React.ReactNode;
 };
 
 export function Tsk02List({
   view, onViewChange, tasks, projects, people, projectLogo,
-  onOpen, onNew, onQuickCreate, onStatusChange, onArchiveChange, children,
+  onOpen, onNew, onQuickCreate, onStatusChange, onProgressChange, onArchiveChange, children,
 }: Props) {
   const { data: stageIndex } = useStageIndex();
   const [q, setQ] = useState("");
@@ -110,6 +112,8 @@ export function Tsk02List({
   const [sel, setSel] = useState<Record<string, boolean>>({});
   const [quick, setQuick] = useState("");
   const [collapsedStages, setCollapsedStages] = useState<Set<string>>(new Set());
+  const [expandedTasks, setExpandedTasks] = useState<Set<string>>(new Set());
+  const [sort, setSort] = useState<{ key: "due" | "progress"; direction: "asc" | "desc" } | null>(null);
 
   useEffect(() => { setPage(1); }, [q, status, assignee, priority, project, deadline, archived, hideDone, perPage]);
   useEffect(() => {
@@ -179,9 +183,26 @@ export function Tsk02List({
     ];
   }, [kpiBase]);
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / perPage));
+  const ordered = useMemo(() => {
+    if (!sort) return filtered;
+    return [...filtered].sort((a, b) => {
+      const av = sort.key === "progress" ? a.progress : (a.due_date ? new Date(`${a.due_date}T00:00:00`).getTime() : Number.MAX_SAFE_INTEGER);
+      const bv = sort.key === "progress" ? b.progress : (b.due_date ? new Date(`${b.due_date}T00:00:00`).getTime() : Number.MAX_SAFE_INTEGER);
+      return (av - bv) * (sort.direction === "asc" ? 1 : -1);
+    });
+  }, [filtered, sort]);
+
+  const toggleSort = (key: "due" | "progress") => setSort(previous => (
+    previous?.key !== key
+      ? { key, direction: "asc" }
+      : previous.direction === "asc"
+        ? { key, direction: "desc" }
+        : null
+  ));
+
+  const totalPages = Math.max(1, Math.ceil(ordered.length / perPage));
   const current = Math.min(page, totalPages);
-  const rows = filtered.slice((current - 1) * perPage, current * perPage);
+  const rows = ordered.slice((current - 1) * perPage, current * perPage);
   const groupedRows = useMemo(() => {
     const groups = new Map<string, { key: string; name: string; color: string; rows: TskTask[] }>();
     rows.forEach(task => {
@@ -334,9 +355,12 @@ export function Tsk02List({
       {view !== "list" ? children?.(filtered) : (
         <div className="k-table">
           <div className="k-thead">
-            <div className="k-chk">
+            <div aria-hidden="true" />
+            <div className="k-statehead" aria-label="Estado"><Circle size={11} /></div>
+            <div className="k-namehead">
               <input
                 type="checkbox"
+                aria-label="Selecionar tarefas da página"
                 checked={rows.length > 0 && rows.every(r => sel[r.id])}
                 onChange={e => {
                   const next = { ...sel };
@@ -344,15 +368,20 @@ export function Tsk02List({
                   setSel(next);
                 }}
               />
+              <span>Tarefa</span>
             </div>
-            <div>Tarefa</div>
+            <div className="k-centerhead">Responsável</div>
+            <button type="button" className="k-sorthead" data-active={sort?.key === "due"} onClick={() => toggleSort("due")}>
+              Prazo {sort?.key === "due" && <span>{sort.direction === "asc" ? "↑" : "↓"}1</span>}
+            </button>
             <div>Projeto</div>
             <div>Status</div>
-            <div>Responsável</div>
+            <div>Etapa</div>
+            <button type="button" className="k-sorthead" data-active={sort?.key === "progress"} onClick={() => toggleSort("progress")}>
+              Progr. {sort?.key === "progress" && <span>{sort.direction === "asc" ? "↑" : "↓"}1</span>}
+            </button>
             <div>Prioridade</div>
-            <div>Prazo</div>
-            <div>Progresso</div>
-            <div style={{ textAlign: "right" }}>Ações</div>
+            <div className="k-addhead"><button type="button" onClick={onNew} title="Adicionar tarefa"><Plus size={14} /></button></div>
           </div>
 
           {rows.length === 0 ? (
@@ -376,69 +405,88 @@ export function Tsk02List({
             const pn = projName(t.project_id);
             const per = person(t.assignee_id);
             const late = isLate(t);
+            const subtasks = t.subtasks ?? [];
+            const expanded = expandedTasks.has(t.id);
+            const stage = stageInfoOf(t, stageIndex);
             return (
-              <div key={t.id} className="k-trow" onClick={() => onOpen(t.id)}>
-                <div className="k-chk" onClick={e => e.stopPropagation()}>
-                  <input type="checkbox" checked={!!sel[t.id]} onChange={e => setSel(s => ({ ...s, [t.id]: e.target.checked }))} />
-                </div>
-                <div className="k-cell">
-                  <div className="k-taskline">
+              <div className="k-taskblock" key={t.id}>
+                <div className="k-trow" onClick={() => onOpen(t.id)}>
+                  <div className="k-expandcell" onClick={e => e.stopPropagation()}>
+                    {subtasks.length > 0 && (
+                      <button
+                        type="button"
+                        aria-label={expanded ? "Recolher subtarefas" : "Expandir subtarefas"}
+                        aria-expanded={expanded}
+                        onClick={() => setExpandedTasks(previous => {
+                          const next = new Set(previous);
+                          if (next.has(t.id)) next.delete(t.id); else next.add(t.id);
+                          return next;
+                        })}
+                      >
+                        <ExpandIcon size={13} className={expanded ? "is-expanded" : ""} />
+                      </button>
+                    )}
+                  </div>
+                  <div className={`k-statecell st-${t.status}`} title={late ? "Atrasada" : STATUS_LABEL[t.status]}>
+                    {t.status === "done" ? <CheckCircle2 size={15} /> : <Circle size={15} />}
+                  </div>
+                  <div className="k-cell k-namecell">
+                    <input
+                      type="checkbox"
+                      aria-label={`Selecionar ${t.title}`}
+                      checked={!!sel[t.id]}
+                      onClick={e => e.stopPropagation()}
+                      onChange={e => setSel(s => ({ ...s, [t.id]: e.target.checked }))}
+                    />
                     <div className="k-tname" title={t.title}>{t.title}</div>
-                    <div className="k-tcode">{taskCode(t, pn)}</div>
+                    <span className="k-tcode">{taskCode(t, pn)}</span>
+                    {!!t.comments_count && <span className="k-comments"><MessageSquare size={11} />{t.comments_count}</span>}
                   </div>
-                </div>
-                <div className="k-cell k-proj">
-                  {projectLogo?.(t.project_id) ? (
-                    <ClientLogo value={projectLogo(t.project_id)} name={pn} size={22} rounded="rounded-md" className="k-pav-logo" />
-                  ) : (
-                    <span className="k-pav" style={{ background: hashColor(pn) }}>{initials(pn)}</span>
-                  )}
-                  <div style={{ minWidth: 0 }}>
-                    <div className="k-pname" title={pn}>{pn}</div>
+                  <div className="k-cell k-user" title={per.name}>
+                    {t.assignee_id ? <UserAvatar userId={t.assignee_id} name={per.name} size="css" className="k-av" /> : <span className="k-emptyvalue">–</span>}
                   </div>
-                </div>
-                <div className="k-cell">
-                  <span className={`k-pill ${late ? "st-late" : `st-${t.status}`}`}>
-                    {late ? "Atrasada" : STATUS_LABEL[t.status]}
-                  </span>
-                </div>
-
-                <div className="k-cell k-user">
-                  <UserAvatar userId={t.assignee_id} name={per.name} size="css" className="k-av" />
-                  <div style={{ minWidth: 0 }}>
-                    <div className="k-uname">{per.name}</div>
+                  <div className="k-cell">
+                    {t.due_date ? <div className={`k-date ${late ? "late" : ""}`}>{fmtDate(t.due_date)}</div> : <span className="k-emptyvalue">–</span>}
                   </div>
-                </div>
-                <div className="k-cell">
-                  <span className={`k-pill pr-${t.priority}`}>{PRIORITY_LABEL[t.priority]}</span>
-                </div>
-                <div className="k-cell">
-                  {t.due_date ? (
-                    <>
-                      <div className={`k-date ${late ? "late" : ""}`}>{fmtDate(t.due_date)}</div>
-                    </>
-                  ) : <span className="k-when">Sem prazo</span>}
-                </div>
-                <div className="k-cell k-prog">
-                  <span className="k-progv">{t.progress}%</span>
-                  <span className="k-bar"><i className={t.progress >= 100 ? "done" : ""} style={{ width: `${Math.min(100, t.progress)}%` }} /></span>
-                </div>
-                <div className="k-cell k-acts" onClick={e => e.stopPropagation()}>
-                  <button className="k-iconbtn" onClick={() => setMenu(m => m === t.id ? null : t.id)}><MoreVertical size={16} /></button>
-                  {menu === t.id && (
-                    <div className="k-menu" onClick={e => e.stopPropagation()}>
-                      <button onClick={() => { setMenu(null); onOpen(t.id); }}>Abrir tarefa</button>
-                      <button onClick={() => { setMenu(null); onStatusChange(t.id, "in_progress"); }}>Marcar em andamento</button>
-                      <button onClick={() => { setMenu(null); onStatusChange(t.id, "review"); }}>Enviar para revisão</button>
-                      <button onClick={() => { setMenu(null); onStatusChange(t.id, "done"); }}>Marcar como concluída</button>
-                      {onArchiveChange && (
-                        t.archived_at
+                  <div className="k-cell k-proj">
+                    {projectLogo?.(t.project_id) ? <ClientLogo value={projectLogo(t.project_id)} name={pn} size={20} rounded="rounded" className="k-pav-logo" /> : t.project_id ? <span className="k-pav" style={{ background: hashColor(pn) }}>{initials(pn)}</span> : null}
+                    <span className={t.project_id ? "k-pname" : "k-emptyvalue"} title={pn}>{t.project_id ? pn : "–"}</span>
+                  </div>
+                  <div className="k-cell k-inlinefield" onClick={e => e.stopPropagation()}>
+                    <select className={`k-pill k-inline-select st-${t.status}`} value={t.status} onChange={e => onStatusChange(t.id, e.target.value as TskTask["status"])} aria-label={`Status de ${t.title}`}>
+                      {Object.entries(STATUS_LABEL).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+                    </select>
+                  </div>
+                  <div className="k-cell"><span className="k-stagepill" style={{ color: stage.color, backgroundColor: `color-mix(in srgb, ${stage.color} 13%, transparent)` }}>{stage.name}</span></div>
+                  <div className="k-cell k-inlinefield" onClick={e => e.stopPropagation()}>
+                    <select className="k-progress-select" value={t.progress} onChange={e => onProgressChange?.(t.id, Number(e.target.value))} aria-label={`Progresso de ${t.title}`}>
+                      {[0, 25, 50, 75, 100].map(value => <option key={value} value={value}>{value}%</option>)}
+                    </select>
+                  </div>
+                  <div className="k-cell"><span className={`k-priority pr-${t.priority}`}><Flag size={12} />{PRIORITY_LABEL[t.priority]}</span></div>
+                  <div className="k-cell k-acts" onClick={e => e.stopPropagation()}>
+                    <button className="k-iconbtn" onClick={() => setMenu(m => m === t.id ? null : t.id)} aria-label={`Ações de ${t.title}`}><MoreVertical size={15} /></button>
+                    {menu === t.id && (
+                      <div className="k-menu" onClick={e => e.stopPropagation()}>
+                        <button onClick={() => { setMenu(null); onOpen(t.id); }}>Abrir tarefa</button>
+                        <button onClick={() => { setMenu(null); onStatusChange(t.id, "in_progress"); }}>Marcar em andamento</button>
+                        <button onClick={() => { setMenu(null); onStatusChange(t.id, "review"); }}>Enviar para revisão</button>
+                        <button onClick={() => { setMenu(null); onStatusChange(t.id, "done"); }}>Marcar como concluída</button>
+                        {onArchiveChange && (t.archived_at
                           ? <button onClick={() => { setMenu(null); onArchiveChange(t.id, false); }}>Desarquivar</button>
-                          : <button onClick={() => { setMenu(null); onArchiveChange(t.id, true); }}>Arquivar</button>
-                      )}
-                    </div>
-                  )}
+                          : <button onClick={() => { setMenu(null); onArchiveChange(t.id, true); }}>Arquivar</button>)}
+                      </div>
+                    )}
+                  </div>
                 </div>
+                {expanded && subtasks.map(subtask => (
+                  <div key={subtask.id} className="k-trow k-subtaskrow">
+                    <div className="k-expandcell" />
+                    <div className={`k-statecell ${subtask.done ? "st-done" : "st-todo"}`}>{subtask.done ? <CheckCircle2 size={14} /> : <Circle size={14} />}</div>
+                    <div className="k-cell k-namecell"><span className="k-subtaskbranch" /> <span className="k-tname" title={subtask.title}>{subtask.title}</span></div>
+                    {Array.from({ length: 8 }, (_, index) => <div className="k-cell" key={index}><span className="k-emptyvalue">–</span></div>)}
+                  </div>
+                ))}
               </div>
             );
               })}
