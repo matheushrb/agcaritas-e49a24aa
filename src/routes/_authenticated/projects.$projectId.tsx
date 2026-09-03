@@ -294,6 +294,87 @@ function ProjectDetail() {
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const selectedTask = tasks.find(t => t.id === selectedTaskId) ?? null;
   const [editOpen, setEditOpen] = useState(false);
+
+  /* ---- Edição do projeto pelo mesmo wizard da criação ---- */
+  const { data: allClients = [] } = useQuery({
+    queryKey: ["clients-min"],
+    queryFn: async () => {
+      const { data } = await supabase.from("clients").select("id,name").order("name");
+      return (data ?? []) as { id: string; name: string }[];
+    },
+  });
+  const clientOptions = allClients;
+
+  const { data: projectMembers = [] } = useQuery({
+    queryKey: ["project-members", projectId],
+    queryFn: async () => {
+      const { data } = await supabase.from("project_members").select("id,user_id,role").eq("project_id", projectId);
+      return (data ?? []) as { id: string; user_id: string; role: string | null }[];
+    },
+  });
+
+  const editValue: ProjectWizardValue | null = useMemo(() => {
+    if (!project) return null;
+    const scope = (project.scope_flags ?? {}) as Record<string, any>;
+    return {
+      ...defaultProjectWizardValue,
+      name: project.name ?? "",
+      client_id: project.client_id,
+      description: project.description ?? "",
+      project_type: project.project_type ?? "",
+      initial_status: (["planning", "active", "paused"].includes(project.status) ? project.status : "active") as any,
+      owner_id: project.owner_id,
+      start_date: project.start_date,
+      end_date: project.end_date,
+      urgency: (project.urgency ?? "medium") as any,
+      stages: Array.isArray((project as any).stages) ? ((project as any).stages as any[]) : [],
+      billing_model: (project.billing_model ?? "per_task") as any,
+      fixed_value: project.fixed_value,
+      social_platforms: Array.isArray(project.social_platforms) ? (project.social_platforms as string[]) : [],
+      tools: Array.isArray(scope.tools) ? (scope.tools as string[]) : [],
+      scope_flags: { ...defaultProjectWizardValue.scope_flags, ...Object.fromEntries(Object.entries(scope).filter(([k]) => k !== "tools")) },
+      traffic_budget: (project.traffic_budget ?? defaultProjectWizardValue.traffic_budget) as any,
+      other_budgets: Array.isArray((project as any).other_budgets) ? ((project as any).other_budgets as any[]) : [],
+      participants: projectMembers
+        .filter(m => m.user_id !== project.owner_id)
+        .map(m => ({
+          id: m.id, user_id: m.user_id,
+          name: people.find((p: any) => p.id === m.user_id)?.full_name ?? "",
+          role: m.role ?? "", department: "", permission: "collaborator" as const, load: "",
+        })),
+    };
+  }, [project, projectMembers, people]);
+
+  const updateProject = useMutation({
+    mutationFn: async (input: ProjectWizardValue) => {
+      const { error } = await supabase.from("projects").update({
+        name: input.name,
+        client_id: input.client_id,
+        description: input.description || null,
+        status: input.initial_status,
+        owner_id: input.owner_id,
+        start_date: input.start_date,
+        end_date: input.end_date,
+        project_type: input.project_type,
+        billing_model: input.billing_model,
+        fixed_value: input.fixed_value,
+        urgency: input.urgency,
+        social_platforms: (input.social_platforms ?? []) as any,
+        scope_flags: { ...input.scope_flags, tools: input.tools } as any,
+        traffic_budget: input.traffic_budget as any,
+        other_budgets: input.other_budgets as any,
+        stages: (input.stages ?? []) as any,
+      }).eq("id", projectId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["project", projectId] });
+      qc.invalidateQueries({ queryKey: ["projects"] });
+      toast.success("Projeto atualizado");
+      setEditOpen(false);
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
   const [noticesOpen, setNoticesOpen] = useState(false);
 
   const addTask = useMutation({

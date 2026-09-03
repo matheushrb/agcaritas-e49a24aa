@@ -360,6 +360,7 @@ function ProjectsPage() {
         scope_flags: { ...input.scope_flags, tools: input.tools } as any,
         traffic_budget: input.traffic_budget as any,
         other_budgets: input.other_budgets as any,
+        stages: (input.stages ?? []) as any,
       }).select("id").single();
       if (error) throw error;
 
