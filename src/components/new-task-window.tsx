@@ -570,6 +570,8 @@ export function TaskWindow({
     setDeliverables(
       (Array.isArray(existing.deliverables) ? existing.deliverables : []).map((d: any) => ({
         id: d.id ?? uid(),
+        label: d.label ?? "",
+        icon: d.icon ?? null,
         platform: d.platform ?? "",
         type: d.type ?? "",
         billing_enabled: d.billing_enabled !== false,
