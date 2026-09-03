@@ -190,7 +190,7 @@ export function NewProjectWizard({
     setV(p => ({ ...p, [k]: val }));
   };
 
-  const reset = () => { setStep(1); setV(defaultProjectWizardValue); setTouched(false); };
+  const reset = () => { setStep(1); setV(initialValue ?? defaultProjectWizardValue); setTouched(false); };
   const handleOpen = (o: boolean) => { onOpenChange(o); if (!o) reset(); };
   const requestClose = () => {
     if (touched && !window.confirm("Existem alterações não salvas. Deseja fechar mesmo assim?")) return;
@@ -250,6 +250,7 @@ export function NewProjectWizard({
   const allOk = step1Ok && step2Ok;
 
   const canGo = (target: number) => {
+    if (isEdit) return true;
     if (target <= step) return true;
     if (target >= 2 && !step1Ok) return false;
     if (target >= 3 && !step2Ok) return false;
@@ -270,8 +271,8 @@ export function NewProjectWizard({
           {/* HEADER */}
           <div className="cw-header">
             <div className="min-w-0 flex-1">
-              <DialogTitle asChild><h2>Novo Projeto</h2></DialogTitle>
-              <p>Crie um novo projeto em 5 etapas simples</p>
+              <DialogTitle asChild><h2>{isEdit ? "Editar Projeto" : "Novo Projeto"}</h2></DialogTitle>
+              <p>{isEdit ? "Ajuste dados, etapas, equipe e financeiro do projeto" : "Crie um novo projeto em 5 etapas simples"}</p>
             </div>
             <button type="button" className="cw-close" onClick={requestClose} aria-label="Fechar"><X size={18} /></button>
           </div>
@@ -344,13 +345,14 @@ export function NewProjectWizard({
               <button type="button" className="cw-btn cw-btn-secondary" onClick={back} disabled={step === 1}>
                 <ChevronLeft /> Voltar
               </button>
-              {step < 5 ? (
-                <button type="button" className="cw-btn cw-btn-primary" onClick={next} disabled={nextDisabled}>
+              {step < 5 && (
+                <button type="button" className="cw-btn cw-btn-secondary" onClick={next} disabled={nextDisabled}>
                   Continuar <ChevronRight />
                 </button>
-              ) : (
+              )}
+              {(step === 5 || isEdit) && (
                 <button type="button" className="cw-btn cw-btn-primary" disabled={pending || !allOk} onClick={() => onCreate(v)}>
-                  {pending ? "Criando…" : "Criar projeto"} <Check />
+                  {pending ? "Salvando…" : isEdit ? "Salvar alterações" : "Criar projeto"} <Check />
                 </button>
               )}
             </div>
