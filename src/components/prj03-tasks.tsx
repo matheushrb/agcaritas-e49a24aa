@@ -240,78 +240,71 @@ export function Prj03Tasks({ tasks, people, onOpen, onQuickCreate, pending }: {
           </button>
         </div>
 
-        {/* 03 — tabela */}
-        <div className="p3-card p3-table">
+        {/* 03 — lista compacta agrupada por etapa (estilo ClickUp) */}
+        <div className="p3-card p3-table p3-table-compact">
           <table>
             <thead>
               <tr>
-                <th className="p3-c-check">
-                  <input
-                    type="checkbox"
-                    checked={rows.length > 0 && rows.every((r) => checked.includes(r.id))}
-                    onChange={(e) => setChecked(e.target.checked ? rows.map((r) => r.id) : [])}
-                    aria-label="Selecionar todas"
-                  />
-                </th>
-                <th>Tarefa</th>
-                <th>Etapa / Status</th>
+                <th>Nome</th>
                 <th>Responsável</th>
+                <th>Vencimento</th>
+                <th>Status</th>
                 <th>Prioridade</th>
-                <th>Prazo</th>
                 <th>Progresso</th>
-                <th>Esforço est.</th>
-                <th className="p3-c-gear"><Settings2 size={15} /></th>
+                <th>Esforço</th>
+                <th className="p3-c-gear"><Settings2 size={14} /></th>
               </tr>
             </thead>
-            <tbody>
-              {rows.map((t) => {
-                const name = nameOf(t.assignee_id);
-                const late = t.status !== "done" && (daysFromToday(t.due_date) ?? 1) < 0;
-                return (
-                  <tr key={t.id}>
-                    <td className="p3-c-check">
-                      <input
-                        type="checkbox"
-                        checked={checked.includes(t.id)}
-                        onChange={(e) => setChecked((c) => e.target.checked ? [...c, t.id] : c.filter((x) => x !== t.id))}
-                        aria-label={`Selecionar ${t.title}`}
-                      />
-                    </td>
-                    <td><span className="p3-tname" onClick={() => onOpen(t.id)}>{t.title}</span></td>
-                    <td>
-                      {(() => { const si = stageInfoOf(t, stageIndex); return (
-                        <span className="p3-stage" title={`${si.name} · ${STATUS_LABEL[t.status]}`}>
-                          <span className="dot" style={{ background: si.color }} />
-                          {si.name}
-                          <ChevronDown />
+            {groups.map((g) => {
+              const collapsed = collapsedGroups[g.key];
+              return (
+                <tbody key={g.key}>
+                  <tr className="p3-group-row" onClick={() => toggleGroup(g.key)}>
+                    <td colSpan={8}>
+                      <span className="p3-group-h">
+                        <ChevronDown className={`p3-group-chev${collapsed ? " closed" : ""}`} />
+                        <span className="p3-group-pill" style={{ background: g.color }}>
+                          <span className="dot" />{g.name}
                         </span>
-                      ); })()}
-                    </td>
-
-                    <td>
-                      {name ? (
-                        <span className="p3-assignee"><UserAvatar userId={t.assignee_id} name={name} size="css" className="p3-av" />{name}</span>
-                      ) : <span className="p3-date">Não atribuída</span>}
-                    </td>
-                    <td><span className={`p3-pill ${PRIORITY[t.priority].cls}`}>{PRIORITY[t.priority].label}</span></td>
-                    <td><span className="p3-date" style={late ? { color: "#D22F2F" } : undefined}>{fmtDate(t.due_date)}</span></td>
-                    <td>
-                      <div className={`p3-prog${t.progress >= 100 ? " done" : ""}`}>
-                        <span className="track"><i style={{ width: `${Math.min(100, Math.max(0, t.progress ?? 0))}%` }} /></span>
-                        <b>{Math.round(t.progress ?? 0)}%</b>
-                      </div>
-                    </td>
-                    <td><span className="p3-date">{t.estimated_hours ? `${t.estimated_hours}h` : "—"}</span></td>
-                    <td className="p3-c-gear">
-                      <button type="button" className="p3-kebab" onClick={() => onOpen(t.id)} aria-label="Abrir tarefa"><MoreVertical size={15} /></button>
+                        <span className="p3-group-count">{g.tasks.length}</span>
+                      </span>
                     </td>
                   </tr>
-                );
-              })}
-              {rows.length === 0 && (
-                <tr><td colSpan={9} className="p3-empty">Nenhuma tarefa encontrada com os filtros atuais.</td></tr>
-              )}
-            </tbody>
+                  {!collapsed && g.tasks.map((t) => {
+                    const name = nameOf(t.assignee_id);
+                    const late = t.status !== "done" && (daysFromToday(t.due_date) ?? 1) < 0;
+                    return (
+                      <tr key={t.id} className="p3-task-row" onClick={() => onOpen(t.id)}>
+                        <td>
+                          <span className="p3-tname" title={t.title}>{t.title}</span>
+                        </td>
+                        <td>
+                          {name ? (
+                            <span className="p3-assignee"><UserAvatar userId={t.assignee_id} name={name} size="css" className="p3-av" /><span className="p3-aname">{name}</span></span>
+                          ) : <span className="p3-date">—</span>}
+                        </td>
+                        <td><span className="p3-date" style={late ? { color: "#D22F2F", fontWeight: 600 } : undefined}>{fmtDate(t.due_date)}</span></td>
+                        <td><span className="p3-pill blue">{STATUS_LABEL[t.status]}</span></td>
+                        <td><span className={`p3-pill ${PRIORITY[t.priority].cls}`}>{PRIORITY[t.priority].label}</span></td>
+                        <td>
+                          <div className={`p3-prog${t.progress >= 100 ? " done" : ""}`}>
+                            <span className="track"><i style={{ width: `${Math.min(100, Math.max(0, t.progress ?? 0))}%` }} /></span>
+                            <b>{Math.round(t.progress ?? 0)}%</b>
+                          </div>
+                        </td>
+                        <td><span className="p3-date">{t.estimated_hours ? `${t.estimated_hours}h` : "—"}</span></td>
+                        <td className="p3-c-gear">
+                          <button type="button" className="p3-kebab" onClick={(e) => { e.stopPropagation(); onOpen(t.id); }} aria-label="Abrir tarefa"><MoreVertical size={14} /></button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              );
+            })}
+            {rows.length === 0 && (
+              <tbody><tr><td colSpan={8} className="p3-empty">Nenhuma tarefa encontrada com os filtros atuais.</td></tr></tbody>
+            )}
           </table>
 
           {/* 04 — rodapé */}
