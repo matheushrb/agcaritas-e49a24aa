@@ -339,11 +339,11 @@ function ProjectDetail() {
         .filter(m => m.user_id !== project.owner_id)
         .map(m => ({
           id: m.id, user_id: m.user_id,
-          name: people.find((p: any) => p.id === m.user_id)?.full_name ?? "",
+          name: "",
           role: m.role ?? "", department: "", permission: "collaborator" as const, load: "",
         })),
     };
-  }, [project, projectMembers, people]);
+  }, [project, projectMembers]);
 
   const updateProject = useMutation({
     mutationFn: async (input: ProjectWizardValue) => {
