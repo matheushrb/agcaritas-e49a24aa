@@ -23,6 +23,8 @@
   color: var(--k-ink);
   font-family: "IBM Plex Sans", "Inter", system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
+  width: min(100%, 1520px);
+  margin-inline: auto;
 }
 .dark .tsk2 {
   --k-card: var(--card);
@@ -40,7 +42,7 @@
 
 /* ---------- cabeçalho ---------- */
 .tsk2 .k-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
-.tsk2 .k-title { font-size: 30px; font-weight: 700; letter-spacing: -.6px; line-height: 1.1; margin: 0; }
+.tsk2 .k-title { font-size: 26px; font-weight: 700; letter-spacing: 0; line-height: 1.1; margin: 0; }
 .tsk2 .k-sub { font-size: 13px; color: var(--k-muted); margin-top: 6px; }
 .tsk2 .k-headacts { display: flex; align-items: center; gap: 10px; }
 
@@ -119,43 +121,44 @@
 /* ---------- tabela ---------- */
 .tsk2 .k-table {
   background: var(--k-card); border: 1px solid var(--k-border); border-radius: 12px;
-  margin-top: 18px; overflow: visible;
+  margin-top: 14px; overflow-x: auto; overflow-y: visible;
 }
 .tsk2 .k-thead,
 .tsk2 .k-trow {
   display: grid;
-  grid-template-columns: 32px minmax(180px, 1.65fr) minmax(150px, 1.15fr) 122px minmax(140px, 1fr) 88px 116px 130px 38px;
-  align-items: center; gap: 8px; padding: 0 10px;
+  grid-template-columns: 26px minmax(210px, 1fr) 180px 112px 158px 78px 106px 100px 28px;
+  align-items: center; gap: 6px; padding: 0 8px;
+  min-width: 1100px;
 }
 .tsk2 .k-thead {
-  height: 34px; border-bottom: 1px solid var(--k-border);
-  font-size: 11px; font-weight: 600; color: var(--k-muted); text-transform: uppercase;
+  height: 29px; border-bottom: 1px solid var(--k-border);
+  font-size: 9.5px; font-weight: 600; color: var(--k-muted); text-transform: uppercase;
 }
 .tsk2 .k-trow {
-  min-height: 42px; padding-top: 5px; padding-bottom: 5px;
+  min-height: 35px; padding-top: 3px; padding-bottom: 3px;
   border-bottom: 1px solid var(--k-border-soft); cursor: pointer; transition: background .12s;
 }
 .tsk2 .k-trow:last-of-type { border-bottom: 0; }
 .tsk2 .k-trow:hover { background: rgba(23,105,246,.035); }
 .tsk2 .k-cell { min-width: 0; }
 .tsk2 .k-chk { display: flex; align-items: center; justify-content: center; }
-.tsk2 .k-chk input { width: 14px; height: 14px; accent-color: var(--k-primary); cursor: pointer; }
+.tsk2 .k-chk input { width: 13px; height: 13px; accent-color: var(--k-primary); cursor: pointer; }
 
-.tsk2 .k-tname { font-size: 12.5px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.tsk2 .k-tcode { font-size: 10px; color: var(--k-muted-2); margin-top: 1px; }
+.tsk2 .k-tname { font-size: 11.5px; font-weight: 600; line-height: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tsk2 .k-tcode { font-size: 9px; line-height: 11px; color: var(--k-muted-2); margin-top: 0; }
 
 .tsk2 .k-proj { display: flex; align-items: center; gap: 7px; min-width: 0; }
 .tsk2 .k-pav {
-  width: 24px; height: 24px; flex: 0 0 24px; border-radius: 6px;
+  width: 22px; height: 22px; flex: 0 0 22px; border-radius: 5px;
   display: inline-flex; align-items: center; justify-content: center;
-  font-size: 10.5px; font-weight: 700; color: #fff; letter-spacing: .2px;
+  font-size: 9px; font-weight: 700; color: #fff; letter-spacing: 0;
 }
-.tsk2 .k-pname { font-size: 12px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.tsk2 .k-psub { font-size: 10px; color: var(--k-muted-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tsk2 .k-pname { font-size: 10.5px; line-height: 13px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tsk2 .k-psub { font-size: 9px; line-height: 11px; color: var(--k-muted-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 .tsk2 .k-pill {
-  display: inline-flex; align-items: center; height: 20px; padding: 0 7px; border-radius: 4px;
-  font-size: 10.5px; font-weight: 600; white-space: nowrap;
+  display: inline-flex; align-items: center; height: 18px; padding: 0 6px; border-radius: 3px;
+  font-size: 9px; font-weight: 600; white-space: nowrap;
 }
 .tsk2 .k-pill.st-todo { background: var(--k-slate-soft); color: var(--k-muted); }
 .tsk2 .k-pill.st-in_progress { background: var(--k-primary-soft); color: var(--k-primary); }
@@ -170,28 +173,28 @@
 
 .tsk2 .k-user { display: flex; align-items: center; gap: 7px; min-width: 0; }
 .tsk2 .k-av {
-  width: 24px; height: 24px; flex: 0 0 24px; border-radius: 999px;
+  width: 21px; height: 21px; flex: 0 0 21px; border-radius: 999px;
   display: inline-flex; align-items: center; justify-content: center;
-  font-size: 11px; font-weight: 700; color: #fff;
+  font-size: 9px; font-weight: 700; color: #fff;
 }
-.tsk2 .k-uname { font-size: 12px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.tsk2 .k-urole { font-size: 10px; color: var(--k-muted-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tsk2 .k-uname { font-size: 10.5px; line-height: 13px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tsk2 .k-urole { font-size: 9px; line-height: 11px; color: var(--k-muted-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-.tsk2 .k-date { font-size: 11.5px; font-weight: 500; }
+.tsk2 .k-date { font-size: 10px; line-height: 12px; font-weight: 500; }
 .tsk2 .k-date.late { color: var(--k-red); }
-.tsk2 .k-when { font-size: 9.5px; color: var(--k-muted-2); margin-top: 1px; }
+.tsk2 .k-when { font-size: 8.5px; line-height: 10px; color: var(--k-muted-2); margin-top: 0; }
 .tsk2 .k-when.late { color: var(--k-red); }
 
 .tsk2 .k-prog { display: flex; align-items: center; gap: 7px; }
-.tsk2 .k-progv { font-size: 10.5px; font-weight: 500; color: var(--k-muted); width: 28px; text-align: right; font-variant-numeric: tabular-nums; }
-.tsk2 .k-bar { flex: 1; height: 4px; border-radius: 999px; background: #EAECF0; overflow: hidden; }
+.tsk2 .k-progv { font-size: 9px; font-weight: 500; color: var(--k-muted); width: 24px; text-align: right; font-variant-numeric: tabular-nums; }
+.tsk2 .k-bar { flex: 1; height: 3px; border-radius: 999px; background: #EAECF0; overflow: hidden; }
 .dark .tsk2 .k-bar { background: rgba(255,255,255,.1); }
 .tsk2 .k-bar i { display: block; height: 100%; border-radius: 999px; background: var(--k-primary); }
 .tsk2 .k-bar i.done { background: var(--k-green); }
 
 .tsk2 .k-acts { position: relative; display: flex; justify-content: flex-end; }
 .tsk2 .k-iconbtn {
-  width: 26px; height: 26px; border-radius: 6px; border: 1px solid transparent; background: transparent;
+  width: 22px; height: 22px; border-radius: 5px; border: 1px solid transparent; background: transparent;
   color: var(--k-muted-2); cursor: pointer; display: inline-flex; align-items: center; justify-content: center;
 }
 .tsk2 .k-iconbtn:hover { border-color: var(--k-border); color: var(--k-ink); }
@@ -235,20 +238,20 @@
 
 @media (max-width: 1400px) {
   .tsk2 .k-thead, .tsk2 .k-trow {
-    grid-template-columns: 30px minmax(160px,1.5fr) minmax(135px,1.1fr) 112px minmax(125px,1fr) 82px 108px 116px 34px;
-    gap: 7px;
+    grid-template-columns: 26px minmax(190px,1fr) 165px 108px 145px 74px 102px 94px 28px;
+    gap: 5px;
   }
 }
 
 /* Etapa dinâmica + status na coluna "Etapa / Status" */
-.k-stagecell { display: flex; flex-direction: column; gap: 4px; align-items: flex-start; }
-.k-stagename { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; color: var(--ink, #101828); }
-.k-stagename i { width: 7px; height: 7px; border-radius: 999px; display: inline-block; }
+.k-stagecell { display: flex; flex-direction: column; gap: 2px; align-items: flex-start; }
+.k-stagename { display: inline-flex; align-items: center; gap: 5px; font-size: 9.5px; line-height: 11px; font-weight: 600; color: var(--ink, #101828); }
+.k-stagename i { width: 6px; height: 6px; border-radius: 999px; display: inline-block; }
 
 /* Grupos compactos por etapa — padrão da lista de tarefas do projeto. */
 .tsk2 .k-stagegroup { display: contents; }
 .tsk2 .k-stagehead {
-  width: 100%; height: 30px; padding: 0 10px; border: 0; border-bottom: 1px solid var(--k-border-soft);
+  width: 100%; height: 27px; padding: 0 8px; border: 0; border-bottom: 1px solid var(--k-border-soft);
   background: color-mix(in srgb, var(--k-slate-soft) 72%, var(--k-card)); color: var(--k-muted);
   display: flex; align-items: center; gap: 7px; cursor: pointer; text-align: left;
 }
@@ -256,9 +259,9 @@
 .tsk2 .k-stagehead svg { transition: transform .15s ease; }
 .tsk2 .k-stagehead svg.is-collapsed { transform: rotate(-90deg); }
 .tsk2 .k-stagebadge {
-  height: 19px; padding: 0 7px; border: 1px solid; border-radius: 4px; background: var(--k-card);
-  display: inline-flex; align-items: center; font-size: 9.5px; font-weight: 700; text-transform: uppercase;
+  height: 17px; padding: 0 6px; border: 1px solid; border-radius: 3px; background: var(--k-card);
+  display: inline-flex; align-items: center; font-size: 8.5px; font-weight: 700; text-transform: uppercase;
 }
-.tsk2 .k-stagecount { font-size: 10.5px; color: var(--k-muted-2); font-variant-numeric: tabular-nums; }
+.tsk2 .k-stagecount { font-size: 9px; color: var(--k-muted-2); font-variant-numeric: tabular-nums; }
 .tsk2 .k-stagecell { gap: 2px; }
-.tsk2 .k-stagename { font-size: 10.5px; }
+.tsk2 .k-stagename { font-size: 9.5px; }
