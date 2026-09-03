@@ -347,7 +347,7 @@ export function Tsk02List({
             </div>
             <div>Tarefa</div>
             <div>Projeto</div>
-            <div>Etapa / Status</div>
+            <div>Status</div>
             <div>Responsável</div>
             <div>Prioridade</div>
             <div>Prazo</div>
@@ -398,14 +398,9 @@ export function Tsk02List({
                   </div>
                 </div>
                 <div className="k-cell">
-                  {(() => { const si = stageInfoOf(t, stageIndex); return (
-                    <div className="k-stagecell">
-                      <span className="k-stagename"><i style={{ background: si.color }} />{si.name}</span>
-                      <span className={`k-pill ${late ? "st-late" : `st-${t.status}`}`}>
-                        {late ? "Atrasada" : STATUS_LABEL[t.status]}
-                      </span>
-                    </div>
-                  ); })()}
+                  <span className={`k-pill ${late ? "st-late" : `st-${t.status}`}`}>
+                    {late ? "Atrasada" : STATUS_LABEL[t.status]}
+                  </span>
                 </div>
 
                 <div className="k-cell k-user">
