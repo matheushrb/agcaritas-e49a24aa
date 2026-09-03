@@ -17,6 +17,7 @@ import { UnsavedChangesDialog, ConfirmDeleteDialog } from "@/components/confirm-
 import { syncChargesFromTask } from "@/lib/billing-sync";
 import { computeStageWindows, stageAlert, fmtBr, type StageWindow } from "@/lib/stage-schedule";
 
+import { IconPicker } from "@/components/settings/icon-picker";
 import "@/windows.css";
 
 const EMPTY_ARR: any[] = [];
