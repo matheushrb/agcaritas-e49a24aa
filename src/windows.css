@@ -1479,3 +1479,75 @@
   .cw-task-body { grid-template-columns: minmax(0, 1fr) 226px; }
   .cw-dock { width: min(96vw, 940px); }
 }
+
+/* ===================================================================
+   TASK WINDOW v6 — layout ClickUp: cabeçalho amplo + campos 2 colunas
+   =================================================================== */
+.cw-window .cw-header {
+  padding: 20px 32px 14px;
+  align-items: flex-start;
+  gap: 12px;
+}
+.cw-window .cw-head-title {
+  font-size: 26px;
+  line-height: 34px;
+  font-weight: 700;
+  letter-spacing: -.02em;
+}
+.cw-window .cw-header .cw-title-icon { margin-top: 6px; }
+.cw-window .cw-head-meta { margin-top: 4px; }
+
+/* barra colapsável dos blocos */
+.cw-fold {
+  display: flex; align-items: center; gap: 7px;
+  margin: 0 32px; padding: 8px 0;
+  font-size: 12px; font-weight: 700; letter-spacing: .01em;
+  color: var(--cw-muted); background: none; border: 0; cursor: pointer;
+}
+.cw-fold:hover { color: var(--cw-ink); }
+.cw-fold svg { transition: transform .15s ease; }
+.cw-fold.is-open svg { transform: rotate(90deg); }
+.cw-fold-count { font-weight: 500; color: var(--cw-muted); }
+
+/* campos: grade de 2 colunas, rótulo à esquerda, valor à direita */
+.cw-headzone.is-slim > .cw-props.cw-cu,
+.cw-props.cw-cu {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(280px, 1fr));
+  column-gap: 48px;
+  row-gap: 4px;
+  padding: 4px 32px 16px;
+  border-bottom: none;
+}
+.cw-props.cw-cu .cw-prop {
+  display: grid;
+  grid-template-columns: 148px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  min-height: 34px;
+  padding: 0;
+  border: none;
+}
+.cw-props.cw-cu .cw-prop > .cw-label {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 12.5px; font-weight: 500; letter-spacing: 0;
+  color: var(--cw-muted); white-space: nowrap;
+}
+.cw-props.cw-cu .cw-prop-value {
+  min-height: 30px; padding: 2px 8px; border-radius: 7px;
+  transition: background .12s ease;
+}
+.cw-props.cw-cu .cw-prop-value:hover { background: color-mix(in oklab, currentColor 7%, transparent); }
+.cw-props.cw-cu .cw-prop-value select,
+.cw-props.cw-cu .cw-prop-value input { font-size: 13px; }
+.cw-props.cw-cu .cw-prop-prio { grid-column: auto; }
+.cw-headzone.is-slim > .cw-stageband { margin: 0 32px 14px; }
+.cw-task-body { padding-left: 32px; padding-right: 32px; }
+
+@media (max-width: 1180px) {
+  .cw-props.cw-cu { grid-template-columns: 1fr; column-gap: 0; }
+  .cw-window .cw-header { padding: 16px 20px 12px; }
+  .cw-fold, .cw-headzone.is-slim > .cw-stageband { margin-left: 20px; margin-right: 20px; }
+  .cw-props.cw-cu { padding-left: 20px; padding-right: 20px; }
+  .cw-task-body { padding-left: 20px; padding-right: 20px; }
+}

@@ -835,6 +835,7 @@ export function TaskWindow({
   const [askUnsaved, setAskUnsaved] = useState(false);
   const [askDelete, setAskDelete] = useState(false);
   const [stagesOpen, setStagesOpen] = useState(false);
+  const [fieldsOpen, setFieldsOpen] = useState(true);
 
 
   const payload = () => ({
@@ -1086,9 +1087,12 @@ export function TaskWindow({
 
           <div className="cw-headzone is-open is-slim">
 
-
           {/* PROPRIEDADES COMPACTAS */}
-          <div className="cw-props cw-cu">
+          <button type="button" className={`cw-fold${fieldsOpen ? " is-open" : ""}`} onClick={() => setFieldsOpen(v => !v)}>
+            <ChevronRight size={14} /> Campos
+            {!fieldsOpen && <span className="cw-fold-count">5 disponíveis</span>}
+          </button>
+          <div className="cw-props cw-cu" hidden={!fieldsOpen}>
             <div className="cw-prop">
               <div className="cw-label"><Layers size={13} /> Projeto</div>
               <div className="cw-prop-value">
