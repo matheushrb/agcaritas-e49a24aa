@@ -140,7 +140,7 @@ export function Prj03Tasks({ tasks, people, onOpen, onQuickCreate, pending }: {
   const [deadline, setDeadline] = useState("all");
   const [page, setPage] = useState(1);
   const [perPage, setPerPage] = useState(10);
-  const [checked, setChecked] = useState<string[]>([]);
+
 
   const nameOf = (id: string | null) => people.find((p) => p.id === id)?.full_name ?? null;
 
