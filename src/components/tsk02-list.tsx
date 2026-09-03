@@ -383,8 +383,10 @@ export function Tsk02List({
                   <input type="checkbox" checked={!!sel[t.id]} onChange={e => setSel(s => ({ ...s, [t.id]: e.target.checked }))} />
                 </div>
                 <div className="k-cell">
-                  <div className="k-tname" title={t.title}>{t.title}</div>
-                  <div className="k-tcode">{taskCode(t, pn)}</div>
+                  <div className="k-taskline">
+                    <div className="k-tname" title={t.title}>{t.title}</div>
+                    <div className="k-tcode">{taskCode(t, pn)}</div>
+                  </div>
                 </div>
                 <div className="k-cell k-proj">
                   {projectLogo?.(t.project_id) ? (
@@ -394,7 +396,6 @@ export function Tsk02List({
                   )}
                   <div style={{ minWidth: 0 }}>
                     <div className="k-pname" title={pn}>{pn}</div>
-                    <div className="k-psub">{projectSub?.(t.project_id) || STATUS_LABEL[t.status]}</div>
                   </div>
                 </div>
                 <div className="k-cell">
@@ -412,7 +413,6 @@ export function Tsk02List({
                   <UserAvatar userId={t.assignee_id} name={per.name} size="css" className="k-av" />
                   <div style={{ minWidth: 0 }}>
                     <div className="k-uname">{per.name}</div>
-                    <div className="k-urole">{per.role}</div>
                   </div>
                 </div>
                 <div className="k-cell">
@@ -422,13 +422,6 @@ export function Tsk02List({
                   {t.due_date ? (
                     <>
                       <div className={`k-date ${late ? "late" : ""}`}>{fmtDate(t.due_date)}</div>
-                      <div className={`k-when ${late ? "late" : ""}`}>
-                        {t.status === "done" ? "Concluída"
-                          : d === null ? ""
-                          : d < 0 ? `${Math.abs(d)} dias atrasado`
-                          : d === 0 ? "Vence hoje"
-                          : `${d} dias restantes`}
-                      </div>
                     </>
                   ) : <span className="k-when">Sem prazo</span>}
                 </div>
