@@ -20,7 +20,7 @@ import {
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { TaskWindow } from "@/components/new-task-window";
-import { EditProjectDialog, type EditableProject } from "@/components/edit-project-dialog";
+import { NewProjectWizard, defaultProjectWizardValue, type ProjectWizardValue } from "@/components/new-project-wizard";
 import { NoticeBoard, NoticeBoardDialog, parseNotices, type ProjectNotice } from "@/components/project-notice-board";
 import { ProjectCostsTab } from "@/components/project-costs-tab";
 import { Prj02Overview, p2Initials } from "@/components/prj02-overview";
@@ -703,10 +703,14 @@ function ProjectDetail() {
         taskId={selectedTaskId}
         onOpenChange={(o: boolean) => { if (!o) setSelectedTaskId(null); }}
       />
-      <EditProjectDialog
-        project={project as EditableProject}
+      <NewProjectWizard
+        mode="edit"
         open={editOpen}
         onOpenChange={setEditOpen}
+        clients={clientOptions}
+        initialValue={editValue}
+        pending={updateProject.isPending}
+        onCreate={(value) => updateProject.mutate(value)}
       />
     </div>
   );
