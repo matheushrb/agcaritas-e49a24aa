@@ -91,7 +91,7 @@ type Props = {
 };
 
 export function Tsk02List({
-  view, onViewChange, tasks, projects, people, projectSub, projectLogo,
+  view, onViewChange, tasks, projects, people, projectLogo,
   onOpen, onNew, onQuickCreate, onStatusChange, onArchiveChange, children,
 }: Props) {
   const { data: stageIndex } = useStageIndex();
@@ -376,7 +376,6 @@ export function Tsk02List({
             const pn = projName(t.project_id);
             const per = person(t.assignee_id);
             const late = isLate(t);
-            const d = t.due_date ? daysDiff(t.due_date) : null;
             return (
               <div key={t.id} className="k-trow" onClick={() => onOpen(t.id)}>
                 <div className="k-chk" onClick={e => e.stopPropagation()}>
