@@ -388,7 +388,7 @@ export function Tsk02List({
                 </div>
                 <div className="k-cell k-proj">
                   {projectLogo?.(t.project_id) ? (
-                    <ClientLogo value={projectLogo(t.project_id)} name={pn} size={30} rounded="rounded-lg" className="k-pav-logo" />
+                    <ClientLogo value={projectLogo(t.project_id)} name={pn} size={22} rounded="rounded-md" className="k-pav-logo" />
                   ) : (
                     <span className="k-pav" style={{ background: hashColor(pn) }}>{initials(pn)}</span>
                   )}
