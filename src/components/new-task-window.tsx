@@ -17,6 +17,7 @@ import { UnsavedChangesDialog, ConfirmDeleteDialog } from "@/components/confirm-
 import { syncChargesFromTask } from "@/lib/billing-sync";
 import { computeStageWindows, stageAlert, fmtBr, type StageWindow } from "@/lib/stage-schedule";
 
+import { IconPicker } from "@/components/settings/icon-picker";
 import "@/windows.css";
 
 const EMPTY_ARR: any[] = [];
@@ -570,6 +571,8 @@ export function TaskWindow({
     setDeliverables(
       (Array.isArray(existing.deliverables) ? existing.deliverables : []).map((d: any) => ({
         id: d.id ?? uid(),
+        label: d.label ?? "",
+        icon: d.icon ?? null,
         platform: d.platform ?? "",
         type: d.type ?? "",
         billing_enabled: d.billing_enabled !== false,
@@ -860,7 +863,7 @@ export function TaskWindow({
     billing_value: baseValue ? Number(baseValue) : null,
     platform: platformsSel.join(", ") || null,
     deliverables: deliverables.map(d => ({
-      id: d.id, platform: d.platform, type: d.type,
+      id: d.id, platform: d.platform, type: d.type, label: d.label ?? "", icon: d.icon ?? null,
       billing_enabled: d.billing_enabled, billing_model: "per_task",
       billing_value: d.billing_value, delivered: d.delivered, invoiced: !!d.invoiced,
       due_date: d.due_date || null,
@@ -1394,6 +1397,7 @@ export function TaskWindow({
                 <table className="cw-table">
                   <thead>
                     <tr>
+                      <th style={{ width: 190 }}>Entregável</th>
                       <th style={{ width: 128 }}>Plataforma</th>
                       <th>Formato / entrega</th>
                       <th style={{ width: 130 }}>Prazo combinado</th>
@@ -1407,12 +1411,22 @@ export function TaskWindow({
                   </thead>
                   <tbody>
                     {deliverables.length === 0 && (
-                      <tr><td colSpan={8} className="cw-mut" style={{ textAlign: "center" }}>Nenhum entregável adicionado.</td></tr>
+                      <tr><td colSpan={9} className="cw-mut" style={{ textAlign: "center" }}>Nenhum entregável adicionado.</td></tr>
                     )}
                     {deliverables.map(d => {
                       const late = !d.delivered && !!d.due_date && d.due_date < new Date().toISOString().slice(0, 10);
                       return (
                       <tr key={d.id}>
+                        <td>
+                          <div className="flex items-center gap-1.5">
+                            <IconPicker
+                              value={d.icon ?? null}
+                              onChange={v => setDeliverables(list => list.map(x => x.id === d.id ? { ...x, icon: v } : x))}
+                            />
+                            <input className="cw-table-inline-input" value={d.label ?? ""} placeholder="Nome do entregável"
+                              onChange={e => setDeliverables(list => list.map(x => x.id === d.id ? { ...x, label: e.target.value } : x))} />
+                          </div>
+                        </td>
                         <td>
                           <select className="cw-table-inline-input" value={d.platform}
                             onChange={e => setDeliverables(list => list.map(x => x.id === d.id ? { ...x, platform: e.target.value } : x))}>
@@ -1420,6 +1434,7 @@ export function TaskWindow({
                             {platforms.map((p: any) => <option key={p.id} value={p.name}>{p.name}</option>)}
                           </select>
                         </td>
+
                         <td>
                           <input className="cw-table-inline-input" value={d.type} placeholder="Ex.: Reels 60s"
                             onChange={e => setDeliverables(list => list.map(x => x.id === d.id ? { ...x, type: e.target.value } : x))} />
