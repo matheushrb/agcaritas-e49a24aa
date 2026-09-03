@@ -230,6 +230,15 @@ function TasksPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const updateProgress = useMutation({
+    mutationFn: async ({ id, progress }: { id: string; progress: number }) => {
+      const { error } = await supabase.from("tasks").update({ progress }).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["tasks"] }),
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   const tasks = useMemo(() => rawTasks.map(t => {
     const eff = effectivePriority(t, settings);
     return eff.escalated ? { ...t, priority: eff.priority } as Task : t;
@@ -327,6 +336,7 @@ function TasksPage() {
         onNew={handleNew}
         onQuickCreate={(title) => createTask.mutate({ title, status: "todo" })}
         onStatusChange={(id, status) => updateStatus.mutate({ id, status: status as TaskStatus })}
+        onProgressChange={(id, progress) => updateProgress.mutate({ id, progress })}
         onArchiveChange={(id, archived) => archiveTask.mutate({ id, archived })}
       >
         {(rows) =>
