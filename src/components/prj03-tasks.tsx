@@ -175,6 +175,23 @@ export function Prj03Tasks({ tasks, people, onOpen, onQuickCreate, pending }: {
   const rows = filtered.slice((current - 1) * perPage, current * perPage);
   const clearFilters = () => { setQ(""); setStatus("all"); setAssignee("all"); setPriority("all"); setDeadline("all"); setPage(1); };
 
+  // Agrupa as linhas da página por etapa (estilo ClickUp)
+  const groups = useMemo(() => {
+    const map = new Map<string, { key: string; name: string; color: string; done: boolean; tasks: P3Task[] }>();
+    for (const t of rows) {
+      const key = t.current_stage_id ?? t.stage;
+      const si = stageInfoOf(t, stageIndex);
+      const g = map.get(key) ?? { key, name: si.name, color: si.color, done: t.status === "done", tasks: [] };
+      if (t.status === "done") g.done = true;
+      g.tasks.push(t);
+      map.set(key, g);
+    }
+    return [...map.values()].sort((a, b) => Number(a.done) - Number(b.done));
+  }, [rows, stageIndex]);
+
+  const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
+  const toggleGroup = (key: string) => setCollapsedGroups((c) => ({ ...c, [key]: !c[key] }));
+
   const upcoming = useMemo(() => tasks
     .filter((t) => t.status !== "done" && (daysFromToday(t.due_date) ?? -1) >= 0)
     .sort((a, b) => (toDate(a.due_date)!.getTime() - toDate(b.due_date)!.getTime()))
