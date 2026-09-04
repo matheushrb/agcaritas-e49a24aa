@@ -238,6 +238,7 @@ export function NewProjectWizard({
   }, [v.project_type, platforms.length, projectTypes.length]);
 
 
+  /* Cliente é opcional no cadastro — só é exigido para concluir o projeto */
   const errors = {
     name: !v.name.trim(),
     client: !v.client_id,
@@ -245,7 +246,7 @@ export function NewProjectWizard({
     owner: !v.owner_id,
     dates: !v.start_date || !v.end_date,
   };
-  const step1Ok = !errors.name && !errors.client && !errors.type && !errors.owner;
+  const step1Ok = !errors.name && !errors.type && !errors.owner;
   const step2Ok = !errors.dates;
   const allOk = step1Ok && step2Ok;
 
@@ -444,20 +445,21 @@ function StepBasics({ v, patch, errors, clients, typeOptions, people, applyTypeS
         </Field>
 
         <div className="cw-field">
-          <span className="cw-label">Cliente<span className="req">*</span></span>
+          <span className="cw-label">Cliente</span>
           <div className="cw-select-wrap">
             <Search style={{ position: "absolute", right: 32, top: "50%", transform: "translateY(-50%)", width: 14, height: 14, color: "var(--cw-muted)", pointerEvents: "none" }} />
             <select
-              className={`cw-select${errors.client ? " is-error" : ""}`}
+              className="cw-select"
               value={v.client_id ?? ""}
               onChange={e => patch("client_id", e.target.value || null)}
             >
-              <option value="">Selecione ou busque o cliente</option>
+              <option value="">Sem cliente por enquanto</option>
               {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
             <ChevronDown />
           </div>
-          <div style={{ textAlign: "right" }}>
+          <div className="flex items-center justify-between gap-2">
+            <span className="cw-hint">Opcional no cadastro — obrigatório para concluir o projeto.</span>
             <a className="cw-link" href="/clients" style={{ display: "inline-flex" }}>+ Novo cliente</a>
           </div>
         </div>
@@ -1051,7 +1053,9 @@ function StepReview({ v, allOk, goTo, clientName, typeLabel, personName }: {
             <EditBtn to={1} />
           </div>
           <Item label="Nome do projeto" value={v.name || "—"} />
-          <Item label="Cliente" value={<span style={{ color: "var(--cw-cobalt)" }}>{clientName}</span>} />
+          <Item label="Cliente" value={v.client_id
+            ? <span style={{ color: "var(--cw-cobalt)" }}>{clientName}</span>
+            : <span style={{ color: "var(--cw-amber, #b45309)" }}>Sem cliente — necessário para concluir o projeto</span>} />
           <Item label="Tipo de projeto" value={typeLabel} />
           <Item label="Descrição" value={v.description || "—"} />
         </div>

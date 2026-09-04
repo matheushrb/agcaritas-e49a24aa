@@ -541,7 +541,10 @@ function ProjectDetail() {
           {isClosed ? (
             <button className="p2-btn icon" type="button" title="Reabrir" onClick={() => setStatus.mutate("active")}><RotateCcw /></button>
           ) : (
-            <button className="p2-btn icon" type="button" title="Concluir projeto" onClick={() => { if (confirm("Concluir este projeto?")) setStatus.mutate("done"); }}><CheckCircle2 /></button>
+            <button className="p2-btn icon" type="button" title="Concluir projeto" onClick={() => {
+              if (!project.client_id) { toast.error("Vincule um cliente ao projeto antes de concluí-lo."); return; }
+              if (confirm("Concluir este projeto?")) setStatus.mutate("done");
+            }}><CheckCircle2 /></button>
           )}
           <Link to="/invoices" search={{ projectId: project.id, new: "1" }} className="p2-btn icon" title="Faturar"><Receipt /></Link>
         </div>
