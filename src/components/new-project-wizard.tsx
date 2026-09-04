@@ -238,6 +238,7 @@ export function NewProjectWizard({
   }, [v.project_type, platforms.length, projectTypes.length]);
 
 
+  /* Cliente é opcional no cadastro — só é exigido para concluir o projeto */
   const errors = {
     name: !v.name.trim(),
     client: !v.client_id,
@@ -245,7 +246,7 @@ export function NewProjectWizard({
     owner: !v.owner_id,
     dates: !v.start_date || !v.end_date,
   };
-  const step1Ok = !errors.name && !errors.client && !errors.type && !errors.owner;
+  const step1Ok = !errors.name && !errors.type && !errors.owner;
   const step2Ok = !errors.dates;
   const allOk = step1Ok && step2Ok;
 
