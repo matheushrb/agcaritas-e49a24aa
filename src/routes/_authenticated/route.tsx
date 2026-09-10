@@ -1,7 +1,7 @@
-import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
+import { createFileRoute, Outlet } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/app-shell";
-import { isOnboardedCached, markOnboarded } from "@/lib/auth-cache";
+
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
